@@ -1,0 +1,27 @@
+{
+  "name": "capstone-nlcom-volunteer-management-system",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "husky",
+    "lint:backend": "cd servetrack-backend && ./vendor/bin/pint",
+    "test-hook": "npx --no -- .husky/pre-commit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/issues"
+  },
+  "homepage": "https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system#readme",
+  "devDependencies": {
+    "gitleaks": "^1.0.0",
+    "husky": "^9.1.7"
+  }
+}
