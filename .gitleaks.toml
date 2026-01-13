@@ -10,43 +10,23 @@ paths = [
   '''vendor/*''',
 ]
 
-# Exclude list (files/directories to skip)
-[exclude]
-description = "Exclude specific paths"
-paths = [
-  '''node_modules''',
-  '''vendor''',
-  '''bower_components''',
-  '''package-lock.json''',
-  '''composer.lock''',
-  '''npm-debug.log''',
-  '''yarn-error.log''',
-  '''coverage''',
-]
-
-# Git-specific options
-[git]
-# Stop at first leak
-stop-on-leak = false
-
-# Report format (options: json, sarif, csv)
-[report]
-report-format = "json"
-output-file = "gitleaks-report.json"
-
 # Regex patterns for common secrets
 [[rules]]
+id = "generic-api-key"
 description = "Generic API Key"
 regex = '''(api[_-]?key[\"'`:=,\s]+[a-z0-9]{32,})'''
 
 [[rules]]
+id = "aws-access-key"
 description = "AWS Access Key"
 regex = '''(AKIA[0-9A-Z]{16})'''
 
 [[rules]]
+id = "github-token"
 description = "GitHub Token"
 regex = '''(gh[pousr]_[0-9a-zA-Z]{36})'''
 
 [[rules]]
+id = "private-key"
 description = "Private Key"
 regex = '''(-----BEGIN ((RSA|EC|OPENSSH|DSA) )?PRIVATE KEY-----)'''

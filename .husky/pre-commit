@@ -1,16 +1,12 @@
 #!/bin/sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Check for secrets with git leaks
-# Note: To enable git leaks, download the binary from:
-# https://github.com/gitleaks/gitleaks/releases
-# Extract and place gitleaks.exe in your PATH, then uncomment below:
-#
-# echo "🔍 Running git leaks..."
-# git leaks detect --report-format json || {
-#   echo "❌ Git leaks detected secrets! Commit aborted."
-#   exit 1
-# }
+# Check for secrets with gitleaks
+echo "🔍 Running gitleaks..."
+gitleaks detect --verbose --no-git || {
+  echo "❌ Gitleaks detected secrets! Commit aborted."
+  exit 1
+}
 
 # Run Laravel Pint on backend files if any PHP files changed
 if git diff --cached --name-only | grep -E '.*\.php$'; then
