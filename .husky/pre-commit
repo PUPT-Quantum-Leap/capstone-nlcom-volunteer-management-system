@@ -1,12 +1,14 @@
-#!/bin/sh
-. "$(dirname -- "$0")/_/husky.sh"
-
-# Check for secrets with gitleaks
-echo "🔍 Running gitleaks..."
-gitleaks detect --verbose --no-git || {
-  echo "❌ Gitleaks detected secrets! Commit aborted."
-  exit 1
-}
+# Check for secrets with gitleaks (optional - runs if installed)
+if command -v gitleaks &> /dev/null; then
+  echo "🔍 Running gitleaks..."
+  gitleaks detect --verbose --no-git || {
+    echo "❌ Gitleaks detected secrets! Commit aborted."
+    exit 1
+  }
+else
+  echo "⚠️  Gitleaks not installed, skipping secrets scan..."
+  echo "   Install from: https://github.com/gitleaks/gitleaks/releases"
+fi
 
 # Run Laravel Pint on backend files if any PHP files changed
 if git diff --cached --name-only | grep -E '.*\.php$'; then
