@@ -1,0 +1,30 @@
+# Node modules
+node_modules/
+
+# Lock files
+package-lock.json
+composer.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Gitleaks report
+gitleaks-report.json
