@@ -1,0 +1,92 @@
+<div class="voting-poll-container">
+  <div class="poll-card">
+    <!-- Poll Header -->
+    <div class="poll-header">
+      <h2 class="poll-title">{{ pollTitle }} ({{ pollDate }})</h2>
+      <div class="poll-cutoff">
+        <span class="cutoff-label">Cut-Off for Poll is</span>
+        <span class="cutoff-time">{{ cutOffDay }} {{ cutOffTime }}</span>
+      </div>
+    </div>
+
+    <!-- Poll Description -->
+    <div class="poll-description">
+      <p>Select your preferred time slot for the mobile kitchen operations. Vote to help us determine the best schedule.</p>
+    </div>
+
+    <!-- Poll Options -->
+    <div class="poll-options">
+      <div 
+        *ngFor="let option of pollOptions" 
+        class="poll-option"
+        [class.selected]="option.selected"
+        [class.disabled]="isFull(option)"
+        (click)="selectOption(option.id)"
+      >
+        <div class="option-header">
+          <div class="option-info">
+            <input 
+              type="radio" 
+              [id]="'option-' + option.id"
+              [checked]="option.selected"
+              [disabled]="isFull(option)"
+              class="option-radio"
+            >
+            <label [for]="'option-' + option.id" class="option-label">
+              {{ option.timeSlot }}
+            </label>
+            <span *ngIf="isFull(option)" class="full-badge">FULL</span>
+          </div>
+          <div class="vote-count">
+            <span class="vote-number">{{ option.votes }}</span>
+            <span class="vote-text">/ {{ option.capacity }}</span>
+          </div>
+        </div>
+        
+        <!-- Capacity Info -->
+        <div class="capacity-info">
+          <span class="capacity-label">
+            <span *ngIf="!isFull(option)" class="remaining-slots">
+              {{ getRemainingSlots(option) }} slots remaining
+            </span>
+            <span *ngIf="isFull(option)" class="slots-full">
+              No slots available
+            </span>
+          </span>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="progress-bar-container">
+          <div 
+            class="progress-bar-fill"
+            [class.full]="isFull(option)"
+            [style.width.%]="(option.votes / option.capacity) * 100"
+          ></div>
+        </div>
+        
+        <!-- Percentage -->
+        <div class="percentage-label">
+          {{ getVotePercentage(option.votes) | number:'1.0-1' }}% of total votes
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Votes -->
+    <div class="poll-footer">
+      <div class="total-votes">
+        <span class="total-label">Total Votes:</span>
+        <span class="total-number">{{ totalVotes }}</span>
+      </div>
+      
+      <!-- Submit Button -->
+      <button 
+        class="btn-submit"
+        [disabled]="!hasSelectedOption"
+        (click)="submitVote()"
+      >
+        Submit Vote
+      </button>
+    </div>
+  </div>
+</div>
+
