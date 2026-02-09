@@ -35,7 +35,7 @@ The project is divided into two main directories:
     ```
 2.  **Install Node Dependencies (for Vite/Tailwind):**
     ```bash
-    npm install
+    pnpm install
     ```
 3.  **Environment Setup:**
     ```bash
@@ -53,17 +53,17 @@ The project is divided into two main directories:
     # Runs Laravel server, Queue worker, and Vite concurrently
     composer run dev
     ```
-    *   Or run individually: `php artisan serve`, `npm run dev`
+    *   Or run individually: `php artisan serve`, `pnpm run dev`
 
 ### Frontend (`servetrack-frontend/`)
 
 1.  **Install Dependencies:**
     ```bash
-    npm install
+    pnpm install
     ```
 2.  **Run Development Server:**
     ```bash
-    ng serve
+    pnpm run start
     ```
     *   Access the app at `http://localhost:4200`.
 
