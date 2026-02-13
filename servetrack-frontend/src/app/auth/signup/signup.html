@@ -9,17 +9,25 @@
       <p class="auth-subtitle">Create your account to start volunteering</p>
     </div>
 
-    <form class="auth-form" (ngSubmit)="onSubmit()">
+    @if (errorMessage()) {
+      <div class="error-message" role="alert">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <form class="auth-form" [formGroup]="signupForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
         <label for="name" class="form-label">Full Name</label>
         <input
           type="text"
           id="name"
-          [(ngModel)]="name"
-          name="name"
+          formControlName="name"
           class="form-input"
-          placeholder="Enter your full name"
-          required>
+          [class.error]="nameControl?.invalid && nameControl?.touched"
+          placeholder="Enter your full name">
+        @if (nameControl?.invalid && nameControl?.touched) {
+          <span class="error-text">{{ getErrorMessage('name') }}</span>
+        }
       </div>
 
       <div class="form-group">
@@ -27,11 +35,13 @@
         <input
           type="email"
           id="email"
-          [(ngModel)]="email"
-          name="email"
+          formControlName="email"
           class="form-input"
-          placeholder="Enter your email"
-          required>
+          [class.error]="emailControl?.invalid && emailControl?.touched"
+          placeholder="Enter your email">
+        @if (emailControl?.invalid && emailControl?.touched) {
+          <span class="error-text">{{ getErrorMessage('email') }}</span>
+        }
       </div>
 
       <div class="form-group">
@@ -39,11 +49,27 @@
         <input
           type="password"
           id="password"
-          [(ngModel)]="password"
-          name="password"
+          formControlName="password"
           class="form-input"
+          [class.error]="passwordControl?.invalid && passwordControl?.touched"
           placeholder="Create a password"
-          required>
+          (focus)="showPasswordRequirements.set(true)">
+        @if (passwordControl?.invalid && passwordControl?.touched) {
+          <span class="error-text">{{ getErrorMessage('password') }}</span>
+        }
+        @if (showPasswordRequirements()) {
+          <div class="password-requirements">
+            <p class="requirements-title">Password must contain:</p>
+            <ul class="requirements-list">
+              @for (req of getPasswordRequirements(); track req.label) {
+                <li [class.met]="req.met">
+                  <span class="requirement-icon">{{ req.met ? '✓' : '○' }}</span>
+                  {{ req.label }}
+                </li>
+              }
+            </ul>
+          </div>
+        }
       </div>
 
       <div class="form-group">
@@ -51,39 +77,42 @@
         <input
           type="password"
           id="confirmPassword"
-          [(ngModel)]="confirmPassword"
-          name="confirmPassword"
+          formControlName="confirmPassword"
           class="form-input"
-          placeholder="Confirm your password"
-          required>
+          [class.error]="confirmPasswordControl?.invalid && confirmPasswordControl?.touched"
+          placeholder="Confirm your password">
+        @if (confirmPasswordControl?.invalid && confirmPasswordControl?.touched) {
+          <span class="error-text">{{ getErrorMessage('confirmPassword') }}</span>
+        }
       </div>
 
       <div class="form-options">
         <label class="checkbox-container">
-          <input type="checkbox" class="checkbox-input" required>
+          <input type="checkbox" formControlName="agreeToTerms" class="checkbox-input">
           <span class="checkmark"></span>
-          I agree to the <a routerLink="" class="link">
-            Terms of Service
-          </a> and 
-          <a routerLink="" class="link">
-            Privacy Policy
-          </a>
+          I agree to the <a routerLink="/terms" class="link">Terms of Service</a> and 
+          <a routerLink="/privacy" class="link">Privacy Policy</a>
         </label>
+        @if (agreeToTermsControl?.invalid && agreeToTermsControl?.touched) {
+          <span class="error-text">{{ getErrorMessage('agreeToTerms') }}</span>
+        }
       </div>
 
       <button
         type="submit"
         class="btn btn-primary btn-full"
-        [disabled]="isLoading">
-        <span *ngIf="isLoading" class="loading-spinner"></span>
-        {{ isLoading ? 'Creating Account...' : 'Create Account' }}
+        [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="loading-spinner"></span>
+        }
+        {{ isLoading() ? 'Creating Account...' : 'Create Account' }}
       </button>
     </form>
 
     <div class="auth-footer">
       <p class="auth-footer-text">
         Already have an account?
-        <a routerLink="/login" class="auth-link" (click)="navigateToLogin()">
+        <a routerLink="/login" class="auth-link">
           Sign in
         </a>
       </p>
