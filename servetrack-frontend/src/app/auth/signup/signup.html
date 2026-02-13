@@ -19,8 +19,7 @@
           name="name"
           class="form-input"
           placeholder="Enter your full name"
-          required
-        >
+          required>
       </div>
 
       <div class="form-group">
@@ -32,8 +31,7 @@
           name="email"
           class="form-input"
           placeholder="Enter your email"
-          required
-        >
+          required>
       </div>
 
       <div class="form-group">
@@ -45,8 +43,7 @@
           name="password"
           class="form-input"
           placeholder="Create a password"
-          required
-        >
+          required>
       </div>
 
       <div class="form-group">
@@ -58,23 +55,26 @@
           name="confirmPassword"
           class="form-input"
           placeholder="Confirm your password"
-          required
-        >
+          required>
       </div>
 
       <div class="form-options">
         <label class="checkbox-container">
           <input type="checkbox" class="checkbox-input" required>
           <span class="checkmark"></span>
-          I agree to the <a href="#" class="link"> Terms of Service</a> and <a href="#" class="link"> Privacy Policy </a>
+          I agree to the <a routerLink="" class="link">
+            Terms of Service
+          </a> and 
+          <a routerLink="" class="link">
+            Privacy Policy
+          </a>
         </label>
       </div>
 
       <button
         type="submit"
         class="btn btn-primary btn-full"
-        [disabled]="isLoading"
-      >
+        [disabled]="isLoading">
         <span *ngIf="isLoading" class="loading-spinner"></span>
         {{ isLoading ? 'Creating Account...' : 'Create Account' }}
       </button>
@@ -83,7 +83,9 @@
     <div class="auth-footer">
       <p class="auth-footer-text">
         Already have an account?
-        <a href="#" class="auth-link" (click)="navigateToLogin()">Sign in</a>
+        <a routerLink="/login" class="auth-link" (click)="navigateToLogin()">
+          Sign in
+        </a>
       </p>
     </div>
   </div>
