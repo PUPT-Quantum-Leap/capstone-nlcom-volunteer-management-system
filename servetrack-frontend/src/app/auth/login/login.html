@@ -19,8 +19,7 @@
           name="email"
           class="form-input"
           placeholder="Enter your email"
-          required
-        >
+          required>
       </div>
 
       <div class="form-group">
@@ -32,8 +31,7 @@
           name="password"
           class="form-input"
           placeholder="Enter your password"
-          required
-        >
+          required>
       </div>
 
       <div class="form-options">
@@ -42,14 +40,15 @@
           <span class="checkmark"></span>
           Remember me
         </label>
-        <a href="#" class="forgot-password">Forgot password?</a>
+        <a routerLink="" class="forgot-password">
+          Forgot password?
+        </a>
       </div>
 
       <button
         type="submit"
         class="btn btn-primary btn-full"
-        [disabled]="isLoading"
-      >
+        [disabled]="isLoading">
         <span *ngIf="isLoading" class="loading-spinner"></span>
         {{ isLoading ? 'Signing In...' : 'Sign In' }}
       </button>
@@ -58,7 +57,9 @@
     <div class="auth-footer">
       <p class="auth-footer-text">
         Don't have an account?
-        <a href="#" class="auth-link" (click)="navigateToSignup()">Sign up</a>
+        <a routerLink="signup" class="auth-link" (click)="navigateToSignup()">
+          Sign up
+        </a>
       </p>
     </div>
   </div>
