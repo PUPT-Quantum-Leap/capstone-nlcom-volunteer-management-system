@@ -11,6 +11,10 @@ $white: #FFFFFF;
 $gray-50: #F9FAFB;
 $gray-100: #F3F4F6;
 
+$error: #DC2626;
+$error-light: #FEE2E2;
+$success: #059669;
+
 .auth-container {
   min-height: 100vh;
   display: flex;
@@ -265,3 +269,94 @@ $gray-100: #F3F4F6;
     }
   }
 }
+
+// Error message styles
+.error-message {
+  background: $error-light;
+  color: $error;
+  padding: 0.875rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-left: 4px solid $error;
+  animation: slideDown 0.3s ease-out;
+}
+
+.error-text {
+  display: block;
+  color: $error;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.form-input.error {
+  border-color: $error;
+  
+  &:focus {
+    border-color: $error;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  }
+}
+
+// Password requirements styles
+.password-requirements {
+  background: $gray-50;
+  border: 1px solid $border;
+  border-radius: 0.5rem;
+  padding: 0.875rem;
+  margin-top: 0.75rem;
+  animation: slideDown 0.3s ease-out;
+
+  .requirements-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $text-dark;
+    margin-bottom: 0.5rem;
+  }
+
+  .requirements-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      font-size: 0.75rem;
+      color: $text-muted;
+      padding: 0.25rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 0.3s;
+
+      &.met {
+        color: $success;
+        font-weight: 500;
+
+        .requirement-icon {
+          color: $success;
+        }
+      }
+
+      .requirement-icon {
+        font-size: 0.875rem;
+        font-weight: bold;
+        width: 16px;
+        text-align: center;
+      }
+    }
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
