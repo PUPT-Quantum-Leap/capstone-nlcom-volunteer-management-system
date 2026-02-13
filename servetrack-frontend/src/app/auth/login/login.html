@@ -9,17 +9,25 @@
       <p class="auth-subtitle">Sign in to your account to continue</p>
     </div>
 
-    <form class="auth-form" (ngSubmit)="onSubmit()">
+    @if (errorMessage()) {
+      <div class="error-message" role="alert">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <form class="auth-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
         <label for="email" class="form-label">Email Address</label>
         <input
           type="email"
           id="email"
-          [(ngModel)]="email"
-          name="email"
+          formControlName="email"
           class="form-input"
-          placeholder="Enter your email"
-          required>
+          [class.error]="emailControl?.invalid && emailControl?.touched"
+          placeholder="Enter your email">
+        @if (emailControl?.invalid && emailControl?.touched) {
+          <span class="error-text">{{ getErrorMessage('email') }}</span>
+        }
       </div>
 
       <div class="form-group">
@@ -27,20 +35,22 @@
         <input
           type="password"
           id="password"
-          [(ngModel)]="password"
-          name="password"
+          formControlName="password"
           class="form-input"
-          placeholder="Enter your password"
-          required>
+          [class.error]="passwordControl?.invalid && passwordControl?.touched"
+          placeholder="Enter your password">
+        @if (passwordControl?.invalid && passwordControl?.touched) {
+          <span class="error-text">{{ getErrorMessage('password') }}</span>
+        }
       </div>
 
       <div class="form-options">
         <label class="checkbox-container">
-          <input type="checkbox" class="checkbox-input">
+          <input type="checkbox" formControlName="rememberMe" class="checkbox-input">
           <span class="checkmark"></span>
           Remember me
         </label>
-        <a routerLink="" class="forgot-password">
+        <a routerLink="/forgot-password" class="forgot-password">
           Forgot password?
         </a>
       </div>
@@ -48,16 +58,18 @@
       <button
         type="submit"
         class="btn btn-primary btn-full"
-        [disabled]="isLoading">
-        <span *ngIf="isLoading" class="loading-spinner"></span>
-        {{ isLoading ? 'Signing In...' : 'Sign In' }}
+        [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="loading-spinner"></span>
+        }
+        {{ isLoading() ? 'Signing In...' : 'Sign In' }}
       </button>
     </form>
 
     <div class="auth-footer">
       <p class="auth-footer-text">
         Don't have an account?
-        <a routerLink="signup" class="auth-link" (click)="navigateToSignup()">
+        <a routerLink="/signup" class="auth-link">
           Sign up
         </a>
       </p>
