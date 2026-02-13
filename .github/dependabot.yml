@@ -1,0 +1,102 @@
+# Dependabot configuration for ServeTrack (Angular + Laravel)
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Frontend dependencies (Angular 21 with pnpm)
+  - package-ecosystem: "npm" # Use "npm" for pnpm projects
+    directory: "/servetrack-frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "frontend"
+    commit-message:
+      prefix: "chore(deps-frontend)"
+      include: "scope"
+    groups:
+      angular:
+        patterns:
+          - "@angular*"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Backend PHP dependencies (Laravel 12 with Composer)
+  - package-ecosystem: "composer"
+    directory: "/servetrack-backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "backend"
+      - "php"
+    commit-message:
+      prefix: "chore(deps-backend)"
+      include: "scope"
+    groups:
+      laravel:
+        patterns:
+          - "laravel/*"
+        update-types:
+          - "minor"
+          - "patch"
+      pest:
+        patterns:
+          - "pestphp/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Backend Node dependencies for Laravel assets (Vite, Tailwind)
+  - package-ecosystem: "npm" # Use "npm" for pnpm projects
+    directory: "/servetrack-backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "backend-assets"
+    commit-message:
+      prefix: "chore(deps-backend-assets)"
+      include: "scope"
+    groups:
+      build-tools:
+        patterns:
+          - "vite*"
+          - "tailwindcss*"
+          - "@tailwindcss/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(deps-actions)"
