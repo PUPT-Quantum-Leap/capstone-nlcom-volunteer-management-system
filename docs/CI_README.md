@@ -19,12 +19,12 @@ Scans for vulnerable dependencies in pull requests using GitHub's dependency rev
 
 ### 3. **frontend-check** (Angular 21 + Vitest)
 Runs when frontend code changes:
-- **Environment**: Ubuntu with Node.js 22 and pnpm 9
+- **Environment**: Ubuntu with Node.js 22 and npm
 - **Browser**: Chromium (headless mode in CI)
 - **Steps**:
-  1. Install pnpm package manager
-  2. Cache dependencies using `pnpm-lock.yaml`
-  3. Install dependencies with `pnpm install --frozen-lockfile`
+  1. Setup Node.js with npm
+  2. Cache dependencies using `package-lock.json`
+  3. Install dependencies with `npm ci`
   4. Build the Angular application
   5. Run Vitest tests with coverage
   6. Upload test artifacts (coverage reports)
@@ -37,7 +37,7 @@ Runs when backend code changes:
   1. Setup PHP 8.2 with required extensions
   2. Cache Composer dependencies
   3. Install PHP dependencies
-  4. Install Node/pnpm for frontend assets (Vite/Tailwind)
+  4. Install Node/npm for frontend assets (Vite/Tailwind)
   5. Prepare Laravel environment (`.env`, app key, config cache)
   6. Run database migrations against test database
   7. Run Laravel Pint (code style checker)
@@ -64,7 +64,7 @@ The backend tests use a MySQL service container with:
 #### Frontend (Vitest)
 Tests run with:
 ```bash
-pnpm run test -- --run --coverage
+npm test -- --run --coverage
 ```
 - `--run`: Single run mode (no watch)
 - `--coverage`: Generate coverage reports
@@ -97,10 +97,10 @@ Coverage files are retained for 7 days and can be viewed in the Actions tab.
 
 1. **Path Filtering**: Only runs affected tests based on changed files
 2. **Dependency Caching**: 
-   - Frontend: pnpm store cached via `setup-node`
+   - Frontend: npm store cached via `setup-node`
    - Backend: Composer cache stored between runs
 3. **Parallel Execution**: Frontend and backend tests run simultaneously
-4. **Frozen Lockfiles**: `pnpm install --frozen-lockfile` prevents unexpected updates
+4. **Frozen Lockfiles**: `npm ci` prevents unexpected updates
 
 ## Local Testing
 
@@ -109,9 +109,9 @@ To replicate CI behavior locally:
 ### Frontend
 ```bash
 cd servetrack-frontend
-pnpm install
-pnpm run build
-CI=true pnpm run test -- --run --coverage
+npm install
+npm run build
+CI=true npm test -- --run --coverage
 ```
 
 ### Backend
@@ -130,7 +130,7 @@ php artisan test --coverage
 ### Frontend Tests Fail
 - Ensure Vitest is configured in `angular.json`
 - Check that `CI` environment variable enables headless mode
-- Verify `pnpm-lock.yaml` is committed
+- Verify `package-lock.json` is committed
 
 ### Backend Tests Fail
 - Verify `.env.example` has correct test database settings
