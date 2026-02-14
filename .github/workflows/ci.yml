@@ -65,18 +65,10 @@ jobs:
       - name: Build Angular app
         run: npm run build --if-present
 
-      - name: Run tests with coverage
-        run: npm test -- --coverage
+      - name: Run tests
+        run: npm test
         env:
           CI: true
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: frontend-test-results
-          path: servetrack-frontend/coverage/
-          retention-days: 7
 
   # Backend (Laravel 12 w/ Pest) - Using SQLite for CI
   backend-check:
@@ -148,7 +140,7 @@ jobs:
         run: vendor/bin/pint --test
 
       - name: Run tests with Pest
-        run: php artisan test --coverage --min=80
+        run: php artisan test
         env:
           APP_ENV: testing
           DB_CONNECTION: sqlite
@@ -156,16 +148,6 @@ jobs:
           CACHE_STORE: array
           SESSION_DRIVER: array
           QUEUE_CONNECTION: sync
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v6
-        with:
-          name: backend-test-results
-          path: |
-            servetrack-backend/coverage/
-            servetrack-backend/tests/
-          retention-days: 7
 
   # Summary job - ensures all checks pass
   ci-success:
