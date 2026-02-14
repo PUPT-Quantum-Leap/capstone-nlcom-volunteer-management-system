@@ -17,14 +17,14 @@ capstone-nlcom-volunteer-management-system/
 ### Root Level
 ```bash
 # Install dependencies
-pnpm install                      # Frontend & backend Node deps
+npm install                       # Frontend & backend Node deps
 cd servetrack-backend && composer install  # Backend PHP deps
 
 # Run linters
-pnpm lint:backend                 # Laravel Pint code formatter
+npm run lint:backend              # Laravel Pint code formatter
 
 # Pre-commit hook test
-pnpm test-hook                    # Test Husky hooks manually
+npm run test-hook                 # Test Husky hooks manually
 ```
 
 ### Frontend (servetrack-frontend/)

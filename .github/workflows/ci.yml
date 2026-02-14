@@ -52,17 +52,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 22
-          cache: 'pnpm'
-          cache-dependency-path: servetrack-frontend/pnpm-lock.yaml
+          cache: 'npm'
+          cache-dependency-path: servetrack-frontend/package-lock.json
 
       - name: Install Chrome dependencies
         run: |
@@ -71,13 +66,13 @@ jobs:
         working-directory: .
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Build Angular app
-        run: pnpm run build --if-present
+        run: npm run build --if-present
 
       - name: Run tests with coverage
-        run: pnpm run test -- --run --coverage
+        run: npm test -- --run --coverage
         env:
           CI: true
 
@@ -137,20 +132,15 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader --no-interaction
 
-      - name: Install pnpm for frontend assets
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
       - name: Setup Node.js for frontend assets
         uses: actions/setup-node@v6
         with:
           node-version: 22
-          cache: 'pnpm'
-          cache-dependency-path: servetrack-backend/pnpm-lock.yaml
+          cache: 'npm'
+          cache-dependency-path: servetrack-backend/package-lock.json
 
       - name: Install Node dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Prepare environment
         run: |
