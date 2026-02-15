@@ -164,7 +164,7 @@ capstone-nlcom-volunteer-management-system/
 
 ## 👥 Development Team
 
-**Organization**: PUPT Quantum Leap
+**Organization**: PUPT Quantum Leap  
 **Project**: Capstone Project for NLCOM
 
 ## 📝 License
