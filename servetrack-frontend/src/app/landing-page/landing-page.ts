@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 @Component({
@@ -7,9 +7,19 @@ import { RouterLink } from '@angular/router';
   templateUrl: './landing-page.html',
   styleUrl: './landing-page-styles.scss',
 })
-export class LandingPage {
+export class LandingPage implements OnDestroy {
+  private observer?: IntersectionObserver;
+
   ngAfterViewInit() {
     this.initScrollAnimations();
+  }
+
+  ngOnDestroy() {
+    // Clean up observer to prevent memory leak
+    if (this.observer) {
+      this.observer.disconnect();
+      this.observer = undefined;
+    }
   }
 
   scrollToSection(sectionId: string, event: Event) {
@@ -26,15 +36,17 @@ export class LandingPage {
       rootMargin: '0px 0px -50px 0px'
     };
 
-    const observer = new IntersectionObserver((entries) => {
+    this.observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add('animate-in');
+          // Optional: Unobserve after animating to improve performance
+          this.observer?.unobserve(entry.target);
         }
       });
     }, observerOptions);
 
     const animatedElements = document.querySelectorAll('.fade-in-up, .fade-in-left, .fade-in-right');
-    animatedElements.forEach(el => observer.observe(el));
+    animatedElements.forEach(el => this.observer!.observe(el));
   }
 }
