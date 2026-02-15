@@ -1,9 +1,10 @@
 # Node modules
 node_modules/
 
-# Lock files
-package-lock.json
-composer.lock
+# Lock files - IMPORTANT: Lock files should be committed for reproducible builds
+# Only ignore lock files in vendor/node_modules subdirectories
+**/node_modules/**/package-lock.json
+**/vendor/**/composer.lock
 
 # OS files
 .DS_Store
