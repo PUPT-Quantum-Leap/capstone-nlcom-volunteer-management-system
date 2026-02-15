@@ -96,7 +96,7 @@ Coverage files are retained for 7 days and can be viewed in the Actions tab.
 ## Performance Optimizations
 
 1. **Path Filtering**: Only runs affected tests based on changed files
-2. **Dependency Caching**: 
+2. **Dependency Caching**:
    - Frontend: npm store cached via `setup-node`
    - Backend: Composer cache stored between runs
 3. **Parallel Execution**: Frontend and backend tests run simultaneously
