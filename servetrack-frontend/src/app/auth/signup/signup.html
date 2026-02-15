@@ -10,79 +10,60 @@
     </div>
 
     @if (errorMessage()) {
-      <div class="error-message" role="alert">
-        {{ errorMessage() }}
-      </div>
+    <div class="error-message" role="alert">
+      {{ errorMessage() }}
+    </div>
     }
 
     <form class="auth-form" [formGroup]="signupForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
         <label for="name" class="form-label">Full Name</label>
-        <input
-          type="text"
-          id="name"
-          formControlName="name"
-          class="form-input"
-          [class.error]="nameControl?.invalid && nameControl?.touched"
-          placeholder="Enter your full name">
+        <input type="text" id="name" formControlName="name" class="form-input"
+          [class.error]="nameControl?.invalid && nameControl?.touched" placeholder="Enter your full name">
         @if (nameControl?.invalid && nameControl?.touched) {
-          <span class="error-text">{{ getErrorMessage('name') }}</span>
+        <span class="error-text">{{ getErrorMessage('name') }}</span>
         }
       </div>
 
       <div class="form-group">
         <label for="email" class="form-label">Email Address</label>
-        <input
-          type="email"
-          id="email"
-          formControlName="email"
-          class="form-input"
-          [class.error]="emailControl?.invalid && emailControl?.touched"
-          placeholder="Enter your email">
+        <input type="email" id="email" formControlName="email" class="form-input"
+          [class.error]="emailControl?.invalid && emailControl?.touched" placeholder="Enter your email">
         @if (emailControl?.invalid && emailControl?.touched) {
-          <span class="error-text">{{ getErrorMessage('email') }}</span>
+        <span class="error-text">{{ getErrorMessage('email') }}</span>
         }
       </div>
 
       <div class="form-group">
         <label for="password" class="form-label">Password</label>
-        <input
-          type="password"
-          id="password"
-          formControlName="password"
-          class="form-input"
-          [class.error]="passwordControl?.invalid && passwordControl?.touched"
-          placeholder="Create a password"
+        <input type="password" id="password" formControlName="password" class="form-input"
+          [class.error]="passwordControl?.invalid && passwordControl?.touched" placeholder="Create a password"
           (focus)="showPasswordRequirements.set(true)">
         @if (passwordControl?.invalid && passwordControl?.touched) {
-          <span class="error-text">{{ getErrorMessage('password') }}</span>
+        <span class="error-text">{{ getErrorMessage('password') }}</span>
         }
         @if (showPasswordRequirements()) {
-          <div class="password-requirements">
-            <p class="requirements-title">Password must contain:</p>
-            <ul class="requirements-list">
-              @for (req of getPasswordRequirements(); track req.label) {
-                <li [class.met]="req.met">
-                  <span class="requirement-icon">{{ req.met ? '✓' : '○' }}</span>
-                  {{ req.label }}
-                </li>
-              }
-            </ul>
-          </div>
+        <div class="password-requirements">
+          <p class="requirements-title">Password must contain:</p>
+          <ul class="requirements-list">
+            @for (req of getPasswordRequirements(); track req.label) {
+            <li [class.met]="req.met">
+              <span class="requirement-icon">{{ req.met ? '✓' : '○' }}</span>
+              {{ req.label }}
+            </li>
+            }
+          </ul>
+        </div>
         }
       </div>
 
       <div class="form-group">
         <label for="confirmPassword" class="form-label">Confirm Password</label>
-        <input
-          type="password"
-          id="confirmPassword"
-          formControlName="confirmPassword"
-          class="form-input"
+        <input type="password" id="confirmPassword" formControlName="confirmPassword" class="form-input"
           [class.error]="confirmPasswordControl?.invalid && confirmPasswordControl?.touched"
           placeholder="Confirm your password">
         @if (confirmPasswordControl?.invalid && confirmPasswordControl?.touched) {
-          <span class="error-text">{{ getErrorMessage('confirmPassword') }}</span>
+        <span class="error-text">{{ getErrorMessage('confirmPassword') }}</span>
         }
       </div>
 
@@ -94,16 +75,13 @@
           <a routerLink="/privacy-policy" class="link">Privacy Policy</a>
         </label>
         @if (agreeToTermsControl?.invalid && agreeToTermsControl?.touched) {
-          <span class="error-text">{{ getErrorMessage('agreeToTerms') }}</span>
+        <span class="error-text">{{ getErrorMessage('agreeToTerms') }}</span>
         }
       </div>
 
-      <button
-        type="submit"
-        class="btn btn-primary btn-full"
-        [disabled]="isLoading()">
+      <button type="submit" class="btn btn-primary btn-full" [disabled]="isLoading()">
         @if (isLoading()) {
-          <span class="loading-spinner"></span>
+        <span class="loading-spinner"></span>
         }
         {{ isLoading() ? 'Creating Account...' : 'Create Account' }}
       </button>
