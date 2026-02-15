@@ -63,7 +63,7 @@ The project is divided into two main directories:
     ```
 2.  **Run Development Server:**
     ```bash
-    ng serve
+    npm run start
     ```
     *   Access the app at `http://localhost:4200`.
 
