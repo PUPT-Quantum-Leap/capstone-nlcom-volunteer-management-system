@@ -90,8 +90,8 @@
         <label class="checkbox-container">
           <input type="checkbox" formControlName="agreeToTerms" class="checkbox-input">
           <span class="checkmark"></span>
-          I agree to the <a routerLink="/terms" class="link">Terms of Service</a> and 
-          <a routerLink="/privacy" class="link">Privacy Policy</a>
+          I agree to the <a routerLink="/terms-of-service" class="link">Terms of Service</a> and
+          <a routerLink="/privacy-policy" class="link">Privacy Policy</a>
         </label>
         @if (agreeToTermsControl?.invalid && agreeToTermsControl?.touched) {
           <span class="error-text">{{ getErrorMessage('agreeToTerms') }}</span>
