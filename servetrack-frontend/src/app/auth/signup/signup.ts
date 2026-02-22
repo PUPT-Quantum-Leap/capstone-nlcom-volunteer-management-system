@@ -7,13 +7,14 @@ import {
   Validators,
   AbstractControl,
 } from '@angular/forms';
+import { NgOptimizedImage } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { passwordStrengthValidator, passwordMatchValidator } from '../../validators/password.validator';
 
 @Component({
   selector: 'app-signup',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, NgOptimizedImage],
   templateUrl: './signup.html',
   styleUrl: './signup.scss',
 })
