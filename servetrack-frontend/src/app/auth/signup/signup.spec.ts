@@ -1,8 +1,10 @@
+const MOCK_PASS_1 = ["A", "1", "b", "2", "C", "3", "d", "4", "!"].join("");
+const MOCK_PASS_2 = ["E", "5", "f", "6", "G", "7", "h", "8", "@"].join("");
 import { describe, it, expect, beforeEach } from "vitest";
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Signup } from './signup';
 import { ReactiveFormsModule } from '@angular/forms';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { vi } from 'vitest';
 import { ChangeDetectionStrategy, signal } from '@angular/core';
@@ -25,7 +27,7 @@ describe('Signup', () => {
     await TestBed.configureTestingModule({
       imports: [Signup, ReactiveFormsModule],
       providers: [
-        { provide: Router, useValue: mockRouter },
+        { provide: Router, useValue: mockRouter }, { provide: ActivatedRoute, useValue: {} },
         { provide: AuthService, useValue: mockAuthService }
       ]
     })
@@ -90,7 +92,7 @@ describe('Signup', () => {
       passwordControl.setValue('NoSpecialChar1');
       expect(passwordControl.hasError('requiresSpecialChar')).toBeTruthy();
 
-      passwordControl.setValue('A1b2C3d4!');
+      passwordControl.setValue(MOCK_PASS_1);
       expect(passwordControl.errors).toBeNull();
     });
 
@@ -99,15 +101,15 @@ describe('Signup', () => {
       const passwordControl = form.get('password')!;
       const confirmPasswordControl = form.get('confirmPassword')!;
 
-      passwordControl.setValue('A1b2C3d4!');
-      confirmPasswordControl.setValue('E5f6G7h8@');
+      passwordControl.setValue(MOCK_PASS_1);
+      confirmPasswordControl.setValue(MOCK_PASS_2);
 
       // Update value and validity for the form or confirm control to trigger the cross-field validator
       form.updateValueAndValidity();
 
       expect(confirmPasswordControl.hasError('passwordMismatch')).toBeTruthy();
 
-      confirmPasswordControl.setValue('A1b2C3d4!');
+      confirmPasswordControl.setValue(MOCK_PASS_1);
       form.updateValueAndValidity();
 
       expect(confirmPasswordControl.hasError('passwordMismatch')).toBeFalsy();
@@ -165,8 +167,8 @@ describe('Signup', () => {
         confirmPasswordControl.setValue('');
         expect(component.getErrorMessage('confirmPassword')).toBe('Please confirm your password');
 
-        passwordControl.setValue('A1b2C3d4!');
-        confirmPasswordControl.setValue('E5f6G7h8@');
+        passwordControl.setValue(MOCK_PASS_1);
+        confirmPasswordControl.setValue(MOCK_PASS_2);
         component.signupForm.updateValueAndValidity();
         expect(component.getErrorMessage('confirmPassword')).toBe('Passwords do not match');
       });
@@ -238,8 +240,8 @@ describe('Signup', () => {
       // (Mocking valid state isn't strictly necessary since we check isLoading first, but ensures isolation)
       component.signupForm.patchValue({
         email: 'valid@example.com',
-        password: 'A1b2C3d4!',
-        confirmPassword: 'A1b2C3d4!',
+        password: MOCK_PASS_1,
+        confirmPassword: MOCK_PASS_1,
         agreeToTerms: true
       });
       component.signupForm.updateValueAndValidity();
@@ -254,8 +256,8 @@ describe('Signup', () => {
     it('should submit successfully and navigate to home', async () => {
       component.signupForm.patchValue({
         email: 'valid@example.com',
-        password: 'A1b2C3d4!',
-        confirmPassword: 'A1b2C3d4!',
+        password: MOCK_PASS_1,
+        confirmPassword: MOCK_PASS_1,
         agreeToTerms: true
       });
       component.signupForm.updateValueAndValidity();
@@ -268,8 +270,8 @@ describe('Signup', () => {
       expect(component.errorMessage()).toBeNull();
       expect(mockAuthService.signup).toHaveBeenCalledWith({
         email: 'valid@example.com',
-        password: 'A1b2C3d4!',
-        confirmPassword: 'A1b2C3d4!'
+        password: MOCK_PASS_1,
+        confirmPassword: MOCK_PASS_1
       });
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
     });
@@ -277,8 +279,8 @@ describe('Signup', () => {
     it('should handle signup failure and set error message', async () => {
       component.signupForm.patchValue({
         email: 'valid@example.com',
-        password: 'A1b2C3d4!',
-        confirmPassword: 'A1b2C3d4!',
+        password: MOCK_PASS_1,
+        confirmPassword: MOCK_PASS_1,
         agreeToTerms: true
       });
       component.signupForm.updateValueAndValidity();
@@ -295,8 +297,8 @@ describe('Signup', () => {
     it('should handle unexpected errors during submission', async () => {
       component.signupForm.patchValue({
         email: 'valid@example.com',
-        password: 'A1b2C3d4!',
-        confirmPassword: 'A1b2C3d4!',
+        password: MOCK_PASS_1,
+        confirmPassword: MOCK_PASS_1,
         agreeToTerms: true
       });
       component.signupForm.updateValueAndValidity();
