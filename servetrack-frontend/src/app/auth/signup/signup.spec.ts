@@ -90,7 +90,7 @@ describe('Signup', () => {
       passwordControl.setValue('NoSpecialChar1');
       expect(passwordControl.hasError('requiresSpecialChar')).toBeTruthy();
 
-      passwordControl.setValue('StrongP@ssw0rd');
+      passwordControl.setValue('A1b2C3d4!');
       expect(passwordControl.errors).toBeNull();
     });
 
@@ -99,15 +99,15 @@ describe('Signup', () => {
       const passwordControl = form.get('password')!;
       const confirmPasswordControl = form.get('confirmPassword')!;
 
-      passwordControl.setValue('StrongP@ssw0rd');
-      confirmPasswordControl.setValue('DifferentP@ssw0rd');
+      passwordControl.setValue('A1b2C3d4!');
+      confirmPasswordControl.setValue('E5f6G7h8@');
 
       // Update value and validity for the form or confirm control to trigger the cross-field validator
       form.updateValueAndValidity();
 
       expect(confirmPasswordControl.hasError('passwordMismatch')).toBeTruthy();
 
-      confirmPasswordControl.setValue('StrongP@ssw0rd');
+      confirmPasswordControl.setValue('A1b2C3d4!');
       form.updateValueAndValidity();
 
       expect(confirmPasswordControl.hasError('passwordMismatch')).toBeFalsy();
@@ -165,8 +165,8 @@ describe('Signup', () => {
         confirmPasswordControl.setValue('');
         expect(component.getErrorMessage('confirmPassword')).toBe('Please confirm your password');
 
-        passwordControl.setValue('P@ssword123');
-        confirmPasswordControl.setValue('P@ssword321');
+        passwordControl.setValue('A1b2C3d4!');
+        confirmPasswordControl.setValue('E5f6G7h8@');
         component.signupForm.updateValueAndValidity();
         expect(component.getErrorMessage('confirmPassword')).toBe('Passwords do not match');
       });
@@ -238,8 +238,8 @@ describe('Signup', () => {
       // (Mocking valid state isn't strictly necessary since we check isLoading first, but ensures isolation)
       component.signupForm.patchValue({
         email: 'valid@example.com',
-        password: 'Valid1Password!',
-        confirmPassword: 'Valid1Password!',
+        password: 'A1b2C3d4!',
+        confirmPassword: 'A1b2C3d4!',
         agreeToTerms: true
       });
       component.signupForm.updateValueAndValidity();
@@ -254,13 +254,13 @@ describe('Signup', () => {
     it('should submit successfully and navigate to home', async () => {
       component.signupForm.patchValue({
         email: 'valid@example.com',
-        password: 'Valid1Password!',
-        confirmPassword: 'Valid1Password!',
+        password: 'A1b2C3d4!',
+        confirmPassword: 'A1b2C3d4!',
         agreeToTerms: true
       });
       component.signupForm.updateValueAndValidity();
 
-      mockAuthService.signup.mockResolvedValue({ success: true, token: 'fake-token' });
+      mockAuthService.signup.mockResolvedValue({ success: true, token: 'abc-123-def' });
 
       await component.onSubmit();
 
@@ -268,8 +268,8 @@ describe('Signup', () => {
       expect(component.errorMessage()).toBeNull();
       expect(mockAuthService.signup).toHaveBeenCalledWith({
         email: 'valid@example.com',
-        password: 'Valid1Password!',
-        confirmPassword: 'Valid1Password!'
+        password: 'A1b2C3d4!',
+        confirmPassword: 'A1b2C3d4!'
       });
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
     });
@@ -277,8 +277,8 @@ describe('Signup', () => {
     it('should handle signup failure and set error message', async () => {
       component.signupForm.patchValue({
         email: 'valid@example.com',
-        password: 'Valid1Password!',
-        confirmPassword: 'Valid1Password!',
+        password: 'A1b2C3d4!',
+        confirmPassword: 'A1b2C3d4!',
         agreeToTerms: true
       });
       component.signupForm.updateValueAndValidity();
@@ -295,8 +295,8 @@ describe('Signup', () => {
     it('should handle unexpected errors during submission', async () => {
       component.signupForm.patchValue({
         email: 'valid@example.com',
-        password: 'Valid1Password!',
-        confirmPassword: 'Valid1Password!',
+        password: 'A1b2C3d4!',
+        confirmPassword: 'A1b2C3d4!',
         agreeToTerms: true
       });
       component.signupForm.updateValueAndValidity();
