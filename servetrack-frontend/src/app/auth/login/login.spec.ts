@@ -6,16 +6,18 @@ import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { Observable, of } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
 describe('Login Component', () => {
   let component: Login;
   let fixture: ComponentFixture<Login>;
-  let mockAuthService: { login: ReturnType<typeof vi.fn> };
+  let mockAuthService: { login$: ReturnType<typeof vi.fn> };
   let mockRouter: { navigate: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     mockAuthService = {
-      login: vi.fn(),
+      login$: vi.fn(),
     };
 
     mockRouter = {
@@ -123,7 +125,7 @@ describe('Login Component', () => {
       const markAllAsTouchedSpy = vi.spyOn(component.loginForm, 'markAllAsTouched');
       await component.onSubmit();
       expect(markAllAsTouchedSpy).toHaveBeenCalled();
-      expect(mockAuthService.login).not.toHaveBeenCalled();
+      expect(mockAuthService.login$).not.toHaveBeenCalled();
     });
 
     it('should not call authService.login if already loading', async () => {
@@ -134,7 +136,7 @@ describe('Login Component', () => {
       });
       component.isLoading.set(true);
       await component.onSubmit();
-      expect(mockAuthService.login).not.toHaveBeenCalled();
+      expect(mockAuthService.login$).not.toHaveBeenCalled();
     });
 
     it('should call authService.login with trimmed credentials when form is valid', async () => {
@@ -144,10 +146,10 @@ describe('Login Component', () => {
         rememberMe: false
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login.mockResolvedValue({ success: true });
+      mockAuthService.login$.mockReturnValue(of({ success: true }));
       await component.onSubmit();
       expect(component.isLoading()).toBe(false);
-      expect(mockAuthService.login).toHaveBeenCalledWith({
+      expect(mockAuthService.login$).toHaveBeenCalledWith({
         email: 'test@example.com',
         password: 'password123'
       });
@@ -160,7 +162,7 @@ describe('Login Component', () => {
         rememberMe: false
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login.mockResolvedValue({ success: true });
+      mockAuthService.login$.mockReturnValue(of({ success: true }));
       await component.onSubmit();
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
       expect(component.errorMessage()).toBeNull();
@@ -173,10 +175,10 @@ describe('Login Component', () => {
         rememberMe: false
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login.mockResolvedValue({
+      mockAuthService.login$.mockReturnValue(of({
         success: false,
         message: 'Invalid credentials'
-      });
+      }));
       await component.onSubmit();
       expect(mockRouter.navigate).not.toHaveBeenCalled();
       expect(component.errorMessage()).toBe('Invalid credentials');
@@ -189,7 +191,7 @@ describe('Login Component', () => {
         rememberMe: false
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login.mockResolvedValue({ success: false });
+      mockAuthService.login$.mockReturnValue(of({ success: false }));
       await component.onSubmit();
       expect(component.errorMessage()).toBe('Invalid email or password');
     });
@@ -202,7 +204,9 @@ describe('Login Component', () => {
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockAuthService.login.mockRejectedValue(new Error('Network error'));
+      mockAuthService.login$.mockReturnValue(new Observable(() => {
+        throw new Error('Network error');
+      }));
       await component.onSubmit();
       expect(component.errorMessage()).toBe('An unexpected error occurred. Please try again.');
       expect(component.isLoading()).toBe(false);
