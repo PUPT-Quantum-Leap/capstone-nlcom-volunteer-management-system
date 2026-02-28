@@ -1,0 +1,441 @@
+$primary: #2563EB;
+$primary-dark: #1E40AF;
+$primary-light: #3B82F6;
+$primary-lighter: #DBEAFE;
+$primary-lightest: #EFF6FF;
+
+$text-dark: #1F2937;
+$text-muted: #6B7280;
+$border: #E5E7EB;
+$white: #FFFFFF;
+$gray-50: #F9FAFB;
+
+$error: #DC2626;
+$error-light: #FEE2E2;
+
+.signup-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, $primary-lightest 0%, $white 100%);
+}
+
+.signup-card {
+  background: $white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 600px;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.progress-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.step-number {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  border: 2px solid $border;
+  color: $text-muted;
+  background: $white;
+  transition: all 0.3s;
+}
+
+.step.active .step-number {
+  border-color: $primary;
+  background: $primary;
+  color: $white;
+}
+
+.step.completed .step-number {
+  border-color: $primary;
+  background: $primary;
+  color: $white;
+}
+
+.step-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: $text-muted;
+  font-family: 'Inter', sans-serif;
+}
+
+.step.active .step-label {
+  color: $primary;
+  font-weight: 600;
+}
+
+.step-line {
+  width: 80px;
+  height: 2px;
+  background: $border;
+  transition: all 0.3s;
+}
+
+.step-line.completed {
+  background: $primary;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.signup-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: $text-dark;
+  margin: 0 0 0.5rem;
+  text-align: center;
+}
+
+.signup-subtitle {
+  font-size: 1rem;
+  color: $text-muted;
+  margin: 0 0 2rem;
+  text-align: center;
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.other-input {
+  animation: slideDown 0.3s ease-out;
+}
+
+.form-label {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  color: $text-dark;
+  font-size: 0.875rem;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: $text-muted;
+  margin: -0.25rem 0 0.25rem;
+  font-style: italic;
+}
+
+.required {
+  color: $error;
+  font-weight: 700;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  border: 2px solid $border;
+  border-radius: 0.5rem;
+  transition: all 0.3s;
+  font-family: 'Inter', sans-serif;
+  color: $text-dark;
+  background: $white;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: $primary;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-input::placeholder {
+  color: $text-muted;
+}
+
+.form-input.error {
+  border-color: $error;
+  background: $error-light;
+}
+
+.form-input.error:focus {
+  border-color: $error;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.form-input:disabled {
+  background: $gray-50;
+  color: $text-muted;
+  cursor: not-allowed;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  padding-right: 3rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $text-muted;
+  transition: color 0.2s;
+  z-index: 1;
+
+  &:hover {
+    color: $primary;
+  }
+
+  &:focus {
+    outline: none;
+    color: $primary;
+  }
+}
+
+.eye-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.password-requirements {
+  margin-top: 0.75rem;
+  padding: 1rem;
+  background: $primary-lightest;
+  border-radius: 0.5rem;
+  border: 1px solid $primary-lighter;
+  animation: slideDown 0.3s ease-out;
+}
+
+.requirements-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $text-dark;
+}
+
+.requirements-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.requirements-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: $text-muted;
+  transition: color 0.2s;
+}
+
+.requirements-list li.met {
+  color: $primary;
+}
+
+.requirement-icon {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.error-message {
+  display: block;
+  color: $error;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-message::before {
+  content: '⚠';
+  font-size: 1rem;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.form-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.btn-back {
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: $text-dark;
+  background: $white;
+  border: 2px solid $border;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: 'Inter', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 140px;
+
+  &:hover {
+    background: $gray-50;
+    border-color: $text-muted;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.btn-back .arrow {
+  font-size: 1.25rem;
+  transition: transform 0.2s ease;
+}
+
+.btn-back:hover .arrow {
+  transform: translateX(-4px);
+}
+
+.btn-next {
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: $white;
+  background: $primary;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: 'Inter', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 140px;
+}
+
+.btn-next:hover:not(:disabled) {
+  background: $primary-dark;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-next:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-next:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.arrow {
+  font-size: 1.25rem;
+  transition: transform 0.2s ease;
+}
+
+.btn-next:hover:not(:disabled) .arrow {
+  transform: translateX(4px);
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: $white;
+  border-radius: 50%;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .signup-card {
+    padding: 2rem 1.5rem;
+    margin: 1rem;
+  }
+
+  .signup-title {
+    font-size: 1.75rem;
+  }
+}
