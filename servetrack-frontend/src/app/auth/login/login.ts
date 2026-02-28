@@ -103,7 +103,7 @@ export class Login {
       };
 
       // Call auth service
-      const response = await firstValueFrom(this.authService.login(credentials));
+      const response = await firstValueFrom(this.authService.login$(credentials));
 
       if (response.success) {
         // Navigate to dashboard or home on success

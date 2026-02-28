@@ -144,7 +144,7 @@ export class Signup {
         confirmPassword: formValue.confirmPassword,
       };
 
-      const response = await firstValueFrom(this.authService.signup(signupData));
+      const response = await firstValueFrom(this.authService.register$(signupData));
 
       if (response.success) {
         await this.router.navigate(['/']);

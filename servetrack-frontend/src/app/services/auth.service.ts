@@ -37,6 +37,7 @@ export interface VolunteerSignupData {
 export interface AuthResponse {
   success: boolean;
   message?: string;
+  token?: string;
   user?: {
     id: string;
     email: string;
@@ -122,6 +123,30 @@ export class AuthService {
       }),
       tap(() => this.isLoading.set(false)),
     );
+  }
+
+  /**
+   * Observable version of register for RxJS compatibility.
+   */
+  register$(data: RegisterData): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, data, { withCredentials: true })
+      .pipe(
+        tap(response => {
+          if (response.success && response.user) {
+            this.isAuthenticated.set(true);
+            this.currentUser.set(response.user);
+            if (response.token) {
+              sessionStorage.setItem('auth_token', response.token);
+            }
+          }
+        }),
+        catchError((err: HttpErrorResponse) => {
+          const message = err.error?.message || 'Registration failed';
+          this.error.set(message);
+          return of({ success: false, message } as AuthResponse);
+        }),
+        tap(() => this.isLoading.set(false)),
+      );
   }
 
   /**
@@ -269,11 +294,14 @@ export class AuthService {
   }
 
   checkAuthStatus$(): Observable<AuthResponse> {
-    return this.http.get<AuthResponse['user']>(`${this.apiUrl}/user`, { withCredentials: true })
+    return this.http.get<AuthResponse>(`${this.apiUrl}/user`, { withCredentials: true })
       .pipe(
-        tap(user => {
-          this.isAuthenticated.set(true);
-          this.currentUser.set(user);
+        map(response => ({ success: true, message: response.message, token: response.token, user: response.user })),
+        tap(response => {
+          if (response.user) {
+            this.isAuthenticated.set(true);
+            this.currentUser.set(response.user);
+          }
         }),
         catchError(() => {
           this.isAuthenticated.set(false);
