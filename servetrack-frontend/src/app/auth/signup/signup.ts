@@ -142,7 +142,7 @@ export class Signup {
       };
 
       // Call auth service
-      const response = await this.authService.signup(signupData);
+      const response = await this.authService.register(signupData);
 
       if (response.success) {
         // Navigate to dashboard or home on success
