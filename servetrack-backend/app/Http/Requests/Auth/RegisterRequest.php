@@ -23,13 +23,15 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
+        $emailRule = app()->isProduction() ? 'email:rfc,dns' : 'email:rfc';
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
                 'string',
                 'lowercase',
-                'email:rfc,dns',
+                $emailRule,
                 'max:255',
                 'unique:'.User::class,
             ],
