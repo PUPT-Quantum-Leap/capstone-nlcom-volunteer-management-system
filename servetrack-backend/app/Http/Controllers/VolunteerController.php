@@ -47,8 +47,6 @@ class VolunteerController extends Controller
         ]);
 
         if ($validator->fails()) {
-            \Log::info('Validation errors:', $validator->errors()->toArray());
-
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
@@ -96,7 +94,6 @@ class VolunteerController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Volunteer registration failed: '.$e->getMessage());
 
             return response()->json([
                 'success' => false,

@@ -9,7 +9,11 @@ class Training extends Model
 {
     use HasFactory;
 
+    protected $table = 'training';
+
     protected $primaryKey = 'training_id';
+
+    public $timestamps = false;
 
     protected $fillable = [
         'name',

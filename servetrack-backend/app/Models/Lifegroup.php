@@ -9,7 +9,11 @@ class Lifegroup extends Model
 {
     use HasFactory;
 
+    protected $table = 'lifegroup';
+
     protected $primaryKey = 'lifegroup_id';
+
+    public $timestamps = false;
 
     protected $fillable = [
         'name',

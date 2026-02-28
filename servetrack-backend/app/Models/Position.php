@@ -9,7 +9,11 @@ class Position extends Model
 {
     use HasFactory;
 
+    protected $table = 'position';
+
     protected $primaryKey = 'position_id';
+
+    public $timestamps = false;
 
     protected $fillable = [
         'name',

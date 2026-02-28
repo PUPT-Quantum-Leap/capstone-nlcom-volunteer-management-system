@@ -9,7 +9,11 @@ class Availability extends Model
 {
     use HasFactory;
 
+    protected $table = 'availability';
+
     protected $primaryKey = 'availability_id';
+
+    public $timestamps = false;
 
     protected $fillable = [
         'name',
