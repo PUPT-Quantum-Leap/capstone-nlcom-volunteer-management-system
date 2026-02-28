@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+            'security.audit' => \App\Http\Middleware\SecurityAudit::class,
         ]);
 
         $middleware->api(prepend: [
