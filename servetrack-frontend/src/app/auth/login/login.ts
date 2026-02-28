@@ -7,6 +7,7 @@ import {
   Validators,
   AbstractControl,
 } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -102,7 +103,7 @@ export class Login {
       };
 
       // Call auth service
-      const response = await this.authService.login(credentials);
+      const response = await firstValueFrom(this.authService.login(credentials));
 
       if (response.success) {
         // Navigate to dashboard or home on success

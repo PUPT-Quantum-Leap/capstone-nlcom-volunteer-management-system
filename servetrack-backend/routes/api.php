@@ -6,9 +6,14 @@ use App\Http\Controllers\VolunteerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// Guest-only routes
-Route::middleware(['guest', 'security.audit'])->group(function (): void {
-    Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:5,1');
+// Generate CSRF cookie for the Angular SPA
+Route::get('/csrf-cookie', function () {
+    return response()->json(['message' => 'CSRF cookie set']);
+})->middleware('web');
+
+// Guest-only routes — CSRF + audit logging + exponential backoff rate limiting
+Route::middleware(['web', 'guest', 'security.audit', 'rate.limit'])->group(function (): void {
+    Route::post('/login', [LoginController::class, 'store']);
     Route::post('/register', [RegisterController::class, 'store']);
 
     // Add volunteer registration route
@@ -16,7 +21,7 @@ Route::middleware(['guest', 'security.audit'])->group(function (): void {
 });
 
 // Auth-required routes
-Route::middleware('auth:sanctum')->group(function (): void {
+Route::middleware(['web', 'auth:sanctum'])->group(function (): void {
     Route::post('/logout', [LoginController::class, 'destroy']);
     Route::get('/user', fn (Request $request) => $request->user());
 });

@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
@@ -16,18 +17,40 @@ class LoginController extends Controller
      */
     public function store(LoginRequest $request): JsonResponse
     {
-        $request->authenticate();
+        try {
+            $request->authenticate();
+        } catch (ValidationException) {
+            // Generic message prevents email enumeration
+            return response()->json([
+                'message' => 'Invalid credentials',
+            ], 422)->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+                'Pragma' => 'no-cache',
+            ]);
+        }
 
         if ($request->hasSession()) {
             $request->session()->regenerate();
         }
 
-        $token = $request->user()->createToken('auth-token')->plainTextToken;
+        $user = $request->user();
+        $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+
+        $cookie = cookie(
+            'auth_token',
+            $token,
+            config('sanctum.expiration', 60),
+            '/',
+            null,
+            true,
+            true,
+            false,
+            'strict'
+        );
 
         return response()->json([
-            'token' => $token,
-            'user' => $request->user(),
-        ]);
+            'user' => $user,
+        ])->withCookie($cookie);
     }
 
     /**
@@ -35,13 +58,8 @@ class LoginController extends Controller
      */
     public function destroy(Request $request): Response
     {
-        // Revoke current token (for API) - only if it's not a transient token
-        $token = $request->user()->currentAccessToken();
-        if ($token && method_exists($token, 'delete')) {
-            $token->delete();
-        }
+        $request->user()->tokens()->delete();
 
-        // Also logout session (for web) - only if session exists
         Auth::guard('web')->logout();
 
         if ($request->hasSession()) {
@@ -49,6 +67,8 @@ class LoginController extends Controller
             $request->session()->regenerateToken();
         }
 
-        return response()->noContent();
+        $cookie = cookie('auth_token', '', -1);
+
+        return response()->noContent()->withCookie($cookie);
     }
 }

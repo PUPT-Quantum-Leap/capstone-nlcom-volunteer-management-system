@@ -1,6 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, catchError, tap, of, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface LoginCredentials {
@@ -36,10 +37,10 @@ export interface VolunteerSignupData {
 export interface AuthResponse {
   success: boolean;
   message?: string;
-  token?: string;
   user?: {
     id: string;
     email: string;
+    name?: string;
   };
 }
 
@@ -49,6 +50,7 @@ export interface AuthResponse {
 export class AuthService {
   private router = inject(Router);
   private http = inject(HttpClient);
+  private apiUrl = '/api';
 
   // State signals
   isAuthenticated = signal(false);
@@ -57,7 +59,8 @@ export class AuthService {
   error = signal<string | null>(null);
 
   /**
-   * Login user with credentials
+   * Login user with credentials.
+   * Returns both Promise and Observable for compatibility.
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     this.isLoading.set(true);
@@ -68,7 +71,6 @@ export class AuthService {
         throw new Error('Invalid email format');
       }
 
-      // Real API call to Laravel backend
       const response = await this.http.post<AuthResponse>(
         `${environment.apiUrl}/login`,
         credentials
@@ -78,18 +80,12 @@ export class AuthService {
         this.isAuthenticated.set(true);
         this.currentUser.set(response.user);
         
-        // Store token securely
         if (response.token) {
           sessionStorage.setItem('auth_token', response.token);
         }
-
-        return response!;
       }
 
-      return {
-        success: false,
-        message: 'Login failed',
-      };
+      return response!;
     } catch (error: any) {
       const errorMessage = error?.error?.message || 'Login failed';
       this.error.set(errorMessage);
@@ -104,7 +100,32 @@ export class AuthService {
   }
 
   /**
-   * Register new user
+   * Observable version of login for RxJS compatibility.
+   */
+  login$(credentials: LoginCredentials): Observable<AuthResponse> {
+    return this.http.post<{ user: AuthResponse['user'] }>(
+      `${this.apiUrl}/login`, 
+      credentials, 
+      { withCredentials: true }
+    ).pipe(
+      map(response => ({ success: true, user: response.user })),
+      tap(response => {
+        if (response.user) {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(response.user);
+        }
+      }),
+      catchError((err: HttpErrorResponse) => {
+        const message = err.error?.message || 'Login failed';
+        this.error.set(message);
+        return of({ success: false, message } as AuthResponse);
+      }),
+      tap(() => this.isLoading.set(false)),
+    );
+  }
+
+  /**
+   * Register a new user - Promise version (your working version).
    */
   async register(data: RegisterData): Promise<AuthResponse> {
     this.isLoading.set(true);
@@ -115,7 +136,6 @@ export class AuthService {
         throw new Error('Invalid email format');
       }
 
-      // Real API call to Laravel backend
       const response = await this.http.post<AuthResponse>(
         `${environment.apiUrl}/register`,
         data
@@ -125,18 +145,12 @@ export class AuthService {
         this.isAuthenticated.set(true);
         this.currentUser.set(response.user);
         
-        // Store token securely
         if (response.token) {
           sessionStorage.setItem('auth_token', response.token);
         }
-
-        return response!;
       }
 
-      return {
-        success: false,
-        message: 'Registration failed',
-      };
+      return response!;
     } catch (error: any) {
       const errorMessage = error?.error?.message || 'Registration failed';
       this.error.set(errorMessage);
@@ -151,19 +165,17 @@ export class AuthService {
   }
 
   /**
-   * Register new volunteer
+   * Register new volunteer - Promise version (your working version).
    */
   async volunteerSignup(data: VolunteerSignupData): Promise<AuthResponse> {
     this.isLoading.set(true);
     this.error.set(null);
 
     try {
-      // Validate email format
       if (!this.isValidEmail(data.email)) {
         throw new Error('Invalid email format');
       }
 
-      // Real API call to Laravel backend
       const response = await this.http.post<AuthResponse>(
         `${environment.apiUrl}/volunteer/register`,
         data
@@ -173,18 +185,12 @@ export class AuthService {
         this.isAuthenticated.set(true);
         this.currentUser.set(response.user);
         
-        // Store token securely
         if (response.token) {
           sessionStorage.setItem('auth_token', response.token);
         }
-
-        return response!;
       }
 
-      return {
-        success: false,
-        message: 'Registration failed',
-      };
+      return response!;
     } catch (error: any) {
       const errorMessage = error?.error?.message || 'Registration failed';
       this.error.set(errorMessage);
@@ -199,22 +205,16 @@ export class AuthService {
   }
 
   /**
-   * Logout current user
+   * Logout current user - both Promise and Observable versions.
    */
   async logout(): Promise<void> {
     try {
       const token = sessionStorage.getItem('auth_token');
       
       if (token) {
-        await this.http.post(
-          `${environment.apiUrl}/logout`,
-          {},
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          }
-        ).toPromise();
+        await this.http.post(`${this.apiUrl}/logout`, {}, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }).toPromise();
       }
       
       this.isAuthenticated.set(false);
@@ -227,8 +227,19 @@ export class AuthService {
     }
   }
 
+  logout$(): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/logout`, {}, { withCredentials: true })
+      .pipe(
+        tap(() => this.clearSession()),
+        catchError(() => {
+          this.clearSession();
+          return of(undefined);
+        }),
+      );
+  }
+
   /**
-   * Check if user is authenticated (e.g., on app initialization)
+   * Check authentication status - both Promise and Observable versions.
    */
   async checkAuthStatus(): Promise<boolean> {
     const token = sessionStorage.getItem('auth_token');
@@ -238,14 +249,9 @@ export class AuthService {
     }
 
     try {
-      // Validate token with backend
       const response = await this.http.get<AuthResponse>(
-        `${environment.apiUrl}/user`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
+        `${this.apiUrl}/user`,
+        { headers: { 'Authorization': `Bearer ${token}` } }
       ).toPromise();
 
       if (response?.user) {
@@ -262,18 +268,29 @@ export class AuthService {
     }
   }
 
-  /**
-   * Validate email format
-   */
+  checkAuthStatus$(): Observable<AuthResponse> {
+    return this.http.get<AuthResponse['user']>(`${this.apiUrl}/user`, { withCredentials: true })
+      .pipe(
+        tap(user => {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(user);
+        }),
+        catchError(() => {
+          this.isAuthenticated.set(false);
+          this.currentUser.set(null);
+          return of({ success: false } as AuthResponse);
+        }),
+      );
+  }
+
+  private clearSession(): void {
+    this.isAuthenticated.set(false);
+    this.currentUser.set(null);
+    this.router.navigate(['/login']);
+  }
+
   private isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email.trim());
-  }
-
-  /**
-   * Delay helper for simulating async operations
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

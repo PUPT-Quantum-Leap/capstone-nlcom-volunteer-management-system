@@ -23,10 +23,43 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
+        $emailRule = app()->isProduction() ? 'email:rfc,dns' : 'email:rfc';
+
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'email' => [
+                'required',
+                'string',
+                'lowercase',
+                $emailRule,
+                'max:255',
+                'unique:'.User::class,
+            ],
+            'password' => [
+                'required',
+                'confirmed',
+                Password::min(12)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+                    ->uncompromised(3),
+            ],
+        ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'password.min' => 'Password must be at least 12 characters long.',
+            'password.mixed_case' => 'Password must contain both uppercase and lowercase letters.',
+            'password.numbers' => 'Password must contain at least one number.',
+            'password.symbols' => 'Password must contain at least one special character.',
+            'password.uncompromised' => 'This password has been found in a data breach. Please choose a different, more secure password.',
         ];
     }
 }

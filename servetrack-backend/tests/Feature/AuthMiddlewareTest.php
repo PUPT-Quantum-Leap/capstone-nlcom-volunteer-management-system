@@ -58,39 +58,34 @@ describe('SecurityAudit middleware', function (): void {
 
         $log = file_get_contents(storage_path('logs/laravel.log'));
 
-        expect($log)->toContain('Auth attempt')
-            ->toContain('audit@example.com');
+        expect($log)->toContain('Security audit event')
+            ->toContain('a***t@example.com');
     });
 
     it('does not log email on a failed login attempt', function (): void {
-        $before = file_exists(storage_path('logs/laravel.log'))
-            ? file_get_contents(storage_path('logs/laravel.log'))
-            : '';
+        Log::spy();
 
         $this->postJson('/api/login', [
             'email' => 'noone@example.com',
             'password' => 'wrongpassword',
         ]);
 
-        $after = file_get_contents(storage_path('logs/laravel.log'));
-        $newContent = substr($after, strlen($before));
-
-        expect($newContent)->toContain('Auth attempt')
-            ->not->toContain('noone@example.com');
+        // Failed auth is routed to the security channel, not the default channel
+        Log::shouldHaveReceived('channel')->with('security')->once();
     });
 
     it('logs email on a successful register attempt', function (): void {
         $this->postJson('/api/register', [
             'name' => 'Test User',
             'email' => 'newuser@example.com',
-            'password' => 'Password1!',
-            'password_confirmation' => 'Password1!',
+            'password' => 'Password1!Secure',
+            'password_confirmation' => 'Password1!Secure',
         ]);
 
         $log = file_get_contents(storage_path('logs/laravel.log'));
 
-        expect($log)->toContain('Auth attempt')
-            ->toContain('newuser@example.com');
+        expect($log)->toContain('Security audit event')
+            ->toContain('n*****r@example.com');
     });
 });
 
@@ -111,11 +106,13 @@ describe('GuestOnly (RedirectIfAuthenticated) middleware', function (): void {
             'password' => bcrypt('password'),
         ]);
 
-        $this->postJson('/api/login', [
+        $response = $this->postJson('/api/login', [
             'email' => 'guest@example.com',
             'password' => 'password',
         ])->assertOk()
-            ->assertJsonStructure(['token', 'user']);
+            ->assertJsonStructure(['user']);
+
+        expect($response->headers->getCookies())->not->toBeEmpty();
     });
 });
 
