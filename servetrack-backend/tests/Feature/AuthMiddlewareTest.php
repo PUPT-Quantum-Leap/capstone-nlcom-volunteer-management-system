@@ -85,7 +85,7 @@ describe('SecurityAudit middleware', function (): void {
         $log = file_get_contents(storage_path('logs/laravel.log'));
 
         expect($log)->toContain('Security audit event')
-            ->toContain('n***r@example.com');
+            ->toContain('n*****r@example.com');
     });
 });
 
