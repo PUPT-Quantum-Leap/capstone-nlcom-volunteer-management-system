@@ -26,7 +26,7 @@
         </ul>
         <div class="nav-buttons">
           <button class="btn btn-outline" routerLink="/login">Login</button>
-          <button class="btn btn-primary" routerLink="/signup-form">Sign Up</button>
+          <button class="btn btn-primary" (click)="showPopupModal()">Sign Up</button>
         </div>
       </div>
     </div>
@@ -45,7 +45,7 @@
             impact, and connect with meaningful opportunities in your community.
           </p>
           <div class="hero-buttons">
-            <button class="btn btn-primary btn-large" routerLink="/signup">Get Started</button>
+            <button class="btn btn-primary btn-large" (click)="showPopupModal()">Get Started</button>
             <button
               class="btn btn-outline btn-large"
               (click)="scrollToSection('features', $event)">
@@ -309,4 +309,27 @@
       </div>
     </div>
   </footer>
+
+  <!-- Popup Modal -->
+  @if (showPopup()) {
+    <div class="popup-overlay" (click)="closePopup()">
+      <div class="popup-modal" (click)="$event.stopPropagation()">
+        <button class="popup-close" (click)="closePopup()">×</button>
+        <div class="popup-content">
+          <h3 class="popup-title">Already an NLCOM volunteer?</h3>
+          <p class="popup-message">
+            Sign up here to continue your journey with us!
+          </p>
+          <div class="popup-actions">
+            <button class="btn btn-primary" routerLink="/signup">
+              Sign Up
+            </button>
+            <button class="btn btn-outline" routerLink="/signup-form">
+              I'm a new member
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
 </div>
