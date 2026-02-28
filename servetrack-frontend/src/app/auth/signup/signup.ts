@@ -31,7 +31,6 @@ export class Signup {
   // Form group with validators
   signupForm: FormGroup = this.fb.group(
     {
-      name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, passwordStrengthValidator()]],
       confirmPassword: ['', [Validators.required]],
@@ -43,10 +42,6 @@ export class Signup {
   );
 
   // Computed getters for form controls
-  get nameControl(): AbstractControl | null {
-    return this.signupForm.get('name');
-  }
-
   get emailControl(): AbstractControl | null {
     return this.signupForm.get('email');
   }
@@ -73,14 +68,7 @@ export class Signup {
     }
 
     const errors = control.errors;
-
-    // Name errors
-    if (controlName === 'name') {
-      if (errors['required']) return 'Name is required';
-      if (errors['minlength']) return 'Name must be at least 2 characters';
-      if (errors['maxlength']) return 'Name is too long';
-    }
-
+    
     // Email errors
     if (controlName === 'email') {
       if (errors['required']) return 'Email is required';
@@ -148,7 +136,6 @@ export class Signup {
       // Trim whitespace from inputs
       const formValue = this.signupForm.value;
       const signupData = {
-        name: formValue.name.trim(),
         email: formValue.email.trim(),
         password: formValue.password,
         confirmPassword: formValue.confirmPassword,

@@ -7,7 +7,6 @@ export interface LoginCredentials {
 }
 
 export interface SignupData {
-  name: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -19,7 +18,6 @@ export interface AuthResponse {
   token?: string;
   user?: {
     id: string;
-    name: string;
     email: string;
   };
 }
@@ -61,7 +59,6 @@ export class AuthService {
         token: 'mock-jwt-token',
         user: {
           id: '1',
-          name: 'John Doe',
           email: credentials.email,
         },
       };
@@ -108,12 +105,6 @@ export class AuthService {
         throw new Error('Invalid email format');
       }
 
-      // Validate name
-      const trimmedName = data.name.trim();
-      if (trimmedName.length < 2) {
-        throw new Error('Name must be at least 2 characters');
-      }
-
       // TODO: Replace with actual API call
       // Example: const response = await fetch('/api/auth/signup', { ... });
       
@@ -126,7 +117,6 @@ export class AuthService {
         token: 'mock-jwt-token',
         user: {
           id: '1',
-          name: trimmedName,
           email: data.email,
         },
       };
@@ -141,7 +131,6 @@ export class AuthService {
         }
 
         console.log('Signup successful', {
-          name: data.name,
           email: data.email,
           // Never log password
         });
