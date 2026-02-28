@@ -1,10 +1,18 @@
 import { defineConfig } from 'vitest/config';
+<<<<<<< HEAD
 
 export default defineConfig({
+=======
+import angular from '@analogjs/vite-plugin-angular';
+
+export default defineConfig({
+  plugins: [angular()],
+>>>>>>> origin/main
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['src/test-setup.ts'],
+<<<<<<< HEAD
   },
   plugins: [
     {
@@ -37,4 +45,12 @@ export default defineConfig({
       }
     }
   ]
+=======
+    include: ['src/**/*.spec.ts'],
+    pool: 'forks'
+  },
+  resolve: {
+    mainFields: ['module'],
+  },
+>>>>>>> origin/main
 });
