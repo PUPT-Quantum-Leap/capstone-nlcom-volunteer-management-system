@@ -18,7 +18,9 @@ class LoginController extends Controller
     {
         $request->authenticate();
 
-        $request->session()->regenerate();
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         $token = $request->user()->createToken('auth-token')->plainTextToken;
 
