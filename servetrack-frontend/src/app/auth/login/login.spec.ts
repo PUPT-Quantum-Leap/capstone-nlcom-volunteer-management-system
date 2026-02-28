@@ -10,8 +10,8 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 describe('Login Component', () => {
   let component: Login;
   let fixture: ComponentFixture<Login>;
-  let mockAuthService: any;
-  let mockRouter: any;
+  let mockAuthService: { login: ReturnType<typeof vi.fn> };
+  let mockRouter: { navigate: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     mockAuthService = {
