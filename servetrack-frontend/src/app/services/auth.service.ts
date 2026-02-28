@@ -1,13 +1,34 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 export interface LoginCredentials {
   email: string;
   password: string;
 }
 
-export interface SignupData {
+export interface RegisterData {
   email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface VolunteerSignupData {
+  firstName: string;
+  lastName: string;
+  facebookName?: string;
+  email: string;
+  mobileNumber: string;
+  birthdate: string;
+  completeAddress: string;
+  educationalAttainment: string;
+  lastMedicalExam: string;
+  trainingExperience?: string;
+  skillsHobbies?: string;
+  classesTraining?: string;
+  volunteerPreference: string;
+  otherPreference?: string;
   password: string;
   confirmPassword: string;
 }
@@ -27,6 +48,7 @@ export interface AuthResponse {
 })
 export class AuthService {
   private router = inject(Router);
+  private http = inject(HttpClient);
 
   // State signals
   isAuthenticated = signal(false);
@@ -42,45 +64,34 @@ export class AuthService {
     this.error.set(null);
 
     try {
-      // Validate email format
       if (!this.isValidEmail(credentials.email)) {
         throw new Error('Invalid email format');
       }
 
-      // TODO: Replace with actual API call
-      // Example: const response = await fetch('/api/auth/login', { ... });
-      
-      // Simulate API call
-      await this.delay(2000);
+      // Real API call to Laravel backend
+      const response = await this.http.post<AuthResponse>(
+        `${environment.apiUrl}/login`,
+        credentials
+      ).toPromise();
 
-      // Simulate successful login
-      const response: AuthResponse = {
-        success: true,
-        token: 'mock-jwt-token',
-        user: {
-          id: '1',
-          email: credentials.email,
-        },
-      };
-
-      if (response.success && response.user) {
+      if (response?.success && response?.user) {
         this.isAuthenticated.set(true);
         this.currentUser.set(response.user);
         
-        // Store token securely (consider using httpOnly cookies in production)
+        // Store token securely
         if (response.token) {
           sessionStorage.setItem('auth_token', response.token);
         }
 
-        console.log('Login successful', {
-          email: credentials.email,
-          // Never log password
-        });
+        return response!;
       }
 
-      return response;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
+      return {
+        success: false,
+        message: 'Login failed',
+      };
+    } catch (error: any) {
+      const errorMessage = error?.error?.message || 'Login failed';
       this.error.set(errorMessage);
       
       return {
@@ -95,7 +106,54 @@ export class AuthService {
   /**
    * Register new user
    */
-  async signup(data: SignupData): Promise<AuthResponse> {
+  async register(data: RegisterData): Promise<AuthResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    try {
+      if (!this.isValidEmail(data.email)) {
+        throw new Error('Invalid email format');
+      }
+
+      // Real API call to Laravel backend
+      const response = await this.http.post<AuthResponse>(
+        `${environment.apiUrl}/register`,
+        data
+      ).toPromise();
+
+      if (response?.success && response?.user) {
+        this.isAuthenticated.set(true);
+        this.currentUser.set(response.user);
+        
+        // Store token securely
+        if (response.token) {
+          sessionStorage.setItem('auth_token', response.token);
+        }
+
+        return response!;
+      }
+
+      return {
+        success: false,
+        message: 'Registration failed',
+      };
+    } catch (error: any) {
+      const errorMessage = error?.error?.message || 'Registration failed';
+      this.error.set(errorMessage);
+      
+      return {
+        success: false,
+        message: errorMessage,
+      };
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  /**
+   * Register new volunteer
+   */
+  async volunteerSignup(data: VolunteerSignupData): Promise<AuthResponse> {
     this.isLoading.set(true);
     this.error.set(null);
 
@@ -105,23 +163,13 @@ export class AuthService {
         throw new Error('Invalid email format');
       }
 
-      // TODO: Replace with actual API call
-      // Example: const response = await fetch('/api/auth/signup', { ... });
-      
-      // Simulate API call
-      await this.delay(2000);
+      // Real API call to Laravel backend
+      const response = await this.http.post<AuthResponse>(
+        `${environment.apiUrl}/volunteer/register`,
+        data
+      ).toPromise();
 
-      // Simulate successful signup
-      const response: AuthResponse = {
-        success: true,
-        token: 'mock-jwt-token',
-        user: {
-          id: '1',
-          email: data.email,
-        },
-      };
-
-      if (response.success && response.user) {
+      if (response?.success && response?.user) {
         this.isAuthenticated.set(true);
         this.currentUser.set(response.user);
         
@@ -130,15 +178,15 @@ export class AuthService {
           sessionStorage.setItem('auth_token', response.token);
         }
 
-        console.log('Signup successful', {
-          email: data.email,
-          // Never log password
-        });
+        return response!;
       }
 
-      return response;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Signup failed';
+      return {
+        success: false,
+        message: 'Registration failed',
+      };
+    } catch (error: any) {
+      const errorMessage = error?.error?.message || 'Registration failed';
       this.error.set(errorMessage);
       
       return {
@@ -155,9 +203,20 @@ export class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      // TODO: Call API to invalidate token on server
+      const token = sessionStorage.getItem('auth_token');
       
-      // Clear local state
+      if (token) {
+        await this.http.post(
+          `${environment.apiUrl}/logout`,
+          {},
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        ).toPromise();
+      }
+      
       this.isAuthenticated.set(false);
       this.currentUser.set(null);
       sessionStorage.removeItem('auth_token');
@@ -179,12 +238,23 @@ export class AuthService {
     }
 
     try {
-      // TODO: Validate token with backend
-      // Example: const response = await fetch('/api/auth/me', { ... });
+      // Validate token with backend
+      const response = await this.http.get<AuthResponse>(
+        `${environment.apiUrl}/user`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      ).toPromise();
+
+      if (response?.user) {
+        this.isAuthenticated.set(true);
+        this.currentUser.set(response.user);
+        return true;
+      }
       
-      // For now, assume token is valid
-      this.isAuthenticated.set(true);
-      return true;
+      return false;
     } catch (error) {
       this.isAuthenticated.set(false);
       sessionStorage.removeItem('auth_token');
