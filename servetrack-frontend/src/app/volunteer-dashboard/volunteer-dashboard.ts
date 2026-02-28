@@ -3,40 +3,9 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@
 import { Router } from '@angular/router';
 import { passwordMatchValidator, passwordStrengthValidator } from '../validators/password.validator';
 
-interface VolunteerProfile {
-  id: number;
-  firstName: string;
-  lastName: string;
-  facebookName: string;
-  email: string;
-  mobileNumber: string;
-  birthdate: string;
-  lastMedicalExam: string;
-  completeAddress: string;
-  educationalAttainment: string;
-  trainingExperience: string;
-  skillsHobbies: string;
-  classesTraining: string;
-  volunteerPreference: string;
-  otherPreference: string;
-  password: string;
-  confirmPassword: string;
-  photoUrl: string;
-}
-
-interface PollChoice {
-  id: number;
-  label: string;
-  votes: number;
-}
-
-interface NotificationItem {
-  id: number;
-  title: string;
-  description: string;
-  time: string;
-  read: boolean;
-}
+import { VolunteerProfile } from '../models/volunteer-profile';
+import { PollChoice } from '../models/poll-choice';
+import { NotificationItem } from '../models/notification-item';
 
 @Component({
   selector: 'app-volunteer-dashboard',
@@ -146,7 +115,7 @@ export class VolunteerDashboard {
       firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       facebookName: [''],
-    email: ['', [Validators.required, Validators.email]],
+      email: ['', [Validators.required, Validators.email]],
       mobileNumber: ['', [Validators.required, Validators.pattern(/^(09|\+639)\d{9}$/)]],
       birthdate: ['', [Validators.required]],
       lastMedicalExam: ['', [Validators.required]],
