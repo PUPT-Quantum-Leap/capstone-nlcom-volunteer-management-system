@@ -159,7 +159,7 @@ export class Signup {
 
       if (response.success) {
         // Navigate to dashboard or home on success
-        await this.router.navigate(['/']);
+        await this.router.navigate(['/volunteer-dashboard']);
       } else {
         this.errorMessage.set(response.message || 'Signup failed. Please try again.');
       }
