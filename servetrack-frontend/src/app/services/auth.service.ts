@@ -1,7 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, tap, of, lastValueFrom } from 'rxjs';
+import { Observable, catchError, tap, of, map } from 'rxjs';
 
 export interface LoginCredentials {
   email: string;
@@ -51,6 +51,7 @@ export class AuthService {
         withCredentials: true,
       })
       .pipe(
+        map((response) => ({ success: true, user: response.user })),
         tap((response) => {
           if (response.user) {
             this.isAuthenticated.set(true);
@@ -63,7 +64,7 @@ export class AuthService {
           return of({ success: false, message } as AuthResponse);
         }),
         tap(() => this.isLoading.set(false)),
-      ) as Observable<AuthResponse>;
+      );
   }
 
   /**
@@ -86,6 +87,7 @@ export class AuthService {
         { withCredentials: true },
       )
       .pipe(
+        map((response) => ({ success: true, user: response.user })),
         tap((response) => {
           if (response.user) {
             this.isAuthenticated.set(true);
@@ -98,7 +100,7 @@ export class AuthService {
           return of({ success: false, message } as AuthResponse);
         }),
         tap(() => this.isLoading.set(false)),
-      ) as Observable<AuthResponse>;
+      );
   }
 
   /**

@@ -58,7 +58,7 @@ describe('SecurityAudit middleware', function (): void {
 
         $log = file_get_contents(storage_path('logs/laravel.log'));
 
-        expect($log)->toContain('Auth attempt')
+        expect($log)->toContain('Security audit event')
             ->toContain('audit@example.com');
     });
 
@@ -84,7 +84,7 @@ describe('SecurityAudit middleware', function (): void {
 
         $log = file_get_contents(storage_path('logs/laravel.log'));
 
-        expect($log)->toContain('Auth attempt')
+        expect($log)->toContain('Security audit event')
             ->toContain('newuser@example.com');
     });
 });
