@@ -8,41 +8,48 @@
       <button type="button" class="sidebar-toggle" (click)="toggleSidebar()">Menu</button>
     </div>
 
-    <nav class="sidebar-nav">
+    <nav class="sidebar-nav" aria-label="Main Navigation">
       <ul>
         <li>
-          <button type="button" [class.active]="currentView() === 'overview'" (click)="setView('overview')">
+          <button type="button" [class.active]="currentView() === 'overview'" (click)="setView('overview')"
+            aria-label="View Overview Summary">
             <span class="label nav-label">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M4 19H20M7 16V10M12 16V6M17 16V12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M4 19H20M7 16V10M12 16V6M17 16V12" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" />
               </svg>
               Overview Summary
             </span>
           </button>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'profile'" (click)="setView('profile')">
+          <button type="button" [class.active]="currentView() === 'profile'" (click)="setView('profile')"
+            aria-label="View My Profile">
             <span class="label nav-label">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 12A4 4 0 1 0 12 4A4 4 0 0 0 12 12Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M4 20C4 16.686 7.134 14 11 14H13C16.866 14 20 16.686 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M12 12A4 4 0 1 0 12 4A4 4 0 0 0 12 12Z" stroke="currentColor" stroke-width="2" />
+                <path d="M4 20C4 16.686 7.134 14 11 14H13C16.866 14 20 16.686 20 20" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round" />
               </svg>
               My Profile
             </span>
           </button>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'schedule'" (click)="setView('schedule')">
+          <button type="button" [class.active]="currentView() === 'schedule'" (click)="setView('schedule')"
+            aria-label="View Service Schedule">
             <span class="label">Service Schedule</span>
           </button>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'polls'" (click)="setView('polls')">
+          <button type="button" [class.active]="currentView() === 'polls'" (click)="setView('polls')"
+            aria-label="View Volunteer Polls">
             <span class="label nav-label">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M4 7H20V20H4V7Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M8 11L12 15L16 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M9 4H15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M4 7H20V20H4V7Z" stroke="currentColor" stroke-width="2" />
+                <path d="M8 11L12 15L16 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M9 4H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
               </svg>
               Volunteer Polls
             </span>
@@ -75,20 +82,15 @@
 
       <div class="top-bar-right">
         <div class="search-inline">
-          <input
-            #dashboardSearch
-            type="text"
-            class="search-input"
-            [value]="searchQuery()"
-            (input)="setSearchQuery(dashboardSearch.value)"
-            (keydown.enter)="runSearch()"
+          <input #dashboardSearch type="text" class="search-input" [value]="searchQuery()"
+            (input)="setSearchQuery(dashboardSearch.value)" (keydown.enter)="runSearch()"
             placeholder="Search dashboard...">
           <button type="button" class="search-btn" (click)="runSearch()">Search</button>
         </div>
         <button type="button" class="outline-btn" (click)="toggleNotifications()">
           Notifications
           @if (notificationCount() > 0) {
-            <span class="badge">{{ notificationCount() }}</span>
+          <span class="badge">{{ notificationCount() }}</span>
           }
         </button>
         <button type="button" class="primary-btn" (click)="logout()">Logout</button>
@@ -96,26 +98,26 @@
     </header>
 
     @if (showNotifications()) {
-      <section class="notification-panel panel">
-        <div class="panel-header">
-          <h2>Notifications</h2>
-          <div class="panel-actions">
-            <button type="button" class="outline-btn" (click)="markNotificationsRead()">Mark all as read</button>
-            <button type="button" class="outline-btn" (click)="closeNotifications()">Close</button>
+    <section class="notification-panel panel">
+      <div class="panel-header">
+        <h2>Notifications</h2>
+        <div class="panel-actions">
+          <button type="button" class="outline-btn" (click)="markNotificationsRead()">Mark all as read</button>
+          <button type="button" class="outline-btn" (click)="closeNotifications()">Close</button>
+        </div>
+      </div>
+      <div class="notification-list">
+        @for (item of notifications(); track item.id) {
+        <article class="notification-item" [class.unread]="!item.read">
+          <div>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.description }}</p>
           </div>
-        </div>
-        <div class="notification-list">
-          @for (item of notifications(); track item.id) {
-            <article class="notification-item" [class.unread]="!item.read">
-              <div>
-                <h3>{{ item.title }}</h3>
-                <p>{{ item.description }}</p>
-              </div>
-              <span class="notification-time">{{ item.time }}</span>
-            </article>
-          }
-        </div>
-      </section>
+          <span class="notification-time">{{ item.time }}</span>
+        </article>
+        }
+      </div>
+    </section>
     }
 
     <main class="dashboard-content">
@@ -189,58 +191,63 @@
 
             <h3 class="section-title wide">Personal Information</h3>
 
-            <label>
-              First Name
-              <input type="text" formControlName="firstName" placeholder="Enter first name">
+            <div class="form-group">
+              <label for="firstName">First Name</label>
+              <input type="text" id="firstName" formControlName="firstName" placeholder="Enter first name">
               @if (controlHasError('firstName')) { <span class="error-text">{{ getControlError('firstName') }}</span> }
-            </label>
+            </div>
 
-            <label>
-              Last Name
-              <input type="text" formControlName="lastName" placeholder="Enter last name">
+            <div class="form-group">
+              <label for="lastName">Last Name</label>
+              <input type="text" id="lastName" formControlName="lastName" placeholder="Enter last name">
               @if (controlHasError('lastName')) { <span class="error-text">{{ getControlError('lastName') }}</span> }
-            </label>
+            </div>
 
-            <label>
-              Facebook Name
-              <input type="text" formControlName="facebookName" placeholder="Optional facebook display name">
-            </label>
+            <div class="form-group">
+              <label for="facebookName">Facebook Name</label>
+              <input type="text" id="facebookName" formControlName="facebookName"
+                placeholder="Optional facebook display name">
+            </div>
 
-            <label>
-              Work Email
-              <input type="email" formControlName="email" placeholder="email@servetrack.org">
+            <div class="form-group">
+              <label for="email">Work Email</label>
+              <input type="email" id="email" formControlName="email" placeholder="email@servetrack.org">
               @if (controlHasError('email')) { <span class="error-text">{{ getControlError('email') }}</span> }
-            </label>
+            </div>
 
-            <label>
-              Mobile Number
-              <input type="text" formControlName="mobileNumber" placeholder="09XXXXXXXXX">
-              @if (controlHasError('mobileNumber')) { <span class="error-text">{{ getControlError('mobileNumber') }}</span> }
-            </label>
+            <div class="form-group">
+              <label for="mobileNumber">Mobile Number</label>
+              <input type="text" id="mobileNumber" formControlName="mobileNumber" placeholder="09XXXXXXXXX">
+              @if (controlHasError('mobileNumber')) { <span class="error-text">{{ getControlError('mobileNumber')
+                }}</span> }
+            </div>
 
-            <label>
-              Birthdate
-              <input type="date" formControlName="birthdate">
+            <div class="form-group">
+              <label for="birthdate">Birthdate</label>
+              <input type="date" id="birthdate" formControlName="birthdate">
               @if (controlHasError('birthdate')) { <span class="error-text">{{ getControlError('birthdate') }}</span> }
-            </label>
+            </div>
 
-            <label class="wide">
-              Date of Last Medical Examination
-              <input type="date" formControlName="lastMedicalExam">
-              @if (controlHasError('lastMedicalExam')) { <span class="error-text">{{ getControlError('lastMedicalExam') }}</span> }
-            </label>
+            <div class="form-group wide">
+              <label for="lastMedicalExam">Date of Last Medical Examination</label>
+              <input type="date" id="lastMedicalExam" formControlName="lastMedicalExam">
+              @if (controlHasError('lastMedicalExam')) { <span class="error-text">{{ getControlError('lastMedicalExam')
+                }}</span> }
+            </div>
 
-            <label class="wide">
-              Complete Address
-              <textarea rows="2" formControlName="completeAddress" placeholder="Enter complete address"></textarea>
-              @if (controlHasError('completeAddress')) { <span class="error-text">{{ getControlError('completeAddress') }}</span> }
-            </label>
+            <div class="form-group wide">
+              <label for="completeAddress">Complete Address</label>
+              <textarea id="completeAddress" rows="2" formControlName="completeAddress"
+                placeholder="Enter complete address"></textarea>
+              @if (controlHasError('completeAddress')) { <span class="error-text">{{ getControlError('completeAddress')
+                }}</span> }
+            </div>
 
             <h3 class="section-title wide">Education and Experience</h3>
 
-            <label class="wide">
-              Educational Attainment
-              <select formControlName="educationalAttainment">
+            <div class="form-group wide">
+              <label for="educationalAttainment">Educational Attainment</label>
+              <select id="educationalAttainment" formControlName="educationalAttainment">
                 <option value="" disabled>Select educational attainment</option>
                 <option value="elementary">Elementary</option>
                 <option value="high-school">High School</option>
@@ -251,29 +258,33 @@
                 <option value="masters">Master's Degree</option>
                 <option value="doctorate">Doctorate Degree</option>
               </select>
-              @if (controlHasError('educationalAttainment')) { <span class="error-text">{{ getControlError('educationalAttainment') }}</span> }
-            </label>
+              @if (controlHasError('educationalAttainment')) { <span class="error-text">{{
+                getControlError('educationalAttainment') }}</span> }
+            </div>
 
-            <label class="wide">
-              Training and Experience
-              <textarea rows="2" formControlName="trainingExperience" placeholder="Optional"></textarea>
-            </label>
+            <div class="form-group wide">
+              <label for="trainingExperience">Training and Experience</label>
+              <textarea id="trainingExperience" rows="2" formControlName="trainingExperience"
+                placeholder="Optional"></textarea>
+            </div>
 
-            <label class="wide">
-              Skills and Hobbies
-              <textarea rows="2" formControlName="skillsHobbies" placeholder="Optional"></textarea>
-            </label>
+            <div class="form-group wide">
+              <label for="skillsHobbies">Skills and Hobbies</label>
+              <textarea id="skillsHobbies" rows="2" formControlName="skillsHobbies" placeholder="Optional"></textarea>
+            </div>
 
-            <label class="wide">
-              Classes and Training Attended
-              <textarea rows="2" formControlName="classesTraining" placeholder="Optional"></textarea>
-            </label>
+            <div class="form-group wide">
+              <label for="classesTraining">Classes and Training Attended</label>
+              <textarea id="classesTraining" rows="2" formControlName="classesTraining"
+                placeholder="Optional"></textarea>
+            </div>
 
             <h3 class="section-title wide">Volunteer Preferences and Account</h3>
 
-            <label class="wide">
-              Volunteer Preference
-              <select formControlName="volunteerPreference" (change)="onVolunteerPreferenceChange($event)">
+            <div class="form-group wide">
+              <label for="volunteerPreference">Volunteer Preference</label>
+              <select id="volunteerPreference" formControlName="volunteerPreference"
+                (change)="onVolunteerPreferenceChange($event)">
                 <option value="" disabled>Select your preference</option>
                 <option value="sidewalk-sunday-school">Metro Sidewalk Sunday School (Teaching & Education)</option>
                 <option value="mobile-kitchen">Mobile Kitchen Operations</option>
@@ -293,32 +304,24 @@
                 <option value="dont-know">Don't know yet</option>
                 <option value="other">Other</option>
               </select>
-              @if (controlHasError('volunteerPreference')) { <span class="error-text">{{ getControlError('volunteerPreference') }}</span> }
-            </label>
+              @if (controlHasError('volunteerPreference')) { <span class="error-text">{{
+                getControlError('volunteerPreference') }}</span> }
+            </div>
 
             @if (showOtherPreference()) {
-              <label class="wide">
-                Other Preference
-                <input type="text" formControlName="otherPreference" placeholder="Specify your preference">
-              </label>
+            <div class="form-group wide">
+              <label for="otherPreference">Other Preference</label>
+              <input type="text" id="otherPreference" formControlName="otherPreference"
+                placeholder="Specify your preference">
+            </div>
             }
 
-            <label>
-              Password
-              <input type="password" formControlName="password" placeholder="Create/update password">
-              @if (controlHasError('password')) { <span class="error-text">{{ getControlError('password') }}</span> }
-            </label>
 
-            <label>
-              Confirm Password
-              <input type="password" formControlName="confirmPassword" placeholder="Confirm password">
-              @if (controlHasError('confirmPassword')) { <span class="error-text">{{ getControlError('confirmPassword') }}</span> }
-            </label>
 
             <div class="form-actions wide">
               <button type="submit" class="primary-btn">Update Profile</button>
               @if (editingProfileId() !== null) {
-                <button type="button" class="outline-btn" (click)="cancelEdit()">Cancel</button>
+              <button type="button" class="outline-btn" (click)="cancelEdit()">Cancel</button>
               }
             </div>
           </form>
@@ -331,21 +334,21 @@
           </div>
           <div class="profile-list">
             @for (profile of profiles(); track profile.id) {
-              <article class="profile-item">
-                <div class="profile-head">
-                  <img [src]="profile.photoUrl" [alt]="getProfileDisplayName(profile)" class="list-avatar">
-                  <div>
-                    <h3>{{ getProfileDisplayName(profile) }}</h3>
-                    <p>{{ profile.volunteerPreference }}</p>
-                  </div>
+            <article class="profile-item">
+              <div class="profile-head">
+                <img [src]="profile.photoUrl" [alt]="getProfileDisplayName(profile)" class="list-avatar">
+                <div>
+                  <h3>{{ getProfileDisplayName(profile) }}</h3>
+                  <p>{{ profile.volunteerPreference }}</p>
                 </div>
-                <div class="item-actions">
-                  <button type="button" class="outline-btn" (click)="editProfile(profile)">Edit</button>
-                  <button type="button" class="danger-btn" (click)="deleteProfile(profile.id)">Remove</button>
-                </div>
-              </article>
+              </div>
+              <div class="item-actions">
+                <button type="button" class="outline-btn" (click)="editProfile(profile)">Edit</button>
+                <button type="button" class="danger-btn" (click)="deleteProfile(profile.id)">Remove</button>
+              </div>
+            </article>
             } @empty {
-              <p class="empty-state">No other mission records found.</p>
+            <p class="empty-state">No other mission records found.</p>
             }
           </div>
         </article>
@@ -364,23 +367,16 @@
 
           <div class="poll-options">
             @for (choice of pollChoices(); track choice.id) {
-              <button
-                type="button"
-                class="poll-option"
-                [class.active]="selectedPollChoiceId() === choice.id"
-                [disabled]="hasSubmittedVote()"
-                (click)="selectPollChoice(choice.id)">
-                <span class="option-label">{{ choice.label }}</span>
-                <span class="poll-meta">{{ getVotePercentage(choice.votes) }}% ({{ choice.votes }})</span>
-              </button>
+            <button type="button" class="poll-option" [class.active]="selectedPollChoiceId() === choice.id"
+              [disabled]="hasSubmittedVote()" (click)="selectPollChoice(choice.id)">
+              <span class="option-label">{{ choice.label }}</span>
+              <span class="poll-meta">{{ getVotePercentage(choice.votes) }}% ({{ choice.votes }})</span>
+            </button>
             }
           </div>
 
           <div class="poll-actions">
-            <button
-              type="button"
-              class="primary-btn"
-              [disabled]="selectedPollChoiceId() === null || hasSubmittedVote()"
+            <button type="button" class="primary-btn" [disabled]="selectedPollChoiceId() === null || hasSubmittedVote()"
               (click)="submitPollVote()">
               {{ hasSubmittedVote() ? 'Vote Recorded' : 'Submit Selection' }}
             </button>
@@ -390,16 +386,29 @@
       }
 
       @case ('schedule') {
-      <section class="panel schedule-placeholder">
+      <section class="panel schedule-panel">
         <div class="panel-header">
           <h2>Service Schedule</h2>
-          <p>Coming Soon</p>
+          <p>Your upcoming assignments and deployments.</p>
         </div>
-        <p>
-          We are currently synchronizing the mission calendar with the regional operations hub.
-          Check back shortly for your assigned deployment dates.
-        </p>
-        <button type="button" class="primary-btn" (click)="setView('overview')">Return to Overview</button>
+        <div class="schedule-list">
+          @for (task of scheduleItems(); track task.id) {
+          <article class="schedule-card">
+            <div class="schedule-date">
+              <strong>{{ task.date | date:'MMM d, yyyy' }}</strong>
+            </div>
+            <div class="schedule-details">
+              <h3>{{ task.role }}</h3>
+              <p>{{ task.location }}</p>
+            </div>
+            <div class="schedule-status">
+              <span class="badge" [class.confirmed]="task.status === 'Confirmed'">{{ task.status }}</span>
+            </div>
+          </article>
+          } @empty {
+          <p class="empty-state">No upcoming schedules found. Check back later.</p>
+          }
+        </div>
       </section>
       }
       }
@@ -408,14 +417,20 @@
 </div>
 
 @if (showLogoutModal()) {
-  <div class="modal-backdrop" (click)="closeLogoutModal()">
-    <section class="modal-card" (click)="$event.stopPropagation()">
-      <h3>Confirm Logout</h3>
-      <p>Are you sure you want to logout?</p>
-      <div class="modal-actions">
-        <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
-        <button type="button" class="primary-btn" (click)="confirmLogout()">Yes, Logout</button>
-      </div>
-    </section>
-  </div>
+<div class="modal-backdrop" (click)="closeLogoutModal()">
+  <section class="modal-card" (click)="$event.stopPropagation()">
+    <h3>Confirm Logout</h3>
+    <p>Are you sure you want to logout?</p>
+    <div class="modal-actions">
+      <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
+      <button type="button" class="primary-btn" (click)="confirmLogout()">Yes, Logout</button>
+    </div>
+  </section>
+</div>
+}
+
+@if (isLoading()) {
+<div class="loading-overlay">
+  <div class="spinner" aria-label="Loading..." role="status"></div>
+</div>
 }

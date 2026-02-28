@@ -14,7 +14,5 @@ export type VolunteerProfile = {
     classesTraining: string;
     volunteerPreference: string;
     otherPreference: string;
-    password: string;
-    confirmPassword: string;
     photoUrl: string;
 };

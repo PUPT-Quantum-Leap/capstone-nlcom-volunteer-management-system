@@ -5,6 +5,7 @@ import { Login } from './auth/login/login';
 import { Signup } from './auth/signup/signup';
 import { SignupForm } from './auth/signup-form/signup-form';
 import { VolunteerDashboard } from './volunteer-dashboard/volunteer-dashboard';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', component: LandingPage },
@@ -12,7 +13,7 @@ export const routes: Routes = [
   { path: 'signup', component: Signup },
   { path: 'signup-form', component: SignupForm },
   { path: 'voting-poll', component: VotingPoll },
-  { path: 'volunteer-dashboard', component: VolunteerDashboard },
+  { path: 'volunteer-dashboard', component: VolunteerDashboard, canActivate: [authGuard] },
   {
     path: 'terms-of-service',
     loadComponent: () => import('./terms-of-service/terms-of-service').then(m => m.TermsOfService)

@@ -1,28 +1,37 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { passwordMatchValidator, passwordStrengthValidator } from '../validators/password.validator';
+import { AuthService } from '../services/auth.service';
 
 import { VolunteerProfile } from '../models/volunteer-profile';
 import { PollChoice } from '../models/poll-choice';
 import { NotificationItem } from '../models/notification-item';
 
+import { DatePipe } from '@angular/common';
+
 @Component({
-  selector: 'app-volunteer-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, DatePipe],
   templateUrl: './volunteer-dashboard.html',
   styleUrl: './volunteer-dashboard.scss',
 })
 export class VolunteerDashboard {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private authService = inject(AuthService);
 
   readonly defaultPhoto = '/assets/volunteer1.png';
 
   currentView = signal<'overview' | 'profile' | 'schedule' | 'polls'>('overview');
-  userName = signal('Jasmine Deleon');
+  userName = signal(this.authService.currentUser()?.name || 'Volunteer');
   sidebarCollapsed = signal(false);
+  isLoading = signal(false);
+
+  scheduleItems = signal([
+    { id: 1, date: '2025-08-20', role: 'Food Pack Sorting', location: 'NLCOM Relief Hub', status: 'Confirmed' },
+    { id: 2, date: '2025-08-25', role: 'Community Outreach', location: 'Barangay 143', status: 'Pending' },
+  ]);
   showNotifications = signal(false);
   showLogoutModal = signal(false);
   showOtherPreference = signal(false);
@@ -104,8 +113,6 @@ export class VolunteerDashboard {
       classesTraining: 'Disaster preparedness, emergency response',
       volunteerPreference: 'mobile-kitchen',
       otherPreference: '',
-      password: 'Pass@1234',
-      confirmPassword: 'Pass@1234',
       photoUrl: this.defaultPhoto,
     },
   ]);
@@ -208,8 +215,10 @@ export class VolunteerDashboard {
   }
 
   async confirmLogout(): Promise<void> {
+    this.isLoading.set(true);
     this.showLogoutModal.set(false);
     await this.router.navigate(['/login']);
+    this.isLoading.set(false);
   }
 
   async logout(): Promise<void> {
@@ -273,23 +282,27 @@ export class VolunteerDashboard {
     this.selectedPollChoiceId.set(choiceId);
   }
 
-  submitPollVote(): void {
+  async submitPollVote(): Promise<void> {
     const selectedId = this.selectedPollChoiceId();
     if (selectedId === null || this.hasSubmittedVote()) {
       return;
     }
 
-    this.pollChoices.update(choices =>
-      choices.map(choice => {
-        if (choice.id === selectedId) {
-          return { ...choice, votes: choice.votes + 1 };
-        }
-
-        return choice;
-      })
-    );
-
-    this.hasSubmittedVote.set(true);
+    this.isLoading.set(true);
+    await new Promise(res => setTimeout(res, 400));
+    try {
+      this.pollChoices.update(choices =>
+        choices.map(choice => {
+          if (choice.id === selectedId) {
+            return { ...choice, votes: choice.votes + 1 };
+          }
+          return choice;
+        })
+      );
+      this.hasSubmittedVote.set(true);
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   getVotePercentage(votes: number): number {
@@ -315,59 +328,65 @@ export class VolunteerDashboard {
       if (typeof result === 'string') {
         this.profilePreviewUrl.set(result);
       }
+      reader.onload = null; // Clean up the listener
     };
 
     reader.readAsDataURL(file);
   }
 
-  saveProfile(): void {
+  async saveProfile(): Promise<void> {
     if (this.profileForm.invalid) {
       this.profileForm.markAllAsTouched();
       return;
     }
 
-    const formValue = this.profileForm.getRawValue();
-    const profilePayload: Omit<VolunteerProfile, 'id'> = {
-      firstName: formValue.firstName?.trim() ?? '',
-      lastName: formValue.lastName?.trim() ?? '',
-      facebookName: formValue.facebookName?.trim() ?? '',
-      email: formValue.email?.trim() ?? '',
-      mobileNumber: formValue.mobileNumber?.trim() ?? '',
-      birthdate: formValue.birthdate ?? '',
-      lastMedicalExam: formValue.lastMedicalExam ?? '',
-      completeAddress: formValue.completeAddress?.trim() ?? '',
-      educationalAttainment: formValue.educationalAttainment ?? '',
-      trainingExperience: formValue.trainingExperience?.trim() ?? '',
-      skillsHobbies: formValue.skillsHobbies?.trim() ?? '',
-      classesTraining: formValue.classesTraining?.trim() ?? '',
-      volunteerPreference: formValue.volunteerPreference ?? '',
-      otherPreference: formValue.otherPreference?.trim() ?? '',
-      password: formValue.password ?? '',
-      confirmPassword: formValue.confirmPassword ?? '',
-      photoUrl: this.profilePreviewUrl(),
-    };
+    this.isLoading.set(true);
+    await new Promise(res => setTimeout(res, 600));
 
-    const editingId = this.editingProfileId();
-    if (editingId !== null) {
-      this.profiles.update(items =>
-        items.map(item => (item.id === editingId ? { id: editingId, ...profilePayload } : item))
-      );
-      if (editingId === 1) {
-        this.userName.set(`${profilePayload.firstName} ${profilePayload.lastName}`.trim());
+    try {
+      const formValue = this.profileForm.getRawValue();
+      const profilePayload: Omit<VolunteerProfile, 'id'> = {
+        firstName: formValue.firstName?.trim() ?? '',
+        lastName: formValue.lastName?.trim() ?? '',
+        facebookName: formValue.facebookName?.trim() ?? '',
+        email: formValue.email?.trim() ?? '',
+        mobileNumber: formValue.mobileNumber?.trim() ?? '',
+        birthdate: formValue.birthdate ?? '',
+        lastMedicalExam: formValue.lastMedicalExam ?? '',
+        completeAddress: formValue.completeAddress?.trim() ?? '',
+        educationalAttainment: formValue.educationalAttainment ?? '',
+        trainingExperience: formValue.trainingExperience?.trim() ?? '',
+        skillsHobbies: formValue.skillsHobbies?.trim() ?? '',
+        classesTraining: formValue.classesTraining?.trim() ?? '',
+        volunteerPreference: formValue.volunteerPreference ?? '',
+        otherPreference: formValue.otherPreference?.trim() ?? '',
+        photoUrl: this.profilePreviewUrl(),
+      };
+
+      const editingId = this.editingProfileId();
+      if (editingId !== null) {
+        this.profiles.update(items =>
+          items.map(item => (item.id === editingId ? { id: editingId, ...profilePayload } : item))
+        );
+        if (editingId === 1) {
+          this.userName.set(`${profilePayload.firstName} ${profilePayload.lastName}`.trim());
+        }
+        this.cancelEdit();
+        return;
       }
-      this.cancelEdit();
-      return;
+
+      const createdProfile: VolunteerProfile = {
+        id: Date.now(),
+        ...profilePayload,
+      };
+
+      this.profiles.update(items => [createdProfile, ...items]);
+      this.profileForm.reset();
+      this.profilePreviewUrl.set(this.defaultPhoto);
+      this.showOtherPreference.set(false);
+    } finally {
+      this.isLoading.set(false);
     }
-
-    const createdProfile: VolunteerProfile = {
-      id: Date.now(),
-      ...profilePayload,
-    };
-
-    this.profiles.update(items => [createdProfile, ...items]);
-    this.profileForm.reset();
-    this.profilePreviewUrl.set(this.defaultPhoto);
-    this.showOtherPreference.set(false);
   }
 
   editProfile(profile: VolunteerProfile): void {
@@ -387,8 +406,6 @@ export class VolunteerDashboard {
       classesTraining: profile.classesTraining,
       volunteerPreference: profile.volunteerPreference,
       otherPreference: profile.otherPreference,
-      password: profile.password,
-      confirmPassword: profile.confirmPassword,
     });
     this.profilePreviewUrl.set(profile.photoUrl || this.defaultPhoto);
     this.showOtherPreference.set(profile.volunteerPreference === 'other');
@@ -401,11 +418,19 @@ export class VolunteerDashboard {
     this.showOtherPreference.set(false);
   }
 
-  deleteProfile(profileId: number): void {
-    this.profiles.update(items => items.filter(item => item.id !== profileId));
+  async deleteProfile(profileId: number): Promise<void> {
+    this.isLoading.set(true);
+    await new Promise(res => setTimeout(res, 400));
+    try {
+      this.profiles.update(items => items.filter(item => item.id !== profileId));
 
-    if (this.editingProfileId() === profileId) {
-      this.cancelEdit();
+      if (this.editingProfileId() === profileId) {
+        this.cancelEdit();
+      }
+    } catch (error) {
+      console.error('Failed to delete profile:', error);
+    } finally {
+      this.isLoading.set(false);
     }
   }
 

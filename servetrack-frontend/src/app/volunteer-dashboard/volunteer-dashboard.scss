@@ -123,8 +123,9 @@
 }
 
 .sidebar-nav button:hover {
-  background: var(--slate-100);
-  border-color: var(--slate-200);
+  background: var(--blue-100);
+  border-color: var(--blue-100);
+  color: var(--blue-800);
 }
 
 .sidebar-nav button.active {
@@ -175,7 +176,7 @@
 .role {
   margin: 0.1rem 0 0;
   font-size: 0.78rem;
-  color: var(--slate-500);
+  color: var(--slate-600);
 }
 
 .main-wrapper {
@@ -309,7 +310,7 @@
 }
 
 .notification-time {
-  color: var(--slate-500);
+  color: var(--slate-600);
   font-size: 0.7rem;
   white-space: nowrap;
 }
@@ -370,7 +371,7 @@
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--slate-500);
+  color: var(--slate-600);
   font-weight: 700;
 }
 
@@ -388,7 +389,7 @@
 
 .meta {
   margin: 0;
-  color: var(--slate-500);
+  color: var(--slate-600);
   font-size: 0.84rem;
 }
 
@@ -456,7 +457,7 @@
 
 .panel-header p {
   margin: 0;
-  color: var(--slate-500);
+  color: var(--slate-600);
   font-size: 0.82rem;
 }
 
@@ -472,11 +473,16 @@
   gap: 0.72rem;
 }
 
-label {
+.form-group {
   display: grid;
   gap: 0.3rem;
+}
+
+label {
+  display: block;
   color: var(--slate-700);
   font-size: 0.86rem;
+  font-weight: 600;
 }
 
 input,
@@ -564,7 +570,7 @@ textarea:focus {
 .profile-head p {
   margin: 0.1rem 0 0;
   font-size: 0.82rem;
-  color: var(--slate-500);
+  color: var(--slate-600);
 }
 
 .item-actions,
@@ -640,6 +646,15 @@ textarea:focus {
   font-weight: 700;
   cursor: pointer;
   transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--blue-700);
+  outline-offset: 2px;
 }
 
 .primary-btn {
@@ -782,4 +797,69 @@ textarea:focus {
     align-items: flex-start;
     gap: 0.25rem;
   }
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--blue-100);
+  border-top-color: var(--blue-700);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.schedule-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.schedule-card {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--slate-200);
+  border-radius: 0.75rem;
+  background: var(--slate-100);
+}
+
+.schedule-date {
+  min-width: 100px;
+  color: var(--blue-800);
+}
+
+.schedule-details h3 {
+  margin: 0 0 0.2rem;
+  color: var(--blue-900);
+  font-size: 1rem;
+}
+
+.schedule-details p {
+  margin: 0;
+  color: var(--slate-600);
+  font-size: 0.86rem;
+}
+
+.schedule-status {
+  margin-left: auto;
+}
+
+.badge.confirmed {
+  background: #059669;
 }
