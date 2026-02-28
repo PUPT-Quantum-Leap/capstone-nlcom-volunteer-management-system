@@ -7,6 +7,7 @@ import {
   Validators,
   AbstractControl,
 } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -24,6 +25,19 @@ export class Login {
   // State signals
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
+
+  // Popup signal
+  showPopup = signal(false);
+
+
+  // Popup methods
+  showPopupModal() {
+    this.showPopup.set(true);
+  }
+
+  closePopup() {
+    this.showPopup.set(false);
+  }
 
   // Form group with validators
   loginForm: FormGroup = this.fb.group({
@@ -89,7 +103,7 @@ export class Login {
       };
 
       // Call auth service
-      const response = await this.authService.login(credentials);
+      const response = await firstValueFrom(this.authService.login(credentials));
 
       if (response.success) {
         // Navigate to dashboard or home on success
