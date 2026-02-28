@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -26,10 +27,27 @@ class LoginRequest extends FormRequest
      */
     public function rules(): array
     {
+        $emailRule = app()->isProduction() ? 'email:rfc,dns' : 'email:rfc';
+
         return [
-            'email' => ['required', 'string', 'lowercase', 'email'],
+            'email' => ['required', 'string', 'lowercase', $emailRule],
             'password' => ['required', 'string'],
         ];
+    }
+
+    /**
+     * Sanitize inputs after validation passes.
+     */
+    public function withValidator(\Illuminate\Contracts\Validation\Validator $validator): void
+    {
+        $validator->after(function (\Illuminate\Contracts\Validation\Validator $validator): void {
+            if ($validator->errors()->any()) {
+                return;
+            }
+
+            $email = filter_var($this->input('email'), FILTER_SANITIZE_EMAIL);
+            $this->merge(['email' => $email]);
+        });
     }
 
     /**
@@ -41,13 +59,32 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        $user = $this->getUserForAuthentication();
+
+        if ($user && $user->isLockedOut()) {
+            $seconds = (int) now()->diffInSeconds($user->locked_until);
+
+            throw ValidationException::withMessages([
+                'email' => __('auth.throttle', [
+                    'seconds' => $seconds,
+                    'minutes' => ceil($seconds / 60),
+                ]),
+            ])->withHeaders(['Retry-After' => $seconds]);
+        }
+
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+            if ($user) {
+                $user->recordFailedAttempt();
+            }
+
+            RateLimiter::hit($this->throttleKey(), 60);
 
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
             ]);
         }
+
+        $user?->resetFailedAttempts();
 
         RateLimiter::clear($this->throttleKey());
     }
@@ -59,19 +96,27 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        $maxAttempts = 5;
+
+        if (! RateLimiter::tooManyAttempts($this->throttleKey(), $maxAttempts)) {
             return;
         }
 
         event(new Lockout($this));
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
+        $retryAfter = max($seconds, 60);
 
         throw ValidationException::withMessages([
             'email' => __('auth.throttle', [
                 'seconds' => $seconds,
                 'minutes' => ceil($seconds / 60),
             ]),
+        ])->withHeaders([
+            'Retry-After' => $retryAfter,
+            'X-RateLimit-Limit' => $maxAttempts,
+            'X-RateLimit-Remaining' => 0,
+            'X-RateLimit-Reset' => time() + $seconds,
         ]);
     }
 
@@ -80,6 +125,14 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return 'login:'.Str::lower(Str::transliterate($this->string('email'))).'|'.$this->ip();
+    }
+
+    /**
+     * Look up the User record for pre-authentication lockout checks.
+     */
+    protected function getUserForAuthentication(): ?User
+    {
+        return User::where('email', Str::lower($this->string('email')))->first();
     }
 }
