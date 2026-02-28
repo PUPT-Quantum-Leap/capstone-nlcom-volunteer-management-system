@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::table('volunteer', function (Blueprint $table) {
             // Add user_id column after volunteer_id
             $table->foreignId('user_id')->after('volunteer_id')->constrained('users');
-            
-            // Make email nullable 
+
+            // Make email nullable
             $table->string('email')->nullable()->change();
         });
     }
@@ -26,9 +26,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('volunteer', function (Blueprint $table) {
-            // Drop the foreign key constraint 
+            // Drop the foreign key constraint
             $table->dropForeign(['user_id']);
-            
+
             // Drop the user_id column
             $table->dropColumn('user_id');
             $table->string('email')->nullable(false)->change();
