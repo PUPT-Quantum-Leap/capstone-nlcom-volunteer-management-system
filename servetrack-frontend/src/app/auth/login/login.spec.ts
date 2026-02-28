@@ -5,6 +5,7 @@ import { Login } from './login';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
+import { of, throwError } from 'rxjs';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 describe('Login Component', () => {
@@ -144,7 +145,7 @@ describe('Login Component', () => {
         rememberMe: false
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login.mockResolvedValue({ success: true });
+      mockAuthService.login.mockReturnValue(of({ success: true }));
       await component.onSubmit();
       expect(component.isLoading()).toBe(false);
       expect(mockAuthService.login).toHaveBeenCalledWith({
@@ -160,7 +161,7 @@ describe('Login Component', () => {
         rememberMe: false
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login.mockResolvedValue({ success: true });
+      mockAuthService.login.mockReturnValue(of({ success: true }));
       await component.onSubmit();
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
       expect(component.errorMessage()).toBeNull();
@@ -173,10 +174,10 @@ describe('Login Component', () => {
         rememberMe: false
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login.mockResolvedValue({
+      mockAuthService.login.mockReturnValue(of({
         success: false,
         message: 'Invalid credentials'
-      });
+      }));
       await component.onSubmit();
       expect(mockRouter.navigate).not.toHaveBeenCalled();
       expect(component.errorMessage()).toBe('Invalid credentials');
@@ -189,7 +190,7 @@ describe('Login Component', () => {
         rememberMe: false
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login.mockResolvedValue({ success: false });
+      mockAuthService.login.mockReturnValue(of({ success: false }));
       await component.onSubmit();
       expect(component.errorMessage()).toBe('Invalid email or password');
     });
@@ -202,7 +203,7 @@ describe('Login Component', () => {
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockAuthService.login.mockRejectedValue(new Error('Network error'));
+      mockAuthService.login.mockReturnValue(throwError(() => new Error('Network error')));
       await component.onSubmit();
       expect(component.errorMessage()).toBe('An unexpected error occurred. Please try again.');
       expect(component.isLoading()).toBe(false);
