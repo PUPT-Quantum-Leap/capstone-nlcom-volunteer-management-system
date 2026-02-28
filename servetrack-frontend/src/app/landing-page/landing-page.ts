@@ -1,5 +1,6 @@
 import { Component, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { signal } from '@angular/core';
 
 @Component({
   selector: 'app-landing-page',
@@ -9,6 +10,9 @@ import { RouterLink } from '@angular/router';
 })
 export class LandingPage implements OnDestroy {
   private observer?: IntersectionObserver;
+  
+  // Popup control signals
+  showPopup = signal(false);
 
   ngAfterViewInit() {
     this.initScrollAnimations();
@@ -20,6 +24,15 @@ export class LandingPage implements OnDestroy {
       this.observer.disconnect();
       this.observer = undefined;
     }
+  }
+
+  // Popup methods
+  showPopupModal() {
+    this.showPopup.set(true);
+  }
+
+  closePopup() {
+    this.showPopup.set(false);
   }
 
   scrollToSection(sectionId: string, event: Event) {
