@@ -69,10 +69,33 @@
     <div class="auth-footer">
       <p class="auth-footer-text">
         Don't have an account?
-        <a routerLink="/signup-form" class="auth-link">
+        <a (click)="showPopupModal()" class="auth-link">
           Sign up
         </a>
       </p>
     </div>
   </div>
+
+  <!-- Popup Modal -->
+  @if (showPopup()) {
+    <div class="popup-overlay" (click)="closePopup()">
+      <div class="popup-modal" (click)="$event.stopPropagation()">
+        <button class="popup-close" (click)="closePopup()">×</button>
+        <div class="popup-content">
+          <h3 class="popup-title">Already an NLCOM volunteer?</h3>
+          <p class="popup-message">
+            Sign up here to continue your journey with us!
+          </p>
+          <div class="popup-actions">
+            <button class="btn btn-primary" routerLink="/signup">
+              Sign Up
+            </button>
+            <button class="btn btn-outline" routerLink="/signup-form">
+              I'm a new member
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
 </div>

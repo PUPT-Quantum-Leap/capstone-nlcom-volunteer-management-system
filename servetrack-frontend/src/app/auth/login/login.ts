@@ -25,6 +25,19 @@ export class Login {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
 
+  // Popup signal
+  showPopup = signal(false);
+
+
+  // Popup methods
+  showPopupModal() {
+    this.showPopup.set(true);
+  }
+
+  closePopup() {
+    this.showPopup.set(false);
+  }
+
   // Form group with validators
   loginForm: FormGroup = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
