@@ -15,10 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'security.audit' => \App\Http\Middleware\SecurityAudit::class,
+            'security.sanitize' => \App\Http\Middleware\SanitizeInput::class,
         ]);
 
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
+            \App\Http\Middleware\SanitizeInput::class,
         ]);
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,

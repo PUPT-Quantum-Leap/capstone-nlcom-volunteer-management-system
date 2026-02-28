@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 // Guest-only routes
 Route::middleware(['guest', 'security.audit'])->group(function (): void {
     Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:5,1');
-    Route::post('/register', [RegisterController::class, 'store']);
+    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:3,1');
 });
 
 // Auth-required routes

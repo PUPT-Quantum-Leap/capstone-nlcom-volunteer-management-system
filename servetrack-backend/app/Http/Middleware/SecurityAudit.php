@@ -22,6 +22,7 @@ class SecurityAudit
         $context = [
             'route' => $request->path(),
             'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
             'status' => $status,
         ];
 
