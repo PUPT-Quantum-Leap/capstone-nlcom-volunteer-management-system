@@ -1,26 +1,29 @@
 <?php
 
+use Illuminate\Support\Str;
+
 describe('SanitizeInput middleware', function (): void {
     it('strips sql injection patterns from input', function (): void {
         $this->postJson('/api/login', [
             'email' => "' OR 1=1 --",
-            'password' => 'password',
+            'password' => Str::random(12),
         ])->assertUnprocessable(); // Sanitized value fails email validation
     });
 
     it('strips UNION injection from input', function (): void {
         $this->postJson('/api/login', [
             'email' => 'test@example.com UNION SELECT * FROM users',
-            'password' => 'password',
+            'password' => Str::random(12),
         ])->assertUnprocessable(); // Sanitized value fails email validation
     });
 
     it('strips script tags from input', function (): void {
+        $password = 'Secret'.fake()->numerify('###').'!';
         $this->postJson('/api/register', [
             'name' => '<script>alert("xss")</script>Test',
-            'email' => 'xss@example.com',
-            'password' => 'Password1!',
-            'password_confirmation' => 'Password1!',
+            'email' => fake()->safeEmail(),
+            'password' => $password,
+            'password_confirmation' => $password,
         ])->assertCreated()
             ->assertJsonPath('user.name', 'alert("xss")Test'); // Tag is stripped
     });
@@ -28,18 +31,19 @@ describe('SanitizeInput middleware', function (): void {
     it('trims whitespace from all string inputs', function (): void {
         $this->postJson('/api/login', [
             'email' => '  nobody@example.com  ',
-            'password' => '  password  ',
+            'password' => '  '.Str::random(10).'  ',
         ])->assertUnprocessable(); // Passes sanitization, but fails auth
     });
 });
 
 describe('Registration throttling', function (): void {
     it('blocks registration after 3 attempts per minute', function (): void {
+        $password = 'Secret'.fake()->numerify('###').'!';
         $payload = [
-            'name' => 'Test User',
-            'email' => 'throttle@example.com',
-            'password' => 'Password1!',
-            'password_confirmation' => 'Password1!',
+            'name' => fake()->name(),
+            'email' => fake()->safeEmail(),
+            'password' => $password,
+            'password_confirmation' => $password,
         ];
 
         // First attempt — succeeds
@@ -56,41 +60,45 @@ describe('Registration throttling', function (): void {
 
 describe('Password policy enforcement', function (): void {
     it('rejects a password that is too short', function (): void {
+        $password = fake()->lexify('????').fake()->numerify('#').'!'; // 6 chars
         $this->postJson('/api/register', [
-            'name' => 'Test',
-            'email' => 'policy@example.com',
-            'password' => 'short1!A',
-            'password_confirmation' => 'short1!A',
+            'name' => fake()->name(),
+            'email' => fake()->safeEmail(),
+            'password' => $password,
+            'password_confirmation' => $password,
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['password']);
     });
 
     it('rejects a password with no special character', function (): void {
+        $password = 'Safe'.fake()->numerify('######');
         $this->postJson('/api/register', [
-            'name' => 'Test',
-            'email' => 'policy@example.com',
-            'password' => 'NoSymbol1234',
-            'password_confirmation' => 'NoSymbol1234',
+            'name' => fake()->name(),
+            'email' => fake()->safeEmail(),
+            'password' => $password,
+            'password_confirmation' => $password,
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['password']);
     });
 
     it('rejects a password with no number', function (): void {
+        $password = 'Safe'.fake()->lexify('?????').'!';
         $this->postJson('/api/register', [
-            'name' => 'Test',
-            'email' => 'policy@example.com',
-            'password' => 'NoNumbers!!A',
-            'password_confirmation' => 'NoNumbers!!A',
+            'name' => fake()->name(),
+            'email' => fake()->safeEmail(),
+            'password' => $password,
+            'password_confirmation' => $password,
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['password']);
     });
 
     it('accepts a strong password', function (): void {
+        $password = 'Strong'.fake()->numerify('####').'!';
         $this->postJson('/api/register', [
-            'name' => 'Test',
-            'email' => 'strong@example.com',
-            'password' => 'StrongPass1!',
-            'password_confirmation' => 'StrongPass1!',
+            'name' => fake()->name(),
+            'email' => fake()->safeEmail(),
+            'password' => $password,
+            'password_confirmation' => $password,
         ])->assertCreated();
     });
 });
@@ -102,8 +110,8 @@ describe('SecurityAudit User-Agent logging', function (): void {
             : '';
 
         $this->postJson('/api/login', [
-            'email' => 'ua@example.com',
-            'password' => 'wrongpassword',
+            'email' => fake()->safeEmail(),
+            'password' => Str::random(10),
         ], ['User-Agent' => 'TestAgent/1.0']);
 
         $after = file_get_contents(storage_path('logs/laravel.log'));
