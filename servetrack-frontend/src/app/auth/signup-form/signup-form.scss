@@ -335,6 +335,10 @@ $error-light: #FEE2E2;
   gap: 1rem;
 }
 
+.form-actions-single {
+  justify-content: flex-end;
+}
+
 .btn-back {
   padding: 0.875rem 2rem;
   font-size: 1rem;
