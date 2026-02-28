@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Volunteer extends Model
@@ -19,7 +18,6 @@ class Volunteer extends Model
 
     // Field Assignment
     protected $fillable = [
-        'user_id',
         'first_name',
         'last_name',
         'facebook_name',
@@ -36,13 +34,17 @@ class Volunteer extends Model
         'birthdate' => 'date',
         'last_medical_examination' => 'date',
         'facebook_id' => 'integer',
-        'user_id' => 'integer',
     ];
 
-    // Define Relationship
-    public function user(): BelongsTo
+    // Define Relationships
+    public function availabilities(): BelongsToMany
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsToMany(
+            Availability::class,
+            'volunteer_availability',
+            'volunteer_id',
+            'availability_id'
+        )->withPivot('custom_description');
     }
 
     public function experiences(): BelongsToMany
@@ -52,6 +54,26 @@ class Volunteer extends Model
             'volunteer_experience',
             'volunteer_id',
             'experience_id'
+        );
+    }
+
+    public function lifegroups(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Lifegroup::class,
+            'volunteer_lifegroup',
+            'volunteer_id',
+            'lifegroup_id'
+        )->withPivot('is_leader');
+    }
+
+    public function positions(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Position::class,
+            'volunteer_position',
+            'volunteer_id',
+            'position_id'
         );
     }
 
@@ -73,5 +95,15 @@ class Volunteer extends Model
             'volunteer_id',
             'training_id'
         );
+    }
+
+    public function pollVotes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PollVote::class, 'volunteer_id');
+    }
+
+    public function smsNotifications(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(SmsNotification::class, 'volunteer_id');
     }
 }

@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Skill extends Model
+class Position extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'skill_id';
+    protected $primaryKey = 'position_id';
 
     protected $fillable = [
         'name',
@@ -17,6 +17,6 @@ class Skill extends Model
 
     public function volunteers(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsToMany(Volunteer::class, 'volunteer_skill', 'skill_id', 'volunteer_id');
+        return $this->belongsToMany(Volunteer::class, 'volunteer_position', 'position_id', 'volunteer_id');
     }
 }
