@@ -42,6 +42,11 @@ export interface AuthResponse {
     id: string;
     email: string;
     name?: string;
+    volunteer?: {
+      volunteer_id: number;
+      first_name: string;
+      last_name: string;
+    };
   };
 }
 
@@ -51,7 +56,6 @@ export interface AuthResponse {
 export class AuthService {
   private router = inject(Router);
   private http = inject(HttpClient);
-  private apiUrl = '/api';
 
   // State signals
   isAuthenticated = signal(false);
@@ -106,7 +110,7 @@ export class AuthService {
    */
   login$(credentials: LoginCredentials): Observable<AuthResponse> {
     return this.http.post<{ user: AuthResponse['user'] }>(
-      `${this.apiUrl}/login`, 
+      `${environment.apiUrl}/login`, 
       credentials, 
       { withCredentials: true }
     ).pipe(
@@ -130,7 +134,7 @@ export class AuthService {
    * Observable version of register for RxJS compatibility.
    */
   register$(data: RegisterData): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, data, { withCredentials: true })
+    return this.http.post<AuthResponse>(`${environment.apiUrl}/register`, data, { withCredentials: true })
       .pipe(
         tap(response => {
           if (response.success && response.user) {
@@ -240,7 +244,7 @@ export class AuthService {
       const token = sessionStorage.getItem('auth_token');
       
       if (token) {
-        await this.http.post(`${this.apiUrl}/logout`, {}, {
+        await this.http.post(`${environment.apiUrl}/logout`, {}, {
           headers: { 'Authorization': `Bearer ${token}` },
           withCredentials: true
         }).toPromise();
@@ -257,7 +261,7 @@ export class AuthService {
   }
 
   logout$(): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/logout`, {}, { withCredentials: true })
+    return this.http.post<void>(`${environment.apiUrl}/logout`, {}, { withCredentials: true })
       .pipe(
         tap(() => this.clearSession()),
         catchError(() => {
@@ -279,7 +283,7 @@ export class AuthService {
 
     try {
       const response = await this.http.get<AuthResponse>(
-        `${this.apiUrl}/user`,
+        `${environment.apiUrl}/user`,
         { headers: { 'Authorization': `Bearer ${token}` }, withCredentials: true }
       ).toPromise();
 
@@ -298,7 +302,7 @@ export class AuthService {
   }
 
   checkAuthStatus$(): Observable<AuthResponse> {
-    return this.http.get<AuthResponse>(`${this.apiUrl}/user`, { withCredentials: true })
+    return this.http.get<AuthResponse>(`${environment.apiUrl}/user`, { withCredentials: true })
       .pipe(
         map(response => ({ success: true, message: response.message, token: response.token, user: response.user })),
         tap(response => {
