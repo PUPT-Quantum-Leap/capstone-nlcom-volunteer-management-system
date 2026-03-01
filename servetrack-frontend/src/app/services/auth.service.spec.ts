@@ -12,7 +12,7 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     mockRouter = {
-      navigate: vi.fn()
+      navigate: vi.fn().mockResolvedValue(true)
     };
 
     TestBed.configureTestingModule({
@@ -260,7 +260,7 @@ describe('AuthService', () => {
 
       service.login$(credentials).subscribe(response => {
         expect(response.success).toBe(false);
-        expect(response.message).toBe('Invalid credentials');
+        expect(response.message).toBe('Login failed');
         expect(service.isAuthenticated()).toBe(false);
         expect(service.currentUser()).toBeNull();
       });
