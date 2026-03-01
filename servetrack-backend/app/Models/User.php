@@ -29,6 +29,14 @@ class User extends Authenticatable
     ];
 
     /**
+     * Get the volunteer profile associated with the user
+     */
+    public function volunteer()
+    {
+        return $this->hasOne(Volunteer::class, 'user_id', 'id');
+    }
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>

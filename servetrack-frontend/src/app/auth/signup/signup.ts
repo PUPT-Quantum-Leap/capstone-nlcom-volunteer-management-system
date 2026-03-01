@@ -144,7 +144,7 @@ export class Signup {
         confirmPassword: formValue.confirmPassword,
       };
 
-      const response = await firstValueFrom(this.authService.signup(signupData));
+      const response = await firstValueFrom(this.authService.register$(signupData));
 
       if (response.success) {
         // Navigate to dashboard or home on success
@@ -153,7 +153,6 @@ export class Signup {
         this.errorMessage.set(response.message || 'Signup failed. Please try again.');
       }
     } catch (error) {
-      console.error('Signup error:', error);
       this.errorMessage.set('An unexpected error occurred. Please try again.');
     } finally {
       this.isLoading.set(false);

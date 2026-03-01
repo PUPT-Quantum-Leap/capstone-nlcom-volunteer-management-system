@@ -427,8 +427,6 @@ export class VolunteerDashboard {
       if (this.editingProfileId() === profileId) {
         this.cancelEdit();
       }
-    } catch (error) {
-      console.error('Failed to delete profile:', error);
     } finally {
       this.isLoading.set(false);
     }

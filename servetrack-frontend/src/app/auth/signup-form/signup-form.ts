@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { passwordStrengthValidator, passwordMatchValidator } from '../../validators/password.validator';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-signup-form',
@@ -11,6 +12,7 @@ import { passwordStrengthValidator, passwordMatchValidator } from '../../validat
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SignupForm {
+  private authService = inject(AuthService);
   private fb = new FormBuilder();
   
   currentStep = signal(1);
@@ -19,6 +21,7 @@ export class SignupForm {
   showPassword = signal(false);
   showConfirmPassword = signal(false);
   showPasswordRequirements = signal(false);
+  error = signal<string | null>(null);
   
   personalInfoForm: FormGroup;
   educationForm: FormGroup;
@@ -92,11 +95,23 @@ export class SignupForm {
         ...this.educationForm.value,
         ...this.preferencesForm.value,
       };
-      console.log('Complete Form Data:', formData);
-      // TODO: Submit to backend
-      setTimeout(() => {
+      
+      // Submit to real backend API
+      this.authService.volunteerSignup(formData).then((response: any) => {
+        if (response.success) {
+          // Navigate to success page or dashboard
+          // this.router.navigate(['/success']);
+        } else {
+          // Show error message 
+          this.error.set(response.message || 'Registration failed');
+        }
+      })
+      .catch((error: any) => {
+        this.error.set('Registration failed. Please try again.');
+      })
+      .finally(() => {
         this.isSubmitting.set(false);
-      }, 2000);
+      });
     }
   }
 
