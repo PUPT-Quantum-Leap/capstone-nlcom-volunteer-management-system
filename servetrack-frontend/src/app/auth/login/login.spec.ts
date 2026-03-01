@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { of, throwError } from 'rxjs';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { Observable, of } from 'rxjs';
+import { Observable} from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 
 describe('Login Component', () => {
