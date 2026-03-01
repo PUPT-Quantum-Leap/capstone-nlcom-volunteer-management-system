@@ -57,7 +57,6 @@ export class VotingPoll {
     if (selectedOption && !this.isFull(selectedOption)) {
       selectedOption.votes++;
       selectedOption.selected = false;
-      console.log('Vote submitted for:', selectedOption.timeSlot);
     }
   }
 

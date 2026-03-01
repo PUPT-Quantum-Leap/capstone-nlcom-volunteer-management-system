@@ -102,13 +102,11 @@ export class SignupForm {
           // Navigate to success page or dashboard
           // this.router.navigate(['/success']);
         } else {
-          console.error('Registration failed:', response.message);
           // Show error message 
           this.error.set(response.message || 'Registration failed');
         }
       })
       .catch((error: any) => {
-        console.error('Registration error:', error);
         this.error.set('Registration failed. Please try again.');
       })
       .finally(() => {

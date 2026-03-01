@@ -112,7 +112,6 @@ export class Login {
         this.errorMessage.set(response.message || 'Invalid email or password');
       }
     } catch (error) {
-      console.error('Login error:', error);
       this.errorMessage.set('An unexpected error occurred. Please try again.');
     } finally {
       this.isLoading.set(false);
@@ -126,7 +125,7 @@ export class Login {
     try {
       await this.router.navigate(['/signup']);
     } catch (error) {
-      console.error('Navigation failed:', error);
+      // Navigation failed silently
     }
   }
 
@@ -137,7 +136,7 @@ export class Login {
     try {
       await this.router.navigate(['/forgot-password']);
     } catch (error) {
-      console.error('Navigation failed:', error);
+      // Navigation failed silently
     }
   }
 }

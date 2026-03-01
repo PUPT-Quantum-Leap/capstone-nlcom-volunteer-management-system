@@ -74,7 +74,8 @@ export class AuthService {
 
       const response = await this.http.post<AuthResponse>(
         `${environment.apiUrl}/login`,
-        credentials
+        credentials,
+        { withCredentials: true }
       ).toPromise();
 
       if (response?.success && response?.user) {
@@ -163,7 +164,8 @@ export class AuthService {
 
       const response = await this.http.post<AuthResponse>(
         `${environment.apiUrl}/register`,
-        data
+        data,
+        { withCredentials: true }
       ).toPromise();
 
       if (response?.success && response?.user) {
@@ -203,7 +205,8 @@ export class AuthService {
 
       const response = await this.http.post<AuthResponse>(
         `${environment.apiUrl}/volunteer/register`,
-        data
+        data,
+        { withCredentials: true }
       ).toPromise();
 
       if (response?.success && response?.user) {
@@ -238,7 +241,8 @@ export class AuthService {
       
       if (token) {
         await this.http.post(`${this.apiUrl}/logout`, {}, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` },
+          withCredentials: true
         }).toPromise();
       }
       
@@ -248,7 +252,7 @@ export class AuthService {
       
       await this.router.navigate(['/login']);
     } catch (error) {
-      console.error('Logout failed:', error);
+      // Logout failed silently
     }
   }
 
@@ -276,7 +280,7 @@ export class AuthService {
     try {
       const response = await this.http.get<AuthResponse>(
         `${this.apiUrl}/user`,
-        { headers: { 'Authorization': `Bearer ${token}` } }
+        { headers: { 'Authorization': `Bearer ${token}` }, withCredentials: true }
       ).toPromise();
 
       if (response?.user) {
