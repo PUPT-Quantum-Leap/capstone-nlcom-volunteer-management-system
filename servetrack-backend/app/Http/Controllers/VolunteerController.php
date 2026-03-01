@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CreateAttendanceRequest;
+use App\Http\Requests\UpdateVolunteerProfileRequest;
+use App\Models\Attendance;
 use App\Models\Experience;
 use App\Models\Position;
 use App\Models\Skill;
@@ -113,6 +116,236 @@ class VolunteerController extends Controller
     }
 
     /**
+     * Get the authenticated volunteer's profile.
+     */
+    public function profile(Request $request): JsonResponse
+    {
+        $volunteer = $request->user()->volunteer;
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Volunteer profile not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $volunteer->load(['experiences', 'skills', 'trainings', 'positions']),
+        ]);
+    }
+
+    /**
+     * Update the authenticated volunteer's profile.
+     */
+    public function updateProfile(UpdateVolunteerProfileRequest $request): JsonResponse
+    {
+        $volunteer = $request->user()->volunteer;
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Volunteer profile not found.',
+            ], 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            $volunteer->update([
+                'first_name' => $request->firstName,
+                'last_name' => $request->lastName,
+                'facebook_name' => $request->facebookName,
+                'email' => $request->email,
+                'mobile_number' => $request->mobileNumber,
+                'birthdate' => $request->birthdate,
+                'address' => $request->completeAddress,
+                'educational_attainment' => $request->educationalAttainment,
+                'last_medical_examination' => $request->lastMedicalExam,
+            ]);
+
+            // Also update the linked user's name and email
+            $volunteer->user()->update([
+                'name' => $request->firstName.' '.$request->lastName,
+                'email' => $request->email,
+            ]);
+
+            // Sync skills (detach all, re-attach from new input)
+            $volunteer->skills()->detach();
+            $this->processSkillsHobbies($volunteer, $request->skillsHobbies);
+
+            // Sync trainings
+            $volunteer->trainings()->detach();
+            $this->processTrainingExperience($volunteer, $request->trainingExperience);
+            $this->processClassesTraining($volunteer, $request->classesTraining);
+
+            // Sync position preference
+            $volunteer->positions()->detach();
+            $this->processVolunteerPreference($volunteer, $request->volunteerPreference, $request->otherPreference);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile updated successfully.',
+                'data' => $volunteer->fresh()->load(['experiences', 'skills', 'trainings', 'positions']),
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Profile update failed: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * List attendance records for the authenticated volunteer.
+     * Supports ?period=daily|weekly|monthly and ?search= filters.
+     */
+    public function listAttendance(Request $request): JsonResponse
+    {
+        $volunteer = $request->user()->volunteer;
+
+        if (! $volunteer) {
+            return response()->json(['success' => false, 'message' => 'Volunteer profile not found.'], 404);
+        }
+
+        $query = $volunteer->attendances()->orderBy('date', 'desc');
+
+        // Period filter
+        $period = $request->query('period');
+        if ($period === 'daily') {
+            $query->whereDate('date', today());
+        } elseif ($period === 'weekly') {
+            $query->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()]);
+        } elseif ($period === 'monthly') {
+            $query->whereMonth('date', now()->month)->whereYear('date', now()->year);
+        }
+
+        // Search filter on description
+        $search = $request->query('search');
+        if ($search) {
+            $query->where('description', 'like', '%'.$search.'%');
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $query->get(),
+        ]);
+    }
+
+    /**
+     * Add a manual attendance entry for the authenticated volunteer.
+     */
+    public function storeAttendance(CreateAttendanceRequest $request): JsonResponse
+    {
+        $volunteer = $request->user()->volunteer;
+
+        if (! $volunteer) {
+            return response()->json(['success' => false, 'message' => 'Volunteer profile not found.'], 404);
+        }
+
+        $attendance = $volunteer->attendances()->create([
+            'date' => $request->date,
+            'hours' => $request->hours,
+            'description' => $request->description,
+            'status' => 'pending',
+            'created_by' => $request->user()->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attendance entry submitted.',
+            'data' => $attendance,
+        ], 201);
+    }
+
+    /**
+     * Get attendance statistics (total hours, counts) for the authenticated volunteer.
+     */
+    public function attendanceStats(Request $request): JsonResponse
+    {
+        $volunteer = $request->user()->volunteer;
+
+        if (! $volunteer) {
+            return response()->json(['success' => false, 'message' => 'Volunteer profile not found.'], 404);
+        }
+
+        $base = $volunteer->attendances()->where('status', 'approved');
+
+        $stats = [
+            'total_hours' => (float) $base->sum('hours'),
+            'total_entries' => $base->count(),
+            'daily' => [
+                'hours' => (float) (clone $base)->whereDate('date', today())->sum('hours'),
+                'entries' => (clone $base)->whereDate('date', today())->count(),
+            ],
+            'weekly' => [
+                'hours' => (float) (clone $base)->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])->sum('hours'),
+                'entries' => (clone $base)->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+            ],
+            'monthly' => [
+                'hours' => (float) (clone $base)->whereMonth('date', now()->month)->whereYear('date', now()->year)->sum('hours'),
+                'entries' => (clone $base)->whereMonth('date', now()->month)->whereYear('date', now()->year)->count(),
+            ],
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $stats,
+        ]);
+    }
+
+    /**
+     * Get all volunteers with their relationships
+     */
+    public function index(): JsonResponse
+    {
+        $volunteers = Volunteer::with([
+            'experiences',
+            'skills',
+            'trainings',
+            'positions',
+            'availabilities',
+            'lifegroups',
+        ])->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $volunteers,
+        ]);
+    }
+
+    /**
+     * Get a specific volunteer with their relationships
+     */
+    public function show(int $id): JsonResponse
+    {
+        $volunteer = Volunteer::with([
+            'experiences',
+            'skills',
+            'trainings',
+            'positions',
+            'availabilities',
+            'lifegroups',
+        ])->find($id);
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Volunteer not found',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $volunteer,
+        ]);
+    }
+
+    /**
      * Process training experience text and create/find training records
      */
     private function processTrainingExperience(Volunteer $volunteer, ?string $trainingExperience): void
@@ -213,52 +446,5 @@ class VolunteerController extends Controller
 
         $position = Position::firstOrCreate(['name' => $positionName]);
         $volunteer->positions()->attach($position->position_id);
-    }
-
-    /**
-     * Get all volunteers with their relationships
-     */
-    public function index(): JsonResponse
-    {
-        $volunteers = Volunteer::with([
-            'experiences',
-            'skills',
-            'trainings',
-            'positions',
-            'availabilities',
-            'lifegroups',
-        ])->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $volunteers,
-        ]);
-    }
-
-    /**
-     * Get a specific volunteer with their relationships
-     */
-    public function show(int $id): JsonResponse
-    {
-        $volunteer = Volunteer::with([
-            'experiences',
-            'skills',
-            'trainings',
-            'positions',
-            'availabilities',
-            'lifegroups',
-        ])->find($id);
-
-        if (! $volunteer) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Volunteer not found',
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $volunteer,
-        ]);
     }
 }
