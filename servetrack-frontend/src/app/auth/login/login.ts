@@ -1,5 +1,5 @@
-import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Component, ChangeDetectionStrategy, signal, inject, OnInit } from '@angular/core';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import {
   FormBuilder,
   FormGroup,
@@ -17,14 +17,16 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
-export class Login {
+export class Login implements OnInit {
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
 
   // State signals
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
+  registrationSuccessMessage = signal<string | null>(null);
 
   // Popup signal
   showPopup = signal(false);
@@ -37,6 +39,16 @@ export class Login {
 
   closePopup() {
     this.showPopup.set(false);
+  }
+
+  ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['registered'] === 'true') {
+        this.registrationSuccessMessage.set('Registration successful! Please log in with your new credentials.');
+        // Clear the query param from the URL without navigation
+        this.router.navigate([], { queryParams: {}, replaceUrl: true });
+      }
+    });
   }
 
   // Form group with validators
