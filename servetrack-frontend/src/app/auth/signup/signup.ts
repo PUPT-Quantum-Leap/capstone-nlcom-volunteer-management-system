@@ -147,7 +147,8 @@ export class Signup {
       const response = await firstValueFrom(this.authService.register$(signupData));
 
       if (response.success) {
-        await this.router.navigate(['/']);
+        // Navigate to dashboard or home on success
+        await this.router.navigate(['/volunteer-dashboard']);
       } else {
         this.errorMessage.set(response.message || 'Signup failed. Please try again.');
       }

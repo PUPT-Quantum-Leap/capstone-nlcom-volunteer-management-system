@@ -5,6 +5,7 @@ import { Login } from './login';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
+import { of, throwError } from 'rxjs';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { Observable, of } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
