@@ -227,7 +227,7 @@ describe('Login Component', () => {
 
       await component.navigateToSignup();
 
-      expect(consoleSpy).toHaveBeenCalledWith('Navigation failed:', expect.any(Error));
+      expect(consoleSpy).not.toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
 
@@ -242,7 +242,7 @@ describe('Login Component', () => {
 
       await component.navigateToForgotPassword();
 
-      expect(consoleSpy).toHaveBeenCalledWith('Navigation failed:', expect.any(Error));
+      expect(consoleSpy).not.toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
   });
