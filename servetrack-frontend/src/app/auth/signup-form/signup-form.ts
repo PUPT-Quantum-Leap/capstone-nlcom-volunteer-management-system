@@ -117,15 +117,6 @@ export class SignupForm {
       });
     }
   }
-      })
-      .catch((error: any) => {
-        this.error.set('Registration failed. Please try again.');
-      })
-      .finally(() => {
-        this.isSubmitting.set(false);
-      });
-    }
-  }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
     Object.keys(formGroup.controls).forEach(key => {

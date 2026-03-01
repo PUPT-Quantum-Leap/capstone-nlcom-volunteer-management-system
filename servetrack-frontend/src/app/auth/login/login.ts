@@ -150,16 +150,4 @@ export class Login implements OnInit {
       this.errorMessage.set('Navigation error. Please try again.');
     }
   }
-  }
-
-  /**
-   * Navigate to forgot password page
-   */
-  async navigateToForgotPassword(): Promise<void> {
-    try {
-      await this.router.navigate(['/forgot-password']);
-    } catch (error) {
-      // Navigation failed silently
-    }
-  }
 }
