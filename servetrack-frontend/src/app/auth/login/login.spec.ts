@@ -3,18 +3,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Login } from './login';
 import { AuthService } from '../../services/auth.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
-import { of, throwError } from 'rxjs';
+import { of, Observable } from 'rxjs';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { Observable} from 'rxjs';
-import { firstValueFrom } from 'rxjs';
 
 describe('Login Component', () => {
   let component: Login;
   let fixture: ComponentFixture<Login>;
   let mockAuthService: { login$: ReturnType<typeof vi.fn> };
   let mockRouter: { navigate: ReturnType<typeof vi.fn> };
+  let mockActivatedRoute: { queryParams: Observable<Record<string, unknown>> };
 
   beforeEach(async () => {
     mockAuthService = {
@@ -25,11 +24,16 @@ describe('Login Component', () => {
       navigate: vi.fn(),
     };
 
+    mockActivatedRoute = {
+      queryParams: of({}),
+    };
+
     await TestBed.configureTestingModule({
       imports: [Login, ReactiveFormsModule],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
         { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
       ],
     })
     .overrideComponent(Login, {
@@ -227,7 +231,8 @@ describe('Login Component', () => {
 
       await component.navigateToSignup();
 
-      expect(consoleSpy).not.toHaveBeenCalled();
+      expect(consoleSpy).toHaveBeenCalled();
+      expect(component.errorMessage()).toBe('Navigation error. Please try again.');
       consoleSpy.mockRestore();
     });
 
@@ -242,7 +247,8 @@ describe('Login Component', () => {
 
       await component.navigateToForgotPassword();
 
-      expect(consoleSpy).not.toHaveBeenCalled();
+      expect(consoleSpy).toHaveBeenCalled();
+      expect(component.errorMessage()).toBe('Navigation error. Please try again.');
       consoleSpy.mockRestore();
     });
   });
