@@ -68,29 +68,7 @@ export class VolunteerDashboard implements OnInit {
   showLogoutModal = signal(false);
   showOtherPreference = signal(false);
   searchQuery = signal('');
-  notifications = signal<NotificationItem[]>([
-    {
-      id: 1,
-      title: 'Attendance Updated',
-      description: 'Your attendance for the latest activity is now recorded.',
-      time: '2h ago',
-      read: false,
-    },
-    {
-      id: 2,
-      title: 'Poll Reminder',
-      description: 'Please submit your preferred volunteer schedule.',
-      time: '5h ago',
-      read: false,
-    },
-    {
-      id: 3,
-      title: 'Profile Review',
-      description: 'Update your profile details for this month.',
-      time: '1d ago',
-      read: false,
-    },
-  ]);
+  notifications = signal<NotificationItem[]>([]);
   notificationCount = computed(
     () => this.notifications().filter(notification => !notification.read).length,
   );
@@ -99,11 +77,7 @@ export class VolunteerDashboard implements OnInit {
   selectedPollChoiceId = signal<number | null>(null);
   hasSubmittedVote = signal(false);
 
-  pollChoices = signal<PollChoice[]>([
-    { id: 1, label: 'Morning Shift (6:00 AM - 12:00 PM)', votes: 10 },
-    { id: 2, label: 'Midday Shift (12:00 PM - 4:00 PM)', votes: 7 },
-    { id: 3, label: 'Afternoon Shift (4:00 PM - 8:00 PM)', votes: 5 },
-  ]);
+  pollChoices = signal<PollChoice[]>([]);
 
   totalVotes = computed(() => this.pollChoices().reduce((sum, choice) => sum + choice.votes, 0));
 
