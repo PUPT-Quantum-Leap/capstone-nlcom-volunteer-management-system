@@ -106,8 +106,8 @@ export class Login {
       const response = await firstValueFrom(this.authService.login$(credentials));
 
       if (response.success) {
-        // Navigate to dashboard or home on success
-        await this.router.navigate(['/']);
+        // Navigate to volunteer dashboard on success
+        await this.router.navigate(['/volunteer-dashboard']);
       } else {
         this.errorMessage.set(response.message || 'Invalid email or password');
       }
