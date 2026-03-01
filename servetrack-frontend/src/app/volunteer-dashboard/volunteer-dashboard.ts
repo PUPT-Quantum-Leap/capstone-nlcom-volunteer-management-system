@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { passwordMatchValidator, passwordStrengthValidator } from '../validators/password.validator';
 import { AuthService } from '../services/auth.service';
+import { VolunteerService } from '../services/volunteer.service';
 
-import { VolunteerProfile } from '../models/volunteer-profile';
+import { VolunteerProfile, VolunteerProfileResponse } from '../models/volunteer-profile';
 import { PollChoice } from '../models/poll-choice';
 import { NotificationItem } from '../models/notification-item';
+import { Attendance, AttendancePeriod } from '../models/attendance';
 
 import { DatePipe } from '@angular/common';
 
@@ -16,10 +18,11 @@ import { DatePipe } from '@angular/common';
   templateUrl: './volunteer-dashboard.html',
   styleUrl: './volunteer-dashboard.scss',
 })
-export class VolunteerDashboard {
+export class VolunteerDashboard implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private authService = inject(AuthService);
+  private volunteerService = inject(VolunteerService);
 
   readonly defaultPhoto = '/assets/volunteer1.png';
 
@@ -28,10 +31,39 @@ export class VolunteerDashboard {
   sidebarCollapsed = signal(false);
   isLoading = signal(false);
 
-  scheduleItems = signal([
-    { id: 1, date: '2025-08-20', role: 'Food Pack Sorting', location: 'NLCOM Relief Hub', status: 'Confirmed' },
-    { id: 2, date: '2025-08-25', role: 'Community Outreach', location: 'Barangay 143', status: 'Pending' },
-  ]);
+  // ── Attendance (real data) ───────────────────────────────────────────────
+  attendancePeriod = signal<AttendancePeriod>('monthly');
+  attendanceItems = signal<Attendance[]>([]);
+  attendanceSearchQuery = signal('');
+
+  attendanceTotalHours = signal(0);
+  attendanceTotalEntries = signal(0);
+  attendanceGoalHours = signal(40); // configurable monthly goal
+
+  attendanceRate = computed(() => {
+    const goal = this.attendanceGoalHours();
+    if (goal === 0) {
+      return 0;
+    }
+    return Math.min(100, Math.round((this.attendanceTotalHours() / goal) * 100));
+  });
+
+  // Keep legacy signals for overview card compatibility
+  attendanceCount = computed(() => this.attendanceTotalHours());
+  attendanceGoal = this.attendanceGoalHours;
+
+  locationAssigned = signal('—');
+  taskAssigned = signal('—');
+
+  // ── Attendance form ──────────────────────────────────────────────────────
+  showAddAttendance = signal(false);
+  attendanceForm = this.fb.group({
+    date: ['', [Validators.required]],
+    hours: [null as number | null, [Validators.required, Validators.min(0.5), Validators.max(24)]],
+    description: [''],
+  });
+
+  // ── Notifications ────────────────────────────────────────────────────────
   showNotifications = signal(false);
   showLogoutModal = signal(false);
   showOtherPreference = signal(false);
@@ -60,14 +92,10 @@ export class VolunteerDashboard {
     },
   ]);
   notificationCount = computed(
-    () => this.notifications().filter(notification => !notification.read).length
+    () => this.notifications().filter(notification => !notification.read).length,
   );
 
-  attendanceCount = signal(18);
-  attendanceGoal = signal(24);
-  locationAssigned = signal('NLCOM Relief Hub, Quezon City');
-  taskAssigned = signal('Food pack sorting and distribution support');
-
+  // ── Polls ─────────────────────────────────────────────────────────────────
   selectedPollChoiceId = signal<number | null>(null);
   hasSubmittedVote = signal(false);
 
@@ -79,43 +107,16 @@ export class VolunteerDashboard {
 
   totalVotes = computed(() => this.pollChoices().reduce((sum, choice) => sum + choice.votes, 0));
 
-  attendanceRate = computed(() => {
-    const goal = this.attendanceGoal();
-    if (goal === 0) {
-      return 0;
-    }
-
-    return Math.round((this.attendanceCount() / goal) * 100);
-  });
-
   selectedPollLabel = computed(() => {
     const selectedId = this.selectedPollChoiceId();
     const choice = this.pollChoices().find(item => item.id === selectedId);
     return choice?.label ?? 'No vote submitted yet';
   });
 
+  // ── Profile ───────────────────────────────────────────────────────────────
   editingProfileId = signal<number | null>(null);
   profilePreviewUrl = signal(this.defaultPhoto);
-  profiles = signal<VolunteerProfile[]>([
-    {
-      id: 1,
-      firstName: 'Jasmine',
-      lastName: 'Deleon',
-      facebookName: 'Jasmine D.',
-      email: 'jasmine.deleon@example.com',
-      mobileNumber: '09171234567',
-      birthdate: '1998-04-12',
-      lastMedicalExam: '2025-08-15',
-      completeAddress: 'Quezon City, Metro Manila',
-      educationalAttainment: 'college-graduate',
-      trainingExperience: 'Relief operations, first aid support',
-      skillsHobbies: 'Community outreach, logistics, communications',
-      classesTraining: 'Disaster preparedness, emergency response',
-      volunteerPreference: 'mobile-kitchen',
-      otherPreference: '',
-      photoUrl: this.defaultPhoto,
-    },
-  ]);
+  profiles = signal<VolunteerProfile[]>([]);
 
   profileForm = this.fb.group(
     {
@@ -133,10 +134,10 @@ export class VolunteerDashboard {
       classesTraining: [''],
       volunteerPreference: ['', [Validators.required]],
       otherPreference: [''],
-      password: ['', [Validators.required, passwordStrengthValidator()]],
-      confirmPassword: ['', [Validators.required]],
+      password: ['', [passwordStrengthValidator()]],
+      confirmPassword: [''],
     },
-    { validators: passwordMatchValidator('password', 'confirmPassword') }
+    { validators: passwordMatchValidator('password', 'confirmPassword') },
   );
 
   profileCompletion = computed(() => {
@@ -151,12 +152,114 @@ export class VolunteerDashboard {
       'completeAddress',
       'educationalAttainment',
       'volunteerPreference',
-      'password',
-      'confirmPassword',
     ];
     const completed = requiredControls.filter(controlName => !!form.get(controlName)?.value).length;
     return Math.round((completed / requiredControls.length) * 100);
   });
+
+  // ─────────────────────────────────────────────────────────────────────────
+
+  ngOnInit(): void {
+    this.loadProfile();
+    this.loadAttendanceStats();
+    this.loadAttendance();
+  }
+
+  // ── Data loading ──────────────────────────────────────────────────────────
+
+  private loadProfile(): void {
+    this.volunteerService.getProfile().subscribe(response => {
+      if (response.success && response.data) {
+        this.applyProfileResponse(response.data);
+      }
+    });
+  }
+
+  private applyProfileResponse(data: VolunteerProfileResponse): void {
+    this.userName.set(`${data.first_name} ${data.last_name}`.trim());
+
+    // Map the first position as "task assigned" for the overview card
+    if (data.positions?.length) {
+      this.taskAssigned.set(data.positions.map(p => p.name).join(', '));
+    }
+
+    // Populate the profile form with real data
+    this.profileForm.patchValue({
+      firstName: data.first_name,
+      lastName: data.last_name,
+      facebookName: data.facebook_name ?? '',
+      email: data.email,
+      mobileNumber: data.mobile_number,
+      birthdate: data.birthdate,
+      lastMedicalExam: data.last_medical_examination,
+      completeAddress: data.address,
+      educationalAttainment: data.educational_attainment,
+    });
+
+    // Mirror into the profiles roster signal so the template shows the volunteer
+    const existing = this.profiles();
+    const profile: VolunteerProfile = {
+      id: data.volunteer_id,
+      firstName: data.first_name,
+      lastName: data.last_name,
+      facebookName: data.facebook_name ?? '',
+      email: data.email,
+      mobileNumber: data.mobile_number,
+      birthdate: data.birthdate,
+      lastMedicalExam: data.last_medical_examination,
+      completeAddress: data.address,
+      educationalAttainment: data.educational_attainment,
+      trainingExperience: '',
+      skillsHobbies: '',
+      classesTraining: '',
+      volunteerPreference: data.positions?.[0]?.name ?? '',
+      otherPreference: '',
+      photoUrl: this.defaultPhoto,
+      positions: data.positions,
+    };
+
+    const idx = existing.findIndex(p => p.id === profile.id);
+    if (idx >= 0) {
+      this.profiles.update(items => items.map((p, i) => (i === idx ? profile : p)));
+    } else {
+      this.profiles.update(items => [profile, ...items]);
+    }
+
+    this.editingProfileId.set(data.volunteer_id);
+  }
+
+  private loadAttendanceStats(): void {
+    this.volunteerService.getAttendanceStats().subscribe(response => {
+      if (response.success && response.data) {
+        const stats = response.data;
+        this.attendanceTotalHours.set(stats.monthly.hours);
+        this.attendanceTotalEntries.set(stats.monthly.entries);
+      }
+    });
+  }
+
+  loadAttendance(): void {
+    this.isLoading.set(true);
+    this.volunteerService
+      .getAttendance(this.attendancePeriod(), this.attendanceSearchQuery() || undefined)
+      .subscribe(response => {
+        if (response.success) {
+          this.attendanceItems.set(response.data ?? []);
+        }
+        this.isLoading.set(false);
+      });
+  }
+
+  setAttendancePeriod(period: AttendancePeriod): void {
+    this.attendancePeriod.set(period);
+    this.loadAttendance();
+  }
+
+  searchAttendance(): void {
+    this.loadAttendance();
+  }
+
+  // ── Sidebar / navigation ──────────────────────────────────────────────────
 
   toggleSidebar(): void {
     this.sidebarCollapsed.update(v => !v);
@@ -194,6 +297,8 @@ export class VolunteerDashboard {
     this.setView('overview');
   }
 
+  // ── Notifications ─────────────────────────────────────────────────────────
+
   toggleNotifications(): void {
     this.showNotifications.update(value => !value);
   }
@@ -206,6 +311,8 @@ export class VolunteerDashboard {
     this.showNotifications.set(false);
   }
 
+  // ── Logout ────────────────────────────────────────────────────────────────
+
   openLogoutModal(): void {
     this.showLogoutModal.set(true);
   }
@@ -217,13 +324,19 @@ export class VolunteerDashboard {
   async confirmLogout(): Promise<void> {
     this.isLoading.set(true);
     this.showLogoutModal.set(false);
-    await this.router.navigate(['/login']);
-    this.isLoading.set(false);
+    try {
+      await this.authService.logout();
+    } finally {
+      await this.router.navigate(['/login']);
+      this.isLoading.set(false);
+    }
   }
 
   async logout(): Promise<void> {
     this.openLogoutModal();
   }
+
+  // ── Form helpers ──────────────────────────────────────────────────────────
 
   getControl(controlName: string): AbstractControl | null {
     return this.profileForm.get(controlName);
@@ -274,6 +387,8 @@ export class VolunteerDashboard {
     return 'Invalid field';
   }
 
+  // ── Polls ─────────────────────────────────────────────────────────────────
+
   selectPollChoice(choiceId: number): void {
     if (this.hasSubmittedVote()) {
       return;
@@ -297,7 +412,7 @@ export class VolunteerDashboard {
             return { ...choice, votes: choice.votes + 1 };
           }
           return choice;
-        })
+        }),
       );
       this.hasSubmittedVote.set(true);
     } finally {
@@ -314,6 +429,8 @@ export class VolunteerDashboard {
     return Math.round((votes / total) * 100);
   }
 
+  // ── Photo ─────────────────────────────────────────────────────────────────
+
   onPhotoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -328,11 +445,13 @@ export class VolunteerDashboard {
       if (typeof result === 'string') {
         this.profilePreviewUrl.set(result);
       }
-      reader.onload = null; // Clean up the listener
+      reader.onload = null;
     };
 
     reader.readAsDataURL(file);
   }
+
+  // ── Profile CRUD ──────────────────────────────────────────────────────────
 
   async saveProfile(): Promise<void> {
     if (this.profileForm.invalid) {
@@ -341,52 +460,31 @@ export class VolunteerDashboard {
     }
 
     this.isLoading.set(true);
-    await new Promise(res => setTimeout(res, 600));
 
-    try {
-      const formValue = this.profileForm.getRawValue();
-      const profilePayload: Omit<VolunteerProfile, 'id'> = {
-        firstName: formValue.firstName?.trim() ?? '',
-        lastName: formValue.lastName?.trim() ?? '',
-        facebookName: formValue.facebookName?.trim() ?? '',
-        email: formValue.email?.trim() ?? '',
-        mobileNumber: formValue.mobileNumber?.trim() ?? '',
-        birthdate: formValue.birthdate ?? '',
-        lastMedicalExam: formValue.lastMedicalExam ?? '',
-        completeAddress: formValue.completeAddress?.trim() ?? '',
-        educationalAttainment: formValue.educationalAttainment ?? '',
-        trainingExperience: formValue.trainingExperience?.trim() ?? '',
-        skillsHobbies: formValue.skillsHobbies?.trim() ?? '',
-        classesTraining: formValue.classesTraining?.trim() ?? '',
-        volunteerPreference: formValue.volunteerPreference ?? '',
-        otherPreference: formValue.otherPreference?.trim() ?? '',
-        photoUrl: this.profilePreviewUrl(),
-      };
+    const formValue = this.profileForm.getRawValue();
+    const payload = {
+      firstName: formValue.firstName?.trim() ?? '',
+      lastName: formValue.lastName?.trim() ?? '',
+      facebookName: formValue.facebookName?.trim() ?? '',
+      email: formValue.email?.trim() ?? '',
+      mobileNumber: formValue.mobileNumber?.trim() ?? '',
+      birthdate: formValue.birthdate ?? '',
+      lastMedicalExam: formValue.lastMedicalExam ?? '',
+      completeAddress: formValue.completeAddress?.trim() ?? '',
+      educationalAttainment: formValue.educationalAttainment ?? '',
+      trainingExperience: formValue.trainingExperience?.trim() ?? '',
+      skillsHobbies: formValue.skillsHobbies?.trim() ?? '',
+      classesTraining: formValue.classesTraining?.trim() ?? '',
+      volunteerPreference: formValue.volunteerPreference ?? '',
+      otherPreference: formValue.otherPreference?.trim() ?? '',
+    };
 
-      const editingId = this.editingProfileId();
-      if (editingId !== null) {
-        this.profiles.update(items =>
-          items.map(item => (item.id === editingId ? { id: editingId, ...profilePayload } : item))
-        );
-        if (editingId === 1) {
-          this.userName.set(`${profilePayload.firstName} ${profilePayload.lastName}`.trim());
-        }
-        this.cancelEdit();
-        return;
+    this.volunteerService.updateProfile(payload).subscribe(response => {
+      if (response.success && response.data) {
+        this.applyProfileResponse(response.data);
       }
-
-      const createdProfile: VolunteerProfile = {
-        id: Date.now(),
-        ...profilePayload,
-      };
-
-      this.profiles.update(items => [createdProfile, ...items]);
-      this.profileForm.reset();
-      this.profilePreviewUrl.set(this.defaultPhoto);
-      this.showOtherPreference.set(false);
-    } finally {
       this.isLoading.set(false);
-    }
+    });
   }
 
   editProfile(profile: VolunteerProfile): void {
@@ -442,5 +540,46 @@ export class VolunteerDashboard {
 
   getProfileDisplayName(profile: VolunteerProfile): string {
     return `${profile.firstName} ${profile.lastName}`.trim();
+  }
+
+  // ── Attendance form ───────────────────────────────────────────────────────
+
+  toggleAddAttendance(): void {
+    this.showAddAttendance.update(v => !v);
+    if (!this.showAddAttendance()) {
+      this.attendanceForm.reset();
+    }
+  }
+
+  submitAttendance(): void {
+    if (this.attendanceForm.invalid) {
+      this.attendanceForm.markAllAsTouched();
+      return;
+    }
+
+    const value = this.attendanceForm.getRawValue();
+    this.isLoading.set(true);
+
+    this.volunteerService
+      .createAttendance({
+        date: value.date ?? '',
+        hours: value.hours ?? 0,
+        description: value.description ?? undefined,
+      })
+      .subscribe(response => {
+        if (response.success) {
+          this.attendanceForm.reset();
+          this.showAddAttendance.set(false);
+          this.loadAttendance();
+          this.loadAttendanceStats();
+        }
+        this.isLoading.set(false);
+      });
+  }
+
+  getAttendanceStatusClass(status: string): string {
+    if (status === 'approved') return 'confirmed';
+    if (status === 'rejected') return 'rejected';
+    return 'pending';
   }
 }

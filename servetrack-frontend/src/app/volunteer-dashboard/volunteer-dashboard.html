@@ -37,8 +37,8 @@
         </li>
         <li>
           <button type="button" [class.active]="currentView() === 'schedule'" (click)="setView('schedule')"
-            aria-label="View Service Schedule">
-            <span class="label">Service Schedule</span>
+            aria-label="View Attendance Log">
+            <span class="label">Attendance Log</span>
           </button>
         </li>
         <li>
@@ -75,7 +75,7 @@
         @switch (currentView()) {
         @case ('overview') { Overview Summary }
         @case ('profile') { Volunteer Profile }
-        @case ('schedule') { Service Schedule }
+        @case ('schedule') { Attendance Log }
         @case ('polls') { Community Polls }
         }
       </h1>
@@ -127,7 +127,7 @@
         <section class="stats-grid">
           <article class="stat-card">
             <p class="label">Attendance</p>
-            <p class="value">{{ attendanceCount() }} / {{ attendanceGoal() }}</p>
+            <p class="value">{{ attendanceTotalHours() }} / {{ attendanceGoalHours() }} hrs</p>
             <div class="meter">
               <div class="fill" [style.width.%]="attendanceRate()"></div>
             </div>
@@ -388,25 +388,80 @@
       @case ('schedule') {
       <section class="panel schedule-panel">
         <div class="panel-header">
-          <h2>Service Schedule</h2>
-          <p>Your upcoming assignments and deployments.</p>
+          <h2>Attendance Log</h2>
+          <p>{{ attendanceTotalHours() }} hrs logged &mdash; {{ attendanceTotalEntries() }} entries this period</p>
         </div>
+
+        <div class="schedule-controls">
+          <div class="period-toggle">
+            <button type="button" class="outline-btn" [class.active]="attendancePeriod() === 'daily'"
+              (click)="setAttendancePeriod('daily')">Daily</button>
+            <button type="button" class="outline-btn" [class.active]="attendancePeriod() === 'weekly'"
+              (click)="setAttendancePeriod('weekly')">Weekly</button>
+            <button type="button" class="outline-btn" [class.active]="attendancePeriod() === 'monthly'"
+              (click)="setAttendancePeriod('monthly')">Monthly</button>
+          </div>
+
+          <div class="search-inline">
+            <input #attendanceSearch type="text" class="search-input" placeholder="Search by description..."
+              [value]="attendanceSearchQuery()"
+              (input)="attendanceSearchQuery.set(attendanceSearch.value)"
+              (keydown.enter)="searchAttendance()">
+            <button type="button" class="search-btn" (click)="searchAttendance()">Search</button>
+          </div>
+
+          <button type="button" class="primary-btn" (click)="toggleAddAttendance()">
+            {{ showAddAttendance() ? 'Cancel' : '+ Log Hours' }}
+          </button>
+        </div>
+
+        @if (showAddAttendance()) {
+        <form class="attendance-form form-grid" [formGroup]="attendanceForm" (ngSubmit)="submitAttendance()">
+          <div class="form-group">
+            <label for="attendanceDate">Date</label>
+            <input type="date" id="attendanceDate" formControlName="date">
+            @if (attendanceForm.get('date')?.invalid && attendanceForm.get('date')?.touched) {
+            <span class="error-text">Date is required</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="attendanceHours">Hours</label>
+            <input type="number" id="attendanceHours" formControlName="hours" min="0.5" max="24" step="0.5"
+              placeholder="e.g. 2.5">
+            @if (attendanceForm.get('hours')?.invalid && attendanceForm.get('hours')?.touched) {
+            <span class="error-text">Enter a valid number of hours (0.5–24)</span>
+            }
+          </div>
+
+          <div class="form-group wide">
+            <label for="attendanceDesc">Description (optional)</label>
+            <input type="text" id="attendanceDesc" formControlName="description" placeholder="What did you do?">
+          </div>
+
+          <div class="form-actions wide">
+            <button type="submit" class="primary-btn">Save Entry</button>
+            <button type="button" class="outline-btn" (click)="toggleAddAttendance()">Cancel</button>
+          </div>
+        </form>
+        }
+
         <div class="schedule-list">
-          @for (task of scheduleItems(); track task.id) {
+          @for (item of attendanceItems(); track item.attendance_id) {
           <article class="schedule-card">
             <div class="schedule-date">
-              <strong>{{ task.date | date:'MMM d, yyyy' }}</strong>
+              <strong>{{ item.date | date:'MMM d, yyyy' }}</strong>
             </div>
             <div class="schedule-details">
-              <h3>{{ task.role }}</h3>
-              <p>{{ task.location }}</p>
+              <h3>{{ item.hours }} hr{{ item.hours !== 1 ? 's' : '' }}</h3>
+              <p>{{ item.description || 'No description' }}</p>
             </div>
             <div class="schedule-status">
-              <span class="badge" [class.confirmed]="task.status === 'Confirmed'">{{ task.status }}</span>
+              <span class="badge" [class]="getAttendanceStatusClass(item.status)">{{ item.status }}</span>
             </div>
           </article>
           } @empty {
-          <p class="empty-state">No upcoming schedules found. Check back later.</p>
+          <p class="empty-state">No attendance records found for this period.</p>
           }
         </div>
       </section>
