@@ -15,7 +15,7 @@ import { AuthService } from '../../services/auth.service';
 export class SignupForm {
   private authService = inject(AuthService);
   private router = inject(Router);
-  private fb = new FormBuilder();
+  private fb = inject(FormBuilder);
   
   currentStep = signal(1);
   isSubmitting = signal(false);
@@ -99,7 +99,7 @@ export class SignupForm {
       };
       
       // Submit to real backend API
-      this.authService.volunteerSignup(formData).then((response: any) => {
+      this.authService.volunteerSignup(formData).then((response: { success: boolean; message?: string }) => {
         if (response.success) {
           setTimeout(() => {
             this.router.navigate(['/login'], { queryParams: { registered: 'true' } });
@@ -108,6 +108,15 @@ export class SignupForm {
           // Show error message 
           this.error.set(response.message || 'Registration failed');
         }
+      })
+      .catch((error: any) => {
+        this.error.set('Registration failed. Please try again.');
+      })
+      .finally(() => {
+        this.isSubmitting.set(false);
+      });
+    }
+  }
       })
       .catch((error: any) => {
         this.error.set('Registration failed. Please try again.');
