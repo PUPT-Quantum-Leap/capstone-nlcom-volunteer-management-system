@@ -2,16 +2,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@400;500;600;700&display=swap');
 
 // Design Tokens (Matching Landing Page)
-$primary: #2563EB;
-$primary-dark: #1E40AF;
-$primary-light: #3B82F6;
-$primary-lighter: #DBEAFE;
-$primary-lightest: #EFF6FF;
+$primary: #2563eb;
+$primary-dark: #1e40af;
+$primary-light: #3b82f6;
+$primary-lighter: #dbeafe;
+$primary-lightest: #eff6ff;
 
-$text-dark: #1F2937;
-$text-muted: #6B7280;
-$border: #E5E7EB;
-$white: #FFFFFF;
+$text-dark: #1f2937;
+$text-muted: #6b7280;
+$border: #e5e7eb;
+$white: #ffffff;
 
 // Fonts
 $font-stack-heading: 'Poppins', sans-serif;
@@ -331,15 +331,15 @@ $border-radius-card: 1rem;
 
 // Warning / Yellow
 .warning-box {
-  background-color: #FFFBEB;
-  border: 1px solid #FCD34D;
+  background-color: #fffbeb;
+  border: 1px solid #fcd34d;
   padding: 1.5rem;
   border-radius: 1rem;
-  color: #92400E;
+  color: #92400e;
 
   p {
     margin: 0;
-    color: #92400E;
+    color: #92400e;
   }
 }
 
@@ -375,7 +375,6 @@ $border-radius-card: 1rem;
     text-decoration: underline;
   }
 }
-
 
 // Contact Section
 .contact-section {

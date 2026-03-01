@@ -74,7 +74,7 @@ export class AuthService {
     return new Promise((resolve) => {
       this.login$(credentials).subscribe({
         next: (response) => resolve(response),
-        error: () => resolve({ success: false, message: 'Login failed' })
+        error: () => resolve({ success: false, message: 'Login failed' }),
       });
     });
   }
@@ -88,25 +88,25 @@ export class AuthService {
       return of({ success: false, message: 'Invalid email format' } as AuthResponse);
     }
 
-    return this.http.post<{ user: AuthResponse['user'] }>(
-      `${environment.apiUrl}/login`, 
-      credentials, 
-      { withCredentials: true }
-    ).pipe(
-      map(response => ({ success: true, user: response.user })),
-      tap(response => {
-        if (response.user) {
-          this.isAuthenticated.set(true);
-          this.currentUser.set(response.user);
-        }
-      }),
-      catchError((err: HttpErrorResponse) => {
-        const message = err.error?.message || 'Login failed';
-        this.error.set(message);
-        return of({ success: false, message } as AuthResponse);
-      }),
-      tap(() => this.isLoading.set(false)),
-    );
+    return this.http
+      .post<{
+        user: AuthResponse['user'];
+      }>(`${environment.apiUrl}/login`, credentials, { withCredentials: true })
+      .pipe(
+        map((response) => ({ success: true, user: response.user })),
+        tap((response) => {
+          if (response.user) {
+            this.isAuthenticated.set(true);
+            this.currentUser.set(response.user);
+          }
+        }),
+        catchError((err: HttpErrorResponse) => {
+          const message = err.error?.message || 'Login failed';
+          this.error.set(message);
+          return of({ success: false, message } as AuthResponse);
+        }),
+        tap(() => this.isLoading.set(false)),
+      );
   }
 
   /**
@@ -121,9 +121,10 @@ export class AuthService {
       return of({ success: false, message: 'Invalid email format' } as AuthResponse);
     }
 
-    return this.http.post<AuthResponse>(`${environment.apiUrl}/register`, data, { withCredentials: true })
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/register`, data, { withCredentials: true })
       .pipe(
-        tap(response => {
+        tap((response) => {
           if (response.success && response.user) {
             this.isAuthenticated.set(true);
             this.currentUser.set(response.user);
@@ -142,7 +143,7 @@ export class AuthService {
     return new Promise((resolve, reject) => {
       this.register$(data).subscribe({
         next: (response) => resolve(response),
-        error: (error) => reject(error)
+        error: (error) => reject(error),
       });
     });
   }
@@ -159,31 +160,31 @@ export class AuthService {
       return of({ success: false, message: 'Invalid email format' } as AuthResponse);
     }
 
-    return this.http.post<AuthResponse>(
-      `${environment.apiUrl}/volunteer/register`,
-      data,
-      { withCredentials: true }
-    ).pipe(
-      tap(response => {
-        if (response.success && response.user) {
-          this.isAuthenticated.set(true);
-          this.currentUser.set(response.user);
-        }
-      }),
-      catchError((err: HttpErrorResponse) => {
-        const message = err.error?.message || 'Registration failed';
-        this.error.set(message);
-        return of({ success: false, message } as AuthResponse);
-      }),
-      tap(() => this.isLoading.set(false)),
-    );
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/volunteer/register`, data, {
+        withCredentials: true,
+      })
+      .pipe(
+        tap((response) => {
+          if (response.success && response.user) {
+            this.isAuthenticated.set(true);
+            this.currentUser.set(response.user);
+          }
+        }),
+        catchError((err: HttpErrorResponse) => {
+          const message = err.error?.message || 'Registration failed';
+          this.error.set(message);
+          return of({ success: false, message } as AuthResponse);
+        }),
+        tap(() => this.isLoading.set(false)),
+      );
   }
 
   volunteerSignup(data: VolunteerSignupData): Promise<AuthResponse> {
     return new Promise((resolve, reject) => {
       this.volunteerSignup$(data).subscribe({
         next: (response) => resolve(response),
-        error: (error) => reject(error)
+        error: (error) => reject(error),
       });
     });
   }
@@ -192,21 +193,20 @@ export class AuthService {
    * Logout current user - Observable version.
    */
   logout$(): Observable<void> {
-    return this.http.post<void>(`${environment.apiUrl}/logout`, {}, { withCredentials: true })
-      .pipe(
-        tap(() => this.clearSession()),
-        catchError(() => {
-          this.clearSession();
-          return of(undefined);
-        }),
-      );
+    return this.http.post<void>(`${environment.apiUrl}/logout`, {}, { withCredentials: true }).pipe(
+      tap(() => this.clearSession()),
+      catchError(() => {
+        this.clearSession();
+        return of(undefined);
+      }),
+    );
   }
 
   logout(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.logout$().subscribe({
         next: () => resolve(),
-        error: (error) => reject(error)
+        error: (error) => reject(error),
       });
     });
   }
@@ -215,10 +215,11 @@ export class AuthService {
    * Check authentication status - Observable version.
    */
   checkAuthStatus$(): Observable<AuthResponse> {
-    return this.http.get<AuthResponse>(`${environment.apiUrl}/user`, { withCredentials: true })
+    return this.http
+      .get<AuthResponse>(`${environment.apiUrl}/user`, { withCredentials: true })
       .pipe(
-        map(response => ({ success: true, message: response.message, user: response.user })),
-        tap(response => {
+        map((response) => ({ success: true, message: response.message, user: response.user })),
+        tap((response) => {
           if (response.user) {
             this.isAuthenticated.set(true);
             this.currentUser.set(response.user);
@@ -234,7 +235,7 @@ export class AuthService {
 
   checkAuthStatus(): Promise<boolean> {
     return new Promise((resolve) => {
-      this.checkAuthStatus$().subscribe(response => {
+      this.checkAuthStatus$().subscribe((response) => {
         resolve(response.success);
       });
     });
@@ -243,9 +244,9 @@ export class AuthService {
   private clearSession(): void {
     this.isAuthenticated.set(false);
     this.currentUser.set(null);
-    
+
     // Handle navigation errors gracefully
-    this.router.navigate(['/login']).catch(error => {
+    this.router.navigate(['/login']).catch((error) => {
       console.error('Navigation to login failed:', error);
     });
   }
@@ -255,19 +256,19 @@ export class AuthService {
    */
   validateLogin(credentials: LoginCredentials): ValidationError[] {
     const errors: ValidationError[] = [];
-    
+
     if (!credentials.email?.trim()) {
       errors.push({ field: 'email', message: 'Email is required' });
     } else if (!this.isValidEmail(credentials.email)) {
       errors.push({ field: 'email', message: 'Please enter a valid email address' });
     }
-    
+
     if (!credentials.password?.trim()) {
       errors.push({ field: 'password', message: 'Password is required' });
     } else if (credentials.password.length < 8) {
       errors.push({ field: 'password', message: 'Password must be at least 8 characters long' });
     }
-    
+
     return errors;
   }
 
@@ -276,14 +277,14 @@ export class AuthService {
    */
   validateRegistration(data: RegisterData): ValidationError[] {
     const errors: ValidationError[] = [];
-    
+
     // Email validation
     if (!data.email?.trim()) {
       errors.push({ field: 'email', message: 'Email is required' });
     } else if (!this.isValidEmail(data.email)) {
       errors.push({ field: 'email', message: 'Please enter a valid email address' });
     }
-    
+
     // Password validation
     if (!data.password?.trim()) {
       errors.push({ field: 'password', message: 'Password is required' });
@@ -292,17 +293,21 @@ export class AuthService {
         errors.push({ field: 'password', message: 'Password must be at least 8 characters long' });
       }
       if (!this.hasValidPasswordFormat(data.password)) {
-        errors.push({ field: 'password', message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' });
+        errors.push({
+          field: 'password',
+          message:
+            'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+        });
       }
     }
-    
+
     // Confirm password validation
     if (!data.confirmPassword?.trim()) {
       errors.push({ field: 'confirmPassword', message: 'Please confirm your password' });
     } else if (data.password !== data.confirmPassword) {
       errors.push({ field: 'confirmPassword', message: 'Passwords do not match' });
     }
-    
+
     return errors;
   }
 
@@ -313,47 +318,53 @@ export class AuthService {
     const errors = this.validateRegistration({
       email: data.email,
       password: data.password,
-      confirmPassword: data.confirmPassword
+      confirmPassword: data.confirmPassword,
     });
-    
+
     // Name validation
     if (!data.firstName?.trim()) {
       errors.push({ field: 'firstName', message: 'First name is required' });
     }
-    
+
     if (!data.lastName?.trim()) {
       errors.push({ field: 'lastName', message: 'Last name is required' });
     }
-    
+
     // Mobile number validation
     if (!data.mobileNumber?.trim()) {
       errors.push({ field: 'mobileNumber', message: 'Mobile number is required' });
     } else if (!this.isValidPhoneNumber(data.mobileNumber)) {
       errors.push({ field: 'mobileNumber', message: 'Please enter a valid mobile number' });
     }
-    
+
     // Birthdate validation
     if (!data.birthdate?.trim()) {
       errors.push({ field: 'birthdate', message: 'Birthdate is required' });
     } else if (!this.isValidBirthdate(data.birthdate)) {
-      errors.push({ field: 'birthdate', message: 'You must be at least 18 years old to volunteer' });
+      errors.push({
+        field: 'birthdate',
+        message: 'You must be at least 18 years old to volunteer',
+      });
     }
-    
+
     // Address validation
     if (!data.completeAddress?.trim()) {
       errors.push({ field: 'completeAddress', message: 'Complete address is required' });
     }
-    
+
     // Educational attainment validation
     if (!data.educationalAttainment?.trim()) {
-      errors.push({ field: 'educationalAttainment', message: 'Educational attainment is required' });
+      errors.push({
+        field: 'educationalAttainment',
+        message: 'Educational attainment is required',
+      });
     }
-    
+
     // Volunteer preference validation
     if (!data.volunteerPreference?.trim()) {
       errors.push({ field: 'volunteerPreference', message: 'Volunteer preference is required' });
     }
-    
+
     return errors;
   }
 
@@ -379,11 +390,11 @@ export class AuthService {
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       return age - 1 >= 18;
     }
-    
+
     return age >= 18;
   }
 }

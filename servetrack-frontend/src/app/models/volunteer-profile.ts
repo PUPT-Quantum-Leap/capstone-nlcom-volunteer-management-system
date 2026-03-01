@@ -1,9 +1,9 @@
-export type Position = {
+export interface Position {
   position_id: number;
   name: string;
-};
+}
 
-export type VolunteerProfile = {
+export interface VolunteerProfile {
   id: number;
   firstName: string;
   lastName: string;
@@ -22,10 +22,10 @@ export type VolunteerProfile = {
   photoUrl: string;
   /** Assigned team/positions from the backend */
   positions?: Position[];
-};
+}
 
 /** Shape returned by GET /api/volunteer/profile */
-export type VolunteerProfileResponse = {
+export interface VolunteerProfileResponse {
   volunteer_id: number;
   first_name: string;
   last_name: string;
@@ -37,5 +37,4 @@ export type VolunteerProfileResponse = {
   address: string;
   educational_attainment: string;
   positions: Position[];
-};
-
+}

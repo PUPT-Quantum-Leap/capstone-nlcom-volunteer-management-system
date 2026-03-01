@@ -2,7 +2,7 @@
   <div class="auth-card">
     <div class="auth-header">
       <div class="logo">
-        <img src="/assets/nlcom.png" alt="NLCOM Logo" class="logo-image">
+        <img src="/assets/nlcom.png" alt="NLCOM Logo" class="logo-image" />
         <span class="logo-text">ServeTrack</span>
       </div>
       <h1 class="auth-title">Welcome Back</h1>
@@ -24,7 +24,8 @@
           formControlName="email"
           class="form-input"
           [class.error]="emailControl?.invalid && emailControl?.touched"
-          placeholder="Enter your email">
+          placeholder="Enter your email"
+        />
         @if (emailControl?.invalid && emailControl?.touched) {
           <span class="error-text">{{ getErrorMessage('email') }}</span>
         }
@@ -38,7 +39,8 @@
           formControlName="password"
           class="form-input"
           [class.error]="passwordControl?.invalid && passwordControl?.touched"
-          placeholder="Enter your password">
+          placeholder="Enter your password"
+        />
         @if (passwordControl?.invalid && passwordControl?.touched) {
           <span class="error-text">{{ getErrorMessage('password') }}</span>
         }
@@ -46,19 +48,14 @@
 
       <div class="form-options">
         <label class="checkbox-container">
-          <input type="checkbox" formControlName="rememberMe" class="checkbox-input">
+          <input type="checkbox" formControlName="rememberMe" class="checkbox-input" />
           <span class="checkmark"></span>
           Remember me
         </label>
-        <a routerLink="/forgot-password" class="forgot-password">
-          Forgot password?
-        </a>
+        <a routerLink="/forgot-password" class="forgot-password"> Forgot password? </a>
       </div>
 
-      <button
-        type="submit"
-        class="btn btn-primary btn-full"
-        [disabled]="isLoading()">
+      <button type="submit" class="btn btn-primary btn-full" [disabled]="isLoading()">
         @if (isLoading()) {
           <span class="loading-spinner"></span>
         }
@@ -69,9 +66,7 @@
     <div class="auth-footer">
       <p class="auth-footer-text">
         Don't have an account?
-        <a (click)="showPopupModal()" class="auth-link">
-          Sign up
-        </a>
+        <a (click)="showPopupModal()" class="auth-link"> Sign up </a>
       </p>
     </div>
   </div>
@@ -83,16 +78,10 @@
         <button class="popup-close" (click)="closePopup()">×</button>
         <div class="popup-content">
           <h3 class="popup-title">Already an NLCOM volunteer?</h3>
-          <p class="popup-message">
-            Sign up here to continue your journey with us!
-          </p>
+          <p class="popup-message">Sign up here to continue your journey with us!</p>
           <div class="popup-actions">
-            <button class="btn btn-primary" routerLink="/signup">
-              Sign Up
-            </button>
-            <button class="btn btn-outline" routerLink="/signup-form">
-              I'm a new member
-            </button>
+            <button class="btn btn-primary" routerLink="/signup">Sign Up</button>
+            <button class="btn btn-outline" routerLink="/signup-form">I'm a new member</button>
           </div>
         </div>
       </div>

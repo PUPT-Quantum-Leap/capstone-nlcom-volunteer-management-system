@@ -1,7 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { passwordMatchValidator, passwordStrengthValidator } from '../validators/password.validator';
+import {
+  passwordMatchValidator,
+  passwordStrengthValidator,
+} from '../validators/password.validator';
 import { AuthService } from '../services/auth.service';
 import { VolunteerService } from '../services/volunteer.service';
 
@@ -70,7 +80,7 @@ export class VolunteerDashboard implements OnInit {
   searchQuery = signal('');
   notifications = signal<NotificationItem[]>([]);
   notificationCount = computed(
-    () => this.notifications().filter(notification => !notification.read).length,
+    () => this.notifications().filter((notification) => !notification.read).length,
   );
 
   // ── Polls ─────────────────────────────────────────────────────────────────
@@ -83,7 +93,7 @@ export class VolunteerDashboard implements OnInit {
 
   selectedPollLabel = computed(() => {
     const selectedId = this.selectedPollChoiceId();
-    const choice = this.pollChoices().find(item => item.id === selectedId);
+    const choice = this.pollChoices().find((item) => item.id === selectedId);
     return choice?.label ?? 'No vote submitted yet';
   });
 
@@ -127,7 +137,9 @@ export class VolunteerDashboard implements OnInit {
       'educationalAttainment',
       'volunteerPreference',
     ];
-    const completed = requiredControls.filter(controlName => !!form.get(controlName)?.value).length;
+    const completed = requiredControls.filter(
+      (controlName) => !!form.get(controlName)?.value,
+    ).length;
     return Math.round((completed / requiredControls.length) * 100);
   });
 
@@ -142,7 +154,7 @@ export class VolunteerDashboard implements OnInit {
   // ── Data loading ──────────────────────────────────────────────────────────
 
   private loadProfile(): void {
-    this.volunteerService.getProfile().subscribe(response => {
+    this.volunteerService.getProfile().subscribe((response) => {
       if (response.success && response.data) {
         this.applyProfileResponse(response.data);
       }
@@ -154,7 +166,7 @@ export class VolunteerDashboard implements OnInit {
 
     // Map the first position as "task assigned" for the overview card
     if (data.positions?.length) {
-      this.taskAssigned.set(data.positions.map(p => p.name).join(', '));
+      this.taskAssigned.set(data.positions.map((p) => p.name).join(', '));
     }
 
     // Populate the profile form with real data
@@ -192,18 +204,18 @@ export class VolunteerDashboard implements OnInit {
       positions: data.positions,
     };
 
-    const idx = existing.findIndex(p => p.id === profile.id);
+    const idx = existing.findIndex((p) => p.id === profile.id);
     if (idx >= 0) {
-      this.profiles.update(items => items.map((p, i) => (i === idx ? profile : p)));
+      this.profiles.update((items) => items.map((p, i) => (i === idx ? profile : p)));
     } else {
-      this.profiles.update(items => [profile, ...items]);
+      this.profiles.update((items) => [profile, ...items]);
     }
 
     this.editingProfileId.set(data.volunteer_id);
   }
 
   private loadAttendanceStats(): void {
-    this.volunteerService.getAttendanceStats().subscribe(response => {
+    this.volunteerService.getAttendanceStats().subscribe((response) => {
       if (response.success && response.data) {
         const stats = response.data;
         this.attendanceTotalHours.set(stats.monthly.hours);
@@ -216,7 +228,7 @@ export class VolunteerDashboard implements OnInit {
     this.isLoading.set(true);
     this.volunteerService
       .getAttendance(this.attendancePeriod(), this.attendanceSearchQuery() || undefined)
-      .subscribe(response => {
+      .subscribe((response) => {
         if (response.success) {
           this.attendanceItems.set(response.data ?? []);
         }
@@ -236,7 +248,7 @@ export class VolunteerDashboard implements OnInit {
   // ── Sidebar / navigation ──────────────────────────────────────────────────
 
   toggleSidebar(): void {
-    this.sidebarCollapsed.update(v => !v);
+    this.sidebarCollapsed.update((v) => !v);
   }
 
   setView(view: 'overview' | 'profile' | 'schedule' | 'polls'): void {
@@ -274,11 +286,11 @@ export class VolunteerDashboard implements OnInit {
   // ── Notifications ─────────────────────────────────────────────────────────
 
   toggleNotifications(): void {
-    this.showNotifications.update(value => !value);
+    this.showNotifications.update((value) => !value);
   }
 
   markNotificationsRead(): void {
-    this.notifications.update(items => items.map(item => ({ ...item, read: true })));
+    this.notifications.update((items) => items.map((item) => ({ ...item, read: true })));
   }
 
   closeNotifications(): void {
@@ -325,7 +337,8 @@ export class VolunteerDashboard implements OnInit {
     if (
       controlName === 'confirmPassword' &&
       this.profileForm.hasError('passwordMismatch') &&
-      (this.profileForm.get('confirmPassword')?.dirty || this.profileForm.get('confirmPassword')?.touched)
+      (this.profileForm.get('confirmPassword')?.dirty ||
+        this.profileForm.get('confirmPassword')?.touched)
     ) {
       return true;
     }
@@ -378,10 +391,10 @@ export class VolunteerDashboard implements OnInit {
     }
 
     this.isLoading.set(true);
-    await new Promise(res => setTimeout(res, 400));
+    await new Promise((res) => setTimeout(res, 400));
     try {
-      this.pollChoices.update(choices =>
-        choices.map(choice => {
+      this.pollChoices.update((choices) =>
+        choices.map((choice) => {
           if (choice.id === selectedId) {
             return { ...choice, votes: choice.votes + 1 };
           }
@@ -453,7 +466,7 @@ export class VolunteerDashboard implements OnInit {
       otherPreference: formValue.otherPreference?.trim() ?? '',
     };
 
-    this.volunteerService.updateProfile(payload).subscribe(response => {
+    this.volunteerService.updateProfile(payload).subscribe((response) => {
       if (response.success && response.data) {
         this.applyProfileResponse(response.data);
       }
@@ -492,9 +505,9 @@ export class VolunteerDashboard implements OnInit {
 
   async deleteProfile(profileId: number): Promise<void> {
     this.isLoading.set(true);
-    await new Promise(res => setTimeout(res, 400));
+    await new Promise((res) => setTimeout(res, 400));
     try {
-      this.profiles.update(items => items.filter(item => item.id !== profileId));
+      this.profiles.update((items) => items.filter((item) => item.id !== profileId));
 
       if (this.editingProfileId() === profileId) {
         this.cancelEdit();
@@ -519,7 +532,7 @@ export class VolunteerDashboard implements OnInit {
   // ── Attendance form ───────────────────────────────────────────────────────
 
   toggleAddAttendance(): void {
-    this.showAddAttendance.update(v => !v);
+    this.showAddAttendance.update((v) => !v);
     if (!this.showAddAttendance()) {
       this.attendanceForm.reset();
     }
@@ -540,7 +553,7 @@ export class VolunteerDashboard implements OnInit {
         hours: value.hours ?? 0,
         description: value.description ?? undefined,
       })
-      .subscribe(response => {
+      .subscribe((response) => {
         if (response.success) {
           this.attendanceForm.reset();
           this.showAddAttendance.set(false);

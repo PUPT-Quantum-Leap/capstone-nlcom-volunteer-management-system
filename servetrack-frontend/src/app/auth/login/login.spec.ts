@@ -1,5 +1,3 @@
-
-
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Login } from './login';
 import { AuthService } from '../../services/auth.service';
@@ -36,17 +34,17 @@ describe('Login Component', () => {
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
       ],
     })
-    .overrideComponent(Login, {
-      remove: {
-        templateUrl: './login.html',
-        styleUrl: './login.scss'
-      },
-      add: {
-        template: '<div>Login Component Mock Template</div>',
-        styles: []
-      }
-    })
-    .compileComponents();
+      .overrideComponent(Login, {
+        remove: {
+          templateUrl: './login.html',
+          styleUrl: './login.scss',
+        },
+        add: {
+          template: '<div>Login Component Mock Template</div>',
+          styles: [],
+        },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(Login);
     component = fixture.componentInstance;
@@ -61,7 +59,7 @@ describe('Login Component', () => {
     expect(component.loginForm.value).toEqual({
       email: '',
       password: '',
-      rememberMe: false
+      rememberMe: false,
     });
   });
 
@@ -137,7 +135,7 @@ describe('Login Component', () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
-        rememberMe: false
+        rememberMe: false,
       });
       component.isLoading.set(true);
       await component.onSubmit();
@@ -148,7 +146,7 @@ describe('Login Component', () => {
       component.loginForm.setValue({
         email: '  test@example.com  ',
         password: 'password123',
-        rememberMe: false
+        rememberMe: false,
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
       mockAuthService.login$.mockReturnValue(of({ success: true }));
@@ -156,7 +154,7 @@ describe('Login Component', () => {
       expect(component.isLoading()).toBe(false);
       expect(mockAuthService.login$).toHaveBeenCalledWith({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       });
     });
 
@@ -164,7 +162,7 @@ describe('Login Component', () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
-        rememberMe: false
+        rememberMe: false,
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
       mockAuthService.login$.mockReturnValue(of({ success: true }));
@@ -177,13 +175,15 @@ describe('Login Component', () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
-        rememberMe: false
+        rememberMe: false,
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login$.mockReturnValue(of({
-        success: false,
-        message: 'Invalid credentials'
-      }));
+      mockAuthService.login$.mockReturnValue(
+        of({
+          success: false,
+          message: 'Invalid credentials',
+        }),
+      );
       await component.onSubmit();
       expect(mockRouter.navigate).not.toHaveBeenCalled();
       expect(component.errorMessage()).toBe('Invalid credentials');
@@ -193,7 +193,7 @@ describe('Login Component', () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
-        rememberMe: false
+        rememberMe: false,
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
       mockAuthService.login$.mockReturnValue(of({ success: false }));
@@ -205,13 +205,15 @@ describe('Login Component', () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
-        rememberMe: false
+        rememberMe: false,
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockAuthService.login$.mockReturnValue(new Observable(() => {
-        throw new Error('Network error');
-      }));
+      mockAuthService.login$.mockReturnValue(
+        new Observable(() => {
+          throw new Error('Network error');
+        }),
+      );
       await component.onSubmit();
       expect(component.errorMessage()).toBe('An unexpected error occurred. Please try again.');
       expect(component.isLoading()).toBe(false);

@@ -63,8 +63,8 @@ export function passwordStrengthValidator(): ValidatorFn {
  * Custom validator to check if password and confirm password match
  */
 export function passwordMatchValidator(
-  passwordField: string = 'password',
-  confirmPasswordField: string = 'confirmPassword'
+  passwordField = 'password',
+  confirmPasswordField = 'confirmPassword',
 ): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const password = control.get(passwordField);
