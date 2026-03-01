@@ -20,4 +20,13 @@ Route::post('/volunteer/register', [VolunteerController::class, 'register'])
 Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
     Route::post('/logout', [LoginController::class, 'destroy']);
     Route::get('/user', fn (Request $request) => $request->user());
+
+    // Volunteer profile
+    Route::get('/volunteer/profile', [VolunteerController::class, 'profile']);
+    Route::put('/volunteer/profile', [VolunteerController::class, 'updateProfile']);
+
+    // Attendance
+    Route::get('/volunteer/attendance', [VolunteerController::class, 'listAttendance']);
+    Route::post('/volunteer/attendance', [VolunteerController::class, 'storeAttendance']);
+    Route::get('/volunteer/attendance/stats', [VolunteerController::class, 'attendanceStats']);
 });

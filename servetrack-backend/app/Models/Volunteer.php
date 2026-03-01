@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Volunteer extends Model
 {
@@ -104,13 +105,18 @@ class Volunteer extends Model
         );
     }
 
-    public function pollVotes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function pollVotes(): HasMany
     {
         return $this->hasMany(PollVote::class, 'volunteer_id');
     }
 
-    public function smsNotifications(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function smsNotifications(): HasMany
     {
         return $this->hasMany(SmsNotification::class, 'volunteer_id');
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class, 'volunteer_id', 'volunteer_id');
     }
 }
