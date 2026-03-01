@@ -60,7 +60,7 @@ class VolunteerController extends Controller
         try {
             // Create user account first
             $user = User::create([
-                'name' => $request->firstName . ' ' . $request->lastName,
+                'name' => $request->firstName.' '.$request->lastName,
                 'email' => $request->email,
                 'password' => bcrypt($request->password),
             ]);
