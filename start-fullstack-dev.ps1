@@ -15,6 +15,10 @@ Write-Host "  Full Stack Development Environment Startup" -ForegroundColor Cyan
 Write-Host "================================================================================" -ForegroundColor Cyan
 Write-Host ""
 
+# Resolve paths relative to this script's location (works on any machine)
+$backendPath  = Join-Path $PSScriptRoot "servetrack-backend"
+$frontendPath = Join-Path $PSScriptRoot "servetrack-frontend"
+
 # ── Step 1: Laravel Backend ──────────────────────────────────────────────────
 Write-Host "[STEP 1/2] Starting Laravel backend (server + queue + vite)..." -ForegroundColor Green
 Write-Host "  Runs: composer run dev" -ForegroundColor Gray
@@ -28,7 +32,7 @@ $backendCmd = "Write-Host '═════════════════�
     "Write-Host '  Vite: http://localhost:5173' -ForegroundColor Yellow; " +
     "Write-Host '════════════════════════════════════════════════════════════' -ForegroundColor Cyan; " +
     "Write-Host ''; " +
-    "cd 'C:\kaelDev\Programming\Capstone\capstone-nlcom-volunteer-management-system\servetrack-backend'; " +
+    "cd '$backendPath'; " +
     "composer run dev"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd
 
@@ -47,7 +51,7 @@ $frontendCmd = "Write-Host '═════════════════�
     "Write-Host '  URL: http://localhost:4200' -ForegroundColor Yellow; " +
     "Write-Host '════════════════════════════════════════════════════════════' -ForegroundColor Cyan; " +
     "Write-Host ''; " +
-    "cd 'C:\kaelDev\Programming\Capstone\capstone-nlcom-volunteer-management-system\servetrack-frontend'; " +
+    "cd '$frontendPath'; " +
     "npm start"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $frontendCmd
 
