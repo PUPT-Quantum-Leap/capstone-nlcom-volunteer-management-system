@@ -31,7 +31,6 @@ export class Login implements OnInit {
   // Popup signal
   showPopup = signal(false);
 
-
   // Popup methods
   showPopupModal() {
     this.showPopup.set(true);
@@ -42,9 +41,11 @@ export class Login implements OnInit {
   }
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       if (params['registered'] === 'true') {
-        this.registrationSuccessMessage.set('Registration successful! Please log in with your new credentials.');
+        this.registrationSuccessMessage.set(
+          'Registration successful! Please log in with your new credentials.',
+        );
         // Clear the query param from the URL without navigation
         this.router.navigate([], { queryParams: {}, replaceUrl: true });
       }

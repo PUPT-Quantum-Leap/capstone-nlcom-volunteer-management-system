@@ -1,5 +1,5 @@
-export type PollChoice = {
-    id: number;
-    label: string;
-    votes: number;
-};
+export interface PollChoice {
+  id: number;
+  label: string;
+  votes: number;
+}

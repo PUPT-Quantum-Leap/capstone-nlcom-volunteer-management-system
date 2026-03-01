@@ -10,7 +10,10 @@ import {
 import { NgOptimizedImage } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
-import { passwordStrengthValidator, passwordMatchValidator } from '../../validators/password.validator';
+import {
+  passwordStrengthValidator,
+  passwordMatchValidator,
+} from '../../validators/password.validator';
 
 @Component({
   selector: 'app-signup',
@@ -39,7 +42,7 @@ export class Signup {
     },
     {
       validators: passwordMatchValidator('password', 'confirmPassword'),
-    }
+    },
   );
 
   // Computed getters for form controls

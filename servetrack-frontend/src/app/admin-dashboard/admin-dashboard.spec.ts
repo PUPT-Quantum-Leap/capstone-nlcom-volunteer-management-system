@@ -8,9 +8,8 @@ describe('AdminDashboard', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AdminDashboard]
-    })
-    .compileComponents();
+      imports: [AdminDashboard],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(AdminDashboard);
     component = fixture.componentInstance;

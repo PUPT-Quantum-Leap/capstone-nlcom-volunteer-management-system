@@ -1,18 +1,18 @@
-$primary: #2563EB;
-$primary-dark: #1E40AF;
-$primary-light: #3B82F6;
-$primary-lighter: #DBEAFE;
-$primary-lightest: #EFF6FF;
+$primary: #2563eb;
+$primary-dark: #1e40af;
+$primary-light: #3b82f6;
+$primary-lighter: #dbeafe;
+$primary-lightest: #eff6ff;
 
-$text-dark: #1F2937;
-$text-muted: #6B7280;
-$border: #E5E7EB;
-$white: #FFFFFF;
-$gray-50: #F9FAFB;
-$gray-100: #F3F4F6;
+$text-dark: #1f2937;
+$text-muted: #6b7280;
+$border: #e5e7eb;
+$white: #ffffff;
+$gray-50: #f9fafb;
+$gray-100: #f3f4f6;
 
-$error: #DC2626;
-$error-light: #FEE2E2;
+$error: #dc2626;
+$error-light: #fee2e2;
 
 .auth-container {
   min-height: 100vh;
@@ -26,7 +26,9 @@ $error-light: #FEE2E2;
 .auth-card {
   background: $white;
   border-radius: 1rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   width: 100%;
   max-width: 28rem;
   padding: 3rem 2rem;
@@ -135,7 +137,7 @@ $error-light: #FEE2E2;
         transition: all 0.3s;
 
         &:after {
-          content: "";
+          content: '';
           position: absolute;
           display: none;
           left: 5px;
@@ -299,7 +301,7 @@ $error-light: #FEE2E2;
 
 .form-input.error {
   border-color: $error;
-  
+
   &:focus {
     border-color: $error;
     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
@@ -426,5 +428,3 @@ $error-light: #FEE2E2;
     flex-direction: column;
   }
 }
-
-

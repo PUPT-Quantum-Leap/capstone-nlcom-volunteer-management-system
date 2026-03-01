@@ -1,5 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { AuthService, LoginCredentials, RegisterData, VolunteerSignupData, ValidationError } from './auth.service';
+import {
+  AuthService,
+  LoginCredentials,
+  RegisterData,
+  VolunteerSignupData,
+  ValidationError,
+} from './auth.service';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
@@ -12,15 +18,12 @@ describe('AuthService', () => {
 
   beforeEach(() => {
     mockRouter = {
-      navigate: vi.fn().mockResolvedValue(true)
+      navigate: vi.fn().mockResolvedValue(true),
     };
 
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [
-        AuthService,
-        { provide: Router, useValue: mockRouter }
-      ]
+      providers: [AuthService, { provide: Router, useValue: mockRouter }],
     });
 
     service = TestBed.inject(AuthService);
@@ -36,7 +39,7 @@ describe('AuthService', () => {
       it('should return no errors for valid credentials', () => {
         const credentials: LoginCredentials = {
           email: 'test@example.com',
-          password: 'password123'
+          password: 'password123',
         };
 
         const errors = service.validateLogin(credentials);
@@ -46,7 +49,7 @@ describe('AuthService', () => {
       it('should return error for missing email', () => {
         const credentials: LoginCredentials = {
           email: '',
-          password: 'password123'
+          password: 'password123',
         };
 
         const errors = service.validateLogin(credentials);
@@ -58,7 +61,7 @@ describe('AuthService', () => {
       it('should return error for invalid email format', () => {
         const credentials: LoginCredentials = {
           email: 'invalid-email',
-          password: 'password123'
+          password: 'password123',
         };
 
         const errors = service.validateLogin(credentials);
@@ -70,7 +73,7 @@ describe('AuthService', () => {
       it('should return error for short password', () => {
         const credentials: LoginCredentials = {
           email: 'test@example.com',
-          password: '123'
+          password: '123',
         };
 
         const errors = service.validateLogin(credentials);
@@ -82,12 +85,12 @@ describe('AuthService', () => {
       it('should return multiple errors for multiple invalid fields', () => {
         const credentials: LoginCredentials = {
           email: '',
-          password: '123'
+          password: '123',
         };
 
         const errors = service.validateLogin(credentials);
         expect(errors).toHaveLength(2);
-        expect(errors.map(e => e.field)).toEqual(['email', 'password']);
+        expect(errors.map((e) => e.field)).toEqual(['email', 'password']);
       });
     });
 
@@ -96,7 +99,7 @@ describe('AuthService', () => {
         const data: RegisterData = {
           email: 'test@example.com',
           password: 'Password123',
-          confirmPassword: 'Password123'
+          confirmPassword: 'Password123',
         };
 
         const errors = service.validateRegistration(data);
@@ -107,7 +110,7 @@ describe('AuthService', () => {
         const data: RegisterData = {
           email: 'test@example.com',
           password: 'Password123',
-          confirmPassword: 'DifferentPassword'
+          confirmPassword: 'DifferentPassword',
         };
 
         const errors = service.validateRegistration(data);
@@ -120,13 +123,15 @@ describe('AuthService', () => {
         const data: RegisterData = {
           email: 'test@example.com',
           password: 'weakpassword',
-          confirmPassword: 'weakpassword'
+          confirmPassword: 'weakpassword',
         };
 
         const errors = service.validateRegistration(data);
         expect(errors).toHaveLength(1);
         expect(errors[0].field).toBe('password');
-        expect(errors[0].message).toBe('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+        expect(errors[0].message).toBe(
+          'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+        );
       });
     });
 
@@ -139,11 +144,11 @@ describe('AuthService', () => {
           mobileNumber: '+1234567890',
           birthdate: '1990-01-01',
           completeAddress: '123 Test St, City, Country',
-          educationalAttainment: 'Bachelor\'s Degree',
+          educationalAttainment: "Bachelor's Degree",
           lastMedicalExam: '2023-01-01',
           volunteerPreference: 'Teaching',
           password: 'Password123',
-          confirmPassword: 'Password123'
+          confirmPassword: 'Password123',
         };
 
         const errors = service.validateVolunteerSignup(data);
@@ -158,21 +163,21 @@ describe('AuthService', () => {
           mobileNumber: '+1234567890',
           birthdate: '1990-01-01',
           completeAddress: '123 Test St, City, Country',
-          educationalAttainment: 'Bachelor\'s Degree',
+          educationalAttainment: "Bachelor's Degree",
           lastMedicalExam: '2023-01-01',
           volunteerPreference: 'Teaching',
           password: 'Password123',
-          confirmPassword: 'Password123'
+          confirmPassword: 'Password123',
         };
 
         const errors = service.validateVolunteerSignup(data);
         expect(errors.length).toBeGreaterThan(0);
-        
-        const firstNameError = errors.find(e => e.field === 'firstName');
+
+        const firstNameError = errors.find((e) => e.field === 'firstName');
         expect(firstNameError).toBeDefined();
         expect(firstNameError?.message).toBe('First name is required');
 
-        const lastNameError = errors.find(e => e.field === 'lastName');
+        const lastNameError = errors.find((e) => e.field === 'lastName');
         expect(lastNameError).toBeDefined();
         expect(lastNameError?.message).toBe('Last name is required');
       });
@@ -185,15 +190,15 @@ describe('AuthService', () => {
           mobileNumber: 'invalid-phone',
           birthdate: '1990-01-01',
           completeAddress: '123 Test St, City, Country',
-          educationalAttainment: 'Bachelor\'s Degree',
+          educationalAttainment: "Bachelor's Degree",
           lastMedicalExam: '2023-01-01',
           volunteerPreference: 'Teaching',
           password: 'Password123',
-          confirmPassword: 'Password123'
+          confirmPassword: 'Password123',
         };
 
         const errors = service.validateVolunteerSignup(data);
-        const phoneError = errors.find(e => e.field === 'mobileNumber');
+        const phoneError = errors.find((e) => e.field === 'mobileNumber');
         expect(phoneError).toBeDefined();
         expect(phoneError?.message).toBe('Please enter a valid mobile number');
       });
@@ -201,7 +206,7 @@ describe('AuthService', () => {
       it('should return error for underage volunteer', () => {
         const recentDate = new Date();
         recentDate.setFullYear(recentDate.getFullYear() - 17); // 17 years old
-        
+
         const data: VolunteerSignupData = {
           firstName: 'John',
           lastName: 'Doe',
@@ -209,15 +214,15 @@ describe('AuthService', () => {
           mobileNumber: '+1234567890',
           birthdate: recentDate.toISOString().split('T')[0],
           completeAddress: '123 Test St, City, Country',
-          educationalAttainment: 'Bachelor\'s Degree',
+          educationalAttainment: "Bachelor's Degree",
           lastMedicalExam: '2023-01-01',
           volunteerPreference: 'Teaching',
           password: 'Password123',
-          confirmPassword: 'Password123'
+          confirmPassword: 'Password123',
         };
 
         const errors = service.validateVolunteerSignup(data);
-        const birthdateError = errors.find(e => e.field === 'birthdate');
+        const birthdateError = errors.find((e) => e.field === 'birthdate');
         expect(birthdateError).toBeDefined();
         expect(birthdateError?.message).toBe('You must be at least 18 years old to volunteer');
       });
@@ -228,18 +233,18 @@ describe('AuthService', () => {
     it('should login successfully with valid credentials', () => {
       const credentials: LoginCredentials = {
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       };
 
       const mockResponse = {
         user: {
           id: '1',
           email: 'test@example.com',
-          name: 'Test User'
-        }
+          name: 'Test User',
+        },
       };
 
-      service.login$(credentials).subscribe(response => {
+      service.login$(credentials).subscribe((response) => {
         expect(response.success).toBe(true);
         expect(response.user).toEqual(mockResponse.user);
         expect(service.isAuthenticated()).toBe(true);
@@ -255,10 +260,10 @@ describe('AuthService', () => {
     it('should handle login error', () => {
       const credentials: LoginCredentials = {
         email: 'test@example.com',
-        password: 'wrongpassword'
+        password: 'wrongpassword',
       };
 
-      service.login$(credentials).subscribe(response => {
+      service.login$(credentials).subscribe((response) => {
         expect(response.success).toBe(false);
         expect(response.message).toBe('Login failed');
         expect(service.isAuthenticated()).toBe(false);
@@ -290,10 +295,10 @@ describe('AuthService', () => {
       const mockUser = {
         id: '1',
         email: 'test@example.com',
-        name: 'Test User'
+        name: 'Test User',
       };
 
-      service.checkAuthStatus$().subscribe(response => {
+      service.checkAuthStatus$().subscribe((response) => {
         expect(response.success).toBe(true);
         expect(response.user).toEqual(mockUser);
         expect(service.isAuthenticated()).toBe(true);
@@ -307,7 +312,7 @@ describe('AuthService', () => {
     });
 
     it('should handle auth status check failure', () => {
-      service.checkAuthStatus$().subscribe(response => {
+      service.checkAuthStatus$().subscribe((response) => {
         expect(response.success).toBe(false);
         expect(service.isAuthenticated()).toBe(false);
         expect(service.currentUser()).toBeNull();

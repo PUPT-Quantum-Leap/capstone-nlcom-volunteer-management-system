@@ -19,11 +19,12 @@ export const routes: Routes = [
   { path: 'admin-dashboard', component: AdminDashboard, canActivate: [authGuard] },
   {
     path: 'terms-of-service',
-    loadComponent: () => import('./terms-of-service/terms-of-service').then(m => m.TermsOfService)
+    loadComponent: () =>
+      import('./terms-of-service/terms-of-service').then((m) => m.TermsOfService),
   },
   {
     path: 'privacy-policy',
-    loadComponent: () => import('./privacy-policy/privacy-policy').then(m => m.PrivacyPolicy)
+    loadComponent: () => import('./privacy-policy/privacy-policy').then((m) => m.PrivacyPolicy),
   },
-  { path: '**', component: NotFound }
+  { path: '**', component: NotFound },
 ];

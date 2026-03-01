@@ -119,7 +119,10 @@
   padding: 0.65rem 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
 }
 
 .sidebar-nav button:hover {
@@ -358,7 +361,9 @@
 .stat-card {
   display: grid;
   align-content: start;
-  transition: transform 140ms ease, box-shadow 140ms ease;
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .stat-card:hover {
@@ -419,7 +424,10 @@
   min-height: 120px;
   text-align: left;
   cursor: pointer;
-  transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .action-card:hover {
@@ -604,7 +612,9 @@ textarea:focus {
   justify-content: space-between;
   gap: 0.8rem;
   cursor: pointer;
-  transition: border-color 140ms ease, transform 140ms ease;
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease;
 }
 
 .poll-option:hover:not(:disabled) {
@@ -645,7 +655,10 @@ textarea:focus {
   font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+  transition:
+    transform 120ms ease,
+    background 120ms ease,
+    border-color 120ms ease;
 }
 
 button:focus-visible,

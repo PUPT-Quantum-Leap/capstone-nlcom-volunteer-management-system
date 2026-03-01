@@ -1,4 +1,4 @@
-export type PerformanceMetric = {
+export interface PerformanceMetric {
   id: number;
   volunteerId: number;
   volunteerName: string;

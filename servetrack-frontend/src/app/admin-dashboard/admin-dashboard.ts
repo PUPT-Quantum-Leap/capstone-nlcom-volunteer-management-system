@@ -20,7 +20,9 @@ export class AdminDashboard {
 
   readonly defaultPhoto = '/assets/nlcom.png';
 
-  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users'>('overview');
+  currentView = signal<
+    'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users'
+  >('overview');
   userName = signal(this.authService.currentUser()?.name || 'Admin');
   sidebarCollapsed = signal(false);
   isLoading = signal(false);
@@ -28,7 +30,7 @@ export class AdminDashboard {
   showNotifications = signal(false);
   showLogoutModal = signal(false);
   searchQuery = signal('');
-  
+
   notifications = signal<NotificationItem[]>([
     {
       id: 1,
@@ -45,9 +47,9 @@ export class AdminDashboard {
       read: false,
     },
   ]);
-  
+
   notificationCount = computed(
-    () => this.notifications().filter(notification => !notification.read).length
+    () => this.notifications().filter((notification) => !notification.read).length,
   );
 
   totalVolunteers = signal(42);
@@ -149,7 +151,9 @@ export class AdminDashboard {
         return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
       }
 
-      return direction === 'asc' ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
+      return direction === 'asc'
+        ? (aVal as number) - (bVal as number)
+        : (bVal as number) - (aVal as number);
     });
 
     return metrics;
@@ -182,10 +186,12 @@ export class AdminDashboard {
   });
 
   toggleSidebar(): void {
-    this.sidebarCollapsed.update(v => !v);
+    this.sidebarCollapsed.update((v) => !v);
   }
 
-  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users'): void {
+  setView(
+    view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users',
+  ): void {
     this.currentView.set(view);
   }
 
@@ -233,11 +239,11 @@ export class AdminDashboard {
   }
 
   toggleNotifications(): void {
-    this.showNotifications.update(value => !value);
+    this.showNotifications.update((value) => !value);
   }
 
   markNotificationsRead(): void {
-    this.notifications.update(items => items.map(item => ({ ...item, read: true })));
+    this.notifications.update((items) => items.map((item) => ({ ...item, read: true })));
   }
 
   closeNotifications(): void {
@@ -265,7 +271,7 @@ export class AdminDashboard {
 
   sortBy(field: 'name' | 'attendance' | 'hours' | 'tasks' | 'rating'): void {
     if (this.sortField() === field) {
-      this.sortDirection.update(dir => (dir === 'asc' ? 'desc' : 'asc'));
+      this.sortDirection.update((dir) => (dir === 'asc' ? 'desc' : 'asc'));
     } else {
       this.sortField.set(field);
       this.sortDirection.set('desc');

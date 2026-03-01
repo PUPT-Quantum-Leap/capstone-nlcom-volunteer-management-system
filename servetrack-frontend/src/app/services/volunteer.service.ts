@@ -2,18 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, of } from 'rxjs';
 import { environment } from '../../environments/environment';
-import {
-  Attendance,
-  AttendanceStats,
-  CreateAttendancePayload,
-} from '../models/attendance';
+import { Attendance, AttendanceStats, CreateAttendancePayload } from '../models/attendance';
 import { VolunteerProfileResponse } from '../models/volunteer-profile';
 
-export type ApiResponse<T> = {
+export interface ApiResponse<T> {
   success: boolean;
   message?: string;
   data: T;
-};
+}
 
 export type AttendancePeriod = 'daily' | 'weekly' | 'monthly';
 
@@ -30,16 +26,22 @@ export class VolunteerService {
       .get<ApiResponse<VolunteerProfileResponse>>(`${this.baseUrl}/profile`, {
         withCredentials: true,
       })
-      .pipe(catchError(() => of({ success: false, data: null as unknown as VolunteerProfileResponse })));
+      .pipe(
+        catchError(() => of({ success: false, data: null as unknown as VolunteerProfileResponse })),
+      );
   }
 
   /** Update the authenticated volunteer's profile. */
-  updateProfile(payload: Record<string, unknown>): Observable<ApiResponse<VolunteerProfileResponse>> {
+  updateProfile(
+    payload: Record<string, unknown>,
+  ): Observable<ApiResponse<VolunteerProfileResponse>> {
     return this.http
       .put<ApiResponse<VolunteerProfileResponse>>(`${this.baseUrl}/profile`, payload, {
         withCredentials: true,
       })
-      .pipe(catchError(() => of({ success: false, data: null as unknown as VolunteerProfileResponse })));
+      .pipe(
+        catchError(() => of({ success: false, data: null as unknown as VolunteerProfileResponse })),
+      );
   }
 
   /**
