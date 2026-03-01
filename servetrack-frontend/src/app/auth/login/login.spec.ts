@@ -156,7 +156,7 @@ describe('Login Component', () => {
       });
     });
 
-    it('should navigate to home on successful login', async () => {
+    it('should navigate to volunteer dashboard on successful login', async () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
@@ -165,7 +165,7 @@ describe('Login Component', () => {
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
       mockAuthService.login$.mockReturnValue(of({ success: true }));
       await component.onSubmit();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/volunteer-dashboard']);
       expect(component.errorMessage()).toBeNull();
     });
 
