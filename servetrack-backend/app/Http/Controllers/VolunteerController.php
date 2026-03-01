@@ -6,6 +6,7 @@ use App\Models\Experience;
 use App\Models\Position;
 use App\Models\Skill;
 use App\Models\Training;
+use App\Models\User;
 use App\Models\Volunteer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -57,7 +58,14 @@ class VolunteerController extends Controller
         // Use database transaction for data integrity
         DB::beginTransaction();
         try {
-            // Create volunteer profile
+            // Create user account first
+            $user = User::create([
+                'name' => $request->firstName . ' ' . $request->lastName,
+                'email' => $request->email,
+                'password' => bcrypt($request->password),
+            ]);
+
+            // Create volunteer profile linked to user
             $volunteer = Volunteer::create([
                 'first_name' => $request->firstName,
                 'last_name' => $request->lastName,
@@ -68,6 +76,7 @@ class VolunteerController extends Controller
                 'address' => $request->completeAddress,
                 'educational_attainment' => $request->educationalAttainment,
                 'last_medical_examination' => $request->lastMedicalExam,
+                'user_id' => $user->id,
             ]);
 
             // Process and attach training experience
@@ -88,7 +97,8 @@ class VolunteerController extends Controller
                 'success' => true,
                 'message' => 'Volunteer registered successfully',
                 'data' => [
-                    'volunteer' => $volunteer->load(['experiences', 'skills', 'trainings', 'positions']),
+                    'user' => $user,
+                    'volunteer' => $volunteer->load(['experiences', 'skills', 'trainings', 'positions', 'user']),
                 ],
             ], 201);
 

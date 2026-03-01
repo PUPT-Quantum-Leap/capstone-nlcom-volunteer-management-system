@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Volunteer extends Model
@@ -28,6 +29,7 @@ class Volunteer extends Model
         'mobile_number',
         'educational_attainment',
         'last_medical_examination',
+        'user_id',
     ];
 
     protected $casts = [
@@ -37,6 +39,11 @@ class Volunteer extends Model
     ];
 
     // Define Relationships
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function availabilities(): BelongsToMany
     {
         return $this->belongsToMany(
