@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { passwordStrengthValidator, passwordMatchValidator } from '../../validators/password.validator';
 import { AuthService } from '../../services/auth.service';
 
@@ -13,6 +14,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class SignupForm {
   private authService = inject(AuthService);
+  private router = inject(Router);
   private fb = new FormBuilder();
   
   currentStep = signal(1);
@@ -99,8 +101,9 @@ export class SignupForm {
       // Submit to real backend API
       this.authService.volunteerSignup(formData).then((response: any) => {
         if (response.success) {
-          // Navigate to success page or dashboard
-          // this.router.navigate(['/success']);
+          setTimeout(() => {
+            this.router.navigate(['/login'], { queryParams: { registered: 'true' } });
+          }, 2000);
         } else {
           // Show error message 
           this.error.set(response.message || 'Registration failed');
