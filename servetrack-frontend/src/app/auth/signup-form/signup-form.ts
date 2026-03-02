@@ -28,6 +28,8 @@ export class SignupForm {
   showPasswordRequirements = signal(false);
   error = signal<string | null>(null);
   showSuccessModal = signal(false);
+  showLifegroupLeaderInput = signal(false);
+  showOtherAvailabilityInput = signal(false);
 
   personalInfoForm: FormGroup;
   educationForm: FormGroup;
@@ -56,6 +58,15 @@ export class SignupForm {
       {
         volunteerPreference: ['', [Validators.required]],
         otherPreference: [''],
+        availability: ['', [Validators.required]],
+        otherAvailability: [''],
+        partOfLifegroup: ['', [Validators.required]],
+        lifegroupLeaderName: [''],
+        leadingLifegroup: ['', [Validators.required]],
+        emergencyContactName: ['', [Validators.required]],
+        emergencyContactNumber: ['', [Validators.required, Validators.pattern(/^(09|\+639)\d{9}$/)]],
+        emergencyContactRelationship: ['', [Validators.required]],
+        classesTrainingAttended: [''],
         password: ['', [Validators.required, passwordStrengthValidator()]],
         confirmPassword: ['', [Validators.required]],
       },
@@ -67,6 +78,26 @@ export class SignupForm {
       if (value !== 'other') {
         this.preferencesForm.get('otherPreference')?.setValue('');
       }
+    });
+
+    this.preferencesForm.get('availability')?.valueChanges.subscribe((value) => {
+      this.showOtherAvailabilityInput.set(value === 'others');
+      if (value !== 'others') {
+        this.preferencesForm.get('otherAvailability')?.setValue('');
+      }
+    });
+
+    this.preferencesForm.get('partOfLifegroup')?.valueChanges.subscribe((value) => {
+      const lifegroupLeaderControl = this.preferencesForm.get('lifegroupLeaderName');
+      this.showLifegroupLeaderInput.set(value === 'yes');
+      
+      if (value === 'yes') {
+        lifegroupLeaderControl?.setValidators([Validators.required]);
+      } else {
+        lifegroupLeaderControl?.clearValidators();
+        lifegroupLeaderControl?.setValue('');
+      }
+      lifegroupLeaderControl?.updateValueAndValidity();
     });
   }
 
@@ -172,7 +203,10 @@ export class SignupForm {
       return `Minimum ${errors['minlength'].requiredLength} characters required`;
     }
     if (errors['pattern']) {
-      return 'Please enter a valid Philippine mobile number';
+      if (fieldName === 'mobileNumber' || fieldName === 'emergencyContactNumber') {
+        return 'Please enter a valid Philippine mobile number';
+      }
+      return 'Invalid format';
     }
 
     // Password strength errors
