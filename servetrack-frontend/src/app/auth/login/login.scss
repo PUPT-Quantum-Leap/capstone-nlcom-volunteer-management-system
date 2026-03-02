@@ -104,6 +104,12 @@ $error-light: #fee2e2;
       &::placeholder {
         color: $text-muted;
       }
+
+      &:disabled {
+        background-color: $gray-100;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
     }
     
     .password-input-wrapper {
@@ -129,16 +135,21 @@ $error-light: #fee2e2;
         transition: all 0.2s ease;
         color: $text-muted;
 
-        &:hover {
+        &:hover:not(:disabled) {
           background: $gray-100;
           color: $primary;
         }
 
-        &:focus {
+        &:focus:not(:disabled) {
           outline: none;
           background: $gray-100;
           color: $primary;
           box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        &:disabled {
+          cursor: not-allowed;
+          opacity: 0.5;
         }
 
         .eye-icon {
@@ -210,8 +221,14 @@ $error-light: #fee2e2;
       font-weight: 500;
       transition: color 0.3s;
 
-      &:hover {
+      &:hover:not(.disabled) {
         color: $primary-dark;
+      }
+
+      &.disabled {
+        color: $text-muted;
+        cursor: not-allowed;
+        opacity: 0.6;
       }
     }
   }
@@ -289,8 +306,14 @@ $error-light: #fee2e2;
       cursor: pointer;
       transition: color 0.3s;
 
-      &:hover {
+      &:hover:not(.disabled) {
         color: $primary-dark;
+      }
+
+      &.disabled {
+        color: $text-muted;
+        cursor: not-allowed;
+        opacity: 0.6;
       }
     }
   }
