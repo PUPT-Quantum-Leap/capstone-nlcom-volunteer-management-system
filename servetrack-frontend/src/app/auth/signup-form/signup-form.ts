@@ -113,10 +113,9 @@ export class SignupForm {
             // Show success modal
             this.showSuccessModal.set(true);
             
-            // Auto-redirect after 3 seconds
             setTimeout(() => {
               this.router.navigate(['/login']);
-            }, 3000);
+            }, 5000);
           } else {
             // Show error message
             this.error.set(response.message || 'Registration failed');
