@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 02, 2026 at 04:02 PM
+-- Generation Time: Mar 02, 2026 at 05:35 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -36,6 +36,24 @@ CREATE TABLE `admin` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `attendances`
+--
+
+CREATE TABLE `attendances` (
+  `attendance_id` bigint(20) UNSIGNED NOT NULL,
+  `volunteer_id` bigint(20) UNSIGNED NOT NULL,
+  `date` date NOT NULL,
+  `hours` decimal(4,1) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  `created_by` bigint(20) UNSIGNED DEFAULT NULL COMMENT 'user_id of admin/coordinator who created the record',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `availability`
 --
 
@@ -55,14 +73,6 @@ CREATE TABLE `cache` (
   `value` mediumtext NOT NULL,
   `expiration` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `cache`
---
-
-INSERT INTO `cache` (`key`, `value`, `expiration`) VALUES
-('laravel-cache-login:johnmatthewarroyow2@gmail.com|127.0.0.1', 'i:1;', 1772437817),
-('laravel-cache-login:johnmatthewarroyow2@gmail.com|127.0.0.1:timer', 'i:1772437817;', 1772437817);
 
 -- --------------------------------------------------------
 
@@ -203,7 +213,9 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (23, '2026_02_28_143516_create_volunteer_position_table', 1),
 (24, '2026_02_28_143517_create_volunteer_skill_table', 1),
 (25, '2026_02_28_143518_create_volunteer_training_table', 1),
-(26, '2026_02_28_143600_add_user_id_to_volunteer_table', 1);
+(26, '2026_02_28_143600_add_user_id_to_volunteer_table', 1),
+(27, '2026_03_01_143533_create_attendances_table', 1),
+(28, '2026_03_01_143839_expand_position_name_column', 1);
 
 -- --------------------------------------------------------
 
@@ -246,22 +258,6 @@ CREATE TABLE `personal_access_tokens` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `personal_access_tokens`
---
-
-INSERT INTO `personal_access_tokens` (`id`, `tokenable_type`, `tokenable_id`, `name`, `token`, `abilities`, `last_used_at`, `expires_at`, `created_at`, `updated_at`) VALUES
-(1, 'App\\Models\\User', 1, 'auth-token', '7ab88f63187f21141b07fad0e29f4f402bcfe782292040470e6440eac5e856fc', '[\"*\"]', NULL, '2026-03-01 23:49:54', '2026-03-01 23:49:54', '2026-03-01 23:49:54'),
-(2, 'App\\Models\\User', 1, 'auth-token', '1a2c0dafaf623216495c0910300dcf97d39d985a7c9abbfaae41ab642f5d8839', '[\"*\"]', NULL, '2026-03-02 00:04:18', '2026-03-02 00:04:18', '2026-03-02 00:04:18'),
-(3, 'App\\Models\\User', 1, 'auth-token', 'e52569a827d2b4581e46b6d031119dbf29c2474e80ea108da962bb53acb8e257', '[\"*\"]', NULL, '2026-03-02 03:29:33', '2026-03-02 03:29:33', '2026-03-02 03:29:33'),
-(4, 'App\\Models\\User', 1, 'auth-token', '0854e2dd3be7e0debc8f9cab66aacc75912b8fb081e765e70fd3eeacf4386307', '[\"*\"]', NULL, '2026-03-02 06:20:26', '2026-03-02 06:20:26', '2026-03-02 06:20:26'),
-(5, 'App\\Models\\User', 1, 'auth-token', '976f999983c34034deeb4a3cb6f8aaa44b7e26f4572f000f722e1cee2231b14b', '[\"*\"]', NULL, '2026-03-02 06:24:53', '2026-03-02 06:24:53', '2026-03-02 06:24:53'),
-(6, 'App\\Models\\User', 1, 'auth-token', '2056c9c6b9b8cfb6cad0a962c814da8140c10410d40df82b5f2f3e72e283720c', '[\"*\"]', NULL, '2026-03-02 06:25:00', '2026-03-02 06:25:00', '2026-03-02 06:25:00'),
-(7, 'App\\Models\\User', 1, 'auth-token', '7c5d3be8fcc67ba2f4fcee2d0f7cf7671cf2ed4d665d833c817a8a892bdd355e', '[\"*\"]', NULL, '2026-03-02 06:25:08', '2026-03-02 06:25:08', '2026-03-02 06:25:08'),
-(8, 'App\\Models\\User', 1, 'auth-token', 'c544b50e6d20b2d8cfd45573fedff99bd5194a8406aca27562a08d5937222d42', '[\"*\"]', NULL, '2026-03-02 06:28:12', '2026-03-02 06:28:12', '2026-03-02 06:28:12'),
-(9, 'App\\Models\\User', 1, 'auth-token', '38f8403e05d2f2cc4cdf6ad38b50af776fd2504eb6096c814e0e012c40599863', '[\"*\"]', NULL, '2026-03-02 06:30:10', '2026-03-02 06:30:10', '2026-03-02 06:30:10'),
-(10, 'App\\Models\\User', 1, 'auth-token', 'edd36b4cf797eaa1d28a1b701c2cc2b5958908b4682e6bc7d42e375de29ea814', '[\"*\"]', NULL, '2026-03-02 06:30:19', '2026-03-02 06:30:19', '2026-03-02 06:30:19');
 
 -- --------------------------------------------------------
 
@@ -311,15 +307,8 @@ CREATE TABLE `poll_vote` (
 
 CREATE TABLE `position` (
   `position_id` bigint(20) UNSIGNED NOT NULL,
-  `name` varchar(50) NOT NULL
+  `name` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `position`
---
-
-INSERT INTO `position` (`position_id`, `name`) VALUES
-(1, 'Mobile Kitchen Operations');
 
 -- --------------------------------------------------------
 
@@ -347,13 +336,6 @@ CREATE TABLE `skill` (
   `name` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `skill`
---
-
-INSERT INTO `skill` (`skill_id`, `name`) VALUES
-(1, 'Reading');
-
 -- --------------------------------------------------------
 
 --
@@ -379,14 +361,6 @@ CREATE TABLE `training` (
   `name` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `training`
---
-
-INSERT INTO `training` (`training_id`, `name`) VALUES
-(1, 'Web Development'),
-(2, 'Python Workshop');
-
 -- --------------------------------------------------------
 
 --
@@ -406,13 +380,6 @@ CREATE TABLE `users` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `locked_until`, `failed_attempts`, `last_failed_at`, `remember_token`, `created_at`, `updated_at`) VALUES
-(1, 'John Matthew Arroyo', 'johnmatthewarroyo2@gmail.com', NULL, '$2y$12$eHcYTiLetHrbEteHd9YuVOAyD6U4nLONf8PCXacoI10exbYi5/Sqy', NULL, 0, NULL, NULL, '2026-03-01 02:22:06', '2026-03-02 00:04:18');
 
 -- --------------------------------------------------------
 
@@ -436,13 +403,6 @@ CREATE TABLE `volunteer` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `volunteer`
---
-
-INSERT INTO `volunteer` (`volunteer_id`, `user_id`, `first_name`, `last_name`, `facebook_name`, `facebook_id`, `email`, `birthdate`, `address`, `mobile_number`, `educational_attainment`, `last_medical_examination`, `created_at`, `updated_at`) VALUES
-(1, 1, 'John Matthew', 'Arroyo', 'Mista Ravioly', NULL, 'johnmatthewarroyo2@gmail.com', '2005-01-01', 'P-23A 9th 16th St. Villamor Air Base, Pasay City', '09087618689', 'senior-high', '2015-01-05', '2026-03-01 02:22:06', '2026-03-01 02:22:06');
 
 -- --------------------------------------------------------
 
@@ -494,13 +454,6 @@ CREATE TABLE `volunteer_position` (
   `position_id` bigint(20) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `volunteer_position`
---
-
-INSERT INTO `volunteer_position` (`volunteer_position_id`, `volunteer_id`, `position_id`) VALUES
-(1, 1, 1);
-
 -- --------------------------------------------------------
 
 --
@@ -512,13 +465,6 @@ CREATE TABLE `volunteer_skill` (
   `volunteer_id` bigint(20) UNSIGNED NOT NULL,
   `skill_id` bigint(20) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `volunteer_skill`
---
-
-INSERT INTO `volunteer_skill` (`volunteer_skill_id`, `volunteer_id`, `skill_id`) VALUES
-(1, 1, 1);
 
 -- --------------------------------------------------------
 
@@ -533,14 +479,6 @@ CREATE TABLE `volunteer_training` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `volunteer_training`
---
-
-INSERT INTO `volunteer_training` (`volunteer_training_id`, `volunteer_id`, `training_id`) VALUES
-(1, 1, 1),
-(2, 1, 2);
-
---
 -- Indexes for dumped tables
 --
 
@@ -549,6 +487,14 @@ INSERT INTO `volunteer_training` (`volunteer_training_id`, `volunteer_id`, `trai
 --
 ALTER TABLE `admin`
   ADD PRIMARY KEY (`admin_id`);
+
+--
+-- Indexes for table `attendances`
+--
+ALTER TABLE `attendances`
+  ADD PRIMARY KEY (`attendance_id`),
+  ADD KEY `attendances_volunteer_id_foreign` (`volunteer_id`),
+  ADD KEY `attendances_created_by_foreign` (`created_by`);
 
 --
 -- Indexes for table `availability`
@@ -762,6 +708,12 @@ ALTER TABLE `admin`
   MODIFY `admin_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `attendances`
+--
+ALTER TABLE `attendances`
+  MODIFY `attendance_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `availability`
 --
 ALTER TABLE `availability`
@@ -801,7 +753,7 @@ ALTER TABLE `lifegroup`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `option`
@@ -813,7 +765,7 @@ ALTER TABLE `option`
 -- AUTO_INCREMENT for table `personal_access_tokens`
 --
 ALTER TABLE `personal_access_tokens`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `poll`
@@ -837,13 +789,13 @@ ALTER TABLE `poll_vote`
 -- AUTO_INCREMENT for table `position`
 --
 ALTER TABLE `position`
-  MODIFY `position_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `position_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `skill`
 --
 ALTER TABLE `skill`
-  MODIFY `skill_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `skill_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `sms_notification`
@@ -855,19 +807,19 @@ ALTER TABLE `sms_notification`
 -- AUTO_INCREMENT for table `training`
 --
 ALTER TABLE `training`
-  MODIFY `training_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `training_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `volunteer`
 --
 ALTER TABLE `volunteer`
-  MODIFY `volunteer_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `volunteer_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `volunteer_availability`
@@ -891,23 +843,30 @@ ALTER TABLE `volunteer_lifegroup`
 -- AUTO_INCREMENT for table `volunteer_position`
 --
 ALTER TABLE `volunteer_position`
-  MODIFY `volunteer_position_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `volunteer_position_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `volunteer_skill`
 --
 ALTER TABLE `volunteer_skill`
-  MODIFY `volunteer_skill_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `volunteer_skill_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `volunteer_training`
 --
 ALTER TABLE `volunteer_training`
-  MODIFY `volunteer_training_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `volunteer_training_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `attendances`
+--
+ALTER TABLE `attendances`
+  ADD CONSTRAINT `attendances_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `attendances_volunteer_id_foreign` FOREIGN KEY (`volunteer_id`) REFERENCES `volunteer` (`volunteer_id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `poll_option`
