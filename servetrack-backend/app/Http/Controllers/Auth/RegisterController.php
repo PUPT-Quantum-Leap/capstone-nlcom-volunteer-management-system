@@ -24,7 +24,13 @@ class RegisterController extends Controller
             ], 201);
         }
 
-        $user = User::create($request->validated());
+        // Provide default name if not provided
+        $userData = $request->validated();
+        if (! isset($userData['name']) || empty($userData['name'])) {
+            $userData['name'] = 'Volunteer User';
+        }
+
+        $user = User::create($userData);
 
         $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
 
