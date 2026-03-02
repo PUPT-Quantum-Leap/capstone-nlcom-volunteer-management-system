@@ -27,6 +27,7 @@ export class SignupForm {
   showConfirmPassword = signal(false);
   showPasswordRequirements = signal(false);
   error = signal<string | null>(null);
+  showSuccessModal = signal(false);
 
   personalInfoForm: FormGroup;
   educationForm: FormGroup;
@@ -109,9 +110,13 @@ export class SignupForm {
         .volunteerSignup(formData)
         .then((response: { success: boolean; message?: string }) => {
           if (response.success) {
+            // Show success modal
+            this.showSuccessModal.set(true);
+            
+            // Auto-redirect after 3 seconds
             setTimeout(() => {
-              this.router.navigate(['/login'], { queryParams: { registered: 'true' } });
-            }, 2000);
+              this.router.navigate(['/login']);
+            }, 3000);
           } else {
             // Show error message
             this.error.set(response.message || 'Registration failed');
@@ -127,10 +132,27 @@ export class SignupForm {
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
-    Object.keys(formGroup.controls).forEach((key) => {
-      const control = formGroup.get(key);
-      control?.markAsTouched();
+    Object.values(formGroup.controls).forEach(control => {
+      control.markAsTouched();
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      }
     });
+  }
+
+  /**
+   * Close success modal
+   */
+  closeSuccessModal(): void {
+    this.showSuccessModal.set(false);
+  }
+
+  /**
+   * Navigate to login immediately
+   */
+  navigateToLoginNow(): void {
+    this.closeSuccessModal();
+    this.router.navigate(['/login']);
   }
 
   getErrorMessage(fieldName: string): string {
