@@ -101,6 +101,40 @@ export class VolunteerDashboard implements OnInit {
   editingProfileId = signal<number | null>(null);
   profilePreviewUrl = signal(this.defaultPhoto);
   profiles = signal<VolunteerProfile[]>([]);
+  
+  // Store the raw profile data from the backend for accurate completion calculation
+  savedProfileData = signal<VolunteerProfileResponse | null>(null);
+
+  // Success notification for profile updates
+  showProfileSuccess = signal(false);
+  profileSuccessMessage = signal('');
+
+  // Confirmation modal for profile save
+  showSaveConfirmModal = signal(false);
+
+  // Error handling for profile updates
+  showProfileError = signal(false);
+  profileErrorMessage = signal('');
+
+  // Map position names to dropdown keys for volunteer preference
+  private positionToKeyMap: Record<string, string> = {
+    'Metro Sidewalk Sunday School (Teaching & Education)': 'sidewalk-sunday-school',
+    'Mobile Kitchen Operations': 'mobile-kitchen',
+    'Relief Operations': 'relief-operations',
+    'Safety and Emergency Response': 'safety-emergency',
+    'Medical Operations': 'medical-operations',
+    'Psychological First Aid': 'psychological-aid',
+    'Transportation & Logistics Team': 'transportation-logistics',
+    'Purchasing Team': 'purchasing',
+    'Individual & Corporate Partnerships': 'partnerships',
+    'Digital Marketing & Promotions': 'digital-marketing',
+    'Creatives (Video / Photos)': 'creatives',
+    'Healing': 'healing',
+    'Real Estate & Sports': 'real-estate-sports',
+    'Anything kitchen-related': 'kitchen-related',
+    'Wherever is needed': 'wherever-needed',
+    "Don't know yet": 'dont-know',
+  };
 
   profileForm = this.fb.group(
     {
@@ -125,22 +159,55 @@ export class VolunteerDashboard implements OnInit {
   );
 
   profileCompletion = computed(() => {
-    const form = this.profileForm;
-    const requiredControls = [
-      'firstName',
-      'lastName',
-      'email',
-      'mobileNumber',
-      'birthdate',
-      'lastMedicalExam',
-      'completeAddress',
-      'educationalAttainment',
-      'volunteerPreference',
+    // Use savedProfileData from database for accurate completion calculation
+    const savedData = this.savedProfileData();
+    
+    if (!savedData) {
+      return 0;
+    }
+    
+    // Required fields (9 total - each worth ~11.11%)
+    const requiredFields = [
+      savedData.first_name,
+      savedData.last_name,
+      savedData.email,
+      savedData.mobile_number,
+      savedData.birthdate,
+      savedData.last_medical_examination,
+      savedData.address,
+      savedData.educational_attainment,
+      savedData.positions?.length ? true : false,
     ];
-    const completed = requiredControls.filter(
-      (controlName) => !!form.get(controlName)?.value,
-    ).length;
-    return Math.round((completed / requiredControls.length) * 100);
+    
+    // Optional fields (4 total - each worth 2.5% bonus)
+    const optionalFields = [
+      savedData.facebook_name,
+      savedData.training_experience,
+      savedData.skills_hobbies,
+      savedData.classes_training,
+    ];
+    
+    // Count completed required fields
+    let completedRequired = 0;
+    for (const field of requiredFields) {
+      if (field && String(field).trim().length > 0) {
+        completedRequired++;
+      }
+    }
+    
+    // Count completed optional fields for bonus
+    let completedOptional = 0;
+    for (const field of optionalFields) {
+      if (field && String(field).trim().length > 0) {
+        completedOptional++;
+      }
+    }
+    
+    // Calculate percentage: required fields (90%) + optional bonus (10%)
+    const requiredPercentage = (completedRequired / requiredFields.length) * 90;
+    const optionalBonus = (completedOptional / optionalFields.length) * 10;
+    
+    return Math.min(100, Math.round(requiredPercentage + optionalBonus));
   });
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -162,12 +229,19 @@ export class VolunteerDashboard implements OnInit {
   }
 
   private applyProfileResponse(data: VolunteerProfileResponse): void {
+    // Store the raw profile data for accurate completion calculation
+    this.savedProfileData.set(data);
+    
     this.userName.set(`${data.first_name} ${data.last_name}`.trim());
 
     // Map the first position as "task assigned" for the overview card
     if (data.positions?.length) {
       this.taskAssigned.set(data.positions.map((p) => p.name).join(', '));
     }
+
+    // Get the position key for dropdown selection
+    const positionName = data.positions?.[0]?.name ?? '';
+    const positionKey = this.getPositionKey(positionName);
 
     // Populate the profile form with real data
     this.profileForm.patchValue({
@@ -180,7 +254,14 @@ export class VolunteerDashboard implements OnInit {
       lastMedicalExam: data.last_medical_examination,
       completeAddress: data.address,
       educationalAttainment: data.educational_attainment,
+      trainingExperience: data.training_experience ?? '',
+      skillsHobbies: data.skills_hobbies ?? '',
+      classesTraining: data.classes_training ?? '',
+      volunteerPreference: positionKey,
     });
+
+    // Show other preference field if position is 'other'
+    this.showOtherPreference.set(positionKey === 'other');
 
     // Mirror into the profiles roster signal so the template shows the volunteer
     const existing = this.profiles();
@@ -440,15 +521,41 @@ export class VolunteerDashboard implements OnInit {
 
   // ── Profile CRUD ──────────────────────────────────────────────────────────
 
-  async saveProfile(): Promise<void> {
+  // Open confirmation modal before saving
+  openSaveConfirmModal(): void {
     if (this.profileForm.invalid) {
       this.profileForm.markAllAsTouched();
       return;
     }
+    this.showSaveConfirmModal.set(true);
+  }
 
+  // Close save confirmation modal
+  closeSaveConfirmModal(): void {
+    this.showSaveConfirmModal.set(false);
+  }
+
+  // Confirm and save profile
+  confirmSaveProfile(): void {
+    this.showSaveConfirmModal.set(false);
+    this.performSaveProfile();
+  }
+
+  // Close error modal
+  closeProfileError(): void {
+    this.showProfileError.set(false);
+    this.profileErrorMessage.set('');
+  }
+
+  // Perform the actual profile save
+  private performSaveProfile(): void {
     this.isLoading.set(true);
 
     const formValue = this.profileForm.getRawValue();
+    
+    // Convert position key to position name for the backend
+    const volunteerPreferenceName = this.getPositionName(formValue.volunteerPreference ?? '');
+    
     const payload = {
       firstName: formValue.firstName?.trim() ?? '',
       lastName: formValue.lastName?.trim() ?? '',
@@ -462,16 +569,33 @@ export class VolunteerDashboard implements OnInit {
       trainingExperience: formValue.trainingExperience?.trim() ?? '',
       skillsHobbies: formValue.skillsHobbies?.trim() ?? '',
       classesTraining: formValue.classesTraining?.trim() ?? '',
-      volunteerPreference: formValue.volunteerPreference ?? '',
+      volunteerPreference: volunteerPreferenceName,
       otherPreference: formValue.otherPreference?.trim() ?? '',
     };
 
     this.volunteerService.updateProfile(payload).subscribe((response) => {
       if (response.success && response.data) {
         this.applyProfileResponse(response.data);
+        // Show success notification
+        this.showProfileSuccess.set(true);
+        this.profileSuccessMessage.set('Profile updated successfully!');
+        // Auto-hide success message after 3 seconds
+        setTimeout(() => {
+          this.showProfileSuccess.set(false);
+          this.profileSuccessMessage.set('');
+        }, 3000);
+      } else {
+        // Show error modal
+        this.showProfileError.set(true);
+        this.profileErrorMessage.set(response.message || 'Failed to update profile. Please try again.');
       }
       this.isLoading.set(false);
     });
+  }
+
+  // Keep saveProfile for backward compatibility
+  async saveProfile(): Promise<void> {
+    this.openSaveConfirmModal();
   }
 
   editProfile(profile: VolunteerProfile): void {
@@ -527,6 +651,34 @@ export class VolunteerDashboard implements OnInit {
 
   getProfileDisplayName(profile: VolunteerProfile): string {
     return `${profile.firstName} ${profile.lastName}`.trim();
+  }
+
+  // Helper method to convert position name to dropdown key
+  private getPositionKey(positionName: string): string {
+    return this.positionToKeyMap[positionName] || positionName;
+  }
+
+  // Helper method to convert dropdown key to position name for saving
+  private getPositionName(positionKey: string): string {
+    const reverseMap: Record<string, string> = {
+      'sidewalk-sunday-school': 'Metro Sidewalk Sunday School (Teaching & Education)',
+      'mobile-kitchen': 'Mobile Kitchen Operations',
+      'relief-operations': 'Relief Operations',
+      'safety-emergency': 'Safety and Emergency Response',
+      'medical-operations': 'Medical Operations',
+      'psychological-aid': 'Psychological First Aid',
+      'transportation-logistics': 'Transportation & Logistics Team',
+      'purchasing': 'Purchasing Team',
+      'partnerships': 'Individual & Corporate Partnerships',
+      'digital-marketing': 'Digital Marketing & Promotions',
+      'creatives': 'Creatives (Video / Photos)',
+      'healing': 'Healing',
+      'real-estate-sports': 'Real Estate & Sports',
+      'kitchen-related': 'Anything kitchen-related',
+      'wherever-needed': 'Wherever is needed',
+      'dont-know': "Don't know yet",
+    };
+    return reverseMap[positionKey] || positionKey;
   }
 
   // ── Attendance form ───────────────────────────────────────────────────────

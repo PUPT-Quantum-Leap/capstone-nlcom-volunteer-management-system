@@ -36,5 +36,29 @@ export interface VolunteerProfileResponse {
   last_medical_examination: string;
   address: string;
   educational_attainment: string;
+  /** Training experience from trainings table */
+  training_experience: string;
+  /** Skills and hobbies from skills table */
+  skills_hobbies: string;
+  /** Classes/training attended from trainings table */
+  classes_training: string;
   positions: Position[];
+  experiences?: Experience[];
+  skills?: Skill[];
+  trainings?: Training[];
+}
+
+export interface Experience {
+  experience_id: number;
+  description: string;
+}
+
+export interface Skill {
+  skill_id: number;
+  name: string;
+}
+
+export interface Training {
+  training_id: number;
+  name: string;
 }
