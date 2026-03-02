@@ -1,26 +1,29 @@
-
-
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Login } from './login';
 import { AuthService } from '../../services/auth.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
-import { of, throwError } from 'rxjs';
+import { of, Observable } from 'rxjs';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 describe('Login Component', () => {
   let component: Login;
   let fixture: ComponentFixture<Login>;
-  let mockAuthService: { login: ReturnType<typeof vi.fn> };
+  let mockAuthService: { login$: ReturnType<typeof vi.fn> };
   let mockRouter: { navigate: ReturnType<typeof vi.fn> };
+  let mockActivatedRoute: { queryParams: Observable<Record<string, unknown>> };
 
   beforeEach(async () => {
     mockAuthService = {
-      login: vi.fn(),
+      login$: vi.fn(),
     };
 
     mockRouter = {
       navigate: vi.fn(),
+    };
+
+    mockActivatedRoute = {
+      queryParams: of({}),
     };
 
     await TestBed.configureTestingModule({
@@ -28,19 +31,20 @@ describe('Login Component', () => {
       providers: [
         { provide: AuthService, useValue: mockAuthService },
         { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
       ],
     })
-    .overrideComponent(Login, {
-      remove: {
-        templateUrl: './login.html',
-        styleUrl: './login.scss'
-      },
-      add: {
-        template: '<div>Login Component Mock Template</div>',
-        styles: []
-      }
-    })
-    .compileComponents();
+      .overrideComponent(Login, {
+        remove: {
+          templateUrl: './login.html',
+          styleUrl: './login.scss',
+        },
+        add: {
+          template: '<div>Login Component Mock Template</div>',
+          styles: [],
+        },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(Login);
     component = fixture.componentInstance;
@@ -55,7 +59,7 @@ describe('Login Component', () => {
     expect(component.loginForm.value).toEqual({
       email: '',
       password: '',
-      rememberMe: false
+      rememberMe: false,
     });
   });
 
@@ -124,46 +128,46 @@ describe('Login Component', () => {
       const markAllAsTouchedSpy = vi.spyOn(component.loginForm, 'markAllAsTouched');
       await component.onSubmit();
       expect(markAllAsTouchedSpy).toHaveBeenCalled();
-      expect(mockAuthService.login).not.toHaveBeenCalled();
+      expect(mockAuthService.login$).not.toHaveBeenCalled();
     });
 
     it('should not call authService.login if already loading', async () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
-        rememberMe: false
+        rememberMe: false,
       });
       component.isLoading.set(true);
       await component.onSubmit();
-      expect(mockAuthService.login).not.toHaveBeenCalled();
+      expect(mockAuthService.login$).not.toHaveBeenCalled();
     });
 
     it('should call authService.login with trimmed credentials when form is valid', async () => {
       component.loginForm.setValue({
         email: '  test@example.com  ',
         password: 'password123',
-        rememberMe: false
+        rememberMe: false,
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login.mockReturnValue(of({ success: true }));
+      mockAuthService.login$.mockReturnValue(of({ success: true }));
       await component.onSubmit();
       expect(component.isLoading()).toBe(false);
-      expect(mockAuthService.login).toHaveBeenCalledWith({
+      expect(mockAuthService.login$).toHaveBeenCalledWith({
         email: 'test@example.com',
-        password: 'password123'
+        password: 'password123',
       });
     });
 
-    it('should navigate to home on successful login', async () => {
+    it('should navigate to volunteer dashboard on successful login', async () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
-        rememberMe: false
+        rememberMe: false,
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login.mockReturnValue(of({ success: true }));
+      mockAuthService.login$.mockReturnValue(of({ success: true }));
       await component.onSubmit();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/volunteer-dashboard']);
       expect(component.errorMessage()).toBeNull();
     });
 
@@ -171,13 +175,15 @@ describe('Login Component', () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
-        rememberMe: false
+        rememberMe: false,
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login.mockReturnValue(of({
-        success: false,
-        message: 'Invalid credentials'
-      }));
+      mockAuthService.login$.mockReturnValue(
+        of({
+          success: false,
+          message: 'Invalid credentials',
+        }),
+      );
       await component.onSubmit();
       expect(mockRouter.navigate).not.toHaveBeenCalled();
       expect(component.errorMessage()).toBe('Invalid credentials');
@@ -187,10 +193,10 @@ describe('Login Component', () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
-        rememberMe: false
+        rememberMe: false,
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login.mockReturnValue(of({ success: false }));
+      mockAuthService.login$.mockReturnValue(of({ success: false }));
       await component.onSubmit();
       expect(component.errorMessage()).toBe('Invalid email or password');
     });
@@ -199,11 +205,15 @@ describe('Login Component', () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
-        rememberMe: false
+        rememberMe: false,
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      mockAuthService.login.mockReturnValue(throwError(() => new Error('Network error')));
+      mockAuthService.login$.mockReturnValue(
+        new Observable(() => {
+          throw new Error('Network error');
+        }),
+      );
       await component.onSubmit();
       expect(component.errorMessage()).toBe('An unexpected error occurred. Please try again.');
       expect(component.isLoading()).toBe(false);
@@ -223,7 +233,8 @@ describe('Login Component', () => {
 
       await component.navigateToSignup();
 
-      expect(consoleSpy).toHaveBeenCalledWith('Navigation failed:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalled();
+      expect(component.errorMessage()).toBe('Navigation error. Please try again.');
       consoleSpy.mockRestore();
     });
 
@@ -238,7 +249,8 @@ describe('Login Component', () => {
 
       await component.navigateToForgotPassword();
 
-      expect(consoleSpy).toHaveBeenCalledWith('Navigation failed:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalled();
+      expect(component.errorMessage()).toBe('Navigation error. Please try again.');
       consoleSpy.mockRestore();
     });
   });

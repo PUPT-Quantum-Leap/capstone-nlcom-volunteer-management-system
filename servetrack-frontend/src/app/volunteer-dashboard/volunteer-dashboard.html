@@ -11,44 +11,77 @@
     <nav class="sidebar-nav" aria-label="Main Navigation">
       <ul>
         <li>
-          <button type="button" [class.active]="currentView() === 'overview'" (click)="setView('overview')"
-            aria-label="View Overview Summary">
+          <button
+            type="button"
+            [class.active]="currentView() === 'overview'"
+            (click)="setView('overview')"
+            aria-label="View Overview Summary"
+          >
             <span class="label nav-label">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M4 19H20M7 16V10M12 16V6M17 16V12" stroke="currentColor" stroke-width="2"
-                  stroke-linecap="round" />
+                <path
+                  d="M4 19H20M7 16V10M12 16V6M17 16V12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
               </svg>
               Overview Summary
             </span>
           </button>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'profile'" (click)="setView('profile')"
-            aria-label="View My Profile">
+          <button
+            type="button"
+            [class.active]="currentView() === 'profile'"
+            (click)="setView('profile')"
+            aria-label="View My Profile"
+          >
             <span class="label nav-label">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 12A4 4 0 1 0 12 4A4 4 0 0 0 12 12Z" stroke="currentColor" stroke-width="2" />
-                <path d="M4 20C4 16.686 7.134 14 11 14H13C16.866 14 20 16.686 20 20" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round" />
+                <path
+                  d="M12 12A4 4 0 1 0 12 4A4 4 0 0 0 12 12Z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+                <path
+                  d="M4 20C4 16.686 7.134 14 11 14H13C16.866 14 20 16.686 20 20"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
               </svg>
               My Profile
             </span>
           </button>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'schedule'" (click)="setView('schedule')"
-            aria-label="View Service Schedule">
-            <span class="label">Service Schedule</span>
+          <button
+            type="button"
+            [class.active]="currentView() === 'schedule'"
+            (click)="setView('schedule')"
+            aria-label="View Attendance Log"
+          >
+            <span class="label">Attendance Log</span>
           </button>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'polls'" (click)="setView('polls')"
-            aria-label="View Volunteer Polls">
+          <button
+            type="button"
+            [class.active]="currentView() === 'polls'"
+            (click)="setView('polls')"
+            aria-label="View Volunteer Polls"
+          >
             <span class="label nav-label">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M4 7H20V20H4V7Z" stroke="currentColor" stroke-width="2" />
-                <path d="M8 11L12 15L16 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                  stroke-linejoin="round" />
+                <path
+                  d="M8 11L12 15L16 11"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
                 <path d="M9 4H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
               </svg>
               Volunteer Polls
@@ -60,7 +93,7 @@
 
     <div class="sidebar-footer">
       <div class="user-brief">
-        <img [src]="profilePreviewUrl()" alt="User" class="avatar-sm">
+        <img [src]="profilePreviewUrl()" alt="User" class="avatar-sm" />
         <div class="user-info">
           <p class="name">{{ userName() }}</p>
           <p class="role">Active Volunteer</p>
@@ -73,24 +106,38 @@
     <header class="top-bar">
       <h1 class="page-title">
         @switch (currentView()) {
-        @case ('overview') { Overview Summary }
-        @case ('profile') { Volunteer Profile }
-        @case ('schedule') { Service Schedule }
-        @case ('polls') { Community Polls }
+          @case ('overview') {
+            Overview Summary
+          }
+          @case ('profile') {
+            Volunteer Profile
+          }
+          @case ('schedule') {
+            Attendance Log
+          }
+          @case ('polls') {
+            Community Polls
+          }
         }
       </h1>
 
       <div class="top-bar-right">
         <div class="search-inline">
-          <input #dashboardSearch type="text" class="search-input" [value]="searchQuery()"
-            (input)="setSearchQuery(dashboardSearch.value)" (keydown.enter)="runSearch()"
-            placeholder="Search dashboard...">
+          <input
+            #dashboardSearch
+            type="text"
+            class="search-input"
+            [value]="searchQuery()"
+            (input)="setSearchQuery(dashboardSearch.value)"
+            (keydown.enter)="runSearch()"
+            placeholder="Search dashboard..."
+          />
           <button type="button" class="search-btn" (click)="runSearch()">Search</button>
         </div>
         <button type="button" class="outline-btn" (click)="toggleNotifications()">
           Notifications
           @if (notificationCount() > 0) {
-          <span class="badge">{{ notificationCount() }}</span>
+            <span class="badge">{{ notificationCount() }}</span>
           }
         </button>
         <button type="button" class="primary-btn" (click)="logout()">Logout</button>
@@ -98,339 +145,532 @@
     </header>
 
     @if (showNotifications()) {
-    <section class="notification-panel panel">
-      <div class="panel-header">
-        <h2>Notifications</h2>
-        <div class="panel-actions">
-          <button type="button" class="outline-btn" (click)="markNotificationsRead()">Mark all as read</button>
-          <button type="button" class="outline-btn" (click)="closeNotifications()">Close</button>
-        </div>
-      </div>
-      <div class="notification-list">
-        @for (item of notifications(); track item.id) {
-        <article class="notification-item" [class.unread]="!item.read">
-          <div>
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.description }}</p>
+      <section class="notification-panel panel">
+        <div class="panel-header">
+          <h2>Notifications</h2>
+          <div class="panel-actions">
+            <button type="button" class="outline-btn" (click)="markNotificationsRead()">
+              Mark all as read
+            </button>
+            <button type="button" class="outline-btn" (click)="closeNotifications()">Close</button>
           </div>
-          <span class="notification-time">{{ item.time }}</span>
-        </article>
-        }
-      </div>
-    </section>
+        </div>
+        <div class="notification-list">
+          @for (item of notifications(); track item.id) {
+            <article class="notification-item" [class.unread]="!item.read">
+              <div>
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.description }}</p>
+              </div>
+              <span class="notification-time">{{ item.time }}</span>
+            </article>
+          }
+        </div>
+      </section>
     }
 
     <main class="dashboard-content">
       @switch (currentView()) {
-      @case ('overview') {
-      <section class="overview-layout">
-        <section class="stats-grid">
-          <article class="stat-card">
-            <p class="label">Attendance</p>
-            <p class="value">{{ attendanceCount() }} / {{ attendanceGoal() }}</p>
-            <div class="meter">
-              <div class="fill" [style.width.%]="attendanceRate()"></div>
-            </div>
-            <p class="meta">{{ attendanceRate() }}% completion rate</p>
-          </article>
-
-          <article class="stat-card">
-            <p class="label">Location Assigned</p>
-            <p class="value value-text">{{ locationAssigned() }}</p>
-            <p class="meta">Current Deployment</p>
-          </article>
-
-          <article class="stat-card">
-            <p class="label">Task Assigned</p>
-            <p class="value value-text">{{ taskAssigned() }}</p>
-            <p class="meta">Service Responsibility</p>
-          </article>
-
-          <article class="stat-card">
-            <p class="label">Last Vote</p>
-            <p class="value value-text">{{ selectedPollLabel() }}</p>
-            <p class="meta">
-              @if (hasSubmittedVote()) { Vote Recorded } @else { Action Required }
-            </p>
-          </article>
-        </section>
-
-        <section class="quick-actions">
-          <button type="button" class="action-card" (click)="setView('profile')">
-            <h3>Update Profile</h3>
-            <p>Keep your volunteer details and preferences current.</p>
-          </button>
-          <button type="button" class="action-card" (click)="setView('polls')">
-            <h3>Vote in Polls</h3>
-            <p>Cast your vote for schedules and assignments.</p>
-          </button>
-          <button type="button" class="action-card" (click)="setView('schedule')">
-            <h3>Review Schedule</h3>
-            <p>Check your latest service deployment updates.</p>
-          </button>
-        </section>
-      </section>
-      }
-
-      @case ('profile') {
-      <section class="profile-grid">
-        <article class="panel">
-          <div class="panel-header">
-            <h2>{{ editingProfileId() !== null ? 'Edit Profile' : 'New Profile' }}</h2>
-            <p>Profile Completion: {{ profileCompletion() }}%</p>
-          </div>
-
-          <form class="form-grid" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
-            <div class="photo-row">
-              <img [src]="profilePreviewUrl()" alt="Profile preview" class="profile-image">
-              <label class="outline-btn upload-btn">
-                Choose Photo
-                <input type="file" accept="image/*" (change)="onPhotoSelected($event)">
-              </label>
-            </div>
-
-            <h3 class="section-title wide">Personal Information</h3>
-
-            <div class="form-group">
-              <label for="firstName">First Name</label>
-              <input type="text" id="firstName" formControlName="firstName" placeholder="Enter first name">
-              @if (controlHasError('firstName')) { <span class="error-text">{{ getControlError('firstName') }}</span> }
-            </div>
-
-            <div class="form-group">
-              <label for="lastName">Last Name</label>
-              <input type="text" id="lastName" formControlName="lastName" placeholder="Enter last name">
-              @if (controlHasError('lastName')) { <span class="error-text">{{ getControlError('lastName') }}</span> }
-            </div>
-
-            <div class="form-group">
-              <label for="facebookName">Facebook Name</label>
-              <input type="text" id="facebookName" formControlName="facebookName"
-                placeholder="Optional facebook display name">
-            </div>
-
-            <div class="form-group">
-              <label for="email">Work Email</label>
-              <input type="email" id="email" formControlName="email" placeholder="email@servetrack.org">
-              @if (controlHasError('email')) { <span class="error-text">{{ getControlError('email') }}</span> }
-            </div>
-
-            <div class="form-group">
-              <label for="mobileNumber">Mobile Number</label>
-              <input type="text" id="mobileNumber" formControlName="mobileNumber" placeholder="09XXXXXXXXX">
-              @if (controlHasError('mobileNumber')) { <span class="error-text">{{ getControlError('mobileNumber')
-                }}</span> }
-            </div>
-
-            <div class="form-group">
-              <label for="birthdate">Birthdate</label>
-              <input type="date" id="birthdate" formControlName="birthdate">
-              @if (controlHasError('birthdate')) { <span class="error-text">{{ getControlError('birthdate') }}</span> }
-            </div>
-
-            <div class="form-group wide">
-              <label for="lastMedicalExam">Date of Last Medical Examination</label>
-              <input type="date" id="lastMedicalExam" formControlName="lastMedicalExam">
-              @if (controlHasError('lastMedicalExam')) { <span class="error-text">{{ getControlError('lastMedicalExam')
-                }}</span> }
-            </div>
-
-            <div class="form-group wide">
-              <label for="completeAddress">Complete Address</label>
-              <textarea id="completeAddress" rows="2" formControlName="completeAddress"
-                placeholder="Enter complete address"></textarea>
-              @if (controlHasError('completeAddress')) { <span class="error-text">{{ getControlError('completeAddress')
-                }}</span> }
-            </div>
-
-            <h3 class="section-title wide">Education and Experience</h3>
-
-            <div class="form-group wide">
-              <label for="educationalAttainment">Educational Attainment</label>
-              <select id="educationalAttainment" formControlName="educationalAttainment">
-                <option value="" disabled>Select educational attainment</option>
-                <option value="elementary">Elementary</option>
-                <option value="high-school">High School</option>
-                <option value="senior-high">Senior High School</option>
-                <option value="vocational">Vocational Course</option>
-                <option value="college-undergraduate">College Undergraduate</option>
-                <option value="college-graduate">College Graduate</option>
-                <option value="masters">Master's Degree</option>
-                <option value="doctorate">Doctorate Degree</option>
-              </select>
-              @if (controlHasError('educationalAttainment')) { <span class="error-text">{{
-                getControlError('educationalAttainment') }}</span> }
-            </div>
-
-            <div class="form-group wide">
-              <label for="trainingExperience">Training and Experience</label>
-              <textarea id="trainingExperience" rows="2" formControlName="trainingExperience"
-                placeholder="Optional"></textarea>
-            </div>
-
-            <div class="form-group wide">
-              <label for="skillsHobbies">Skills and Hobbies</label>
-              <textarea id="skillsHobbies" rows="2" formControlName="skillsHobbies" placeholder="Optional"></textarea>
-            </div>
-
-            <div class="form-group wide">
-              <label for="classesTraining">Classes and Training Attended</label>
-              <textarea id="classesTraining" rows="2" formControlName="classesTraining"
-                placeholder="Optional"></textarea>
-            </div>
-
-            <h3 class="section-title wide">Volunteer Preferences and Account</h3>
-
-            <div class="form-group wide">
-              <label for="volunteerPreference">Volunteer Preference</label>
-              <select id="volunteerPreference" formControlName="volunteerPreference"
-                (change)="onVolunteerPreferenceChange($event)">
-                <option value="" disabled>Select your preference</option>
-                <option value="sidewalk-sunday-school">Metro Sidewalk Sunday School (Teaching & Education)</option>
-                <option value="mobile-kitchen">Mobile Kitchen Operations</option>
-                <option value="relief-operations">Relief Operations</option>
-                <option value="safety-emergency">Safety and Emergency Response</option>
-                <option value="medical-operations">Medical Operations</option>
-                <option value="psychological-aid">Psychological First Aid</option>
-                <option value="transportation-logistics">Transportation & Logistics Team</option>
-                <option value="purchasing">Purchasing Team</option>
-                <option value="partnerships">Individual & Corporate Partnerships</option>
-                <option value="digital-marketing">Digital Marketing & Promotions</option>
-                <option value="creatives">Creatives (Video / Photos)</option>
-                <option value="healing">Healing</option>
-                <option value="real-estate-sports">Real Estate & Sports</option>
-                <option value="kitchen-related">Anything kitchen-related</option>
-                <option value="wherever-needed">Wherever is needed</option>
-                <option value="dont-know">Don't know yet</option>
-                <option value="other">Other</option>
-              </select>
-              @if (controlHasError('volunteerPreference')) { <span class="error-text">{{
-                getControlError('volunteerPreference') }}</span> }
-            </div>
-
-            @if (showOtherPreference()) {
-            <div class="form-group wide">
-              <label for="otherPreference">Other Preference</label>
-              <input type="text" id="otherPreference" formControlName="otherPreference"
-                placeholder="Specify your preference">
-            </div>
-            }
-
-
-
-            <div class="form-actions wide">
-              <button type="submit" class="primary-btn">Update Profile</button>
-              @if (editingProfileId() !== null) {
-              <button type="button" class="outline-btn" (click)="cancelEdit()">Cancel</button>
-              }
-            </div>
-          </form>
-        </article>
-
-        <article class="panel">
-          <div class="panel-header">
-            <h2>Volunteer Roster</h2>
-            <p>{{ profiles().length }} active members</p>
-          </div>
-          <div class="profile-list">
-            @for (profile of profiles(); track profile.id) {
-            <article class="profile-item">
-              <div class="profile-head">
-                <img [src]="profile.photoUrl" [alt]="getProfileDisplayName(profile)" class="list-avatar">
-                <div>
-                  <h3>{{ getProfileDisplayName(profile) }}</h3>
-                  <p>{{ profile.volunteerPreference }}</p>
+        @case ('overview') {
+          <section class="overview-layout">
+            <section class="stats-grid">
+              <article class="stat-card">
+                <p class="label">Attendance</p>
+                <p class="value">{{ attendanceTotalHours() }} / {{ attendanceGoalHours() }} hrs</p>
+                <div class="meter">
+                  <div class="fill" [style.width.%]="attendanceRate()"></div>
                 </div>
+                <p class="meta">{{ attendanceRate() }}% completion rate</p>
+              </article>
+
+              <article class="stat-card">
+                <p class="label">Location Assigned</p>
+                <p class="value value-text">{{ locationAssigned() }}</p>
+                <p class="meta">Current Deployment</p>
+              </article>
+
+              <article class="stat-card">
+                <p class="label">Task Assigned</p>
+                <p class="value value-text">{{ taskAssigned() }}</p>
+                <p class="meta">Service Responsibility</p>
+              </article>
+
+              <article class="stat-card">
+                <p class="label">Last Vote</p>
+                <p class="value value-text">{{ selectedPollLabel() }}</p>
+                <p class="meta">
+                  @if (hasSubmittedVote()) {
+                    Vote Recorded
+                  } @else {
+                    Action Required
+                  }
+                </p>
+              </article>
+            </section>
+
+            <section class="quick-actions">
+              <button type="button" class="action-card" (click)="setView('profile')">
+                <h3>Update Profile</h3>
+                <p>Keep your volunteer details and preferences current.</p>
+              </button>
+              <button type="button" class="action-card" (click)="setView('polls')">
+                <h3>Vote in Polls</h3>
+                <p>Cast your vote for schedules and assignments.</p>
+              </button>
+              <button type="button" class="action-card" (click)="setView('schedule')">
+                <h3>Review Schedule</h3>
+                <p>Check your latest service deployment updates.</p>
+              </button>
+            </section>
+          </section>
+        }
+
+        @case ('profile') {
+          <section class="profile-grid">
+            <article class="panel">
+              <div class="panel-header">
+                <h2>{{ editingProfileId() !== null ? 'Edit Profile' : 'New Profile' }}</h2>
+                <p>Profile Completion: {{ profileCompletion() }}%</p>
               </div>
-              <div class="item-actions">
-                <button type="button" class="outline-btn" (click)="editProfile(profile)">Edit</button>
-                <button type="button" class="danger-btn" (click)="deleteProfile(profile.id)">Remove</button>
+
+              <form class="form-grid" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+                <div class="photo-row">
+                  <img [src]="profilePreviewUrl()" alt="Profile preview" class="profile-image" />
+                  <label class="outline-btn upload-btn">
+                    Choose Photo
+                    <input type="file" accept="image/*" (change)="onPhotoSelected($event)" />
+                  </label>
+                </div>
+
+                <h3 class="section-title wide">Personal Information</h3>
+
+                <div class="form-group">
+                  <label for="firstName">First Name</label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    formControlName="firstName"
+                    placeholder="Enter first name"
+                  />
+                  @if (controlHasError('firstName')) {
+                    <span class="error-text">{{ getControlError('firstName') }}</span>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="lastName">Last Name</label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    formControlName="lastName"
+                    placeholder="Enter last name"
+                  />
+                  @if (controlHasError('lastName')) {
+                    <span class="error-text">{{ getControlError('lastName') }}</span>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="facebookName">Facebook Name</label>
+                  <input
+                    type="text"
+                    id="facebookName"
+                    formControlName="facebookName"
+                    placeholder="Optional facebook display name"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="email">Work Email</label>
+                  <input
+                    type="email"
+                    id="email"
+                    formControlName="email"
+                    placeholder="email@servetrack.org"
+                  />
+                  @if (controlHasError('email')) {
+                    <span class="error-text">{{ getControlError('email') }}</span>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="mobileNumber">Mobile Number</label>
+                  <input
+                    type="text"
+                    id="mobileNumber"
+                    formControlName="mobileNumber"
+                    placeholder="09XXXXXXXXX"
+                  />
+                  @if (controlHasError('mobileNumber')) {
+                    <span class="error-text">{{ getControlError('mobileNumber') }}</span>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="birthdate">Birthdate</label>
+                  <input type="date" id="birthdate" formControlName="birthdate" />
+                  @if (controlHasError('birthdate')) {
+                    <span class="error-text">{{ getControlError('birthdate') }}</span>
+                  }
+                </div>
+
+                <div class="form-group wide">
+                  <label for="lastMedicalExam">Date of Last Medical Examination</label>
+                  <input type="date" id="lastMedicalExam" formControlName="lastMedicalExam" />
+                  @if (controlHasError('lastMedicalExam')) {
+                    <span class="error-text">{{ getControlError('lastMedicalExam') }}</span>
+                  }
+                </div>
+
+                <div class="form-group wide">
+                  <label for="completeAddress">Complete Address</label>
+                  <textarea
+                    id="completeAddress"
+                    rows="2"
+                    formControlName="completeAddress"
+                    placeholder="Enter complete address"
+                  ></textarea>
+                  @if (controlHasError('completeAddress')) {
+                    <span class="error-text">{{ getControlError('completeAddress') }}</span>
+                  }
+                </div>
+
+                <h3 class="section-title wide">Education and Experience</h3>
+
+                <div class="form-group wide">
+                  <label for="educationalAttainment">Educational Attainment</label>
+                  <select id="educationalAttainment" formControlName="educationalAttainment">
+                    <option value="" disabled>Select educational attainment</option>
+                    <option value="elementary">Elementary</option>
+                    <option value="high-school">High School</option>
+                    <option value="senior-high">Senior High School</option>
+                    <option value="vocational">Vocational Course</option>
+                    <option value="college-undergraduate">College Undergraduate</option>
+                    <option value="college-graduate">College Graduate</option>
+                    <option value="masters">Master's Degree</option>
+                    <option value="doctorate">Doctorate Degree</option>
+                  </select>
+                  @if (controlHasError('educationalAttainment')) {
+                    <span class="error-text">{{ getControlError('educationalAttainment') }}</span>
+                  }
+                </div>
+
+                <div class="form-group wide">
+                  <label for="trainingExperience">Training and Experience</label>
+                  <textarea
+                    id="trainingExperience"
+                    rows="2"
+                    formControlName="trainingExperience"
+                    placeholder="Optional"
+                  ></textarea>
+                </div>
+
+                <div class="form-group wide">
+                  <label for="skillsHobbies">Skills and Hobbies</label>
+                  <textarea
+                    id="skillsHobbies"
+                    rows="2"
+                    formControlName="skillsHobbies"
+                    placeholder="Optional"
+                  ></textarea>
+                </div>
+
+                <div class="form-group wide">
+                  <label for="classesTraining">Classes and Training Attended</label>
+                  <textarea
+                    id="classesTraining"
+                    rows="2"
+                    formControlName="classesTraining"
+                    placeholder="Optional"
+                  ></textarea>
+                </div>
+
+                <h3 class="section-title wide">Volunteer Preferences and Account</h3>
+
+                <div class="form-group wide">
+                  <label for="volunteerPreference">Volunteer Preference</label>
+                  <select
+                    id="volunteerPreference"
+                    formControlName="volunteerPreference"
+                    (change)="onVolunteerPreferenceChange($event)"
+                  >
+                    <option value="" disabled>Select your preference</option>
+                    <option value="sidewalk-sunday-school">
+                      Metro Sidewalk Sunday School (Teaching & Education)
+                    </option>
+                    <option value="mobile-kitchen">Mobile Kitchen Operations</option>
+                    <option value="relief-operations">Relief Operations</option>
+                    <option value="safety-emergency">Safety and Emergency Response</option>
+                    <option value="medical-operations">Medical Operations</option>
+                    <option value="psychological-aid">Psychological First Aid</option>
+                    <option value="transportation-logistics">
+                      Transportation & Logistics Team
+                    </option>
+                    <option value="purchasing">Purchasing Team</option>
+                    <option value="partnerships">Individual & Corporate Partnerships</option>
+                    <option value="digital-marketing">Digital Marketing & Promotions</option>
+                    <option value="creatives">Creatives (Video / Photos)</option>
+                    <option value="healing">Healing</option>
+                    <option value="real-estate-sports">Real Estate & Sports</option>
+                    <option value="kitchen-related">Anything kitchen-related</option>
+                    <option value="wherever-needed">Wherever is needed</option>
+                    <option value="dont-know">Don't know yet</option>
+                    <option value="other">Other</option>
+                  </select>
+                  @if (controlHasError('volunteerPreference')) {
+                    <span class="error-text">{{ getControlError('volunteerPreference') }}</span>
+                  }
+                </div>
+
+                @if (showOtherPreference()) {
+                  <div class="form-group wide">
+                    <label for="otherPreference">Other Preference</label>
+                    <input
+                      type="text"
+                      id="otherPreference"
+                      formControlName="otherPreference"
+                      placeholder="Specify your preference"
+                    />
+                  </div>
+                }
+
+                <div class="form-actions wide">
+                  <button type="submit" class="primary-btn">Update Profile</button>
+                  @if (editingProfileId() !== null) {
+                    <button type="button" class="outline-btn" (click)="cancelEdit()">Cancel</button>
+                  }
+                </div>
+              </form>
+            </article>
+
+            <article class="panel">
+              <div class="panel-header">
+                <h2>Volunteer Roster</h2>
+                <p>{{ profiles().length }} active members</p>
+              </div>
+              <div class="profile-list">
+                @for (profile of profiles(); track profile.id) {
+                  <article class="profile-item">
+                    <div class="profile-head">
+                      <img
+                        [src]="profile.photoUrl"
+                        [alt]="getProfileDisplayName(profile)"
+                        class="list-avatar"
+                      />
+                      <div>
+                        <h3>{{ getProfileDisplayName(profile) }}</h3>
+                        <p>{{ profile.volunteerPreference }}</p>
+                      </div>
+                    </div>
+                    <div class="item-actions">
+                      <button type="button" class="outline-btn" (click)="editProfile(profile)">
+                        Edit
+                      </button>
+                      <button type="button" class="danger-btn" (click)="deleteProfile(profile.id)">
+                        Remove
+                      </button>
+                    </div>
+                  </article>
+                } @empty {
+                  <p class="empty-state">No other mission records found.</p>
+                }
               </div>
             </article>
-            } @empty {
-            <p class="empty-state">No other mission records found.</p>
+          </section>
+        }
+
+        @case ('polls') {
+          <section class="poll-grid">
+            <article class="panel">
+              <div class="panel-header">
+                <h2>Active Deployment Polls</h2>
+                <p>Shape the next mission logistics.</p>
+              </div>
+
+              <h3 class="section-text">Preferred Volunteer Schedule</h3>
+
+              <div class="poll-options">
+                @for (choice of pollChoices(); track choice.id) {
+                  <button
+                    type="button"
+                    class="poll-option"
+                    [class.active]="selectedPollChoiceId() === choice.id"
+                    [disabled]="hasSubmittedVote()"
+                    (click)="selectPollChoice(choice.id)"
+                  >
+                    <span class="option-label">{{ choice.label }}</span>
+                    <span class="poll-meta"
+                      >{{ getVotePercentage(choice.votes) }}% ({{ choice.votes }})</span
+                    >
+                  </button>
+                }
+              </div>
+
+              <div class="poll-actions">
+                <button
+                  type="button"
+                  class="primary-btn"
+                  [disabled]="selectedPollChoiceId() === null || hasSubmittedVote()"
+                  (click)="submitPollVote()"
+                >
+                  {{ hasSubmittedVote() ? 'Vote Recorded' : 'Submit Selection' }}
+                </button>
+              </div>
+            </article>
+          </section>
+        }
+
+        @case ('schedule') {
+          <section class="panel schedule-panel">
+            <div class="panel-header">
+              <h2>Attendance Log</h2>
+              <p>
+                {{ attendanceTotalHours() }} hrs logged &mdash;
+                {{ attendanceTotalEntries() }} entries this period
+              </p>
+            </div>
+
+            <div class="schedule-controls">
+              <div class="period-toggle">
+                <button
+                  type="button"
+                  class="outline-btn"
+                  [class.active]="attendancePeriod() === 'daily'"
+                  (click)="setAttendancePeriod('daily')"
+                >
+                  Daily
+                </button>
+                <button
+                  type="button"
+                  class="outline-btn"
+                  [class.active]="attendancePeriod() === 'weekly'"
+                  (click)="setAttendancePeriod('weekly')"
+                >
+                  Weekly
+                </button>
+                <button
+                  type="button"
+                  class="outline-btn"
+                  [class.active]="attendancePeriod() === 'monthly'"
+                  (click)="setAttendancePeriod('monthly')"
+                >
+                  Monthly
+                </button>
+              </div>
+
+              <div class="search-inline">
+                <input
+                  #attendanceSearch
+                  type="text"
+                  class="search-input"
+                  placeholder="Search by description..."
+                  [value]="attendanceSearchQuery()"
+                  (input)="attendanceSearchQuery.set(attendanceSearch.value)"
+                  (keydown.enter)="searchAttendance()"
+                />
+                <button type="button" class="search-btn" (click)="searchAttendance()">
+                  Search
+                </button>
+              </div>
+
+              <button type="button" class="primary-btn" (click)="toggleAddAttendance()">
+                {{ showAddAttendance() ? 'Cancel' : '+ Log Hours' }}
+              </button>
+            </div>
+
+            @if (showAddAttendance()) {
+              <form
+                class="attendance-form form-grid"
+                [formGroup]="attendanceForm"
+                (ngSubmit)="submitAttendance()"
+              >
+                <div class="form-group">
+                  <label for="attendanceDate">Date</label>
+                  <input type="date" id="attendanceDate" formControlName="date" />
+                  @if (attendanceForm.get('date')?.invalid && attendanceForm.get('date')?.touched) {
+                    <span class="error-text">Date is required</span>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="attendanceHours">Hours</label>
+                  <input
+                    type="number"
+                    id="attendanceHours"
+                    formControlName="hours"
+                    min="0.5"
+                    max="24"
+                    step="0.5"
+                    placeholder="e.g. 2.5"
+                  />
+                  @if (
+                    attendanceForm.get('hours')?.invalid && attendanceForm.get('hours')?.touched
+                  ) {
+                    <span class="error-text">Enter a valid number of hours (0.5–24)</span>
+                  }
+                </div>
+
+                <div class="form-group wide">
+                  <label for="attendanceDesc">Description (optional)</label>
+                  <input
+                    type="text"
+                    id="attendanceDesc"
+                    formControlName="description"
+                    placeholder="What did you do?"
+                  />
+                </div>
+
+                <div class="form-actions wide">
+                  <button type="submit" class="primary-btn">Save Entry</button>
+                  <button type="button" class="outline-btn" (click)="toggleAddAttendance()">
+                    Cancel
+                  </button>
+                </div>
+              </form>
             }
-          </div>
-        </article>
-      </section>
-      }
 
-      @case ('polls') {
-      <section class="poll-grid">
-        <article class="panel">
-          <div class="panel-header">
-            <h2>Active Deployment Polls</h2>
-            <p>Shape the next mission logistics.</p>
-          </div>
-
-          <h3 class="section-text">Preferred Volunteer Schedule</h3>
-
-          <div class="poll-options">
-            @for (choice of pollChoices(); track choice.id) {
-            <button type="button" class="poll-option" [class.active]="selectedPollChoiceId() === choice.id"
-              [disabled]="hasSubmittedVote()" (click)="selectPollChoice(choice.id)">
-              <span class="option-label">{{ choice.label }}</span>
-              <span class="poll-meta">{{ getVotePercentage(choice.votes) }}% ({{ choice.votes }})</span>
-            </button>
-            }
-          </div>
-
-          <div class="poll-actions">
-            <button type="button" class="primary-btn" [disabled]="selectedPollChoiceId() === null || hasSubmittedVote()"
-              (click)="submitPollVote()">
-              {{ hasSubmittedVote() ? 'Vote Recorded' : 'Submit Selection' }}
-            </button>
-          </div>
-        </article>
-      </section>
-      }
-
-      @case ('schedule') {
-      <section class="panel schedule-panel">
-        <div class="panel-header">
-          <h2>Service Schedule</h2>
-          <p>Your upcoming assignments and deployments.</p>
-        </div>
-        <div class="schedule-list">
-          @for (task of scheduleItems(); track task.id) {
-          <article class="schedule-card">
-            <div class="schedule-date">
-              <strong>{{ task.date | date:'MMM d, yyyy' }}</strong>
+            <div class="schedule-list">
+              @for (item of attendanceItems(); track item.attendance_id) {
+                <article class="schedule-card">
+                  <div class="schedule-date">
+                    <strong>{{ item.date | date: 'MMM d, yyyy' }}</strong>
+                  </div>
+                  <div class="schedule-details">
+                    <h3>{{ item.hours }} hr{{ item.hours !== 1 ? 's' : '' }}</h3>
+                    <p>{{ item.description || 'No description' }}</p>
+                  </div>
+                  <div class="schedule-status">
+                    <span class="badge" [class]="getAttendanceStatusClass(item.status)">{{
+                      item.status
+                    }}</span>
+                  </div>
+                </article>
+              } @empty {
+                <p class="empty-state">No attendance records found for this period.</p>
+              }
             </div>
-            <div class="schedule-details">
-              <h3>{{ task.role }}</h3>
-              <p>{{ task.location }}</p>
-            </div>
-            <div class="schedule-status">
-              <span class="badge" [class.confirmed]="task.status === 'Confirmed'">{{ task.status }}</span>
-            </div>
-          </article>
-          } @empty {
-          <p class="empty-state">No upcoming schedules found. Check back later.</p>
-          }
-        </div>
-      </section>
-      }
+          </section>
+        }
       }
     </main>
   </div>
 </div>
 
 @if (showLogoutModal()) {
-<div class="modal-backdrop" (click)="closeLogoutModal()">
-  <section class="modal-card" (click)="$event.stopPropagation()">
-    <h3>Confirm Logout</h3>
-    <p>Are you sure you want to logout?</p>
-    <div class="modal-actions">
-      <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
-      <button type="button" class="primary-btn" (click)="confirmLogout()">Yes, Logout</button>
-    </div>
-  </section>
-</div>
+  <div class="modal-backdrop" (click)="closeLogoutModal()">
+    <section class="modal-card" (click)="$event.stopPropagation()">
+      <h3>Confirm Logout</h3>
+      <p>Are you sure you want to logout?</p>
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
+        <button type="button" class="primary-btn" (click)="confirmLogout()">Yes, Logout</button>
+      </div>
+    </section>
+  </div>
 }
 
 @if (isLoading()) {
-<div class="loading-overlay">
-  <div class="spinner" aria-label="Loading..." role="status"></div>
-</div>
+  <div class="loading-overlay">
+    <div class="spinner" aria-label="Loading..." role="status"></div>
+  </div>
 }

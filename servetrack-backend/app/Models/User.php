@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -27,6 +28,14 @@ class User extends Authenticatable
         'failed_attempts',
         'last_failed_at',
     ];
+
+    /**
+     * Get the volunteer profile associated with the user
+     */
+    public function volunteer(): HasOne
+    {
+        return $this->hasOne(Volunteer::class, 'user_id', 'id');
+    }
 
     /**
      * The attributes that should be hidden for serialization.

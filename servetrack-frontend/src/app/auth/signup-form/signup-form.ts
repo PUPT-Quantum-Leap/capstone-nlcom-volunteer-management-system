@@ -1,7 +1,12 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { passwordStrengthValidator, passwordMatchValidator } from '../../validators/password.validator';
+import { Router } from '@angular/router';
+import {
+  passwordStrengthValidator,
+  passwordMatchValidator,
+} from '../../validators/password.validator';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-signup-form',
@@ -11,15 +16,18 @@ import { passwordStrengthValidator, passwordMatchValidator } from '../../validat
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SignupForm {
-  private fb = new FormBuilder();
-  
+  private authService = inject(AuthService);
+  private router = inject(Router);
+  private fb = inject(FormBuilder);
+
   currentStep = signal(1);
   isSubmitting = signal(false);
   showOtherInput = signal(false);
   showPassword = signal(false);
   showConfirmPassword = signal(false);
   showPasswordRequirements = signal(false);
-  
+  error = signal<string | null>(null);
+
   personalInfoForm: FormGroup;
   educationForm: FormGroup;
   preferencesForm: FormGroup;
@@ -43,14 +51,17 @@ export class SignupForm {
       classesTraining: [''],
     });
 
-    this.preferencesForm = this.fb.group({
-      volunteerPreference: ['', [Validators.required]],
-      otherPreference: [''],
-      password: ['', [Validators.required, passwordStrengthValidator()]],
-      confirmPassword: ['', [Validators.required]],
-    }, { validators: passwordMatchValidator('password', 'confirmPassword') });
+    this.preferencesForm = this.fb.group(
+      {
+        volunteerPreference: ['', [Validators.required]],
+        otherPreference: [''],
+        password: ['', [Validators.required, passwordStrengthValidator()]],
+        confirmPassword: ['', [Validators.required]],
+      },
+      { validators: passwordMatchValidator('password', 'confirmPassword') },
+    );
 
-    this.preferencesForm.get('volunteerPreference')?.valueChanges.subscribe(value => {
+    this.preferencesForm.get('volunteerPreference')?.valueChanges.subscribe((value) => {
       this.showOtherInput.set(value === 'other');
       if (value !== 'other') {
         this.preferencesForm.get('otherPreference')?.setValue('');
@@ -66,7 +77,7 @@ export class SignupForm {
 
   onNext(): void {
     const currentForm = this.getCurrentForm();
-    
+
     if (currentForm.valid) {
       if (this.currentStep() < 3) {
         this.currentStep.set(this.currentStep() + 1);
@@ -92,16 +103,31 @@ export class SignupForm {
         ...this.educationForm.value,
         ...this.preferencesForm.value,
       };
-      console.log('Complete Form Data:', formData);
-      // TODO: Submit to backend
-      setTimeout(() => {
-        this.isSubmitting.set(false);
-      }, 2000);
+
+      // Submit to real backend API
+      this.authService
+        .volunteerSignup(formData)
+        .then((response: { success: boolean; message?: string }) => {
+          if (response.success) {
+            setTimeout(() => {
+              this.router.navigate(['/login'], { queryParams: { registered: 'true' } });
+            }, 2000);
+          } else {
+            // Show error message
+            this.error.set(response.message || 'Registration failed');
+          }
+        })
+        .catch((error: any) => {
+          this.error.set('Registration failed. Please try again.');
+        })
+        .finally(() => {
+          this.isSubmitting.set(false);
+        });
     }
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
-    Object.keys(formGroup.controls).forEach(key => {
+    Object.keys(formGroup.controls).forEach((key) => {
       const control = formGroup.get(key);
       control?.markAsTouched();
     });
@@ -156,7 +182,7 @@ export class SignupForm {
 
   getPasswordRequirements(): { label: string; met: boolean }[] {
     const password = this.preferencesForm.get('password')?.value || '';
-    
+
     return [
       { label: 'At least 8 characters', met: password.length >= 8 },
       { label: 'One uppercase letter', met: /[A-Z]/.test(password) },

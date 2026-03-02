@@ -33,7 +33,7 @@ class LoginController extends Controller
             $request->session()->regenerate();
         }
 
-        $user = $request->user();
+        $user = $request->user()->load('volunteer');
         $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
 
         $cookie = cookie(
