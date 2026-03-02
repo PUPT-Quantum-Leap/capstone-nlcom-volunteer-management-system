@@ -97,7 +97,10 @@ describe('GuestOnly (RedirectIfAuthenticated) middleware', function (): void {
             'email' => $user->email,
             'password' => 'password',
         ])->assertOk()
-            ->assertJson(['message' => 'Already authenticated.']);
+            ->assertJson([
+                'message' => 'Already authenticated.',
+                'redirect' => '/',
+            ]);
     });
 
     it('allows unauthenticated users to access the login route', function (): void {
