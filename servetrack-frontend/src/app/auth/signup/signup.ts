@@ -158,7 +158,7 @@ export class Signup {
         
         setTimeout(() => {
           this.navigateToLogin();
-        }, 3000);
+        }, 5000);
       } else {
         this.errorMessage.set(response.message || 'Signup failed. Please try again.');
       }
@@ -176,7 +176,7 @@ export class Signup {
     try {
       await this.router.navigate(['/login']);
     } catch (error) {
-      console.error('Navigation failed:', error);
+      // Navigation failed - handle silently
     }
   }
 
