@@ -31,6 +31,8 @@ export class Signup {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   showPasswordRequirements = signal(false);
+  showPassword = signal(false);
+  showConfirmPassword = signal(false);
 
   // Form group with validators
   signupForm: FormGroup = this.fb.group(
@@ -178,5 +180,19 @@ export class Signup {
    */
   togglePasswordRequirements(): void {
     this.showPasswordRequirements.update((show) => !show);
+  }
+
+  /**
+   * Toggle password visibility
+   */
+  togglePasswordVisibility(): void {
+    this.showPassword.set(!this.showPassword());
+  }
+
+  /**
+   * Toggle confirm password visibility
+   */
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword.set(!this.showConfirmPassword());
   }
 }
