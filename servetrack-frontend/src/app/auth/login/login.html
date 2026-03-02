@@ -24,6 +24,7 @@
           formControlName="email"
           class="form-input"
           [class.error]="emailControl?.invalid && emailControl?.touched"
+          [disabled]="isLoading()"
           placeholder="Enter your email"
         />
         @if (emailControl?.invalid && emailControl?.touched) {
@@ -40,6 +41,7 @@
             formControlName="password"
             class="form-input password-input"
             [class.error]="passwordControl?.invalid && passwordControl?.touched"
+            [disabled]="isLoading()"
             placeholder="Enter your password"
           />
           <button
@@ -47,6 +49,7 @@
             class="password-toggle"
             (click)="togglePasswordVisibility()"
             [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            [disabled]="isLoading()"
           >
             @if (showPassword()) {
               <svg
@@ -93,17 +96,30 @@
 
       <div class="form-options">
         <label class="checkbox-container">
-          <input type="checkbox" formControlName="rememberMe" class="checkbox-input" />
-          <span class="checkmark"></span>
-          Remember me
+          <input type="checkbox" formControlName="rememberMe" 
+            class="checkbox-input" 
+            [disabled]="isLoading()" 
+          />
+          <span class="checkmark"></span>Remember me
         </label>
-        <a routerLink="/forgot-password" class="forgot-password"> Forgot password? </a>
+        @if (!isLoading()) {
+          <a routerLink="/forgot-password" class="forgot-password"> 
+            Forgot password? 
+          </a>
+        } @else {
+          <span class="forgot-password disabled"> Forgot password?</span>
+        }
       </div>
 
-      <button type="submit" class="btn btn-primary btn-full" [disabled]="isLoading()">
+      <button 
+        type="submit" 
+        class="btn btn-primary btn-full" 
+        [disabled]="isLoading()">
+
         @if (isLoading()) {
           <span class="loading-spinner"></span>
         }
+
         {{ isLoading() ? 'Signing In...' : 'Sign In' }}
       </button>
     </form>
@@ -111,7 +127,11 @@
     <div class="auth-footer">
       <p class="auth-footer-text">
         Don't have an account?
-        <a (click)="showPopupModal()" class="auth-link"> Sign up </a>
+        @if (!isLoading()) {
+          <a (click)="showPopupModal()" class="auth-link"> Sign up </a>
+        } @else {
+          <span class="auth-link disabled"> Sign up </span>
+        }
       </p>
     </div>
   </div>
