@@ -37,6 +37,7 @@
                 personalInfoForm.get('firstName')?.invalid &&
                 personalInfoForm.get('firstName')?.touched
               "
+              [disabled]="isSubmitting()"
             />
             @if (
               personalInfoForm.get('firstName')?.touched &&
@@ -60,6 +61,7 @@
                 personalInfoForm.get('lastName')?.invalid &&
                 personalInfoForm.get('lastName')?.touched
               "
+              [disabled]="isSubmitting()"
             />
             @if (
               personalInfoForm.get('lastName')?.touched && personalInfoForm.get('lastName')?.invalid
@@ -93,6 +95,7 @@
             [class.error]="
               personalInfoForm.get('email')?.invalid && personalInfoForm.get('email')?.touched
             "
+            [disabled]="isSubmitting()"
           />
           @if (personalInfoForm.get('email')?.touched && personalInfoForm.get('email')?.invalid) {
             <span class="error-message">{{ getErrorMessage('email') }}</span>
@@ -113,6 +116,7 @@
               personalInfoForm.get('mobileNumber')?.invalid &&
               personalInfoForm.get('mobileNumber')?.touched
             "
+            [disabled]="isSubmitting()"
           />
           @if (
             personalInfoForm.get('mobileNumber')?.touched &&
@@ -190,9 +194,14 @@
         </div>
 
         <div class="form-actions form-actions-single">
-          <button type="submit" class="btn-next">
-            Next
-            <span class="arrow">→</span>
+          <button type="submit" class="btn-next" [disabled]="isSubmitting()">
+            @if (isSubmitting()) {
+              <span class="spinner"></span>
+              Processing...
+            } @else {
+              Next
+              <span class="arrow">→</span>
+            }
           </button>
         </div>
       </form>
@@ -268,13 +277,19 @@
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn-back" (click)="onBack()">
+          <button type="button" class="btn-back" (click)="onBack()" 
+            [disabled]="isSubmitting()">
             <span class="arrow">←</span>
             Back
           </button>
-          <button type="submit" class="btn-next">
-            Next
-            <span class="arrow">→</span>
+          <button type="submit" class="btn-next" [disabled]="isSubmitting()">
+            @if (isSubmitting()) {
+              <span class="spinner"></span>
+              Processing...
+            } @else {
+              Next
+              <span class="arrow">→</span>
+            }
           </button>
         </div>
       </form>
@@ -489,7 +504,8 @@
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn-back" (click)="onBack()">
+          <button type="button" class="btn-back" (click)="onBack()" 
+            [disabled]="isSubmitting()">
             <span class="arrow">←</span>
             Back
           </button>
