@@ -105,6 +105,60 @@ $success: #059669;
       &::placeholder {
         color: $text-muted;
       }
+
+      &:disabled {
+        background-color: $gray-100;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
+
+    .password-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+
+      .password-input {
+        padding-right: 3rem; 
+      }
+
+      .password-toggle {
+        position: absolute;
+        right: 0.75rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        color: $text-muted;
+
+        &:hover:not(:disabled) {
+          background: $gray-100;
+          color: $primary;
+        }
+
+        &:focus:not(:disabled) {
+          outline: none;
+          background: $gray-100;
+          color: $primary;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        &:disabled {
+          cursor: not-allowed;
+          opacity: 0.5;
+        }
+
+        .eye-icon {
+          width: 20px;
+          height: 20px;
+          stroke-width: 1.5;
+        }
+      }
     }
   }
 
@@ -166,8 +220,14 @@ $success: #059669;
         font-weight: 500;
         transition: color 0.3s;
 
-        &:hover {
+        &:hover:not(.disabled) {
           color: $primary-dark;
+        }
+
+        &.disabled {
+          color: $text-muted;
+          cursor: not-allowed;
+          opacity: 0.6;
         }
       }
     }
@@ -241,8 +301,14 @@ $success: #059669;
       font-weight: 500;
       transition: color 0.3s;
 
-      &:hover {
+      &:hover:not(.disabled) {
         color: $primary-dark;
+      }
+
+      &.disabled {
+        color: $text-muted;
+        cursor: not-allowed;
+        opacity: 0.6;
       }
     }
   }
