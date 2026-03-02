@@ -20,9 +20,7 @@ export class AdminDashboard {
 
   readonly defaultPhoto = '/assets/nlcom.png';
 
-  currentView = signal<
-    'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup'
-  >('overview');
+  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Admin');
   sidebarCollapsed = signal(false);
   isLoading = signal(false);
@@ -232,6 +230,16 @@ export class AdminDashboard {
 
     if (query.includes('user')) {
       this.setView('users');
+      return;
+    }
+
+    if (query.includes('sms') || query.includes('message')) {
+      this.setView('sms');
+      return;
+    }
+
+    if (query.includes('backup') || query.includes('restore')) {
+      this.setView('backup');
       return;
     }
 
