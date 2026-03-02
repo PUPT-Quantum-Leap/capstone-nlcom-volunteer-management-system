@@ -21,7 +21,7 @@ export class AdminDashboard {
   readonly defaultPhoto = '/assets/nlcom.png';
 
   currentView = signal<
-    'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users'
+    'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup'
   >('overview');
   userName = signal(this.authService.currentUser()?.name || 'Admin');
   sidebarCollapsed = signal(false);
@@ -190,7 +190,7 @@ export class AdminDashboard {
   }
 
   setView(
-    view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users',
+    view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup',
   ): void {
     this.currentView.set(view);
   }
