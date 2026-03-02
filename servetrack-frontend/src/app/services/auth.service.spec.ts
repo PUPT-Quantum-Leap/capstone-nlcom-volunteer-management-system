@@ -99,7 +99,7 @@ describe('AuthService', () => {
         const data: RegisterData = {
           email: 'test@example.com',
           password: 'Password123',
-          confirmPassword: 'Password123',
+          password_confirmation: 'Password123',
         };
 
         const errors = service.validateRegistration(data);
@@ -110,12 +110,12 @@ describe('AuthService', () => {
         const data: RegisterData = {
           email: 'test@example.com',
           password: 'Password123',
-          confirmPassword: 'DifferentPassword',
+          password_confirmation: 'DifferentPassword',
         };
 
         const errors = service.validateRegistration(data);
         expect(errors).toHaveLength(1);
-        expect(errors[0].field).toBe('confirmPassword');
+        expect(errors[0].field).toBe('password_confirmation');
         expect(errors[0].message).toBe('Passwords do not match');
       });
 
@@ -123,7 +123,7 @@ describe('AuthService', () => {
         const data: RegisterData = {
           email: 'test@example.com',
           password: 'weakpassword',
-          confirmPassword: 'weakpassword',
+          password_confirmation: 'weakpassword',
         };
 
         const errors = service.validateRegistration(data);
