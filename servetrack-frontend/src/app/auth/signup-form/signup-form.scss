@@ -365,13 +365,20 @@ $error-light: #fee2e2;
   gap: 0.5rem;
   min-width: 140px;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: $gray-50;
     border-color: $text-muted;
   }
 
-  &:active {
+  &:active:not(:disabled) {
     transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background: $gray-50;
+    color: $text-muted;
   }
 }
 
