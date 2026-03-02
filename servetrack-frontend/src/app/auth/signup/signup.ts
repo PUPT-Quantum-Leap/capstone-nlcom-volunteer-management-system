@@ -147,7 +147,7 @@ export class Signup {
       const signupData = {
         email: formValue.email.trim(),
         password: formValue.password,
-        confirmPassword: formValue.confirmPassword,
+        password_confirmation: formValue.confirmPassword,
       };
 
       const response = await firstValueFrom(this.authService.register$(signupData));

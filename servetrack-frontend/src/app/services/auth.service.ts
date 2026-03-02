@@ -12,7 +12,7 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
-  confirmPassword: string;
+  password_confirmation: string;
 }
 
 export interface VolunteerSignupData {
@@ -302,10 +302,16 @@ export class AuthService {
     }
 
     // Confirm password validation
-    if (!data.confirmPassword?.trim()) {
-      errors.push({ field: 'confirmPassword', message: 'Please confirm your password' });
-    } else if (data.password !== data.confirmPassword) {
-      errors.push({ field: 'confirmPassword', message: 'Passwords do not match' });
+    if (!data.password_confirmation?.trim()) {
+      errors.push({
+        field: 'password_confirmation',
+        message: 'Please confirm your password',
+      });
+    } else if (data.password !== data.password_confirmation) {
+      errors.push({
+        field: 'password_confirmation',
+        message: 'Passwords do not match',
+      });
     }
 
     return errors;
@@ -318,7 +324,7 @@ export class AuthService {
     const errors = this.validateRegistration({
       email: data.email,
       password: data.password,
-      confirmPassword: data.confirmPassword,
+      password_confirmation: data.confirmPassword,
     });
 
     // Name validation
