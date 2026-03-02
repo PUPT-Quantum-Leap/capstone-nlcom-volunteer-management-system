@@ -256,3 +256,36 @@
     </div>
   </div>
 </div>
+
+<!-- Success Modal -->
+@if (showSuccessModal()) {
+  <div class="popup-overlay" (click)="closeSuccessModal()">
+    <div class="popup-modal" (click)="$event.stopPropagation()">
+      <button class="popup-close" (click)="closeSuccessModal()">×</button>
+      <div class="popup-content">
+        <div class="success-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+               viewBox="0 0 24 24" stroke-width="2"
+               stroke="currentColor" class="success-check">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 class="popup-title">Registration Successful!</h3>
+        <p class="popup-message">
+          Your account has been created successfully. 
+          You can now log in with your credentials.
+        </p>
+        <p class="popup-redirect">Redirecting to login in 3 seconds...</p>
+        <div class="popup-actions">
+          <button class="btn btn-primary" (click)="navigateToLoginNow()">
+            Go to Login Now
+          </button>
+          <button class="btn btn-outline" (click)="closeSuccessModal()">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
