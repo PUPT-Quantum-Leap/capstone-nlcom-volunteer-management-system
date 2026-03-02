@@ -30,9 +30,19 @@ class RegisterController extends Controller
             $userData['name'] = 'Volunteer User';
         }
 
-        $user = User::create($userData);
+        try {
+            $user = User::create($userData);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Registration failed: '.$e->getMessage(),
+            ], 500);
+        }
 
-        $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+        $token = $user->createToken(
+            'auth-token',
+            ['*'],
+            now()->addMinutes(config('sanctum.expiration', 60))
+        )->plainTextToken;
 
         $cookie = cookie(
             'auth_token',
@@ -47,6 +57,7 @@ class RegisterController extends Controller
         );
 
         return response()->json([
+            'success' => true,
             'user' => $user,
         ], 201)->withCookie($cookie);
     }
