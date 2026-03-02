@@ -33,11 +33,11 @@
     "tslib": "^2.3.0"
   },
   "devDependencies": {
-    "@analogjs/vite-plugin-angular": "^2.3.0",
-    "@angular/build": "^21.0.0",
-    "@angular/cli": "^21.0.0",
-    "@angular/compiler-cli": "^21.0.0",
-    "@angular/platform-browser-dynamic": "^21.0.8",
+    "@analogjs/vite-plugin-angular": "^2.3.1",
+    "@angular/build": "^21.2.0",
+    "@angular/cli": "^21.2.0",
+    "@angular/compiler-cli": "^21.2.0",
+    "@angular/platform-browser-dynamic": "^21.2.0",
     "@vitest/coverage-v8": "^4.0.18",
     "jsdom": "^28.1.0",
     "typescript": "~5.9.2",
