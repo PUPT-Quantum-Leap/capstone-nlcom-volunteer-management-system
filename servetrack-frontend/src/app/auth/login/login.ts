@@ -27,6 +27,7 @@ export class Login implements OnInit {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   registrationSuccessMessage = signal<string | null>(null);
+  showPassword = signal(false);
 
   // Popup signal
   showPopup = signal(false);
@@ -38,6 +39,11 @@ export class Login implements OnInit {
 
   closePopup() {
     this.showPopup.set(false);
+  }
+
+  // Password visibility methods
+  togglePasswordVisibility(): void {
+    this.showPassword.set(!this.showPassword());
   }
 
   ngOnInit(): void {
