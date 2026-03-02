@@ -187,9 +187,13 @@ export class AdminDashboard {
     this.sidebarCollapsed.update((v) => !v);
   }
 
+<<<<<<< HEAD
   setView(
     view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup',
   ): void {
+=======
+  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup'): void {
+>>>>>>> c0df37f (feat: add SMS and backup views to admin dashboard)
     this.currentView.set(view);
   }
 
