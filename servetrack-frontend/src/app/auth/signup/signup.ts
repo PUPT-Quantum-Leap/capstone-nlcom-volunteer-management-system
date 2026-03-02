@@ -33,6 +33,7 @@ export class Signup {
   showPasswordRequirements = signal(false);
   showPassword = signal(false);
   showConfirmPassword = signal(false);
+  showSuccessModal = signal(false);
 
   // Form group with validators
   signupForm: FormGroup = this.fb.group(
@@ -152,8 +153,12 @@ export class Signup {
       const response = await firstValueFrom(this.authService.register$(signupData));
 
       if (response.success) {
-        // Navigate to dashboard or home on success
-        await this.router.navigate(['/volunteer-dashboard']);
+        // Show success modal
+        this.showSuccessModal.set(true);
+        
+        setTimeout(() => {
+          this.navigateToLogin();
+        }, 3000);
       } else {
         this.errorMessage.set(response.message || 'Signup failed. Please try again.');
       }
@@ -194,5 +199,27 @@ export class Signup {
    */
   toggleConfirmPasswordVisibility(): void {
     this.showConfirmPassword.set(!this.showConfirmPassword());
+  }
+
+  /**
+   * Show success modal
+   */
+  showSuccessModalMethod(): void {
+    this.showSuccessModal.set(true);
+  }
+
+  /**
+   * Close success modal
+   */
+  closeSuccessModal(): void {
+    this.showSuccessModal.set(false);
+  }
+
+  /**
+   * Navigate to login immediately
+   */
+  navigateToLoginNow(): void {
+    this.closeSuccessModal();
+    this.navigateToLogin();
   }
 }
