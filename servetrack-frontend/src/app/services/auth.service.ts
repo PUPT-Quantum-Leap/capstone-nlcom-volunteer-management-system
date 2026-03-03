@@ -34,6 +34,22 @@ export interface VolunteerSignupData {
   confirmPassword: string;
 }
 
+export interface AdminSignupData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  contactNumber?: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface CoordinatorSignupData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
 export interface ValidationError {
   field: string;
   message: string;
@@ -46,6 +62,7 @@ export interface AuthResponse {
     id: string;
     email: string;
     name?: string;
+    role?: 'volunteer' | 'admin' | 'coordinator';
     volunteer?: {
       volunteer_id: number;
       first_name: string;
@@ -402,5 +419,151 @@ export class AuthService {
     }
 
     return age >= 18;
+  }
+
+  /**
+   * Register a new coordinator user
+   */
+  coordinatorRegister(data: CoordinatorSignupData): Promise<AuthResponse> {
+    return new Promise((resolve) => {
+      this.coordinatorRegister$(data).subscribe({
+        next: (response) => resolve(response),
+        error: () => resolve({ success: false, message: 'Coordinator registration failed' }),
+      });
+    });
+  }
+
+  coordinatorRegister$(data: CoordinatorSignupData): Observable<AuthResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    if (!this.isValidEmail(data.email)) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Invalid email format' } as AuthResponse);
+    }
+
+    if (data.password !== data.confirmPassword) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Passwords do not match' } as AuthResponse);
+    }
+
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/coordinator/register`, data, { withCredentials: true })
+      .pipe(
+        map((response) => response),
+        tap((response) => {
+          this.isLoading.set(false);
+          if (response.success) {
+            // Auto-login after successful registration
+            this.login({ email: data.email, password: data.password });
+          }
+        }),
+        catchError((error: HttpErrorResponse) => {
+          this.isLoading.set(false);
+          const errorMessage = error.error?.message || 'Admin registration failed';
+          this.error.set(errorMessage);
+          return of({ success: false, message: errorMessage } as AuthResponse);
+        }),
+      );
+  }
+
+  /**
+   * Validate admin registration data
+   */
+  validateAdminRegistration(data: AdminSignupData): ValidationError[] {
+    const errors: ValidationError[] = [];
+
+    // First name validation
+    if (!data.firstName?.trim()) {
+      errors.push({ field: 'firstName', message: 'First name is required' });
+    } else if (data.firstName.length < 2) {
+      errors.push({ field: 'firstName', message: 'First name must be at least 2 characters long' });
+    }
+
+    // Last name validation
+    if (!data.lastName?.trim()) {
+      errors.push({ field: 'lastName', message: 'Last name is required' });
+    } else if (data.lastName.length < 2) {
+      errors.push({ field: 'lastName', message: 'Last name must be at least 2 characters long' });
+    }
+
+    // Email validation
+    if (!data.email?.trim()) {
+      errors.push({ field: 'email', message: 'Email is required' });
+    } else if (!this.isValidEmail(data.email)) {
+      errors.push({ field: 'email', message: 'Please enter a valid email address' });
+    }
+
+    // Contact number validation (optional)
+    if (data.contactNumber?.trim() && !this.isValidPhoneNumber(data.contactNumber)) {
+      errors.push({ field: 'contactNumber', message: 'Please enter a valid contact number' });
+    }
+
+    // Password validation
+    if (!data.password?.trim()) {
+      errors.push({ field: 'password', message: 'Password is required' });
+    } else if (data.password.length < 8) {
+      errors.push({ field: 'password', message: 'Password must be at least 8 characters long' });
+    } else if (!this.hasValidPasswordFormat(data.password)) {
+      errors.push({
+        field: 'password',
+        message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+      });
+    }
+
+    // Confirm password validation
+    if (!data.confirmPassword?.trim()) {
+      errors.push({ field: 'confirmPassword', message: 'Please confirm your password' });
+    } else if (data.password !== data.confirmPassword) {
+      errors.push({ field: 'confirmPassword', message: 'Passwords do not match' });
+    }
+
+    return errors;
+  }
+
+  /**
+   * Register a new admin user
+   */
+  adminRegister(data: AdminSignupData): Promise<AuthResponse> {
+    return new Promise((resolve) => {
+      this.adminRegister$(data).subscribe({
+        next: (response) => resolve(response),
+        error: () => resolve({ success: false, message: 'Admin registration failed' }),
+      });
+    });
+  }
+
+  adminRegister$(data: AdminSignupData): Observable<AuthResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    if (!this.isValidEmail(data.email)) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Invalid email format' } as AuthResponse);
+    }
+
+    if (data.password !== data.confirmPassword) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Passwords do not match' } as AuthResponse);
+    }
+
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/admin/register`, data, { withCredentials: true })
+      .pipe(
+        map((response) => response),
+        tap((response) => {
+          this.isLoading.set(false);
+          if (response.success) {
+            // Auto-login after successful registration
+            this.login({ email: data.email, password: data.password });
+          }
+        }),
+        catchError((error: HttpErrorResponse) => {
+          this.isLoading.set(false);
+          const errorMessage = error.error?.message || 'Admin registration failed';
+          this.error.set(errorMessage);
+          return of({ success: false, message: errorMessage } as AuthResponse);
+        }),
+      );
   }
 }
