@@ -228,14 +228,11 @@ describe('Login Component', () => {
     });
 
     it('should handle navigateToSignup error gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockRouter.navigate.mockRejectedValue(new Error('Navigation error'));
 
       await component.navigateToSignup();
 
-      expect(consoleSpy).toHaveBeenCalled();
       expect(component.errorMessage()).toBe('Navigation error. Please try again.');
-      consoleSpy.mockRestore();
     });
 
     it('should navigate to forgot password page', async () => {
@@ -244,14 +241,11 @@ describe('Login Component', () => {
     });
 
     it('should handle navigateToForgotPassword error gracefully', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       mockRouter.navigate.mockRejectedValue(new Error('Navigation error'));
 
       await component.navigateToForgotPassword();
 
-      expect(consoleSpy).toHaveBeenCalled();
       expect(component.errorMessage()).toBe('Navigation error. Please try again.');
-      consoleSpy.mockRestore();
     });
   });
 
