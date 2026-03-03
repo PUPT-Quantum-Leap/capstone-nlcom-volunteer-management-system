@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\VolunteerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +16,14 @@ Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(funct
 
 // Volunteer registration - public signup
 Route::post('/volunteer/register', [VolunteerController::class, 'register'])
+    ->middleware(['api', 'guest', 'security.audit', 'rate.limit']);
+
+// Admin registration - public signup
+Route::post('/admin/register', [AdminController::class, 'register'])
+    ->middleware(['api', 'guest', 'security.audit', 'rate.limit']);
+
+// Coordinator registration - public signup
+Route::post('/coordinator/register', [CoordinatorController::class, 'register'])
     ->middleware(['api', 'guest', 'security.audit', 'rate.limit']);
 
 // Auth-required routes

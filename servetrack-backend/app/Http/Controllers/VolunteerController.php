@@ -66,6 +66,7 @@ class VolunteerController extends Controller
                 'name' => $request->firstName.' '.$request->lastName,
                 'email' => $request->email,
                 'password' => bcrypt($request->password),
+                'role' => 'volunteer',
             ]);
 
             // Create volunteer profile linked to user
