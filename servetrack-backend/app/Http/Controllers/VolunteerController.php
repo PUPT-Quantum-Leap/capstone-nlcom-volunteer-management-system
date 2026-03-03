@@ -129,54 +129,156 @@ class VolunteerController extends Controller
             ], 404);
         }
 
+        // Load relationships
+        $volunteer->load(['experiences', 'skills', 'trainings', 'positions']);
+
+        // Get text fields from related tables
+        $trainingExperience = $volunteer->trainings->pluck('name')->implode(', ');
+        $skillsHobbies = $volunteer->skills->pluck('name')->implode(', ');
+        $classesTraining = $volunteer->trainings->pluck('name')->implode(', ');
+
         return response()->json([
             'success' => true,
-            'data' => $volunteer->load(['experiences', 'skills', 'trainings', 'positions']),
+            'data' => [
+                'volunteer_id' => $volunteer->volunteer_id,
+                'first_name' => $volunteer->first_name,
+                'last_name' => $volunteer->last_name,
+                'facebook_name' => $volunteer->facebook_name,
+                'email' => $volunteer->email,
+                'mobile_number' => $volunteer->mobile_number,
+                'birthdate' => $volunteer->birthdate,
+                'address' => $volunteer->address,
+                'educational_attainment' => $volunteer->educational_attainment,
+                'last_medical_examination' => $volunteer->last_medical_examination,
+                'training_experience' => $trainingExperience,
+                'skills_hobbies' => $skillsHobbies,
+                'classes_training' => $classesTraining,
+                'positions' => $volunteer->positions,
+                'experiences' => $volunteer->experiences,
+                'skills' => $volunteer->skills,
+                'trainings' => $volunteer->trainings,
+            ],
         ]);
     }
 
     /**
      * Update the authenticated volunteer's profile.
+     * Creates a new volunteer profile if one doesn't exist.
      */
     public function updateProfile(UpdateVolunteerProfileRequest $request): JsonResponse
     {
-        $volunteer = $request->user()->volunteer;
+        $user = $request->user();
+        $volunteer = $user->volunteer;
 
+        // If no volunteer profile exists, create one
         if (! $volunteer) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Volunteer profile not found.',
-            ], 404);
+            DB::beginTransaction();
+            try {
+                // Create volunteer profile linked to user
+                $volunteer = Volunteer::create([
+                    'first_name' => $request->firstName,
+                    'last_name' => $request->lastName,
+                    'facebook_name' => $request->facebookName ?? null,
+                    'email' => $request->email,
+                    'mobile_number' => $request->mobileNumber,
+                    'birthdate' => $request->birthdate,
+                    'address' => $request->completeAddress,
+                    'educational_attainment' => $request->educationalAttainment,
+                    'last_medical_examination' => $request->lastMedicalExam,
+                    'user_id' => $user->id,
+                ]);
+
+                // Update user info
+                $user->name = $request->firstName.' '.$request->lastName;
+                $user->email = $request->email;
+                $user->save();
+
+                // Process skills, training, and positions
+                if ($request->skillsHobbies) {
+                    $this->processSkillsHobbies($volunteer, $request->skillsHobbies);
+                }
+                if ($request->trainingExperience) {
+                    $this->processTrainingExperience($volunteer, $request->trainingExperience);
+                }
+                if ($request->classesTraining) {
+                    $this->processClassesTraining($volunteer, $request->classesTraining);
+                }
+                $this->processVolunteerPreference($volunteer, $request->volunteerPreference, $request->otherPreference);
+
+                DB::commit();
+
+                // Reload with relationships
+                $volunteer = $volunteer->fresh(['experiences', 'skills', 'trainings', 'positions']);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Profile created successfully.',
+                    'data' => [
+                        'volunteer_id' => $volunteer->volunteer_id,
+                        'first_name' => $volunteer->first_name,
+                        'last_name' => $volunteer->last_name,
+                        'facebook_name' => $volunteer->facebook_name,
+                        'email' => $volunteer->email,
+                        'mobile_number' => $volunteer->mobile_number,
+                        'birthdate' => $volunteer->birthdate,
+                        'address' => $volunteer->address,
+                        'educational_attainment' => $volunteer->educational_attainment,
+                        'last_medical_examination' => $volunteer->last_medical_examination,
+                        'training_experience' => '',
+                        'skills_hobbies' => '',
+                        'classes_training' => '',
+                        'positions' => $volunteer->positions,
+                        'experiences' => $volunteer->experiences,
+                        'skills' => $volunteer->skills,
+                        'trainings' => $volunteer->trainings,
+                    ],
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create profile. Please try again.',
+                    'errors' => ['server' => $e->getMessage()],
+                ], 500);
+            }
         }
 
+        // Volunteer profile exists, update it
         DB::beginTransaction();
         try {
-            $volunteer->update([
-                'first_name' => $request->firstName,
-                'last_name' => $request->lastName,
-                'facebook_name' => $request->facebookName,
-                'email' => $request->email,
-                'mobile_number' => $request->mobileNumber,
-                'birthdate' => $request->birthdate,
-                'address' => $request->completeAddress,
-                'educational_attainment' => $request->educationalAttainment,
-                'last_medical_examination' => $request->lastMedicalExam,
-            ]);
+            // Update volunteer basic info
+            $volunteer->first_name = $request->firstName;
+            $volunteer->last_name = $request->lastName;
+            $volunteer->facebook_name = $request->facebookName ?? null;
+            $volunteer->email = $request->email;
+            $volunteer->mobile_number = $request->mobileNumber;
+            $volunteer->birthdate = $request->birthdate;
+            $volunteer->address = $request->completeAddress;
+            $volunteer->educational_attainment = $request->educationalAttainment;
+            $volunteer->last_medical_examination = $request->lastMedicalExam;
+            $volunteer->save();
 
             // Also update the linked user's name and email
-            $volunteer->user()->update([
-                'name' => $request->firstName.' '.$request->lastName,
-                'email' => $request->email,
-            ]);
+            $user->name = $request->firstName.' '.$request->lastName;
+            $user->email = $request->email;
+            $user->save();
 
             // Sync skills (detach all, re-attach from new input)
             $volunteer->skills()->detach();
-            $this->processSkillsHobbies($volunteer, $request->skillsHobbies);
+            if ($request->skillsHobbies) {
+                $this->processSkillsHobbies($volunteer, $request->skillsHobbies);
+            }
 
-            // Sync trainings
+            // Sync trainings - detach first to avoid duplicates
             $volunteer->trainings()->detach();
-            $this->processTrainingExperience($volunteer, $request->trainingExperience);
-            $this->processClassesTraining($volunteer, $request->classesTraining);
+            if ($request->trainingExperience) {
+                $this->processTrainingExperience($volunteer, $request->trainingExperience);
+            }
+            if ($request->classesTraining) {
+                $this->processClassesTraining($volunteer, $request->classesTraining);
+            }
 
             // Sync position preference
             $volunteer->positions()->detach();
@@ -184,10 +286,36 @@ class VolunteerController extends Controller
 
             DB::commit();
 
+            // Reload the updated volunteer with relationships
+            $volunteer = $volunteer->fresh(['experiences', 'skills', 'trainings', 'positions']);
+
+            // Get text fields from related tables
+            $trainingExperience = $volunteer->trainings->pluck('name')->implode(', ');
+            $skillsHobbies = $volunteer->skills->pluck('name')->implode(', ');
+            $classesTraining = $volunteer->trainings->pluck('name')->implode(', ');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Profile updated successfully.',
-                'data' => $volunteer->fresh()->load(['experiences', 'skills', 'trainings', 'positions']),
+                'data' => [
+                    'volunteer_id' => $volunteer->volunteer_id,
+                    'first_name' => $volunteer->first_name,
+                    'last_name' => $volunteer->last_name,
+                    'facebook_name' => $volunteer->facebook_name,
+                    'email' => $volunteer->email,
+                    'mobile_number' => $volunteer->mobile_number,
+                    'birthdate' => $volunteer->birthdate,
+                    'address' => $volunteer->address,
+                    'educational_attainment' => $volunteer->educational_attainment,
+                    'last_medical_examination' => $volunteer->last_medical_examination,
+                    'training_experience' => $trainingExperience,
+                    'skills_hobbies' => $skillsHobbies,
+                    'classes_training' => $classesTraining,
+                    'positions' => $volunteer->positions,
+                    'experiences' => $volunteer->experiences,
+                    'skills' => $volunteer->skills,
+                    'trainings' => $volunteer->trainings,
+                ],
             ]);
 
         } catch (\Exception $e) {
@@ -195,7 +323,8 @@ class VolunteerController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Profile update failed: '.$e->getMessage(),
+                'message' => 'Failed to update profile. Please try again.',
+                'errors' => ['server' => $e->getMessage()],
             ], 500);
         }
     }

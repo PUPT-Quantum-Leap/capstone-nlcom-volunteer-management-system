@@ -876,3 +876,64 @@ a:focus-visible {
 .badge.confirmed {
   background: #059669;
 }
+
+// Profile completion progress bar
+.profile-completion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 140px;
+}
+
+.completion-label {
+  font-size: 0.8rem;
+  color: var(--slate-600);
+  font-weight: 500;
+}
+
+.completion-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--slate-100);
+  overflow: hidden;
+}
+
+.completion-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue-600), #10b981);
+  border-radius: 999px;
+  transition: width 300ms ease;
+}
+
+// Success notification
+.success-notification {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 0.65rem;
+  color: #047857;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 0.85rem;
+  animation: slideIn 300ms ease;
+}
+
+.success-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

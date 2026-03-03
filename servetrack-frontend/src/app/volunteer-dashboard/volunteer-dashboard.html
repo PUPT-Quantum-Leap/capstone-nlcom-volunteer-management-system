@@ -230,8 +230,23 @@
             <article class="panel">
               <div class="panel-header">
                 <h2>{{ editingProfileId() !== null ? 'Edit Profile' : 'New Profile' }}</h2>
-                <p>Profile Completion: {{ profileCompletion() }}%</p>
+                <div class="profile-completion">
+                  <span class="completion-label">Profile Completion: {{ profileCompletion() }}%</span>
+                  <div class="completion-bar">
+                    <div class="completion-fill" [style.width.%]="profileCompletion()"></div>
+                  </div>
+                </div>
               </div>
+
+              @if (showProfileSuccess()) {
+                <div class="success-notification">
+                  <svg class="success-icon" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  <span>{{ profileSuccessMessage() }}</span>
+                </div>
+              }
 
               <form class="form-grid" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
                 <div class="photo-row">
@@ -664,6 +679,31 @@
       <div class="modal-actions">
         <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
         <button type="button" class="primary-btn" (click)="confirmLogout()">Yes, Logout</button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (showSaveConfirmModal()) {
+  <div class="modal-backdrop" (click)="closeSaveConfirmModal()">
+    <section class="modal-card" (click)="$event.stopPropagation()">
+      <h3>Confirm Profile Update</h3>
+      <p>Are you sure you want to save your profile changes?</p>
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeSaveConfirmModal()">Cancel</button>
+        <button type="button" class="primary-btn" (click)="confirmSaveProfile()">Yes, Save</button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (showProfileError()) {
+  <div class="modal-backdrop" (click)="closeProfileError()">
+    <section class="modal-card" (click)="$event.stopPropagation()">
+      <h3>Update Failed</h3>
+      <p>{{ profileErrorMessage() }}</p>
+      <div class="modal-actions">
+        <button type="button" class="primary-btn" (click)="closeProfileError()">OK</button>
       </div>
     </section>
   </div>

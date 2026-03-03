@@ -40,7 +40,11 @@ export class VolunteerService {
         withCredentials: true,
       })
       .pipe(
-        catchError(() => of({ success: false, data: null as unknown as VolunteerProfileResponse })),
+        catchError((error) => {
+          // Return the error message from the server if available
+          const errorMessage = error.error?.message || 'Failed to update profile';
+          return of({ success: false, message: errorMessage, data: null as unknown as VolunteerProfileResponse });
+        }),
       );
   }
 
