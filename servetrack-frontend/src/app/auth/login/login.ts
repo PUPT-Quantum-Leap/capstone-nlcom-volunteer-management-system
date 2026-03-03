@@ -144,7 +144,6 @@ export class Login implements OnInit {
     try {
       await this.router.navigate(['/signup']);
     } catch (error) {
-      console.error('Navigation to signup failed:', error);
       this.errorMessage.set('Navigation error. Please try again.');
     }
   }
@@ -153,7 +152,6 @@ export class Login implements OnInit {
     try {
       await this.router.navigate(['/forgot-password']);
     } catch (error) {
-      console.error('Navigation to forgot password failed:', error);
       this.errorMessage.set('Navigation error. Please try again.');
     }
   }
