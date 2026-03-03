@@ -30,6 +30,7 @@ class Volunteer extends Model
         'mobile_number',
         'educational_attainment',
         'last_medical_examination',
+        'emergency_contact_id',
         'user_id',
     ];
 
@@ -43,6 +44,14 @@ class Volunteer extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function emergencyContact(): BelongsTo
+    {
+        return $this->belongsTo(
+            EmergencyContact::class,
+            'emergency_contact_id'
+        );
     }
 
     public function availabilities(): BelongsToMany
