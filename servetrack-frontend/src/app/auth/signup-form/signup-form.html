@@ -72,14 +72,26 @@
         </div>
 
         <div class="form-group">
-          <label for="facebookName" class="form-label"> Facebook Name </label>
+          <label for="facebookName" class="form-label">
+            Facebook Name <span class="required">*</span>
+          </label>
           <input
             type="text"
             id="facebookName"
             formControlName="facebookName"
             class="form-input"
-            placeholder="Enter your Facebook name (optional)"
+            placeholder="Enter your Facebook name"
+            [class.error]="
+              personalInfoForm.get('facebookName')?.invalid &&
+              personalInfoForm.get('facebookName')?.touched
+            "
           />
+          @if (
+            personalInfoForm.get('facebookName')?.touched &&
+            personalInfoForm.get('facebookName')?.invalid
+          ) {
+            <span class="error-message">{{ getErrorMessage('facebookName') }}</span>
+          }
         </div>
 
         <div class="form-group">
@@ -731,7 +743,42 @@
   </div>
 </div>
 
-<!-- Success Modal -->
+<!-- Error Modal -->
+@if (showErrorModal()) {
+  <div class="popup-overlay" (click)="closeErrorModal()">
+    <div class="popup-modal popup-error" (click)="$event.stopPropagation()">
+      <button class="popup-close" (click)="closeErrorModal()">×</button>
+      <div class="popup-content">
+        <div class="error-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+               viewBox="0 0 24 24" stroke-width="2"
+               stroke="currentColor" class="error-cross">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+        </div>
+        <h3 class="popup-title">Submission Failed</h3>
+        <p class="popup-message">
+          There were some problems with your submission:
+        </p>
+        <div class="error-list-container">
+          <ul class="error-list">
+            @for (msg of (error() || '').split(';'); track msg) {
+              @if (msg.trim()) {
+                <li>{{ msg.trim() }}</li>
+              }
+            }
+          </ul>
+        </div>
+        <div class="popup-actions">
+          <button class="btn btn-error" (click)="closeErrorModal()">
+            Go Back & Fix
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
 @if (showSuccessModal()) {
   <div class="popup-overlay" (click)="closeSuccessModal()">
     <div class="popup-modal" (click)="$event.stopPropagation()">
@@ -749,10 +796,10 @@
         <p class="popup-message">
           Your volunteer account has been created successfully. 
         </p>
-        <p class="popup-redirect">Redirecting to login in 5 seconds...</p>
+        <p class="popup-redirect">Redirecting to your dashboard in 3 seconds...</p>
         <div class="popup-actions">
           <button class="btn btn-primary" (click)="navigateToLoginNow()">
-            Go to Login Now
+            Go to Dashboard Now
           </button>
           <button class="btn btn-outline" (click)="closeSuccessModal()">
             Close

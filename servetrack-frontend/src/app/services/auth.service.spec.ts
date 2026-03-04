@@ -4,7 +4,6 @@ import {
   LoginCredentials,
   RegisterData,
   VolunteerSignupData,
-  ValidationError,
 } from './auth.service';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
@@ -35,6 +34,34 @@ describe('AuthService', () => {
   });
 
   describe('Validation Methods', () => {
+    const createVolunteerData = (overrides: Partial<VolunteerSignupData> = {}): VolunteerSignupData => ({
+      firstName: 'John',
+      lastName: 'Doe',
+      facebookName: 'John Doe',
+      email: 'test@example.com',
+      mobileNumber: '+1234567890',
+      birthdate: '1990-01-01',
+      completeAddress: '123 Test St, City, Country',
+      educationalAttainment: "Bachelor's Degree",
+      lastMedicalExam: '2023-01-01',
+      trainingExperience: '',
+      skillsHobbies: '',
+      classesTraining: '',
+      volunteerPreference: 'Teaching',
+      otherPreference: '',
+      availability: 'anytime',
+      otherAvailability: '',
+      partOfLifegroup: 'no',
+      lifegroupLeaderName: '',
+      leadingLifegroup: 'no',
+      emergencyContactName: 'Jane Doe',
+      emergencyContactNumber: '+1234567891',
+      emergencyContactRelationship: 'Sibling',
+      password: 'Password123',
+      confirmPassword: 'Password123',
+      ...overrides,
+    });
+
     describe('validateLogin', () => {
       it('should return no errors for valid credentials', () => {
         const credentials: LoginCredentials = {
@@ -137,38 +164,17 @@ describe('AuthService', () => {
 
     describe('validateVolunteerSignup', () => {
       it('should return no errors for valid volunteer data', () => {
-        const data: VolunteerSignupData = {
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'test@example.com',
-          mobileNumber: '+1234567890',
-          birthdate: '1990-01-01',
-          completeAddress: '123 Test St, City, Country',
-          educationalAttainment: "Bachelor's Degree",
-          lastMedicalExam: '2023-01-01',
-          volunteerPreference: 'Teaching',
-          password: 'Password123',
-          confirmPassword: 'Password123',
-        };
+        const data: VolunteerSignupData = createVolunteerData();
 
         const errors = service.validateVolunteerSignup(data);
         expect(errors).toHaveLength(0);
       });
 
       it('should return errors for missing required fields', () => {
-        const data: VolunteerSignupData = {
+        const data: VolunteerSignupData = createVolunteerData({
           firstName: '',
           lastName: '',
-          email: 'test@example.com',
-          mobileNumber: '+1234567890',
-          birthdate: '1990-01-01',
-          completeAddress: '123 Test St, City, Country',
-          educationalAttainment: "Bachelor's Degree",
-          lastMedicalExam: '2023-01-01',
-          volunteerPreference: 'Teaching',
-          password: 'Password123',
-          confirmPassword: 'Password123',
-        };
+        });
 
         const errors = service.validateVolunteerSignup(data);
         expect(errors.length).toBeGreaterThan(0);
@@ -183,19 +189,9 @@ describe('AuthService', () => {
       });
 
       it('should return error for invalid phone number', () => {
-        const data: VolunteerSignupData = {
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'test@example.com',
+        const data: VolunteerSignupData = createVolunteerData({
           mobileNumber: 'invalid-phone',
-          birthdate: '1990-01-01',
-          completeAddress: '123 Test St, City, Country',
-          educationalAttainment: "Bachelor's Degree",
-          lastMedicalExam: '2023-01-01',
-          volunteerPreference: 'Teaching',
-          password: 'Password123',
-          confirmPassword: 'Password123',
-        };
+        });
 
         const errors = service.validateVolunteerSignup(data);
         const phoneError = errors.find((e) => e.field === 'mobileNumber');
@@ -207,19 +203,9 @@ describe('AuthService', () => {
         const recentDate = new Date();
         recentDate.setFullYear(recentDate.getFullYear() - 17); // 17 years old
 
-        const data: VolunteerSignupData = {
-          firstName: 'John',
-          lastName: 'Doe',
-          email: 'test@example.com',
-          mobileNumber: '+1234567890',
+        const data: VolunteerSignupData = createVolunteerData({
           birthdate: recentDate.toISOString().split('T')[0],
-          completeAddress: '123 Test St, City, Country',
-          educationalAttainment: "Bachelor's Degree",
-          lastMedicalExam: '2023-01-01',
-          volunteerPreference: 'Teaching',
-          password: 'Password123',
-          confirmPassword: 'Password123',
-        };
+        });
 
         const errors = service.validateVolunteerSignup(data);
         const birthdateError = errors.find((e) => e.field === 'birthdate');
@@ -251,6 +237,11 @@ describe('AuthService', () => {
         expect(service.currentUser()).toEqual(mockResponse.user);
       });
 
+      const csrfReq = httpMock.expectOne(`${environment.apiUrl.replace('/api', '')}/sanctum/csrf-cookie`);
+      expect(csrfReq.request.method).toBe('GET');
+      expect(csrfReq.request.withCredentials).toBe(true);
+      csrfReq.flush({});
+
       const req = httpMock.expectOne(`${environment.apiUrl}/login`);
       expect(req.request.method).toBe('POST');
       expect(req.request.withCredentials).toBe(true);
@@ -265,13 +256,18 @@ describe('AuthService', () => {
 
       service.login$(credentials).subscribe((response) => {
         expect(response.success).toBe(false);
-        expect(response.message).toBe('Login failed');
+        expect(response.message).toBe('Invalid email or password.');
         expect(service.isAuthenticated()).toBe(false);
         expect(service.currentUser()).toBeNull();
       });
 
+      const csrfReq = httpMock.expectOne(`${environment.apiUrl.replace('/api', '')}/sanctum/csrf-cookie`);
+      expect(csrfReq.request.method).toBe('GET');
+      expect(csrfReq.request.withCredentials).toBe(true);
+      csrfReq.flush({});
+
       const req = httpMock.expectOne(`${environment.apiUrl}/login`);
-      req.flush('Invalid credentials', { status: 401, statusText: 'Unauthorized' });
+      req.flush({ message: 'Invalid credentials' }, { status: 401, statusText: 'Unauthorized' });
     });
 
     it('should logout successfully', () => {

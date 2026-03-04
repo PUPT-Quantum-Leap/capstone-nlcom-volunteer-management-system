@@ -7,13 +7,22 @@ use Illuminate\Validation\Rule;
 
 class UpdateVolunteerProfileRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('email')) {
+            $this->merge([
+                'email' => strtolower(trim((string) $this->input('email'))),
+            ]);
+        }
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      * Only authenticated volunteers may update their own profile.
      */
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        return $this->user() !== null && $this->user()->role === 'volunteer';
     }
 
     /**
@@ -28,7 +37,7 @@ class UpdateVolunteerProfileRequest extends FormRequest
         return [
             'firstName' => ['required', 'string', 'min:2', 'max:50'],
             'lastName' => ['required', 'string', 'min:2', 'max:50'],
-            'facebookName' => ['nullable', 'string', 'max:100'],
+            'facebookName' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', Rule::unique('volunteer', 'email')->ignore($volunteer?->volunteer_id, 'volunteer_id')],
             'mobileNumber' => ['required', 'string', 'min:10', 'max:15'],
             'birthdate' => ['required', 'date', 'before:today'],
@@ -72,6 +81,7 @@ class UpdateVolunteerProfileRequest extends FormRequest
         return [
             'firstName.required' => 'First name is required.',
             'lastName.required' => 'Last name is required.',
+            'facebookName.required' => 'Facebook name is required.',
             'email.required' => 'Email address is required.',
             'email.email' => 'Please enter a valid email address.',
             'email.unique' => 'This email is already taken by another volunteer.',

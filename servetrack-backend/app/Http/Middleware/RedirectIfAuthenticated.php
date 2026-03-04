@@ -19,7 +19,10 @@ class RedirectIfAuthenticated
         $guards = empty($guards) ? [null] : $guards;
 
         foreach ($guards as $guard) {
-            if (Auth::guard($guard)->check()) {
+            $guardInstance = Auth::guard($guard);
+
+            if ($guardInstance->check()) {
+                // If the user record exists, redirect as usual
                 if ($request->expectsJson()) {
                     return response()->json([
                         'message' => 'Already authenticated.',
@@ -28,6 +31,16 @@ class RedirectIfAuthenticated
                 }
 
                 return redirect('/');
+            } else {
+                // If there's an active session but no user record (stale session),
+                // clear it to allow guest access
+                if ($guard === null || $guard === 'web') {
+                    Auth::logout();
+                    if ($request->hasSession()) {
+                        $request->session()->invalidate();
+                        $request->session()->regenerateToken();
+                    }
+                }
             }
         }
 

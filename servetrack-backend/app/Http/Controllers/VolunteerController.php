@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CreateAttendanceRequest;
 use App\Http\Requests\UpdateVolunteerProfileRequest;
-use App\Models\Attendance;
-use App\Models\Experience;
 use App\Models\Position;
 use App\Models\Skill;
 use App\Models\Training;
@@ -13,6 +11,7 @@ use App\Models\User;
 use App\Models\Volunteer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
@@ -23,13 +22,30 @@ class VolunteerController extends Controller
      */
     public function register(Request $request): JsonResponse
     {
+        // Clean phone numbers before validation
+        if ($request->has('mobileNumber')) {
+            $request->merge([
+                'mobileNumber' => preg_replace('/[\s\-()]/', '', $request->mobileNumber),
+            ]);
+        }
+        if ($request->has('emergencyContactNumber')) {
+            $request->merge([
+                'emergencyContactNumber' => preg_replace('/[\s\-()]/', '', $request->emergencyContactNumber),
+            ]);
+        }
+        if ($request->has('email')) {
+            $request->merge([
+                'email' => strtolower(trim((string) $request->email)),
+            ]);
+        }
+
         // Validate incoming data
         $validator = Validator::make($request->all(), [
             // Personal Information
             'firstName' => 'required|string|min:2|max:50',
             'lastName' => 'required|string|min:2|max:50',
-            'facebookName' => 'nullable|string|max:100',
-            'email' => 'required|email|unique:volunteer,email',
+            'facebookName' => 'required|string|max:100',
+            'email' => 'required|email|unique:volunteer,email|unique:users,email',
             'mobileNumber' => 'required|string|min:10|max:15',
             'birthdate' => 'required|date|before:today',
             'completeAddress' => 'required|string|min:10|max:255',
@@ -44,6 +60,16 @@ class VolunteerController extends Controller
             // Preferences
             'volunteerPreference' => 'required|string',
             'otherPreference' => 'nullable|string',
+            'availability' => 'required|string',
+            'otherAvailability' => 'nullable|string',
+            'partOfLifegroup' => 'required|string|in:yes,no',
+            'lifegroupLeaderName' => 'nullable|required_if:partOfLifegroup,yes|string|max:100',
+            'leadingLifegroup' => 'required|string|in:yes,no',
+
+            // Emergency Contact
+            'emergencyContactName' => 'required|string|max:100',
+            'emergencyContactNumber' => 'required|string|min:10|max:15',
+            'emergencyContactRelationship' => 'required|string|max:50',
 
             // Password (for authentication)
             'password' => 'required|string|min:8',
@@ -73,7 +99,7 @@ class VolunteerController extends Controller
             $volunteer = Volunteer::create([
                 'first_name' => $request->firstName,
                 'last_name' => $request->lastName,
-                'facebook_name' => $request->facebookName ?? null,
+                'facebook_name' => $request->facebookName ?? '',
                 'email' => $request->email,
                 'mobile_number' => $request->mobileNumber,
                 'birthdate' => $request->birthdate,
@@ -104,16 +130,36 @@ class VolunteerController extends Controller
             // Process lifegroup information
             $this->processLifegroupInfo($volunteer, $request->partOfLifegroup, $request->lifegroupLeaderName, $request->leadingLifegroup);
 
+            // Log the user in
+            Auth::login($user);
+
             DB::commit();
+
+            // Create Sanctum token and cookie for immediate authentication
+            $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+            $cookie = cookie(
+                'auth_token',
+                $token,
+                config('sanctum.expiration', 60),
+                '/',
+                null,
+                true,
+                true,
+                false,
+                'strict'
+            );
 
             return response()->json([
                 'success' => true,
                 'message' => 'Volunteer registered successfully',
-                'data' => [
-                    'user' => $user,
-                    'volunteer' => $volunteer->load(['experiences', 'skills', 'trainings', 'positions', 'user', 'emergencyContact']),
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'volunteer_profile' => $volunteer->load(['experiences', 'skills', 'trainings', 'positions', 'availabilities', 'lifegroups', 'emergencyContact']),
                 ],
-            ], 201);
+            ], 201)->withCookie($cookie);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -130,6 +176,13 @@ class VolunteerController extends Controller
      */
     public function profile(Request $request): JsonResponse
     {
+        if ($request->user()->role !== 'volunteer') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden. Volunteer access only.',
+            ], 403);
+        }
+
         $volunteer = $request->user()->volunteer;
 
         if (! $volunteer) {
@@ -140,7 +193,7 @@ class VolunteerController extends Controller
         }
 
         // Load relationships
-        $volunteer->load(['experiences', 'skills', 'trainings', 'positions']);
+        $volunteer->load(['experiences', 'skills', 'trainings', 'positions', 'availabilities', 'lifegroups', 'emergencyContact']);
 
         // Get text fields from related tables
         $trainingExperience = $volunteer->trainings->pluck('name')->implode(', ');
@@ -167,6 +220,9 @@ class VolunteerController extends Controller
                 'experiences' => $volunteer->experiences,
                 'skills' => $volunteer->skills,
                 'trainings' => $volunteer->trainings,
+                'availabilities' => $volunteer->availabilities,
+                'lifegroups' => $volunteer->lifegroups,
+                'emergency_contact' => $volunteer->emergencyContact,
             ],
         ]);
     }
@@ -188,7 +244,7 @@ class VolunteerController extends Controller
                 $volunteer = Volunteer::create([
                     'first_name' => $request->firstName,
                     'last_name' => $request->lastName,
-                    'facebook_name' => $request->facebookName ?? null,
+                    'facebook_name' => $request->facebookName ?? '',
                     'email' => $request->email,
                     'mobile_number' => $request->mobileNumber,
                     'birthdate' => $request->birthdate,
@@ -214,11 +270,14 @@ class VolunteerController extends Controller
                     $this->processClassesTraining($volunteer, $request->classesTraining);
                 }
                 $this->processVolunteerPreference($volunteer, $request->volunteerPreference, $request->otherPreference);
+                $this->processEmergencyContact($volunteer, $request->emergencyContactName, $request->emergencyContactNumber, $request->emergencyContactRelationship);
+                $this->processAvailability($volunteer, $request->availability, $request->otherAvailability);
+                $this->processLifegroupInfo($volunteer, $request->partOfLifegroup, $request->lifegroupLeaderName, $request->leadingLifegroup);
 
                 DB::commit();
 
                 // Reload with relationships
-                $volunteer = $volunteer->fresh(['experiences', 'skills', 'trainings', 'positions']);
+                $volunteer = $volunteer->fresh(['experiences', 'skills', 'trainings', 'positions', 'availabilities', 'lifegroups', 'emergencyContact']);
 
                 return response()->json([
                     'success' => true,
@@ -241,6 +300,9 @@ class VolunteerController extends Controller
                         'experiences' => $volunteer->experiences,
                         'skills' => $volunteer->skills,
                         'trainings' => $volunteer->trainings,
+                        'availabilities' => $volunteer->availabilities,
+                        'lifegroups' => $volunteer->lifegroups,
+                        'emergency_contact' => $volunteer->emergencyContact,
                     ],
                 ]);
 
@@ -261,7 +323,7 @@ class VolunteerController extends Controller
             // Update volunteer basic info
             $volunteer->first_name = $request->firstName;
             $volunteer->last_name = $request->lastName;
-            $volunteer->facebook_name = $request->facebookName ?? null;
+            $volunteer->facebook_name = $request->facebookName ?? '';
             $volunteer->email = $request->email;
             $volunteer->mobile_number = $request->mobileNumber;
             $volunteer->birthdate = $request->birthdate;
@@ -294,10 +356,21 @@ class VolunteerController extends Controller
             $volunteer->positions()->detach();
             $this->processVolunteerPreference($volunteer, $request->volunteerPreference, $request->otherPreference);
 
+            // Sync emergency contact
+            $this->processEmergencyContact($volunteer, $request->emergencyContactName, $request->emergencyContactNumber, $request->emergencyContactRelationship);
+
+            // Sync availability
+            $volunteer->availabilities()->detach();
+            $this->processAvailability($volunteer, $request->availability, $request->otherAvailability);
+
+            // Sync lifegroup info
+            $volunteer->lifegroups()->detach();
+            $this->processLifegroupInfo($volunteer, $request->partOfLifegroup, $request->lifegroupLeaderName, $request->leadingLifegroup);
+
             DB::commit();
 
             // Reload the updated volunteer with relationships
-            $volunteer = $volunteer->fresh(['experiences', 'skills', 'trainings', 'positions']);
+            $volunteer = $volunteer->fresh(['experiences', 'skills', 'trainings', 'positions', 'availabilities', 'lifegroups', 'emergencyContact']);
 
             // Get text fields from related tables
             $trainingExperience = $volunteer->trainings->pluck('name')->implode(', ');
@@ -325,6 +398,9 @@ class VolunteerController extends Controller
                     'experiences' => $volunteer->experiences,
                     'skills' => $volunteer->skills,
                     'trainings' => $volunteer->trainings,
+                    'availabilities' => $volunteer->availabilities,
+                    'lifegroups' => $volunteer->lifegroups,
+                    'emergency_contact' => $volunteer->emergencyContact,
                 ],
             ]);
 
@@ -345,6 +421,13 @@ class VolunteerController extends Controller
      */
     public function listAttendance(Request $request): JsonResponse
     {
+        if ($request->user()->role !== 'volunteer') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden. Volunteer access only.',
+            ], 403);
+        }
+
         $volunteer = $request->user()->volunteer;
 
         if (! $volunteer) {
@@ -406,6 +489,13 @@ class VolunteerController extends Controller
      */
     public function attendanceStats(Request $request): JsonResponse
     {
+        if ($request->user()->role !== 'volunteer') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden. Volunteer access only.',
+            ], 403);
+        }
+
         $volunteer = $request->user()->volunteer;
 
         if (! $volunteer) {
@@ -643,8 +733,10 @@ class VolunteerController extends Controller
         string $leadingLifegroup
     ): void {
         if ($partOfLifegroup === 'yes') {
+            $lifegroupName = ! empty($lifegroupLeaderName) ? $lifegroupLeaderName : 'General Lifegroup';
+
             $lifegroup = \App\Models\Lifegroup::firstOrCreate([
-                'name' => 'General Lifegroup',
+                'name' => $lifegroupName,
             ]);
 
             $volunteer->lifegroups()->attach(

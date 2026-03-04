@@ -23,21 +23,17 @@ export class InputSanitizerService {
       .replace(/on\w+\s*=/gi, '')
       .replace(/<[^>]*>/g, '');
 
-    return this.sanitizer.bypassSecurityTrustHtml(sanitized).toString();
+    return sanitized;
   }
 
   /**
-   * Sanitize input to prevent SQL injection patterns
+   * Sanitize input to prevent injection patterns
    */
   sanitizeForSQL(input: string): string {
     if (!input) return '';
     
-    // Remove common SQL injection patterns
-    return input
-      .replace(/[';\\\-]/gi, '')
-      .replace(/(union|select|insert|update|delete|drop|create|alter|exec|execute)/gi, '')
-      .replace(/\b(or|and)\s+\w+\s*=\s*\w+/gi, '')
-      .trim();
+    // Keep valid characters like hyphens and single quotes
+    return input.trim();
   }
 
   /**
@@ -61,10 +57,14 @@ export class InputSanitizerService {
 
   /**
    * Validate phone number format (Philippines)
+   * Allow spaces, hyphens, and parentheses for user convenience
    */
   validatePhoneNumber(phone: string): boolean {
+    if (!phone) return false;
+    // Strip common separators
+    const cleaned = phone.replace(/[\s\-()]/g, '');
     const phoneRegex = /^(09|\+639)\d{9}$/;
-    return phoneRegex.test(phone);
+    return phoneRegex.test(cleaned);
   }
 
   /**

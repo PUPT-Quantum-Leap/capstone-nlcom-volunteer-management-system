@@ -152,4 +152,35 @@
       </div>
     </div>
   }
+
+  @if (showLoginErrorModal()) {
+    <div class="popup-overlay" (click)="closeLoginErrorModal()">
+      <div class="popup-modal" (click)="$event.stopPropagation()">
+        <button class="popup-close" (click)="closeLoginErrorModal()">×</button>
+        <div class="popup-content">
+          <h3 class="popup-title">Login Failed</h3>
+          <p class="popup-message">{{ errorMessage() }}</p>
+          <div class="popup-actions">
+            <button class="btn btn-primary" (click)="closeLoginErrorModal()">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+  @if (showLoginSuccessModal()) {
+    <div class="popup-overlay" (click)="$event.stopPropagation()">
+      <div class="popup-modal" (click)="$event.stopPropagation()">
+        <button class="popup-close" (click)="closeLoginSuccessModal()">X</button>
+        <div class="popup-content">
+          <h3 class="popup-title">Login Successful</h3>
+          <p class="popup-message">{{ loginSuccessMessage() }}</p>
+          <div class="popup-actions">
+            <button class="btn btn-primary" (click)="continueAfterSuccessfulLogin()">
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
 </div>
