@@ -745,14 +745,6 @@ export class VolunteerDashboard implements OnInit {
 
   // ── Attendance form ───────────────────────────────────────────────────────
 
-  toggleAddAttendance(): void {
-    this.showAddAttendance.update((v) => !v);
-    if (!this.showAddAttendance()) {
-      this.attendanceForm.reset();
-    }
-  }
-
-
   getAttendanceStatusClass(status: string): string {
     if (status === 'approved') return 'confirmed';
     if (status === 'rejected') return 'rejected';

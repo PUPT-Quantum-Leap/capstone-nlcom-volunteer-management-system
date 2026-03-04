@@ -71,18 +71,6 @@ export class VolunteerService {
       .pipe(catchError(() => of({ success: false, data: [] })));
   }
 
-  /** Submit a new manual attendance entry. */
-  createAttendance(payload: CreateAttendancePayload): Observable<ApiResponse<Attendance>> {
-    return this.authService.ensureCsrf$().pipe(
-      switchMap(() => 
-        this.http.post<ApiResponse<Attendance>>(`${this.baseUrl}/attendance`, payload, {
-          withCredentials: true,
-        })
-      ),
-      catchError(() => of({ success: false, data: null as unknown as Attendance })),
-    );
-  }
-
   /** Fetch attendance statistics (total, daily, weekly, monthly). */
   getAttendanceStats(): Observable<ApiResponse<AttendanceStats>> {
     return this.http
