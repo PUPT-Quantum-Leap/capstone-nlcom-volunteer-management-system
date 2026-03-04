@@ -9,6 +9,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
@@ -35,10 +37,10 @@ class LoginController extends Controller
         }
 
         $user = $request->user();
-        
+
         $userData = $user->toArray();
         $userData['user_type'] = $this->getUserType($user);
-        
+
         // Load specific profile data
         switch ($userData['user_type']) {
             case 'admin':
@@ -52,7 +54,7 @@ class LoginController extends Controller
                 $userData['volunteer_profile'] = $user->volunteer;
                 break;
         }
-        
+
         $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
 
         $cookie = cookie(
