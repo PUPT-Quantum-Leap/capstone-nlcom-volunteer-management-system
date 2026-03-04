@@ -6,6 +6,7 @@ use App\Models\Admin;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -59,10 +60,27 @@ class AdminController extends Controller
                 ];
             });
 
+            // Log the user in
+            Auth::login($result['user']);
+
+            // Create Sanctum token and cookie
+            $token = $result['user']->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+            $cookie = cookie(
+                'auth_token',
+                $token,
+                config('sanctum.expiration', 60),
+                '/',
+                null,
+                true,
+                true,
+                false,
+                'strict'
+            );
+
             return response()->json([
                 'success' => true,
                 'message' => 'Admin registration successful',
-                'data' => [
+                'user' => [
                     'id' => $result['user']->id,
                     'name' => $result['user']->name,
                     'email' => $result['user']->email,
@@ -74,7 +92,7 @@ class AdminController extends Controller
                         'contact_number' => $result['admin']->contact_number,
                     ],
                 ],
-            ], 201);
+            ], 201)->withCookie($cookie);
 
         } catch (\Exception $e) {
             return response()->json([

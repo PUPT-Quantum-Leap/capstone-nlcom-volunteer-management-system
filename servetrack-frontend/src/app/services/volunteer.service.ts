@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, of } from 'rxjs';
+import { Observable, catchError, of, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Attendance, AttendanceStats, CreateAttendancePayload } from '../models/attendance';
 import { VolunteerProfileResponse } from '../models/volunteer-profile';
+import { AuthService } from './auth.service';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -18,6 +19,7 @@ export type AttendancePeriod = 'daily' | 'weekly' | 'monthly';
 })
 export class VolunteerService {
   private http = inject(HttpClient);
+  private authService = inject(AuthService);
   private readonly baseUrl = `${environment.apiUrl}/volunteer`;
 
   /** Fetch the authenticated volunteer's profile. */
@@ -35,17 +37,18 @@ export class VolunteerService {
   updateProfile(
     payload: Record<string, unknown>,
   ): Observable<ApiResponse<VolunteerProfileResponse>> {
-    return this.http
-      .put<ApiResponse<VolunteerProfileResponse>>(`${this.baseUrl}/profile`, payload, {
-        withCredentials: true,
-      })
-      .pipe(
-        catchError((error) => {
-          // Return the error message from the server if available
-          const errorMessage = error.error?.message || 'Failed to update profile';
-          return of({ success: false, message: errorMessage, data: null as unknown as VolunteerProfileResponse });
-        }),
-      );
+    return this.authService.ensureCsrf$().pipe(
+      switchMap(() => 
+        this.http.put<ApiResponse<VolunteerProfileResponse>>(`${this.baseUrl}/profile`, payload, {
+          withCredentials: true,
+        })
+      ),
+      catchError((error) => {
+        // Return the error message from the server if available
+        const errorMessage = error.error?.message || 'Failed to update profile';
+        return of({ success: false, message: errorMessage, data: null as unknown as VolunteerProfileResponse });
+      }),
+    );
   }
 
   /**
@@ -70,11 +73,14 @@ export class VolunteerService {
 
   /** Submit a new manual attendance entry. */
   createAttendance(payload: CreateAttendancePayload): Observable<ApiResponse<Attendance>> {
-    return this.http
-      .post<ApiResponse<Attendance>>(`${this.baseUrl}/attendance`, payload, {
-        withCredentials: true,
-      })
-      .pipe(catchError(() => of({ success: false, data: null as unknown as Attendance })));
+    return this.authService.ensureCsrf$().pipe(
+      switchMap(() => 
+        this.http.post<ApiResponse<Attendance>>(`${this.baseUrl}/attendance`, payload, {
+          withCredentials: true,
+        })
+      ),
+      catchError(() => of({ success: false, data: null as unknown as Attendance })),
+    );
   }
 
   /** Fetch attendance statistics (total, daily, weekly, monthly). */

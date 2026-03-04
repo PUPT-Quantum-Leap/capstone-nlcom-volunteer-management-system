@@ -14,16 +14,6 @@ class RegisterController extends Controller
      */
     public function store(RegisterRequest $request): JsonResponse
     {
-        // If email already exists, return a generic success to prevent enumeration.
-        // The unique:users validation in RegisterRequest catches this for legitimate
-        // registrations, but an attacker probing via timing can still detect it, so
-        // we short-circuit here before touching the DB further.
-        if (User::where('email', $request->input('email'))->exists()) {
-            return response()->json([
-                'message' => 'Registration successful',
-            ], 201);
-        }
-
         // Provide default name if not provided
         $userData = $request->validated();
         if (! isset($userData['name']) || empty($userData['name'])) {

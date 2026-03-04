@@ -40,6 +40,7 @@ export class SignupForm {
   showPasswordRequirements = signal(false);
   error = signal<string | null>(null);
   showSuccessModal = signal(false);
+  showErrorModal = signal(false);
   showLifegroupLeaderInput = signal(false);
   showOtherAvailabilityInput = signal(false);
 
@@ -49,14 +50,14 @@ export class SignupForm {
 
   constructor() {
     this.personalInfoForm = this.fb.group({
-      firstName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      facebookName: ['', [Validators.maxLength(100)]],
-      email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
-      mobileNumber: ['', [Validators.required, Validators.pattern(/^(09|\+639)\d{9}$/)]],
-      birthdate: ['', [Validators.required]],
-      lastMedicalExam: ['', [Validators.required]],
-      completeAddress: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(255)]],
+      firstName: ['', [Validators.required, nameValidator(this.sanitizer)]],
+      lastName: ['', [Validators.required, nameValidator(this.sanitizer)]],
+      facebookName: ['', [Validators.required, Validators.maxLength(100)]],
+      email: ['', [Validators.required, emailValidator(this.sanitizer), Validators.maxLength(100)]],
+      mobileNumber: ['', [Validators.required, phoneNumberValidator(this.sanitizer)]],
+      birthdate: ['', [Validators.required, dateValidator(this.sanitizer, 'Birthdate')]],
+      lastMedicalExam: ['', [Validators.required, dateValidator(this.sanitizer, 'Medical exam date')]],
+      completeAddress: ['', [Validators.required, addressValidator()]],
     });
 
     this.educationForm = this.fb.group({
@@ -76,7 +77,7 @@ export class SignupForm {
         lifegroupLeaderName: ['', [Validators.maxLength(100)]],
         leadingLifegroup: ['', [Validators.required]],
         emergencyContactName: ['', [Validators.required, Validators.maxLength(100)]],
-        emergencyContactNumber: ['', [Validators.required, Validators.pattern(/^(09|\+639)\d{9}$/)]],
+        emergencyContactNumber: ['', [Validators.required, emergencyContactValidator(this.sanitizer)]],
         emergencyContactRelationship: ['', [Validators.required, Validators.maxLength(50)]],
         password: ['', [Validators.required, passwordStrengthValidator()]],
         confirmPassword: ['', [Validators.required]],
@@ -171,15 +172,17 @@ export class SignupForm {
             this.showSuccessModal.set(true);
             
             setTimeout(() => {
-              this.router.navigate(['/login']);
-            }, 5000);
+              this.router.navigate(['/volunteer-dashboard']);
+            }, 3000);
           } else {
             // Show error message
             this.error.set(response.message || 'Registration failed');
+            this.showErrorModal.set(true);
           }
         })
         .catch((error: any) => {
           this.error.set('Registration failed. Please try again.');
+          this.showErrorModal.set(true);
         })
         .finally(() => {
           this.isSubmitting.set(false);
@@ -265,10 +268,18 @@ export class SignupForm {
 
     if (errors.length > 0) {
       this.error.set(errors.join('; '));
+      this.showErrorModal.set(true);
       return null;
     }
 
     return sanitized;
+  }
+
+  /**
+   * Close error modal
+   */
+  closeErrorModal(): void {
+    this.showErrorModal.set(false);
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
@@ -288,11 +299,11 @@ export class SignupForm {
   }
 
   /**
-   * Navigate to login immediately
+   * Navigate to volunteer dashboard immediately
    */
   navigateToLoginNow(): void {
     this.closeSuccessModal();
-    this.router.navigate(['/login']);
+    this.router.navigate(['/volunteer-dashboard']);
   }
 
   getErrorMessage(fieldName: string): string {
@@ -306,11 +317,26 @@ export class SignupForm {
     if (errors['required']) {
       return 'This field is required';
     }
-    if (errors['email']) {
+    if (errors['email'] || errors['invalidEmail']) {
       return 'Please enter a valid email address';
     }
     if (errors['minlength']) {
       return `Minimum ${errors['minlength'].requiredLength} characters required`;
+    }
+    if (errors['maxLength']) {
+      return `Maximum ${errors['maxLength'].requiredLength} characters exceeded`;
+    }
+    if (errors['invalidPhone']) {
+      return 'Please enter a valid Philippine mobile number (e.g. 0917 123 4567)';
+    }
+    if (errors['invalidName']) {
+      return 'Name contains invalid characters';
+    }
+    if (errors['futureDate']) {
+      return errors['futureDate'];
+    }
+    if (errors['addressTooShort']) {
+      return 'Address is too short';
     }
     if (errors['pattern']) {
       if (fieldName === 'mobileNumber' || fieldName === 'emergencyContactNumber') {

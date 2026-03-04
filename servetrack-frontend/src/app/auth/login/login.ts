@@ -31,6 +31,10 @@ export class Login implements OnInit {
 
   // Popup signal
   showPopup = signal(false);
+  showLoginErrorModal = signal(false);
+  showLoginSuccessModal = signal(false);
+  loginSuccessMessage = signal<string | null>(null);
+  private loginRedirectPath: '/volunteer-dashboard' | '/admin-dashboard' = '/volunteer-dashboard';
 
   // Popup methods
   showPopupModal() {
@@ -39,6 +43,28 @@ export class Login implements OnInit {
 
   closePopup() {
     this.showPopup.set(false);
+  }
+
+  closeLoginErrorModal(): void {
+    this.showLoginErrorModal.set(false);
+  }
+
+  closeLoginSuccessModal(): void {
+    this.showLoginSuccessModal.set(false);
+  }
+
+  async continueAfterSuccessfulLogin(): Promise<void> {
+    this.closeLoginSuccessModal();
+    try {
+      const navigated = await this.router.navigateByUrl(this.loginRedirectPath);
+      if (!navigated) {
+        this.errorMessage.set('Login succeeded, but dashboard navigation failed. Please try again.');
+        this.showLoginErrorModal.set(true);
+      }
+    } catch {
+      this.errorMessage.set('Login succeeded, but dashboard navigation failed. Please try again.');
+      this.showLoginErrorModal.set(true);
+    }
   }
 
   // Password visibility methods
@@ -127,17 +153,23 @@ export class Login implements OnInit {
       if (response.success) {
         // Smart routing based on user type
         const userType = response.user?.user_type || response.user?.role || 'volunteer';
-        
+
         if (userType === 'admin') {
-          await this.router.navigate(['/admin-dashboard']);
+          this.loginRedirectPath = '/admin-dashboard';
+          this.loginSuccessMessage.set('Login successful. Redirecting to admin dashboard.');
         } else {
-          await this.router.navigate(['/volunteer-dashboard']);
+          this.loginRedirectPath = '/volunteer-dashboard';
+          this.loginSuccessMessage.set('Login successful. Redirecting to volunteer dashboard.');
         }
+
+        this.showLoginSuccessModal.set(true);
       } else {
         this.errorMessage.set(response.message || 'Invalid email or password');
+        this.showLoginErrorModal.set(true);
       }
     } catch (error) {
       this.errorMessage.set('An unexpected error occurred. Please try again.');
+      this.showLoginErrorModal.set(true);
     } finally {
       this.isLoading.set(false);
     }
