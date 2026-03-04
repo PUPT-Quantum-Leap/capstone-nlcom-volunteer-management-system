@@ -125,6 +125,20 @@ export class AuthService {
   }
 
   login$(credentials: LoginCredentials): Observable<AuthResponse> {
+    return this.loginWithEndpoint$(credentials, '/login');
+  }
+
+  /**
+   * Login using the admin-only endpoint.
+   */
+  adminLogin$(credentials: LoginCredentials): Observable<AuthResponse> {
+    return this.loginWithEndpoint$(credentials, '/admin/login');
+  }
+
+  private loginWithEndpoint$(
+    credentials: LoginCredentials,
+    endpoint: '/login' | '/admin/login',
+  ): Observable<AuthResponse> {
     this.isLoading.set(true);
     this.error.set(null);
 
@@ -133,29 +147,26 @@ export class AuthService {
       return of({ success: false, message: 'Invalid email format' } as AuthResponse);
     }
 
-    return this.ensureCsrf$().pipe(
-      switchMap(() =>
-        this.http.post<{
-          message?: string;
-          user?: AuthResponse['user'];
-        }>(`${environment.apiUrl}/login`, credentials, { withCredentials: true }),
-      ),
+    return this.requestLogin$(credentials, endpoint).pipe(
       switchMap((response) => {
         if (response.user) {
           return of({ success: true, user: response.user } as AuthResponse);
         }
 
-        // Session/cookie is already authenticated; fetch user and proceed.
+        // If stale/previous account is still authenticated, log it out and retry with provided credentials.
         if (response.message === 'Already authenticated.') {
-          return this.checkAuthStatus$().pipe(
-            map((authResponse) => {
-              if (authResponse.success && authResponse.user) {
-                return { success: true, user: authResponse.user } as AuthResponse;
+          return this.forceLogoutForRelogin$().pipe(
+            switchMap(() => this.requestLogin$(credentials, endpoint)),
+            map((retryResponse) => {
+              if (retryResponse.user) {
+                return { success: true, user: retryResponse.user } as AuthResponse;
               }
 
               return {
                 success: false,
-                message: 'Session is active but user details could not be loaded.',
+                message: this.normalizeAdminLoginOnlyMessage(
+                  retryResponse.message || 'Login failed after resetting previous session.',
+                ),
               } as AuthResponse;
             }),
           );
@@ -163,7 +174,9 @@ export class AuthService {
 
         return of({
           success: false,
-          message: response.message || 'Login failed. Please try again.',
+          message: this.normalizeAdminLoginOnlyMessage(
+            response.message || 'Login failed. Please try again.',
+          ),
         } as AuthResponse);
       }),
       tap((response) => {
@@ -181,8 +194,37 @@ export class AuthService {
     );
   }
 
+  private requestLogin$(
+    credentials: LoginCredentials,
+    endpoint: '/login' | '/admin/login',
+  ): Observable<{ message?: string; user?: AuthResponse['user'] }> {
+    return this.ensureCsrf$().pipe(
+      switchMap(() =>
+        this.http.post<{
+          message?: string;
+          user?: AuthResponse['user'];
+        }>(`${environment.apiUrl}${endpoint}`, credentials, { withCredentials: true }),
+      ),
+    );
+  }
+
+  private forceLogoutForRelogin$(): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/logout`, {}, { withCredentials: true }).pipe(
+      tap(() => {
+        this.isAuthenticated.set(false);
+        this.currentUser.set(null);
+      }),
+      catchError(() => {
+        this.isAuthenticated.set(false);
+        this.currentUser.set(null);
+        return of(undefined);
+      }),
+    );
+  }
+
   private getLoginErrorMessage(err: HttpErrorResponse): string {
-    const backendMessage = typeof err.error?.message === 'string' ? err.error.message : '';
+    const backendMessageRaw = typeof err.error?.message === 'string' ? err.error.message : '';
+    const backendMessage = this.normalizeAdminLoginOnlyMessage(backendMessageRaw);
     const retryAfterHeader = err.headers?.get('Retry-After');
     const retryAfterBody = err.error?.retry_after;
     const retryAfterRaw = retryAfterBody ?? retryAfterHeader;
@@ -201,6 +243,9 @@ export class AuthService {
     }
 
     if (err.status === 401 || err.status === 422) {
+      if (backendMessage === 'ERROR') {
+        return backendMessage;
+      }
       return 'Invalid email or password.';
     }
 
@@ -209,6 +254,15 @@ export class AuthService {
     }
 
     return backendMessage || 'Login failed. Please try again.';
+  }
+
+  private normalizeAdminLoginOnlyMessage(message: string): string {
+    const normalizedMessage = message.toLowerCase();
+    if (normalizedMessage.includes('admin accounts must') && normalizedMessage.includes('/admin-login')) {
+      return 'ERROR';
+    }
+
+    return message;
   }
 
   /**

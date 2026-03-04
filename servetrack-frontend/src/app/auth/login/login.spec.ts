@@ -9,7 +9,10 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 describe('Login Component', () => {
   let component: Login;
   let fixture: ComponentFixture<Login>;
-  let mockAuthService: { login$: ReturnType<typeof vi.fn> };
+  let mockAuthService: {
+    login$: ReturnType<typeof vi.fn>;
+    logout$: ReturnType<typeof vi.fn>;
+  };
   let mockRouter: {
     navigate: ReturnType<typeof vi.fn>;
     navigateByUrl: ReturnType<typeof vi.fn>;
@@ -19,6 +22,7 @@ describe('Login Component', () => {
   beforeEach(async () => {
     mockAuthService = {
       login$: vi.fn(),
+      logout$: vi.fn().mockReturnValue(of(undefined)),
     };
 
     mockRouter = {
@@ -219,6 +223,27 @@ describe('Login Component', () => {
       mockAuthService.login$.mockReturnValue(of({ success: false }));
       await component.onSubmit();
       expect(component.errorMessage()).toBe('Invalid email or password');
+    });
+
+    it('should show error when admin logs in from /login and logout the session', async () => {
+      component.loginForm.setValue({
+        email: 'admin@example.com',
+        password: 'password123',
+        rememberMe: false,
+      });
+      Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
+      mockAuthService.login$.mockReturnValue(
+        of({
+          success: true,
+          user: { id: '1', email: 'admin@example.com', role: 'admin' },
+        }),
+      );
+
+      await component.onSubmit();
+
+      expect(component.errorMessage()).toBe('ERROR');
+      expect(component.showLoginSuccessModal()).toBe(false);
+      expect(mockAuthService.logout$).toHaveBeenCalled();
     });
 
     it('should catch errors and set generic error message', async () => {

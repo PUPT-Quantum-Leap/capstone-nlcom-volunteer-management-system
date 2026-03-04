@@ -283,210 +283,61 @@
               </tr>
             </thead>
             <tbody>
+              @for (volunteer of volunteerRows(); track volunteer.id) {
               <tr>
                 <td>
                   <div class="volunteer-info">
                     <div class="volunteer-details">
-                      <span class="volunteer-name">Maria Santos</span>
-                      <span class="volunteer-id">VOL-001</span>
+                      <span class="volunteer-name">{{ volunteer.name }}</span>
+                      <span class="volunteer-id">VOL-{{ volunteer.id }}</span>
                     </div>
                   </div>
                 </td>
-                <td>maria.santos&#64;email.com</td>
-                <td>+63 912 345 6789</td>
-                <td><span class="dept-badge dept-medical">Medical</span></td>
-                <td><span class="status-badge status-active">Active</span></td>
-                <td>Jan 15, 2026</td>
+                <td>{{ volunteer.email }}</td>
+                <td>{{ volunteer.phone }}</td>
+                <td><span class="dept-badge">{{ volunteer.department }}</span></td>
+                <td>
+                  <span
+                    class="status-badge"
+                    [class.status-active]="volunteer.status === 'active'"
+                    [class.status-inactive]="volunteer.status === 'inactive'"
+                  >
+                    {{ volunteer.status === 'active' ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td>{{ volunteer.joined_date | date: 'MMM d, yyyy' }}</td>
                 <td>
                   <div class="action-buttons">
                     <button type="button" class="action-btn view-btn" title="View">
                       <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                      </svg>
-                    </button>
-                    <button type="button" class="action-btn edit-btn" title="Edit">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
-                    <button type="button" class="action-btn delete-btn" title="Delete">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path
+                          d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
                       </svg>
                     </button>
                   </div>
                 </td>
               </tr>
+              } @empty {
               <tr>
-                <td>
-                  <div class="volunteer-info">
-                    <div class="volunteer-details">
-                      <span class="volunteer-name">Juan Dela Cruz</span>
-                      <span class="volunteer-id">VOL-002</span>
-                    </div>
-                  </div>
-                </td>
-                <td>juan.delacruz&#64;email.com</td>
-                <td>+63 923 456 7890</td>
-                <td><span class="dept-badge dept-logistics">Logistics</span></td>
-                <td><span class="status-badge status-active">Active</span></td>
-                <td>Jan 20, 2026</td>
-                <td>
-                  <div class="action-buttons">
-                    <button type="button" class="action-btn view-btn" title="View">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                      </svg>
-                    </button>
-                    <button type="button" class="action-btn edit-btn" title="Edit">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
-                    <button type="button" class="action-btn delete-btn" title="Delete">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
+                <td colspan="7">
+                  <p class="empty-state">No volunteer records found.</p>
                 </td>
               </tr>
-              <tr>
-                <td>
-                  <div class="volunteer-info">
-                    <div class="volunteer-details">
-                      <span class="volunteer-name">Ana Reyes</span>
-                      <span class="volunteer-id">VOL-003</span>
-                    </div>
-                  </div>
-                </td>
-                <td>ana.reyes&#64;email.com</td>
-                <td>+63 934 567 8901</td>
-                <td><span class="dept-badge dept-comms">Communications</span></td>
-                <td><span class="status-badge status-inactive">Inactive</span></td>
-                <td>Feb 5, 2026</td>
-                <td>
-                  <div class="action-buttons">
-                    <button type="button" class="action-btn view-btn" title="View">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                      </svg>
-                    </button>
-                    <button type="button" class="action-btn edit-btn" title="Edit">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
-                    <button type="button" class="action-btn delete-btn" title="Delete">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="volunteer-info">
-                    <div class="volunteer-details">
-                      <span class="volunteer-name">Pedro Garcia</span>
-                      <span class="volunteer-id">VOL-004</span>
-                    </div>
-                  </div>
-                </td>
-                <td>pedro.garcia&#64;email.com</td>
-                <td>+63 945 678 9012</td>
-                <td><span class="dept-badge dept-medical">Medical</span></td>
-                <td><span class="status-badge status-active">Active</span></td>
-                <td>Feb 10, 2026</td>
-                <td>
-                  <div class="action-buttons">
-                    <button type="button" class="action-btn view-btn" title="View">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                      </svg>
-                    </button>
-                    <button type="button" class="action-btn edit-btn" title="Edit">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
-                    <button type="button" class="action-btn delete-btn" title="Delete">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="volunteer-info">
-                    <div class="volunteer-details">
-                      <span class="volunteer-name">Lisa Fernandez</span>
-                      <span class="volunteer-id">VOL-005</span>
-                    </div>
-                  </div>
-                </td>
-                <td>lisa.fernandez&#64;email.com</td>
-                <td>+63 956 789 0123</td>
-                <td><span class="dept-badge dept-logistics">Logistics</span></td>
-                <td><span class="status-badge status-active">Active</span></td>
-                <td>Feb 15, 2026</td>
-                <td>
-                  <div class="action-buttons">
-                    <button type="button" class="action-btn view-btn" title="View">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
-                      </svg>
-                    </button>
-                    <button type="button" class="action-btn edit-btn" title="Edit">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
-                    <button type="button" class="action-btn delete-btn" title="Delete">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-              </tr>
+              }
             </tbody>
           </table>
         </div>
 
         <div class="pagination-container">
           <div class="pagination-info">
-            Showing <strong>1-5</strong> of <strong>25</strong> volunteers
+            Showing <strong>{{ volunteerRows().length }}</strong> volunteer(s)
           </div>
-          <nav class="pagination-nav">
-            <button type="button" class="pagination-btn" disabled>
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              Previous
-            </button>
-            <div class="pagination-numbers">
-              <button type="button" class="pagination-number active">1</button>
-              <button type="button" class="pagination-number">2</button>
-              <button type="button" class="pagination-number">3</button>
-              <button type="button" class="pagination-number">4</button>
-              <button type="button" class="pagination-number">5</button>
-            </div>
-            <button type="button" class="pagination-btn">
-              Next
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-          </nav>
         </div>
       </section>
       }
@@ -933,3 +784,4 @@
   <div class="spinner" aria-label="Loading..." role="status"></div>
 </div>
 }
+

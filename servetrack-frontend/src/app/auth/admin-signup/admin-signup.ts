@@ -224,7 +224,7 @@ export class AdminSignup {
    */
   async navigateToLogin(): Promise<void> {
     try {
-      await this.router.navigate(['/login']);
+      await this.router.navigate(['/admin-login']);
     } catch (error) {
       // Navigation failed - handle silently
     }

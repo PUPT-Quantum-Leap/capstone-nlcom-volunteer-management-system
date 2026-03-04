@@ -302,7 +302,7 @@
       <p class="auth-footer-text">
         Already have an account?
         @if (!isLoading()) {
-          <a routerLink="/login" class="auth-link">Sign in</a>
+          <a routerLink="/admin-login" class="auth-link">Sign in</a>
         } @else {
           <span class="auth-link disabled">Sign in</span>
         }
@@ -329,10 +329,10 @@
         <p class="popup-message">
           Your admin account has been created successfully. You can now log in with your credentials.
         </p>
-        <p class="popup-redirect">Redirecting to login in {{ countdown() }} seconds...</p>
+        <p class="popup-redirect">Redirecting to admin login in {{ countdown() }} seconds...</p>
         <div class="popup-actions">
           <button class="btn btn-primary" (click)="navigateToLogin()">
-            Go to Login Now
+            Go to Admin Login
           </button>
           <button class="btn btn-outline" (click)="closeSuccessModal()">
             Close

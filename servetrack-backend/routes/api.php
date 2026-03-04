@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 // Guest-only routes — audit logging + exponential backoff rate limiting
 Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(function (): void {
     Route::post('/login', [LoginController::class, 'store']);
+    Route::post('/admin/login', [LoginController::class, 'adminStore']);
     Route::post('/register', [RegisterController::class, 'store']);
 });
 
@@ -35,8 +36,10 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
     Route::get('/volunteer/profile', [VolunteerController::class, 'profile']);
     Route::put('/volunteer/profile', [VolunteerController::class, 'updateProfile']);
 
+    // Admin dashboard
+    Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
+
     // Attendance
     Route::get('/volunteer/attendance', [VolunteerController::class, 'listAttendance']);
-    Route::post('/volunteer/attendance', [VolunteerController::class, 'storeAttendance']);
     Route::get('/volunteer/attendance/stats', [VolunteerController::class, 'attendanceStats']);
 });

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CreateAttendanceRequest;
 use App\Http\Requests\UpdateVolunteerProfileRequest;
 use App\Models\Position;
 use App\Models\Skill;
@@ -456,32 +455,6 @@ class VolunteerController extends Controller
             'success' => true,
             'data' => $query->get(),
         ]);
-    }
-
-    /**
-     * Add a manual attendance entry for the authenticated volunteer.
-     */
-    public function storeAttendance(CreateAttendanceRequest $request): JsonResponse
-    {
-        $volunteer = $request->user()->volunteer;
-
-        if (! $volunteer) {
-            return response()->json(['success' => false, 'message' => 'Volunteer profile not found.'], 404);
-        }
-
-        $attendance = $volunteer->attendances()->create([
-            'date' => $request->date,
-            'hours' => $request->hours,
-            'description' => $request->description,
-            'status' => 'pending',
-            'created_by' => $request->user()->id,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Attendance entry submitted.',
-            'data' => $attendance,
-        ], 201);
     }
 
     /**

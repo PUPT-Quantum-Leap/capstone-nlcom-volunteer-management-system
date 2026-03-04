@@ -686,62 +686,11 @@
                   Search
                 </button>
               </div>
-
-              <button type="button" class="primary-btn" (click)="toggleAddAttendance()">
-                {{ showAddAttendance() ? 'Cancel' : '+ Log Hours' }}
-              </button>
             </div>
 
-            @if (showAddAttendance()) {
-              <form
-                class="attendance-form form-grid"
-                [formGroup]="attendanceForm"
-                (ngSubmit)="submitAttendance()"
-              >
-                <div class="form-group">
-                  <label for="attendanceDate">Date</label>
-                  <input type="date" id="attendanceDate" formControlName="date" />
-                  @if (attendanceForm.get('date')?.invalid && attendanceForm.get('date')?.touched) {
-                    <span class="error-text">Date is required</span>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="attendanceHours">Hours</label>
-                  <input
-                    type="number"
-                    id="attendanceHours"
-                    formControlName="hours"
-                    min="0.5"
-                    max="24"
-                    step="0.5"
-                    placeholder="e.g. 2.5"
-                  />
-                  @if (
-                    attendanceForm.get('hours')?.invalid && attendanceForm.get('hours')?.touched
-                  ) {
-                    <span class="error-text">Enter a valid number of hours (0.5–24)</span>
-                  }
-                </div>
-
-                <div class="form-group wide">
-                  <label for="attendanceDesc">Description (optional)</label>
-                  <input
-                    type="text"
-                    id="attendanceDesc"
-                    formControlName="description"
-                    placeholder="What did you do?"
-                  />
-                </div>
-
-                <div class="form-actions wide">
-                  <button type="submit" class="primary-btn">Save Entry</button>
-                  <button type="button" class="outline-btn" (click)="toggleAddAttendance()">
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            }
+            <p class="meta">
+              Attendance entries are managed by admins. This log is read-only for volunteers.
+            </p>
 
             <div class="schedule-list">
               @for (item of attendanceItems(); track item.attendance_id) {
