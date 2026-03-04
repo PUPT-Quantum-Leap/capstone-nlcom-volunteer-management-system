@@ -29,7 +29,7 @@ export class AdminDashboard implements OnInit {
 
   readonly defaultPhoto = '/assets/nlcom.png';
 
-  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup'>('overview');
+  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Admin');
   sidebarCollapsed = signal(false);
   isLoading = signal(false);
@@ -157,7 +157,7 @@ export class AdminDashboard implements OnInit {
     this.sidebarCollapsed.update((v) => !v);
   }
 
-  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup'): void {
+  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'): void {
     this.currentView.set(view);
   }
 
@@ -198,6 +198,16 @@ export class AdminDashboard implements OnInit {
 
     if (query.includes('user')) {
       this.setView('users');
+      return;
+    }
+
+    if (query.includes('analytic')) {
+      this.setView('analytics');
+      return;
+    }
+
+    if (query.includes('event')) {
+      this.setView('events');
       return;
     }
 

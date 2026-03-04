@@ -95,6 +95,29 @@
           </button>
         </li>
         <li>
+          <button type="button" [class.active]="currentView() === 'analytics'" (click)="setView('analytics')"
+            aria-label="Analytics">
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 3V21H21M7 16L12 11L16 15L21 10M21 10V14M21 10H17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Analytics
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'events'" (click)="setView('events')"
+            aria-label="Events Management">
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M15.695 13.7H15.704M15.695 16.7H15.704M11.995 13.7H12.005M11.995 16.7H12.005M8.295 13.7H8.305M8.295 16.7H8.305" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Events
+            </span>
+          </button>
+        </li>
+        <li>
           <button type="button" [class.active]="currentView() === 'sms'" (click)="setView('sms')"
             aria-label="SMS Notifications">
             <span class="label nav-label">
@@ -141,6 +164,8 @@
         @case ('polls') { Polls Management }
         @case ('ics') { Incident Command System }
         @case ('users') { User Management }
+        @case ('analytics') { Analytics }
+        @case ('events') { Events Management }
         @case ('sms') { SMS Notifications }
         @case ('backup') { Backup and Restore }
         }
@@ -529,6 +554,26 @@
           <p>Manage system users, roles, and permissions</p>
         </div>
         <p class="empty-state">User management features coming soon.</p>
+      </section>
+      }
+
+      @case ('analytics') {
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Analytics</h2>
+          <p>View detailed analytics and insights</p>
+        </div>
+        <p class="empty-state">Analytics features coming soon.</p>
+      </section>
+      }
+
+      @case ('events') {
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Events Management</h2>
+          <p>Create and manage volunteer events and activities</p>
+        </div>
+        <p class="empty-state">Events management features coming soon.</p>
       </section>
       }
 
