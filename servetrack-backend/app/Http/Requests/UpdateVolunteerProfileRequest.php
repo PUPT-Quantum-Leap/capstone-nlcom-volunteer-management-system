@@ -40,6 +40,27 @@ class UpdateVolunteerProfileRequest extends FormRequest
             'classesTraining' => ['nullable', 'string'],
             'volunteerPreference' => ['required', 'string'],
             'otherPreference' => ['nullable', 'string'],
+            'availability' => ['required', 'string'],
+            'otherAvailability' => ['nullable', 'string'],
+            'partOfLifegroup' => ['required', 'string', 'in:yes,no'],
+            'lifegroupLeaderName' => [
+                'required_if:partOfLifegroup,yes',
+                'string',
+                'max:100',
+            ],
+            'leadingLifegroup' => ['required', 'string', 'in:yes,no'],
+            'emergencyContactName' => ['required', 'string', 'max:100'],
+            'emergencyContactNumber' => [
+                'required',
+                'string',
+                'min:10',
+                'max:15',
+            ],
+            'emergencyContactRelationship' => [
+                'required',
+                'string',
+                'max:50',
+            ],
         ];
     }
 
@@ -62,6 +83,15 @@ class UpdateVolunteerProfileRequest extends FormRequest
             'lastMedicalExam.before_or_equal' => 'Last medical exam date cannot be in the future.',
             'educationalAttainment.required' => 'Educational attainment is required.',
             'volunteerPreference.required' => 'Volunteer preference is required.',
+            'availability.required' => 'Availability is required.',
+            'partOfLifegroup.required' => 'Lifegroup participation is required.',
+            'partOfLifegroup.in' => 'Please select yes or no for lifegroup.',
+            'lifegroupLeaderName.required_if' => 'Lifegroup leader name is required when you are part of a lifegroup.',
+            'leadingLifegroup.required' => 'Lifegroup leadership information is required.',
+            'leadingLifegroup.in' => 'Please select yes or no for lifegroup leadership.',
+            'emergencyContactName.required' => 'Emergency contact name is required.',
+            'emergencyContactNumber.required' => 'Emergency contact number is required.',
+            'emergencyContactRelationship.required' => 'Emergency contact relationship is required.',
         ];
     }
 }

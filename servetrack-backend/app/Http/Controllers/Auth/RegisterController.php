@@ -24,9 +24,25 @@ class RegisterController extends Controller
             ], 201);
         }
 
-        $user = User::create($request->validated());
+        // Provide default name if not provided
+        $userData = $request->validated();
+        if (! isset($userData['name']) || empty($userData['name'])) {
+            $userData['name'] = 'Volunteer User';
+        }
 
-        $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+        try {
+            $user = User::create($userData);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Registration failed: '.$e->getMessage(),
+            ], 500);
+        }
+
+        $token = $user->createToken(
+            'auth-token',
+            ['*'],
+            now()->addMinutes(config('sanctum.expiration', 60))
+        )->plainTextToken;
 
         $cookie = cookie(
             'auth_token',
@@ -41,6 +57,7 @@ class RegisterController extends Controller
         );
 
         return response()->json([
+            'success' => true,
             'user' => $user,
         ], 201)->withCookie($cookie);
     }

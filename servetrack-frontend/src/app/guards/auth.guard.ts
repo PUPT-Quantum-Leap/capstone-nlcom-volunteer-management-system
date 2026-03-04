@@ -11,15 +11,31 @@ export const authGuard: CanActivateFn = () => {
   if (authService.isAuthenticated()) {
     const user = authService.currentUser();
 
-    // If user has volunteer profile, they're a volunteer
-    if (user?.volunteer) {
+    // Route based on user type
+    if (user?.user_type === 'volunteer') {
       return true;
-    } else {
-      // User without volunteer profile is considered admin
+    } else if (user?.user_type === 'admin') {
       // Redirect to admin dashboard if trying to access volunteer dashboard
       const currentUrl = router.url;
       if (currentUrl.includes('volunteer-dashboard')) {
         return router.parseUrl('/admin-dashboard');
+      }
+      return true;
+    } else if (user?.user_type === 'coordinator') {
+      // Future: coordinator dashboard routing
+      return true;
+    } else {
+      // Fallback to role for backward compatibility
+      if (user?.role === 'volunteer') {
+        return true;
+      } else if (user?.role === 'admin') {
+        const currentUrl = router.url;
+        if (currentUrl.includes('volunteer-dashboard')) {
+          return router.parseUrl('/admin-dashboard');
+        }
+        return true;
+      } else if (user?.role === 'coordinator') {
+        return true;
       }
       return true;
     }
@@ -32,16 +48,33 @@ export const authGuard: CanActivateFn = () => {
       if (response.success && response.user) {
         const user = response.user;
 
-        // If user has volunteer profile, they're a volunteer
-        if (user?.volunteer) {
+        // Route based on user type
+        if (user?.user_type === 'volunteer') {
           return true;
-        } else {
-          // User without volunteer profile is considered admin
+        } else if (user?.user_type === 'admin') {
           // Redirect to admin dashboard if trying to access volunteer dashboard
           const currentUrl = router.url;
           if (currentUrl.includes('volunteer-dashboard')) {
             return router.parseUrl('/admin-dashboard');
           }
+          return true;
+        } else if (user?.user_type === 'coordinator') {
+          // Future: coordinator dashboard routing
+          return true;
+        } else {
+          // Fallback to role for backward compatibility
+          if (user?.role === 'volunteer') {
+            return true;
+          } else if (user?.role === 'admin') {
+            const currentUrl = router.url;
+            if (currentUrl.includes('volunteer-dashboard')) {
+              return router.parseUrl('/admin-dashboard');
+            }
+            return true;
+          } else if (user?.role === 'coordinator') {
+            return true;
+          }
+          // Default to volunteer dashboard
           return true;
         }
       }

@@ -37,6 +37,7 @@
                 personalInfoForm.get('firstName')?.invalid &&
                 personalInfoForm.get('firstName')?.touched
               "
+              [disabled]="isSubmitting()"
             />
             @if (
               personalInfoForm.get('firstName')?.touched &&
@@ -60,6 +61,7 @@
                 personalInfoForm.get('lastName')?.invalid &&
                 personalInfoForm.get('lastName')?.touched
               "
+              [disabled]="isSubmitting()"
             />
             @if (
               personalInfoForm.get('lastName')?.touched && personalInfoForm.get('lastName')?.invalid
@@ -93,6 +95,7 @@
             [class.error]="
               personalInfoForm.get('email')?.invalid && personalInfoForm.get('email')?.touched
             "
+            [disabled]="isSubmitting()"
           />
           @if (personalInfoForm.get('email')?.touched && personalInfoForm.get('email')?.invalid) {
             <span class="error-message">{{ getErrorMessage('email') }}</span>
@@ -113,6 +116,7 @@
               personalInfoForm.get('mobileNumber')?.invalid &&
               personalInfoForm.get('mobileNumber')?.touched
             "
+            [disabled]="isSubmitting()"
           />
           @if (
             personalInfoForm.get('mobileNumber')?.touched &&
@@ -190,9 +194,14 @@
         </div>
 
         <div class="form-actions form-actions-single">
-          <button type="submit" class="btn-next">
-            Next
-            <span class="arrow">→</span>
+          <button type="submit" class="btn-next" [disabled]="isSubmitting()">
+            @if (isSubmitting()) {
+              <span class="spinner"></span>
+              Processing...
+            } @else {
+              Next
+              <span class="arrow">→</span>
+            }
           </button>
         </div>
       </form>
@@ -268,13 +277,19 @@
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn-back" (click)="onBack()">
+          <button type="button" class="btn-back" (click)="onBack()" 
+            [disabled]="isSubmitting()">
             <span class="arrow">←</span>
             Back
           </button>
-          <button type="submit" class="btn-next">
-            Next
-            <span class="arrow">→</span>
+          <button type="submit" class="btn-next" [disabled]="isSubmitting()">
+            @if (isSubmitting()) {
+              <span class="spinner"></span>
+              Processing...
+            } @else {
+              Next
+              <span class="arrow">→</span>
+            }
           </button>
         </div>
       </form>
@@ -339,6 +354,213 @@
             />
           </div>
         }
+
+        <div class="form-group">
+          <label for="availability" class="form-label">
+            Availability <span class="required">*</span>
+          </label>
+          <select
+            id="availability"
+            formControlName="availability"
+            class="form-input"
+            [class.error]="
+              preferencesForm.get('availability')?.invalid &&
+              preferencesForm.get('availability')?.touched
+            "
+          >
+            <option value="" disabled selected>Select your availability</option>
+            <option value="anytime">Anytime / On Call</option>
+            <option value="weekends-only">Weekends Only</option>
+            <option value="weekdays-only">Weekdays Only</option>
+            <option value="weekdays-weekends">Weekdays & Weekends</option>
+            <option value="friday-saturday">Friday & Saturday Only</option>
+            <option value="scheduled">Scheduled (By Arrangement)</option>
+            <option value="holidays">Holidays (If Available)</option>
+            <option value="rest-days">Rest Days / With Filed Leave</option>
+            <option value="limited-weekdays">Limited Weekdays (Not Whole Day)</option>
+            <option value="day-off">Day Off Only</option>
+            <option value="others">Others</option>
+          </select>
+          @if (
+            preferencesForm.get('availability')?.touched &&
+            preferencesForm.get('availability')?.invalid
+          ) {
+            <span class="error-message">{{ getErrorMessage('availability') }}</span>
+          }
+        </div>
+
+        @if (showOtherAvailabilityInput()) {
+          <div class="form-group other-input">
+            <label for="otherAvailability" class="form-label"> Please specify your availability </label>
+            <input
+              type="text"
+              id="otherAvailability"
+              formControlName="otherAvailability"
+              class="form-input"
+              placeholder="Enter your availability"
+            />
+          </div>
+        }
+
+        <div class="form-group">
+          <label for="partOfLifegroup" class="form-label">
+            Are you part of a lifegroup? <span class="required">*</span>
+          </label>
+          <select
+            id="partOfLifegroup"
+            formControlName="partOfLifegroup"
+            class="form-input"
+            [class.error]="
+              preferencesForm.get('partOfLifegroup')?.invalid &&
+              preferencesForm.get('partOfLifegroup')?.touched
+            "
+          >
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+          @if (
+            preferencesForm.get('partOfLifegroup')?.touched &&
+            preferencesForm.get('partOfLifegroup')?.invalid
+          ) {
+            <span class="error-message">{{ getErrorMessage('partOfLifegroup') }}</span>
+          }
+        </div>
+
+        @if (showLifegroupLeaderInput()) {
+          <div class="form-group other-input">
+            <label for="lifegroupLeaderName" class="form-label">
+              Name of your Lifegroup Leader <span class="required">*</span>
+            </label>
+            <input
+              type="text"
+              id="lifegroupLeaderName"
+              formControlName="lifegroupLeaderName"
+              class="form-input"
+              placeholder="Enter your lifegroup leader's name"
+              [class.error]="
+                preferencesForm.get('lifegroupLeaderName')?.invalid &&
+                preferencesForm.get('lifegroupLeaderName')?.touched
+              "
+            />
+            @if (
+              preferencesForm.get('lifegroupLeaderName')?.touched &&
+              preferencesForm.get('lifegroupLeaderName')?.invalid
+            ) {
+              <span class="error-message">{{ getErrorMessage('lifegroupLeaderName') }}</span>
+            }
+          </div>
+        }
+
+        <div class="form-group">
+          <label for="leadingLifegroup" class="form-label">
+            Are you leading a lifegroup? <span class="required">*</span>
+          </label>
+          <select
+            id="leadingLifegroup"
+            formControlName="leadingLifegroup"
+            class="form-input"
+            [class.error]="
+              preferencesForm.get('leadingLifegroup')?.invalid &&
+              preferencesForm.get('leadingLifegroup')?.touched
+            "
+          >
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+          @if (
+            preferencesForm.get('leadingLifegroup')?.touched &&
+            preferencesForm.get('leadingLifegroup')?.invalid
+          ) {
+            <span class="error-message">{{ getErrorMessage('leadingLifegroup') }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            Emergency Contact <span class="required">*</span>
+          </label>
+          <p class="form-hint">In case of any emergency, provide contact details</p>
+          
+          <div class="emergency-contact-fields">
+            <div class="form-group">
+              <label for="emergencyContactName" class="form-label-small">Name</label>
+              <input
+                type="text"
+                id="emergencyContactName"
+                formControlName="emergencyContactName"
+                class="form-input"
+                placeholder="Full name"
+                [class.error]="
+                  preferencesForm.get('emergencyContactName')?.invalid &&
+                  preferencesForm.get('emergencyContactName')?.touched
+                "
+              />
+              @if (
+                preferencesForm.get('emergencyContactName')?.touched &&
+                preferencesForm.get('emergencyContactName')?.invalid
+              ) {
+                <span class="error-message">{{ getErrorMessage('emergencyContactName') }}</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="emergencyContactNumber" class="form-label-small">Contact Number</label>
+              <input
+                type="tel"
+                id="emergencyContactNumber"
+                formControlName="emergencyContactNumber"
+                class="form-input"
+                placeholder="09XXXXXXXXX"
+                [class.error]="
+                  preferencesForm.get('emergencyContactNumber')?.invalid &&
+                  preferencesForm.get('emergencyContactNumber')?.touched
+                "
+              />
+              @if (
+                preferencesForm.get('emergencyContactNumber')?.touched &&
+                preferencesForm.get('emergencyContactNumber')?.invalid
+              ) {
+                <span class="error-message">{{ getErrorMessage('emergencyContactNumber') }}</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="emergencyContactRelationship" class="form-label-small">Relationship</label>
+              <input
+                type="text"
+                id="emergencyContactRelationship"
+                formControlName="emergencyContactRelationship"
+                class="form-input"
+                placeholder="e.g. Spouse, Parent, Sibling"
+                [class.error]="
+                  preferencesForm.get('emergencyContactRelationship')?.invalid &&
+                  preferencesForm.get('emergencyContactRelationship')?.touched
+                "
+              />
+              @if (
+                preferencesForm.get('emergencyContactRelationship')?.touched &&
+                preferencesForm.get('emergencyContactRelationship')?.invalid
+              ) {
+                <span class="error-message">{{ getErrorMessage('emergencyContactRelationship') }}</span>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="classesTrainingAttended" class="form-label">
+            Classes and Training Attended
+          </label>
+          <textarea
+            id="classesTrainingAttended"
+            formControlName="classesTrainingAttended"
+            class="form-input form-textarea"
+            placeholder="List any classes or training programs you have attended (optional)"
+            rows="3"
+          ></textarea>
+        </div>
 
         <div class="form-group">
           <label for="password" class="form-label">
@@ -489,7 +711,8 @@
         </div>
 
         <div class="form-actions">
-          <button type="button" class="btn-back" (click)="onBack()">
+          <button type="button" class="btn-back" (click)="onBack()" 
+            [disabled]="isSubmitting()">
             <span class="arrow">←</span>
             Back
           </button>
@@ -507,3 +730,35 @@
     }
   </div>
 </div>
+
+<!-- Success Modal -->
+@if (showSuccessModal()) {
+  <div class="popup-overlay" (click)="closeSuccessModal()">
+    <div class="popup-modal" (click)="$event.stopPropagation()">
+      <button class="popup-close" (click)="closeSuccessModal()">×</button>
+      <div class="popup-content">
+        <div class="success-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+               viewBox="0 0 24 24" stroke-width="2"
+               stroke="currentColor" class="success-check">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 class="popup-title">Registration Successful!</h3>
+        <p class="popup-message">
+          Your volunteer account has been created successfully. 
+        </p>
+        <p class="popup-redirect">Redirecting to login in 5 seconds...</p>
+        <div class="popup-actions">
+          <button class="btn btn-primary" (click)="navigateToLoginNow()">
+            Go to Login Now
+          </button>
+          <button class="btn btn-outline" (click)="closeSuccessModal()">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

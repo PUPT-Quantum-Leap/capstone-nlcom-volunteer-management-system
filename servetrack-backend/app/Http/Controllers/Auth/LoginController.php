@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -33,7 +34,25 @@ class LoginController extends Controller
             $request->session()->regenerate();
         }
 
-        $user = $request->user()->load('volunteer');
+        $user = $request->user();
+
+        $userData = $user->toArray();
+        $userData['user_type'] = $this->getUserType($user);
+
+        // Load specific profile data
+        switch ($userData['user_type']) {
+            case 'admin':
+                $userData['admin_profile'] = $user->admin;
+                break;
+            case 'coordinator':
+                $userData['coordinator_profile'] = $user->coordinator;
+                break;
+            case 'volunteer':
+            default:
+                $userData['volunteer_profile'] = $user->volunteer;
+                break;
+        }
+
         $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
 
         $cookie = cookie(
@@ -49,8 +68,29 @@ class LoginController extends Controller
         );
 
         return response()->json([
-            'user' => $user,
+            'user' => $userData,
         ])->withCookie($cookie);
+    }
+
+    /**
+     * Determine the user type based on role and profile
+     */
+    private function getUserType(User $user): string
+    {
+        if ($user->role === 'admin') {
+            return 'admin';
+        }
+
+        if ($user->role === 'coordinator') {
+            return 'coordinator';
+        }
+
+        if ($user->volunteer) {
+            return 'volunteer';
+        }
+
+        // Default to volunteer for backward compatibility
+        return 'volunteer';
     }
 
     /**

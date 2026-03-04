@@ -66,6 +66,7 @@ class VolunteerController extends Controller
                 'name' => $request->firstName.' '.$request->lastName,
                 'email' => $request->email,
                 'password' => bcrypt($request->password),
+                'role' => 'volunteer',
             ]);
 
             // Create volunteer profile linked to user
@@ -94,6 +95,15 @@ class VolunteerController extends Controller
             // Process volunteer preference and attach to position
             $this->processVolunteerPreference($volunteer, $request->volunteerPreference, $request->otherPreference);
 
+            // Process emergency contact
+            $this->processEmergencyContact($volunteer, $request->emergencyContactName, $request->emergencyContactNumber, $request->emergencyContactRelationship);
+
+            // Process availability
+            $this->processAvailability($volunteer, $request->availability, $request->otherAvailability);
+
+            // Process lifegroup information
+            $this->processLifegroupInfo($volunteer, $request->partOfLifegroup, $request->lifegroupLeaderName, $request->leadingLifegroup);
+
             DB::commit();
 
             return response()->json([
@@ -101,7 +111,7 @@ class VolunteerController extends Controller
                 'message' => 'Volunteer registered successfully',
                 'data' => [
                     'user' => $user,
-                    'volunteer' => $volunteer->load(['experiences', 'skills', 'trainings', 'positions', 'user']),
+                    'volunteer' => $volunteer->load(['experiences', 'skills', 'trainings', 'positions', 'user', 'emergencyContact']),
                 ],
             ], 201);
 
@@ -575,5 +585,72 @@ class VolunteerController extends Controller
 
         $position = Position::firstOrCreate(['name' => $positionName]);
         $volunteer->positions()->attach($position->position_id);
+    }
+
+    /**
+     * Process emergency contact and create/find emergency contact record
+     */
+    private function processEmergencyContact(
+        Volunteer $volunteer,
+        string $name,
+        string $number,
+        string $relationship
+    ): void {
+        $emergencyContact = \App\Models\EmergencyContact::firstOrCreate([
+            'name' => $name,
+            'phone_number' => $number,
+            'relationship' => $relationship,
+        ]);
+
+        $volunteer->emergency_contact_id =
+            $emergencyContact->emergency_contact_id;
+        $volunteer->save();
+    }
+
+    /**
+     * Process volunteer availability and create/find availability record
+     */
+    private function processAvailability(
+        Volunteer $volunteer,
+        string $availability,
+        ?string $otherAvailability
+    ): void {
+        $availabilityName = $availability;
+        $customDescription = null;
+
+        if ($availability === 'others' && ! empty($otherAvailability)) {
+            $availabilityName = 'Custom Availability';
+            $customDescription = $otherAvailability;
+        }
+
+        $availabilityRecord = \App\Models\Availability::firstOrCreate([
+            'name' => $availabilityName,
+        ]);
+
+        $volunteer->availabilities()->attach(
+            $availabilityRecord->availability_id,
+            ['custom_description' => $customDescription]
+        );
+    }
+
+    /**
+     * Process lifegroup information and create/find lifegroup record
+     */
+    private function processLifegroupInfo(
+        Volunteer $volunteer,
+        string $partOfLifegroup,
+        ?string $lifegroupLeaderName,
+        string $leadingLifegroup
+    ): void {
+        if ($partOfLifegroup === 'yes') {
+            $lifegroup = \App\Models\Lifegroup::firstOrCreate([
+                'name' => 'General Lifegroup',
+            ]);
+
+            $volunteer->lifegroups()->attach(
+                $lifegroup->lifegroup_id,
+                ['is_leader' => $leadingLifegroup === 'yes' ? 1 : 0]
+            );
+        }
     }
 }

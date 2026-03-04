@@ -3,22 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Model;
 
-class Admin extends Authenticatable
+class Admin extends Model
 {
-    use HasFactory, Notifiable;
+    use HasFactory;
 
-    protected $primaryKey = 'admin_id';
+    protected $table = 'admin';
 
     protected $fillable = [
-        'name',
-        'password',
-    ];
-
-    protected $hidden = [
-        'password',
-        'remember_token',
+        'first_name',
+        'last_name',
+        'email',
+        'contact_number',
     ];
 }

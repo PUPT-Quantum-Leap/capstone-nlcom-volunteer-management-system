@@ -12,8 +12,8 @@
         />
         <span class="logo-text">ServeTrack</span>
       </div>
-      <h1 class="auth-title">Join ServeTrack</h1>
-      <p class="auth-subtitle">Create your account to start volunteering</p>
+      <h1 class="auth-title">Admin Registration</h1>
+      <p class="auth-subtitle">Create your administrator account</p>
     </div>
 
     @if (errorMessage()) {
@@ -22,7 +22,59 @@
       </div>
     }
 
-    <form class="auth-form" [formGroup]="signupForm" (ngSubmit)="onSubmit()">
+    <form class="auth-form" [formGroup]="adminForm" (ngSubmit)="onSubmit()">
+      <!-- First Name Field -->
+      <div class="form-group">
+        <label for="firstName" class="form-label">First Name</label>
+        <input
+          type="text"
+          id="firstName"
+          formControlName="firstName"
+          class="form-input"
+          [class.error]="firstNameControl?.invalid && firstNameControl?.touched"
+          [disabled]="isLoading()"
+          placeholder="Enter your first name"
+        />
+        @if (firstNameControl?.invalid && firstNameControl?.touched) {
+          <span class="error-text">{{ getErrorMessage('firstName') }}</span>
+        }
+      </div>
+
+      <!-- Last Name Field -->
+      <div class="form-group">
+        <label for="lastName" class="form-label">Last Name</label>
+        <input
+          type="text"
+          id="lastName"
+          formControlName="lastName"
+          class="form-input"
+          [class.error]="lastNameControl?.invalid && lastNameControl?.touched"
+          [disabled]="isLoading()"
+          placeholder="Enter your last name"
+        />
+        @if (lastNameControl?.invalid && lastNameControl?.touched) {
+          <span class="error-text">{{ getErrorMessage('lastName') }}</span>
+        }
+      </div>
+
+      <!-- Contact Number Field -->
+      <div class="form-group">
+        <label for="contactNumber" class="form-label">Contact Number</label>
+        <input
+          type="tel"
+          id="contactNumber"
+          formControlName="contactNumber"
+          class="form-input"
+          [class.error]="contactNumberControl?.invalid && contactNumberControl?.touched"
+          [disabled]="isLoading()"
+          placeholder="+1234567890"
+        />
+        @if (contactNumberControl?.invalid && contactNumberControl?.touched) {
+          <span class="error-text">{{ getErrorMessage('contactNumber') }}</span>
+        }
+      </div>
+
+      <!-- Email Field -->
       <div class="form-group">
         <label for="email" class="form-label">Email Address</label>
         <input
@@ -32,13 +84,14 @@
           class="form-input"
           [class.error]="emailControl?.invalid && emailControl?.touched"
           [disabled]="isLoading()"
-          placeholder="Enter your email"
+          placeholder="admin@example.com"
         />
         @if (emailControl?.invalid && emailControl?.touched) {
           <span class="error-text">{{ getErrorMessage('email') }}</span>
         }
       </div>
 
+      <!-- Password Field -->
       <div class="form-group">
         <label for="password" class="form-label">Password</label>
         <div class="password-input-wrapper">
@@ -119,6 +172,7 @@
         }
       </div>
 
+      <!-- Confirm Password Field -->
       <div class="form-group">
         <label for="confirmPassword" class="form-label">
           Confirm Password
@@ -240,7 +294,7 @@
         @if (isLoading()) {
           <span class="loading-spinner"></span>
         }
-        {{ isLoading() ? 'Creating Account...' : 'Create Account' }}
+        {{ isLoading() ? 'Creating Account...' : 'Create Admin Account' }}
       </button>
     </form>
 
@@ -273,11 +327,11 @@
         </div>
         <h3 class="popup-title">Registration Successful! 🎉</h3>
         <p class="popup-message">
-          Your account has been created successfully. 
+          Your admin account has been created successfully. You can now log in with your credentials.
         </p>
-        <p class="popup-redirect">Redirecting to login in 5 seconds...</p>
+        <p class="popup-redirect">Redirecting to login in {{ countdown() }} seconds...</p>
         <div class="popup-actions">
-          <button class="btn btn-primary" (click)="navigateToLoginNow()">
+          <button class="btn btn-primary" (click)="navigateToLogin()">
             Go to Login Now
           </button>
           <button class="btn btn-outline" (click)="closeSuccessModal()">

@@ -268,6 +268,18 @@ $success: #059669;
   &.btn-full {
     width: 100%;
   }
+
+  &.btn-outline {
+    background: transparent;
+    border: 2px solid $border;
+    color: $text-dark;
+
+    &:hover:not(:disabled) {
+      background: $gray-50;
+      border-color: $primary;
+      color: $primary;
+    }
+  }
 }
 
 .loading-spinner {

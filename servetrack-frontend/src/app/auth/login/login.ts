@@ -27,6 +27,7 @@ export class Login implements OnInit {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   registrationSuccessMessage = signal<string | null>(null);
+  showPassword = signal(false);
 
   // Popup signal
   showPopup = signal(false);
@@ -38,6 +39,11 @@ export class Login implements OnInit {
 
   closePopup() {
     this.showPopup.set(false);
+  }
+
+  // Password visibility methods
+  togglePasswordVisibility(): void {
+    this.showPassword.set(!this.showPassword());
   }
 
   ngOnInit(): void {
@@ -119,8 +125,14 @@ export class Login implements OnInit {
       const response = await firstValueFrom(this.authService.login$(credentials));
 
       if (response.success) {
-        // Navigate to volunteer dashboard on success
-        await this.router.navigate(['/volunteer-dashboard']);
+        // Smart routing based on user type
+        const userType = response.user?.user_type || response.user?.role || 'volunteer';
+        
+        if (userType === 'admin') {
+          await this.router.navigate(['/admin-dashboard']);
+        } else {
+          await this.router.navigate(['/volunteer-dashboard']);
+        }
       } else {
         this.errorMessage.set(response.message || 'Invalid email or password');
       }
@@ -138,7 +150,6 @@ export class Login implements OnInit {
     try {
       await this.router.navigate(['/signup']);
     } catch (error) {
-      console.error('Navigation to signup failed:', error);
       this.errorMessage.set('Navigation error. Please try again.');
     }
   }
@@ -147,7 +158,6 @@ export class Login implements OnInit {
     try {
       await this.router.navigate(['/forgot-password']);
     } catch (error) {
-      console.error('Navigation to forgot password failed:', error);
       this.errorMessage.set('Navigation error. Please try again.');
     }
   }
