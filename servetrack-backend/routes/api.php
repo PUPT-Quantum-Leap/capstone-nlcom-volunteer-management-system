@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 // Guest-only routes — audit logging + exponential backoff rate limiting
 Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(function (): void {
     Route::post('/login', [LoginController::class, 'store']);
+    Route::post('/admin/login', [LoginController::class, 'adminStore']);
     Route::post('/register', [RegisterController::class, 'store']);
 });
 

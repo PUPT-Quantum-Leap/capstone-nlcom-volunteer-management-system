@@ -34,6 +34,7 @@ export class Login implements OnInit {
   showLoginErrorModal = signal(false);
   showLoginSuccessModal = signal(false);
   loginSuccessMessage = signal<string | null>(null);
+  isAdminLoginPage = signal(false);
   private loginRedirectPath: '/volunteer-dashboard' | '/admin-dashboard' = '/volunteer-dashboard';
 
   // Popup methods
@@ -73,6 +74,8 @@ export class Login implements OnInit {
   }
 
   ngOnInit(): void {
+    this.isAdminLoginPage.set(this.route.snapshot.routeConfig?.path === 'admin-login');
+
     this.route.queryParams.subscribe((params) => {
       if (params['registered'] === 'true') {
         this.registrationSuccessMessage.set(
@@ -148,7 +151,11 @@ export class Login implements OnInit {
       };
 
       // Call auth service
-      const response = await firstValueFrom(this.authService.login$(credentials));
+      const response = await firstValueFrom(
+        this.isAdminLoginPage()
+          ? this.authService.adminLogin$(credentials)
+          : this.authService.login$(credentials),
+      );
 
       if (response.success) {
         // Smart routing based on user type

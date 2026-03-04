@@ -36,6 +36,22 @@ class LoginController extends Controller
 
         $user = $request->user();
 
+        // Volunteer login endpoint should not authenticate admin accounts.
+        if ($user && $user->role === 'admin') {
+            Auth::guard('web')->logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+
+            return response()->json([
+                'message' => 'Admin accounts must use /admin-login.',
+            ], 422)->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+                'Pragma' => 'no-cache',
+            ]);
+        }
+
         $userData = $user->toArray();
         $userData['user_type'] = $this->getUserType($user);
 
@@ -53,23 +69,52 @@ class LoginController extends Controller
                 break;
         }
 
-        $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+        return $this->buildAuthenticatedResponse($userData, $user);
+    }
 
-        $cookie = cookie(
-            'auth_token',
-            $token,
-            config('sanctum.expiration', 60),
-            '/',
-            null,
-            true,
-            true,
-            false,
-            'strict'
-        );
+    /**
+     * Handle an incoming admin-only authentication request.
+     */
+    public function adminStore(LoginRequest $request): JsonResponse
+    {
+        try {
+            $request->authenticate();
+        } catch (ValidationException) {
+            return response()->json([
+                'message' => 'Invalid credentials',
+            ], 422)->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+                'Pragma' => 'no-cache',
+            ]);
+        }
 
-        return response()->json([
-            'user' => $userData,
-        ])->withCookie($cookie);
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
+
+        $user = $request->user();
+
+        // Admin login endpoint accepts only admin role.
+        if (! $user || $user->role !== 'admin') {
+            Auth::guard('web')->logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+
+            return response()->json([
+                'message' => 'Invalid credentials',
+            ], 422)->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+                'Pragma' => 'no-cache',
+            ]);
+        }
+
+        $userData = $user->toArray();
+        $userData['user_type'] = 'admin';
+        $userData['admin_profile'] = $user->admin;
+
+        return $this->buildAuthenticatedResponse($userData, $user);
     }
 
     /**
@@ -110,5 +155,31 @@ class LoginController extends Controller
         $cookie = cookie('auth_token', '', -1);
 
         return response()->noContent()->withCookie($cookie);
+    }
+
+    /**
+     * Build authenticated login response with a Sanctum auth cookie.
+     *
+     * @param  array<string, mixed>  $userData
+     */
+    private function buildAuthenticatedResponse(array $userData, User $user): JsonResponse
+    {
+        $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+
+        $cookie = cookie(
+            'auth_token',
+            $token,
+            config('sanctum.expiration', 60),
+            '/',
+            null,
+            true,
+            true,
+            false,
+            'strict'
+        );
+
+        return response()->json([
+            'user' => $userData,
+        ])->withCookie($cookie);
     }
 }
