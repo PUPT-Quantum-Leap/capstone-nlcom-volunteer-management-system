@@ -63,10 +63,22 @@ export interface AuthResponse {
     email: string;
     name?: string;
     role?: 'volunteer' | 'admin' | 'coordinator';
-    volunteer?: {
+    user_type?: 'volunteer' | 'admin' | 'coordinator';
+    volunteer_profile?: {
       volunteer_id: number;
       first_name: string;
       last_name: string;
+    };
+    admin_profile?: {
+      id: number;
+      first_name: string;
+      last_name: string;
+      contact_number?: string;
+    };
+    coordinator_profile?: {
+      id: number;
+      name: string;
+      email: string;
     };
   };
 }
@@ -554,8 +566,8 @@ export class AuthService {
         tap((response) => {
           this.isLoading.set(false);
           if (response.success) {
-            // Auto-login after successful registration
-            this.login({ email: data.email, password: data.password });
+            // Registration successful - user will login manually
+            // No auto-login - just show success message
           }
         }),
         catchError((error: HttpErrorResponse) => {
