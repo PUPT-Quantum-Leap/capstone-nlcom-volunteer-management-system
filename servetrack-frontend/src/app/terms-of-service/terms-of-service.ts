@@ -9,4 +9,3 @@ import { RouterLink } from '@angular/router';
   styleUrl: './terms-of-service.scss',
 })
 export class TermsOfService {}
-

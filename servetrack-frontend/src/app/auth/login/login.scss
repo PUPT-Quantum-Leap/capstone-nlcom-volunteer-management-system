@@ -1,18 +1,18 @@
-$primary: #2563EB;
-$primary-dark: #1E40AF;
-$primary-light: #3B82F6;
-$primary-lighter: #DBEAFE;
-$primary-lightest: #EFF6FF;
+$primary: #2563eb;
+$primary-dark: #1e40af;
+$primary-light: #3b82f6;
+$primary-lighter: #dbeafe;
+$primary-lightest: #eff6ff;
 
-$text-dark: #1F2937;
-$text-muted: #6B7280;
-$border: #E5E7EB;
-$white: #FFFFFF;
-$gray-50: #F9FAFB;
-$gray-100: #F3F4F6;
+$text-dark: #1f2937;
+$text-muted: #6b7280;
+$border: #e5e7eb;
+$white: #ffffff;
+$gray-50: #f9fafb;
+$gray-100: #f3f4f6;
 
-$error: #DC2626;
-$error-light: #FEE2E2;
+$error: #dc2626;
+$error-light: #fee2e2;
 
 .auth-container {
   min-height: 100vh;
@@ -26,7 +26,9 @@ $error-light: #FEE2E2;
 .auth-card {
   background: $white;
   border-radius: 1rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   width: 100%;
   max-width: 28rem;
   padding: 3rem 2rem;
@@ -102,6 +104,60 @@ $error-light: #FEE2E2;
       &::placeholder {
         color: $text-muted;
       }
+
+      &:disabled {
+        background-color: $gray-100;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
+    
+    .password-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+
+      .password-input {
+        padding-right: 3rem; 
+      }
+
+      .password-toggle {
+        position: absolute;
+        right: 0.75rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        color: $text-muted;
+
+        &:hover:not(:disabled) {
+          background: $gray-100;
+          color: $primary;
+        }
+
+        &:focus:not(:disabled) {
+          outline: none;
+          background: $gray-100;
+          color: $primary;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        &:disabled {
+          cursor: not-allowed;
+          opacity: 0.5;
+        }
+
+        .eye-icon {
+          width: 20px;
+          height: 20px;
+          stroke-width: 1.5;
+        }
+      }
     }
   }
 
@@ -135,7 +191,7 @@ $error-light: #FEE2E2;
         transition: all 0.3s;
 
         &:after {
-          content: "";
+          content: '';
           position: absolute;
           display: none;
           left: 5px;
@@ -165,22 +221,28 @@ $error-light: #FEE2E2;
       font-weight: 500;
       transition: color 0.3s;
 
-      &:hover {
+      &:hover:not(.disabled) {
         color: $primary-dark;
+      }
+
+      &.disabled {
+        color: $text-muted;
+        cursor: not-allowed;
+        opacity: 0.6;
       }
     }
   }
 }
 
 .btn {
-  padding: 0.875rem 2rem;
+  padding: 0.625rem 1.5rem;
   border-radius: 0.5rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s;
   border: none;
   font-family: 'Inter', sans-serif;
-  font-size: 1rem;
+  font-size: 0.875rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -190,16 +252,20 @@ $error-light: #FEE2E2;
     background: $primary;
     color: $white;
 
-    &:hover:not(:disabled) {
+    &:hover {
       background: $primary-dark;
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
+  }
 
-    &:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-      transform: none;
+  &.btn-outline {
+    background: transparent;
+    border: 2px solid $primary;
+    color: $primary;
+
+    &:hover {
+      background: $primary-lightest;
     }
   }
 
@@ -237,10 +303,17 @@ $error-light: #FEE2E2;
       color: $primary;
       text-decoration: none;
       font-weight: 500;
+      cursor: pointer;
       transition: color 0.3s;
 
-      &:hover {
+      &:hover:not(.disabled) {
         color: $primary-dark;
+      }
+
+      &.disabled {
+        color: $text-muted;
+        cursor: not-allowed;
+        opacity: 0.6;
       }
     }
   }
@@ -294,7 +367,7 @@ $error-light: #FEE2E2;
 
 .form-input.error {
   border-color: $error;
-  
+
   &:focus {
     border-color: $error;
     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
@@ -312,3 +385,112 @@ $error-light: #FEE2E2;
   }
 }
 
+// Popup Modal Styles
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.popup-modal {
+  background: $white;
+  border-radius: 1rem;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.4s ease-out;
+}
+
+.popup-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: $text-muted;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s;
+
+  &:hover {
+    background: $primary-lightest;
+    color: $primary;
+  }
+}
+
+.popup-content {
+  text-align: center;
+}
+
+.popup-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: $text-dark;
+  margin-bottom: 1rem;
+}
+
+.popup-message {
+  color: $text-muted;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.popup-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+// Popup Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive popup
+@media (max-width: 640px) {
+  .popup-modal {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .popup-title {
+    font-size: 1.25rem;
+  }
+
+  .popup-actions {
+    flex-direction: column;
+  }
+}

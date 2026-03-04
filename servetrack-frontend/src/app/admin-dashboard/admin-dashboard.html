@@ -1,0 +1,935 @@
+<div class="dashboard-container">
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
+    <div class="sidebar-header">
+      <div class="logo-area">
+        <div class="logo-icon">ST</div>
+        <span class="logo-text">ServeTrack</span>
+      </div>
+      <button type="button" class="sidebar-toggle" (click)="toggleSidebar()">Menu</button>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Admin Navigation">
+      <ul>
+        <li>
+          <button type="button" [class.active]="currentView() === 'overview'" (click)="setView('overview')"
+            aria-label="View Dashboard Overview">
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 19H20M7 16V10M12 16V6M17 16V12" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" />
+              </svg>
+              Dashboard Overview
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'volunteers'" (click)="setView('volunteers')"
+            aria-label="Manage Volunteers">
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M17 20C17 18.3431 14.7614 17 12 17C9.23858 17 7 18.3431 7 20M21 17C21 15.3431 19.2091 14 17 14M3 17C3 15.3431 4.79086 14 7 14M12 14C9.79086 14 8 12.2091 8 10C8 7.79086 9.79086 6 12 6C14.2091 6 16 7.79086 16 10C16 12.2091 14.2091 14 12 14ZM19 10C19 8.34315 17.6569 7 16 7M5 10C5 8.34315 6.34315 7 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              Volunteers
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'attendance'" (click)="setView('attendance')"
+            aria-label="Manage Attendance">
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Attendance
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'performance'" (click)="setView('performance')"
+            aria-label="View Performance">
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 19V6M15 19V13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M4 19H20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              Performance
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'polls'" (click)="setView('polls')"
+            aria-label="Manage Polls">
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 7H20V20H4V7Z" stroke="currentColor" stroke-width="2" />
+                <path d="M8 11L12 15L16 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M9 4H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              Polls
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'ics'" (click)="setView('ics')"
+            aria-label="Incident Command System">
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Incident Command System
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'users'" (click)="setView('users')"
+            aria-label="User Management">
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.3503 17.623 3.8507 18.1676 4.55231C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              User Management
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'sms'" (click)="setView('sms')"
+            aria-label="SMS Notifications">
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              SMS
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'backup'" (click)="setView('backup')"
+            aria-label="Backup and Restore">
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Backup and Restore
+            </span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-brief">
+        <img [src]="defaultPhoto" alt="Admin" class="avatar-sm">
+        <div class="user-info">
+          <p class="name">{{ userName() }}</p>
+          <p class="role">System Administrator</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main-wrapper" [class.expanded]="sidebarCollapsed()">
+    <header class="top-bar">
+      <h1 class="page-title">
+        @switch (currentView()) {
+        @case ('overview') { Dashboard Overview }
+        @case ('volunteers') { Volunteer Management }
+        @case ('attendance') { Attendance Management }
+        @case ('performance') { Performance Metrics }
+        @case ('polls') { Polls Management }
+        @case ('ics') { Incident Command System }
+        @case ('users') { User Management }
+        @case ('sms') { SMS Notifications }
+        @case ('backup') { Backup and Restore }
+        }
+      </h1>
+
+      <div class="top-bar-right">
+        <div class="search-inline">
+          <input #dashboardSearch type="text" class="search-input" [value]="searchQuery()"
+            (input)="setSearchQuery(dashboardSearch.value)" (keydown.enter)="runSearch()"
+            placeholder="Search dashboard...">
+          <button type="button" class="search-btn" (click)="runSearch()">Search</button>
+        </div>
+        <button type="button" class="outline-btn" (click)="toggleNotifications()">
+          Notifications
+          @if (notificationCount() > 0) {
+          <span class="badge">{{ notificationCount() }}</span>
+          }
+        </button>
+        <button type="button" class="primary-btn" (click)="logout()">Logout</button>
+      </div>
+    </header>
+
+    @if (showNotifications()) {
+    <section class="notification-panel panel">
+      <div class="panel-header">
+        <h2>Notifications</h2>
+        <div class="panel-actions">
+          <button type="button" class="outline-btn" (click)="markNotificationsRead()">Mark all as read</button>
+          <button type="button" class="outline-btn" (click)="closeNotifications()">Close</button>
+        </div>
+      </div>
+      <div class="notification-list">
+        @for (item of notifications(); track item.id) {
+        <article class="notification-item" [class.unread]="!item.read">
+          <div>
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.description }}</p>
+          </div>
+          <span class="notification-time">{{ item.time }}</span>
+        </article>
+        }
+      </div>
+    </section>
+    }
+
+    <main class="dashboard-content">
+      @switch (currentView()) {
+      @case ('overview') {
+      <section class="overview-layout">
+        <section class="stats-grid">
+          <article class="stat-card">
+            <p class="label">Total Volunteers</p>
+            <p class="value">{{ totalVolunteers() }}</p>
+            <p class="meta">Registered members</p>
+          </article>
+
+          <article class="stat-card">
+            <p class="label">Active Volunteers</p>
+            <p class="value">{{ activeVolunteers() }}</p>
+            <p class="meta">Currently engaged</p>
+          </article>
+
+          <article class="stat-card">
+            <p class="label">Upcoming Events</p>
+            <p class="value">{{ upcomingEvents() }}</p>
+            <p class="meta">Scheduled activities</p>
+          </article>
+
+          <article class="stat-card">
+            <p class="label">Completed Missions</p>
+            <p class="value">{{ completedMissions() }}</p>
+            <p class="meta">Total achievements</p>
+          </article>
+        </section>
+
+        <section class="quick-actions">
+          <button type="button" class="action-card" (click)="setView('volunteers')">
+            <h3>Manage Volunteers</h3>
+            <p>View and manage volunteer profiles and assignments.</p>
+          </button>
+          <button type="button" class="action-card" (click)="setView('attendance')">
+            <h3>Track Attendance</h3>
+            <p>Monitor volunteer attendance for activities.</p>
+          </button>
+          <button type="button" class="action-card" (click)="setView('performance')">
+            <h3>View Performance</h3>
+            <p>Review volunteer performance metrics and ratings.</p>
+          </button>
+        </section>
+      </section>
+      }
+
+      @case ('volunteers') {
+      <section class="volunteers-layout">
+        <div class="volunteers-header">
+          <div class="header-content">
+            <h2>Volunteer Management</h2>
+            <p>Manage volunteer profiles, assignments, and information</p>
+          </div>
+          <button type="button" class="add-volunteer-btn">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Add New Volunteer
+          </button>
+        </div>
+
+        <div class="volunteers-filters">
+          <div class="search-filter">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+              <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <input type="text" placeholder="Search volunteers..." class="filter-input">
+          </div>
+          <select class="filter-select">
+            <option>All Status</option>
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+          <select class="filter-select">
+            <option>All Departments</option>
+            <option>Medical</option>
+            <option>Logistics</option>
+            <option>Communications</option>
+          </select>
+        </div>
+
+        <div class="volunteers-table-container">
+          <table class="volunteers-table">
+            <thead>
+              <tr>
+                <th>Volunteer</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Department</th>
+                <th>Status</th>
+                <th>Joined Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="volunteer-info">
+                    <div class="volunteer-details">
+                      <span class="volunteer-name">Maria Santos</span>
+                      <span class="volunteer-id">VOL-001</span>
+                    </div>
+                  </div>
+                </td>
+                <td>maria.santos&#64;email.com</td>
+                <td>+63 912 345 6789</td>
+                <td><span class="dept-badge dept-medical">Medical</span></td>
+                <td><span class="status-badge status-active">Active</span></td>
+                <td>Jan 15, 2026</td>
+                <td>
+                  <div class="action-buttons">
+                    <button type="button" class="action-btn view-btn" title="View">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn edit-btn" title="Edit">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn delete-btn" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="volunteer-info">
+                    <div class="volunteer-details">
+                      <span class="volunteer-name">Juan Dela Cruz</span>
+                      <span class="volunteer-id">VOL-002</span>
+                    </div>
+                  </div>
+                </td>
+                <td>juan.delacruz&#64;email.com</td>
+                <td>+63 923 456 7890</td>
+                <td><span class="dept-badge dept-logistics">Logistics</span></td>
+                <td><span class="status-badge status-active">Active</span></td>
+                <td>Jan 20, 2026</td>
+                <td>
+                  <div class="action-buttons">
+                    <button type="button" class="action-btn view-btn" title="View">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn edit-btn" title="Edit">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn delete-btn" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="volunteer-info">
+                    <div class="volunteer-details">
+                      <span class="volunteer-name">Ana Reyes</span>
+                      <span class="volunteer-id">VOL-003</span>
+                    </div>
+                  </div>
+                </td>
+                <td>ana.reyes&#64;email.com</td>
+                <td>+63 934 567 8901</td>
+                <td><span class="dept-badge dept-comms">Communications</span></td>
+                <td><span class="status-badge status-inactive">Inactive</span></td>
+                <td>Feb 5, 2026</td>
+                <td>
+                  <div class="action-buttons">
+                    <button type="button" class="action-btn view-btn" title="View">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn edit-btn" title="Edit">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn delete-btn" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="volunteer-info">
+                    <div class="volunteer-details">
+                      <span class="volunteer-name">Pedro Garcia</span>
+                      <span class="volunteer-id">VOL-004</span>
+                    </div>
+                  </div>
+                </td>
+                <td>pedro.garcia&#64;email.com</td>
+                <td>+63 945 678 9012</td>
+                <td><span class="dept-badge dept-medical">Medical</span></td>
+                <td><span class="status-badge status-active">Active</span></td>
+                <td>Feb 10, 2026</td>
+                <td>
+                  <div class="action-buttons">
+                    <button type="button" class="action-btn view-btn" title="View">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn edit-btn" title="Edit">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn delete-btn" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="volunteer-info">
+                    <div class="volunteer-details">
+                      <span class="volunteer-name">Lisa Fernandez</span>
+                      <span class="volunteer-id">VOL-005</span>
+                    </div>
+                  </div>
+                </td>
+                <td>lisa.fernandez&#64;email.com</td>
+                <td>+63 956 789 0123</td>
+                <td><span class="dept-badge dept-logistics">Logistics</span></td>
+                <td><span class="status-badge status-active">Active</span></td>
+                <td>Feb 15, 2026</td>
+                <td>
+                  <div class="action-buttons">
+                    <button type="button" class="action-btn view-btn" title="View">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn edit-btn" title="Edit">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.10217 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.10217 21.5 2.5C21.8978 2.89782 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.10217 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn delete-btn" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination-container">
+          <div class="pagination-info">
+            Showing <strong>1-5</strong> of <strong>25</strong> volunteers
+          </div>
+          <nav class="pagination-nav">
+            <button type="button" class="pagination-btn" disabled>
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Previous
+            </button>
+            <div class="pagination-numbers">
+              <button type="button" class="pagination-number active">1</button>
+              <button type="button" class="pagination-number">2</button>
+              <button type="button" class="pagination-number">3</button>
+              <button type="button" class="pagination-number">4</button>
+              <button type="button" class="pagination-number">5</button>
+            </div>
+            <button type="button" class="pagination-btn">
+              Next
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </nav>
+        </div>
+      </section>
+      }
+
+      @case ('attendance') {
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Attendance Management</h2>
+          <p>Track volunteer attendance and participation</p>
+        </div>
+        <p class="empty-state">Attendance tracking features coming soon.</p>
+      </section>
+      }
+
+      @case ('performance') {
+      <section class="reports-layout">
+        <section class="stats-grid">
+          <article class="stat-card metric-card">
+            <div class="metric-icon attendance-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <p class="label">Avg Attendance Rate</p>
+              <p class="value">{{ averageAttendanceRate() }}%</p>
+              <div class="meter">
+                <div class="fill" [style.width.%]="averageAttendanceRate()"></div>
+              </div>
+              <p class="meta">Overall volunteer attendance</p>
+            </div>
+          </article>
+
+          <article class="stat-card metric-card">
+            <div class="metric-icon hours-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <p class="label">Total Hours Served</p>
+              <p class="value">{{ totalHoursServed() }}<span class="value-unit">hrs</span></p>
+              <p class="meta">Cumulative service hours</p>
+            </div>
+          </article>
+
+          <article class="stat-card metric-card">
+            <div class="metric-icon tasks-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <p class="label">Tasks Completed</p>
+              <p class="value">{{ totalTasksCompleted() }}</p>
+              <p class="meta">Total tasks accomplished</p>
+            </div>
+          </article>
+
+          <article class="stat-card metric-card">
+            <div class="metric-icon rating-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="metric-content">
+              <p class="label">Average Rating</p>
+              <p class="value">{{ averageRating() }}<span class="value-unit">/5.0</span></p>
+              <div class="star-display">
+                <span class="rating-stars-large">{{ getRatingStars(+averageRating()) }}</span>
+              </div>
+              <p class="meta">Overall volunteer rating</p>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Volunteer Performance</h2>
+            <p>Detailed performance metrics for all volunteers</p>
+          </div>
+
+          <div class="performance-table-wrapper">
+            <table class="performance-table">
+              <thead>
+                <tr>
+                  <th>
+                    <button type="button" class="sort-btn" (click)="sortBy('name')">
+                      Volunteer Name
+                      @if (sortField() === 'name') {
+                        <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+                      }
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" class="sort-btn" (click)="sortBy('attendance')">
+                      Attendance
+                      @if (sortField() === 'attendance') {
+                        <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+                      }
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" class="sort-btn" (click)="sortBy('hours')">
+                      Hours Served
+                      @if (sortField() === 'hours') {
+                        <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+                      }
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" class="sort-btn" (click)="sortBy('tasks')">
+                      Tasks Done
+                      @if (sortField() === 'tasks') {
+                        <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+                      }
+                    </button>
+                  </th>
+                  <th>
+                    <button type="button" class="sort-btn" (click)="sortBy('rating')">
+                      Rating
+                      @if (sortField() === 'rating') {
+                        <span class="sort-indicator">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+                      }
+                    </button>
+                  </th>
+                  <th>Performance</th>
+                  <th>Last Activity</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (metric of sortedPerformanceMetrics(); track metric.id) {
+                <tr>
+                  <td class="volunteer-name">{{ metric.volunteerName }}</td>
+                  <td>
+                    <div class="attendance-cell">
+                      <span class="attendance-value">{{ metric.attendanceRate }}%</span>
+                      <div class="mini-meter">
+                        <div class="mini-fill" [style.width.%]="metric.attendanceRate"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ metric.hoursServed }}h</td>
+                  <td>{{ metric.tasksCompleted }}</td>
+                  <td class="rating-cell">
+                    <span class="rating-stars">{{ getRatingStars(metric.rating) }}</span>
+                    <span class="rating-value">{{ metric.rating }}</span>
+                  </td>
+                  <td>
+                    <span class="performance-badge" [class]="getPerformanceLevelClass(metric.attendanceRate)">
+                      {{ getPerformanceLevel(metric.attendanceRate) }}
+                    </span>
+                  </td>
+                  <td class="last-activity">{{ metric.lastActivity | date:'MMM d, yyyy' }}</td>
+                </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+      }
+
+      @case ('polls') {
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Polls Management</h2>
+          <p>Create and manage volunteer polls and surveys</p>
+        </div>
+        <p class="empty-state">Polls management features coming soon.</p>
+      </section>
+      }
+
+      @case ('ics') {
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Incident Command System</h2>
+          <p>Manage emergency response and incident coordination</p>
+        </div>
+        <p class="empty-state">Incident Command System features coming soon.</p>
+      </section>
+      }
+
+      @case ('users') {
+      <section class="panel">
+        <div class="panel-header">
+          <h2>User Management</h2>
+          <p>Manage system users, roles, and permissions</p>
+        </div>
+        <p class="empty-state">User management features coming soon.</p>
+      </section>
+      }
+
+      @case ('sms') {
+      <section class="panel">
+        <div class="panel-header">
+          <h2>SMS Notifications</h2>
+          <p>Send and manage SMS notifications to volunteers</p>
+        </div>
+        <p class="empty-state">SMS notification features coming soon.</p>
+      </section>
+      }
+
+      @case ('backup') {
+      <section class="backup-restore-layout">
+        <div class="backup-actions-grid">
+          <article class="backup-card">
+            <div class="backup-icon backup-icon-create">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="backup-card-content">
+              <h3>Create Backup</h3>
+              <p>Generate a complete backup of all system data including volunteer records, events, and settings.</p>
+              <button type="button" class="backup-btn backup-btn-primary">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+                  <path d="M19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16L21 8V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M17 21V13H7V21M7 3V8H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Create Full Backup
+              </button>
+            </div>
+          </article>
+
+          <article class="backup-card">
+            <div class="backup-icon backup-icon-restore">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="backup-card-content">
+              <h3>Restore Backup</h3>
+              <p>Restore system data from a previously created backup file. This will replace current data.</p>
+              <button type="button" class="backup-btn backup-btn-secondary">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+                  <path d="M21.44 11.05L19.88 9.49C19.29 8.9 18.44 8.57 17.56 8.57H17.5V6.5C17.5 5.12 16.38 4 15 4H6.5C5.12 4 4 5.12 4 6.5V17.5C4 18.88 5.12 20 6.5 20H15C16.38 20 17.5 18.88 17.5 17.5V15.43H17.56C18.44 15.43 19.29 15.1 19.88 14.51L21.44 12.95C21.78 12.61 21.78 12.05 21.44 11.71L21.44 11.05Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Upload & Restore
+              </button>
+            </div>
+          </article>
+
+          <article class="backup-card">
+            <div class="backup-icon backup-icon-schedule">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="backup-card-content">
+              <h3>Scheduled Backups</h3>
+              <p>Configure automatic backups to run daily, weekly, or monthly to ensure data safety.</p>
+              <button type="button" class="backup-btn backup-btn-outline">
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 8V12L15 15M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Configure Schedule
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <section class="backup-history">
+          <div class="section-header">
+            <h2>Backup History</h2>
+            <button type="button" class="refresh-btn">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M21.5 2V8M21.5 8H15.5M21.5 8L18 4.5C16.8 3.3 15.2 2.5 13.5 2.1C11.8 1.7 10 2 8.5 2.8C7 3.6 5.8 4.9 5.1 6.4C4.4 7.9 4.2 9.7 4.6 11.4M2.5 22V16M2.5 16H8.5M2.5 16L6 19.5C7.2 20.7 8.8 21.5 10.5 21.9C12.2 22.3 14 22 15.5 21.2C17 20.4 18.2 19.1 18.9 17.6C19.6 16.1 19.8 14.3 19.4 12.6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Refresh
+            </button>
+          </div>
+
+          <div class="backup-table-container">
+            <table class="backup-table">
+              <thead>
+                <tr>
+                  <th>Backup Name</th>
+                  <th>Date Created</th>
+                  <th>Size</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div class="backup-name">
+                      <svg class="file-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M13 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V9L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      servetrack_backup_2026_03_01.zip
+                    </div>
+                  </td>
+                  <td>Mar 1, 2026 07:00 AM</td>
+                  <td>124.5 MB</td>
+                  <td><span class="backup-badge backup-auto">Automatic</span></td>
+                  <td><span class="status-badge status-success">Completed</span></td>
+                  <td>
+                    <div class="action-buttons">
+                      <button type="button" class="action-btn download-btn" title="Download">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <button type="button" class="action-btn restore-btn" title="Restore">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C10.2429 21 8.59335 20.4555 7.22222 19.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                          <path d="M3 12L6 9M3 12L6 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <button type="button" class="action-btn delete-btn" title="Delete">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="backup-name">
+                      <svg class="file-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M13 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V9L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      servetrack_backup_2026_02_28.zip
+                    </div>
+                  </td>
+                  <td>Feb 28, 2026 11:30 PM</td>
+                  <td>118.2 MB</td>
+                  <td><span class="backup-badge backup-manual">Manual</span></td>
+                  <td><span class="status-badge status-success">Completed</span></td>
+                  <td>
+                    <div class="action-buttons">
+                      <button type="button" class="action-btn download-btn" title="Download">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <button type="button" class="action-btn restore-btn" title="Restore">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C10.2429 21 8.59335 20.4555 7.22222 19.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                          <path d="M3 12L6 9M3 12L6 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <button type="button" class="action-btn delete-btn" title="Delete">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="backup-name">
+                      <svg class="file-icon" viewBox="0 0 24 24" fill="none">
+                        <path d="M13 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V9L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      servetrack_backup_2026_02_25.zip
+                    </div>
+                  </td>
+                  <td>Feb 25, 2026 03:00 AM</td>
+                  <td>115.8 MB</td>
+                  <td><span class="backup-badge backup-auto">Automatic</span></td>
+                  <td><span class="status-badge status-success">Completed</span></td>
+                  <td>
+                    <div class="action-buttons">
+                      <button type="button" class="action-btn download-btn" title="Download">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <button type="button" class="action-btn restore-btn" title="Restore">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C10.2429 21 8.59335 20.4555 7.22222 19.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                          <path d="M3 12L6 9M3 12L6 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <button type="button" class="action-btn delete-btn" title="Delete">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pagination-container">
+            <div class="pagination-info">
+              Showing <strong>1-3</strong> of <strong>15</strong> backups
+            </div>
+            <nav class="pagination-nav">
+              <button type="button" class="pagination-btn" disabled>
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Previous
+              </button>
+              <div class="pagination-numbers">
+                <button type="button" class="pagination-number active">1</button>
+                <button type="button" class="pagination-number">2</button>
+                <button type="button" class="pagination-number">3</button>
+                <span class="pagination-dots">...</span>
+                <button type="button" class="pagination-number">5</button>
+              </div>
+              <button type="button" class="pagination-btn">
+                Next
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </nav>
+          </div>
+        </section>
+      </section>
+      }
+      }
+    </main>
+  </div>
+</div>
+
+@if (showLogoutModal()) {
+<div class="modal-backdrop" (click)="closeLogoutModal()">
+  <section class="modal-card" (click)="$event.stopPropagation()">
+    <h3>Confirm Logout</h3>
+    <p>Are you sure you want to logout?</p>
+    <div class="modal-actions">
+      <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
+      <button type="button" class="primary-btn" (click)="confirmLogout()">Yes, Logout</button>
+    </div>
+  </section>
+</div>
+}
+
+@if (isLoading()) {
+<div class="loading-overlay">
+  <div class="spinner" aria-label="Loading..." role="status"></div>
+</div>
+}

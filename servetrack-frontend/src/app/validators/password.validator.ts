@@ -3,11 +3,13 @@ import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 /**
  * Custom validator for password strength
  * Requires:
- * - Minimum 8 characters
+ * - Minimum 12 characters
  * - At least one uppercase letter
  * - At least one lowercase letter
  * - At least one number
  * - At least one special character
+ * - No common patterns (e.g. "password", "123456")
+ * - No 3+ repeated consecutive characters (e.g. "aaa")
  */
 export function passwordStrengthValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -19,8 +21,8 @@ export function passwordStrengthValidator(): ValidatorFn {
 
     const errors: ValidationErrors = {};
 
-    if (value.length < 8) {
-      errors['minLength'] = { requiredLength: 8, actualLength: value.length };
+    if (value.length < 12) {
+      errors['minLength'] = { requiredLength: 12, actualLength: value.length };
     }
 
     if (value.length > 128) {
@@ -43,6 +45,16 @@ export function passwordStrengthValidator(): ValidatorFn {
       errors['requiresSpecialChar'] = true;
     }
 
+    // Check for common patterns
+    if (/^(password|123456|qwerty|admin)/i.test(value)) {
+      errors['commonPattern'] = true;
+    }
+
+    // Check for 3+ repeated consecutive characters
+    if (/(.)\1{2,}/.test(value)) {
+      errors['repeatedChars'] = true;
+    }
+
     return Object.keys(errors).length > 0 ? errors : null;
   };
 }
@@ -51,8 +63,8 @@ export function passwordStrengthValidator(): ValidatorFn {
  * Custom validator to check if password and confirm password match
  */
 export function passwordMatchValidator(
-  passwordField: string = 'password',
-  confirmPasswordField: string = 'confirmPassword'
+  passwordField = 'password',
+  confirmPasswordField = 'confirmPassword',
 ): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const password = control.get(passwordField);
