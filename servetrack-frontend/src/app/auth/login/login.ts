@@ -31,7 +31,6 @@ export class Login implements OnInit {
 
   // Popup signal
   showPopup = signal(false);
-  showLoginErrorModal = signal(false);
   showLoginSuccessModal = signal(false);
   loginSuccessMessage = signal<string | null>(null);
   isAdminLoginPage = signal(false);
@@ -46,10 +45,6 @@ export class Login implements OnInit {
     this.showPopup.set(false);
   }
 
-  closeLoginErrorModal(): void {
-    this.showLoginErrorModal.set(false);
-  }
-
   closeLoginSuccessModal(): void {
     this.showLoginSuccessModal.set(false);
   }
@@ -60,11 +55,9 @@ export class Login implements OnInit {
       const navigated = await this.router.navigateByUrl(this.loginRedirectPath);
       if (!navigated) {
         this.errorMessage.set('Login succeeded, but dashboard navigation failed. Please try again.');
-        this.showLoginErrorModal.set(true);
       }
     } catch {
       this.errorMessage.set('Login succeeded, but dashboard navigation failed. Please try again.');
-      this.showLoginErrorModal.set(true);
     }
   }
 
@@ -74,7 +67,7 @@ export class Login implements OnInit {
   }
 
   ngOnInit(): void {
-    this.isAdminLoginPage.set(this.route.snapshot.routeConfig?.path === 'admin-login');
+    this.isAdminLoginPage.set(this.route.snapshot?.routeConfig?.path === 'admin-login');
 
     this.route.queryParams.subscribe((params) => {
       if (params['registered'] === 'true') {
@@ -161,6 +154,13 @@ export class Login implements OnInit {
         // Smart routing based on user type
         const userType = response.user?.user_type || response.user?.role || 'volunteer';
 
+        if (userType === 'admin' && !this.isAdminLoginPage()) {
+          this.errorMessage.set('ERROR');
+          this.showLoginSuccessModal.set(false);
+          await firstValueFrom(this.authService.logout$());
+          return;
+        }
+
         if (userType === 'admin') {
           this.loginRedirectPath = '/admin-dashboard';
           this.loginSuccessMessage.set('Login successful. Redirecting to admin dashboard.');
@@ -172,11 +172,9 @@ export class Login implements OnInit {
         this.showLoginSuccessModal.set(true);
       } else {
         this.errorMessage.set(response.message || 'Invalid email or password');
-        this.showLoginErrorModal.set(true);
       }
     } catch (error) {
       this.errorMessage.set('An unexpected error occurred. Please try again.');
-      this.showLoginErrorModal.set(true);
     } finally {
       this.isLoading.set(false);
     }

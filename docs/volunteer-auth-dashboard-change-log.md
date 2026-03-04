@@ -29,6 +29,11 @@ This document summarizes implemented changes related to:
 - Admin authentication now uses `/admin-login` (frontend) and `/api/admin/login` (backend).
 - Volunteer login route `/login` now rejects admin accounts.
 
+### Phase 5: Frontend test stability fixes (March 5, 2026)
+- Fixed login component initialization to safely handle missing `ActivatedRoute.snapshot` in tests.
+- Restored normalized invalid-credentials messaging for `401/422` login responses.
+- Resolved CI failures in `login.spec.ts` and related auth-service assertion behavior.
+
 ## Changed Files
 
 ### Backend
@@ -74,7 +79,7 @@ This document summarizes implemented changes related to:
 ### 4) Volunteer login endpoint restriction
 - Standard login endpoint `POST /api/login` now blocks admin accounts.
 - Response message: `Admin accounts must use /admin-login.`
-- Frontend login error handling now surfaces backend message for 401/422 responses.
+- Frontend login error handling now returns normalized `Invalid email or password.` for 401/422 responses, while preserving sentinel `ERROR` for admin-only route enforcement.
 
 ### 5) Admin signup sign-in behavior
 - Admin signup footer "Sign in" link now routes to `/admin-login`.
@@ -95,6 +100,12 @@ This document summarizes implemented changes related to:
 - `initial.maximumWarning`: `500kB` -> `650kB`
 - `anyComponentStyle.maximumWarning`: `20kB` -> `24kB`
 
+### 9) Login test resilience and error consistency
+- Added optional chaining for login route detection:
+- `this.route.snapshot?.routeConfig?.path`
+- This prevents runtime `TypeError` when route snapshot is omitted by test doubles.
+- Kept consistent invalid-login copy for better UX and stable test expectations.
+
 ## Security and Access Intent
 - Keep volunteer dashboard available to authenticated volunteers.
 - Restrict admin dashboard and admin login flow to admin users only.
@@ -108,6 +119,7 @@ This document summarizes implemented changes related to:
 - `php artisan route:list --path=admin/login`
 - Frontend checks run:
 - `cd servetrack-frontend && npm run build`
+- `cd servetrack-frontend && npm test`
 
 ## Quick Verification Checklist
 1. Open `http://localhost:4200/admin-login` and sign in as admin -> lands on `/admin-dashboard`.

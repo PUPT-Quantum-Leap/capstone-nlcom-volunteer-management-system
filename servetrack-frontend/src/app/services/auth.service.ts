@@ -164,7 +164,9 @@ export class AuthService {
 
               return {
                 success: false,
-                message: retryResponse.message || 'Login failed after resetting previous session.',
+                message: this.normalizeAdminLoginOnlyMessage(
+                  retryResponse.message || 'Login failed after resetting previous session.',
+                ),
               } as AuthResponse;
             }),
           );
@@ -172,7 +174,9 @@ export class AuthService {
 
         return of({
           success: false,
-          message: response.message || 'Login failed. Please try again.',
+          message: this.normalizeAdminLoginOnlyMessage(
+            response.message || 'Login failed. Please try again.',
+          ),
         } as AuthResponse);
       }),
       tap((response) => {
@@ -219,7 +223,8 @@ export class AuthService {
   }
 
   private getLoginErrorMessage(err: HttpErrorResponse): string {
-    const backendMessage = typeof err.error?.message === 'string' ? err.error.message : '';
+    const backendMessageRaw = typeof err.error?.message === 'string' ? err.error.message : '';
+    const backendMessage = this.normalizeAdminLoginOnlyMessage(backendMessageRaw);
     const retryAfterHeader = err.headers?.get('Retry-After');
     const retryAfterBody = err.error?.retry_after;
     const retryAfterRaw = retryAfterBody ?? retryAfterHeader;
@@ -238,7 +243,10 @@ export class AuthService {
     }
 
     if (err.status === 401 || err.status === 422) {
-      return backendMessage || 'Invalid email or password.';
+      if (backendMessage === 'ERROR') {
+        return backendMessage;
+      }
+      return 'Invalid email or password.';
     }
 
     if (err.status >= 500) {
@@ -246,6 +254,15 @@ export class AuthService {
     }
 
     return backendMessage || 'Login failed. Please try again.';
+  }
+
+  private normalizeAdminLoginOnlyMessage(message: string): string {
+    const normalizedMessage = message.toLowerCase();
+    if (normalizedMessage.includes('admin accounts must') && normalizedMessage.includes('/admin-login')) {
+      return 'ERROR';
+    }
+
+    return message;
   }
 
   /**
