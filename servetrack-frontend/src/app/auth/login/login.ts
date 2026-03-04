@@ -125,8 +125,14 @@ export class Login implements OnInit {
       const response = await firstValueFrom(this.authService.login$(credentials));
 
       if (response.success) {
-        // Navigate to volunteer dashboard on success
-        await this.router.navigate(['/volunteer-dashboard']);
+        // Smart routing based on user type
+        const userType = response.user?.user_type || response.user?.role || 'volunteer';
+        
+        if (userType === 'admin') {
+          await this.router.navigate(['/admin-dashboard']);
+        } else {
+          await this.router.navigate(['/volunteer-dashboard']);
+        }
       } else {
         this.errorMessage.set(response.message || 'Invalid email or password');
       }
