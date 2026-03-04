@@ -80,7 +80,7 @@ class LoginController extends Controller
         if ($user->role === 'admin') {
             return 'admin';
         }
-        
+
         if ($user->role === 'coordinator') {
             return 'coordinator';
         }
@@ -88,7 +88,7 @@ class LoginController extends Controller
         if ($user->volunteer) {
             return 'volunteer';
         }
-        
+
         // Default to volunteer for backward compatibility
         return 'volunteer';
     }
