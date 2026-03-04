@@ -65,14 +65,6 @@ export class VolunteerDashboard implements OnInit {
   locationAssigned = signal('—');
   taskAssigned = signal('—');
 
-  // ── Attendance form ──────────────────────────────────────────────────────
-  showAddAttendance = signal(false);
-  attendanceForm = this.fb.group({
-    date: ['', [Validators.required]],
-    hours: [null as number | null, [Validators.required, Validators.min(0.5), Validators.max(24)]],
-    description: [''],
-  });
-
   // ── Notifications ────────────────────────────────────────────────────────
   showNotifications = signal(false);
   showLogoutModal = signal(false);
@@ -751,40 +743,6 @@ export class VolunteerDashboard implements OnInit {
     return reverseMap[availabilityKey] || availabilityKey;
   }
 
-  // ── Attendance form ───────────────────────────────────────────────────────
-
-  toggleAddAttendance(): void {
-    this.showAddAttendance.update((v) => !v);
-    if (!this.showAddAttendance()) {
-      this.attendanceForm.reset();
-    }
-  }
-
-  submitAttendance(): void {
-    if (this.attendanceForm.invalid) {
-      this.attendanceForm.markAllAsTouched();
-      return;
-    }
-
-    const value = this.attendanceForm.getRawValue();
-    this.isLoading.set(true);
-
-    this.volunteerService
-      .createAttendance({
-        date: value.date ?? '',
-        hours: value.hours ?? 0,
-        description: value.description ?? undefined,
-      })
-      .subscribe((response) => {
-        if (response.success) {
-          this.attendanceForm.reset();
-          this.showAddAttendance.set(false);
-          this.loadAttendance();
-          this.loadAttendanceStats();
-        }
-        this.isLoading.set(false);
-      });
-  }
 
   getAttendanceStatusClass(status: string): string {
     if (status === 'approved') return 'confirmed';

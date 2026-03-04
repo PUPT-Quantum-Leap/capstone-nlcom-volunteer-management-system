@@ -9,7 +9,7 @@ function resolveUserType(user: AuthResponse['user'] | null | undefined): string 
 
 function canAccessTarget(targetUrl: string, userType: string): boolean {
   if (targetUrl.startsWith('/volunteer-dashboard')) {
-    return userType === 'volunteer';
+    return userType === 'volunteer' || userType === 'coordinator';
   }
 
   if (targetUrl.startsWith('/admin-dashboard')) {

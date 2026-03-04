@@ -35,8 +35,10 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
     Route::get('/volunteer/profile', [VolunteerController::class, 'profile']);
     Route::put('/volunteer/profile', [VolunteerController::class, 'updateProfile']);
 
+    // Admin dashboard
+    Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
+
     // Attendance
     Route::get('/volunteer/attendance', [VolunteerController::class, 'listAttendance']);
-    Route::post('/volunteer/attendance', [VolunteerController::class, 'storeAttendance']);
     Route::get('/volunteer/attendance/stats', [VolunteerController::class, 'attendanceStats']);
 });
