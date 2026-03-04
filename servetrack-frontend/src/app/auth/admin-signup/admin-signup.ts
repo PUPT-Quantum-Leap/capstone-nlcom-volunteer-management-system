@@ -37,6 +37,7 @@ export class AdminSignup {
   showPassword = signal(false);
   showConfirmPassword = signal(false);
   showSuccessModal = signal(false);
+  countdown = signal(5);
   validationErrors = signal<ValidationError[]>([]);
 
   // Form group with validators
@@ -190,9 +191,8 @@ export class AdminSignup {
         // Show success modal
         this.showSuccessModal.set(true);
         
-        setTimeout(() => {
-          this.navigateToLogin();
-        }, 5000);
+        // Start countdown timer
+        this.startCountdown();
       } else {
         this.errorMessage.set(response.message || 'Signup failed. Please try again.');
       }
@@ -201,6 +201,22 @@ export class AdminSignup {
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  /**
+   * Start countdown timer for success modal
+   */
+  startCountdown(): void {
+    const timer = setInterval(() => {
+      const current = this.countdown() - 1;
+      this.countdown.set(Math.max(0, current));
+      
+      if (current <= 0) {
+        clearInterval(timer);
+        // Auto-navigate to login when countdown reaches zero
+        this.navigateToLogin();
+      }
+    }, 1000);
   }
 
   /**

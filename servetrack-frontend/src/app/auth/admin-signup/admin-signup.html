@@ -327,11 +327,11 @@
         </div>
         <h3 class="popup-title">Registration Successful! 🎉</h3>
         <p class="popup-message">
-          Your admin account has been created successfully. 
+          Your admin account has been created successfully. You can now log in with your credentials.
         </p>
-        <p class="popup-redirect">Redirecting to login in 5 seconds...</p>
+        <p class="popup-redirect">Redirecting to login in {{ countdown() }} seconds...</p>
         <div class="popup-actions">
-          <button class="btn btn-primary" (click)="navigateToLoginNow()">
+          <button class="btn btn-primary" (click)="navigateToLogin()">
             Go to Login Now
           </button>
           <button class="btn btn-outline" (click)="closeSuccessModal()">
