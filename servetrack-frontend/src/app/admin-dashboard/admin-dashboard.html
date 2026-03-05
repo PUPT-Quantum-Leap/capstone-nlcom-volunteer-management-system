@@ -277,13 +277,11 @@
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Department</th>
-                <th>Status</th>
-                <th>Joined Date</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              @for (volunteer of volunteerRows(); track volunteer.id) {
+              @for (volunteer of paginatedVolunteers(); track volunteer.id) {
               <tr>
                 <td>
                   <div class="volunteer-info">
@@ -296,16 +294,6 @@
                 <td>{{ volunteer.email }}</td>
                 <td>{{ volunteer.phone }}</td>
                 <td><span class="dept-badge">{{ volunteer.department }}</span></td>
-                <td>
-                  <span
-                    class="status-badge"
-                    [class.status-active]="volunteer.status === 'active'"
-                    [class.status-inactive]="volunteer.status === 'inactive'"
-                  >
-                    {{ volunteer.status === 'active' ? 'Active' : 'Inactive' }}
-                  </span>
-                </td>
-                <td>{{ volunteer.joined_date | date: 'MMM d, yyyy' }}</td>
                 <td>
                   <div class="action-buttons">
                     <button type="button" class="action-btn view-btn" title="View">
@@ -325,7 +313,7 @@
               </tr>
               } @empty {
               <tr>
-                <td colspan="7">
+                <td colspan="5">
                   <p class="empty-state">No volunteer records found.</p>
                 </td>
               </tr>
@@ -336,7 +324,16 @@
 
         <div class="pagination-container">
           <div class="pagination-info">
-            Showing <strong>{{ volunteerRows().length }}</strong> volunteer(s)
+            Showing <strong>{{ volunteerRange() }}</strong> of <strong>{{ volunteerRows().length }}</strong> volunteers
+          </div>
+          <div class="pagination-nav">
+            <button type="button" class="pagination-btn" [disabled]="currentPage() === 1" (click)="prevPage()">
+              &laquo; Previous
+            </button>
+            <span class="page-info">Page {{ currentPage() }} of {{ totalPages() }}</span>
+            <button type="button" class="pagination-btn" [disabled]="currentPage() === totalPages() || totalPages() === 0" (click)="nextPage()">
+              Next &raquo;
+            </button>
           </div>
         </div>
       </section>
@@ -763,6 +760,14 @@
       }
       }
     </main>
+
+    <!-- AI Assistant Floating Button - Bottom Right -->
+    <button type="button" class="ai-assistant-fab" (click)="openAiModal()"
+      aria-label="Open AI Assistant" title="AI Assistant">
+      <svg class="ai-fab-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 2L14.85 8.15L21 11L14.85 13.85L12 20L9.15 13.85L3 11L9.15 8.15L12 2Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
 </div>
 
@@ -774,6 +779,26 @@
     <div class="modal-actions">
       <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
       <button type="button" class="primary-btn" (click)="confirmLogout()">Yes, Logout</button>
+    </div>
+  </section>
+</div>
+}
+
+@if (showAiModal()) {
+<div class="modal-backdrop" (click)="closeAiModal()">
+  <section class="modal-card ai-coming-soon-card" (click)="$event.stopPropagation()">
+    <div class="ai-modal-header">
+      <svg class="ai-modal-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L14.85 8.15L21 11L14.85 13.85L12 20L9.15 13.85L3 11L9.15 8.15L12 2Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h3>AI Assistant</h3>
+    </div>
+    <div class="ai-modal-content">
+      <p>Our intelligent assistant is currently being trained to help you manage volunteers more effectively.</p>
+      <div class="coming-soon-badge">Coming Soon</div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="primary-btn" (click)="closeAiModal()">Got it!</button>
     </div>
   </section>
 </div>

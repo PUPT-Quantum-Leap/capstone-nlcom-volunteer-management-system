@@ -62,7 +62,25 @@
             (click)="setView('schedule')"
             aria-label="View Attendance Log"
           >
-            <span class="label">Attendance Log</span>
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M8 3V6M16 3V6M4 9H20M6 6H18C19.105 6 20 6.895 20 8V19C20 20.105 19.105 21 18 21H6C4.895 21 4 20.105 4 19V8C4 6.895 4.895 6 6 6Z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M9.5 14L11 15.5L14.5 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Attendance Log
+            </span>
           </button>
         </li>
         <li>
@@ -645,12 +663,13 @@
             </div>
 
             <div class="schedule-controls">
-              <div class="period-toggle">
+              <div class="period-toggle" role="tablist" aria-label="Attendance period">
                 <button
                   type="button"
                   class="outline-btn"
                   [class.active]="attendancePeriod() === 'daily'"
                   (click)="setAttendancePeriod('daily')"
+                  [attr.aria-pressed]="attendancePeriod() === 'daily'"
                 >
                   Daily
                 </button>
@@ -659,6 +678,7 @@
                   class="outline-btn"
                   [class.active]="attendancePeriod() === 'weekly'"
                   (click)="setAttendancePeriod('weekly')"
+                  [attr.aria-pressed]="attendancePeriod() === 'weekly'"
                 >
                   Weekly
                 </button>
@@ -667,12 +687,13 @@
                   class="outline-btn"
                   [class.active]="attendancePeriod() === 'monthly'"
                   (click)="setAttendancePeriod('monthly')"
+                  [attr.aria-pressed]="attendancePeriod() === 'monthly'"
                 >
                   Monthly
                 </button>
               </div>
 
-              <div class="search-inline">
+              <div class="search-inline schedule-search">
                 <input
                   #attendanceSearch
                   type="text"
@@ -688,7 +709,7 @@
               </div>
             </div>
 
-            <p class="meta">
+            <p class="meta schedule-note">
               Attendance entries are managed by admins. This log is read-only for volunteers.
             </p>
 
