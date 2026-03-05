@@ -29,7 +29,7 @@ export class AdminDashboard implements OnInit {
 
   readonly defaultPhoto = '/assets/nlcom.png';
 
-  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup'>('overview');
+  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Admin');
   sidebarCollapsed = signal(false);
   isLoading = signal(false);
@@ -52,24 +52,6 @@ export class AdminDashboard implements OnInit {
 
   volunteerRows = signal<DashboardVolunteerRow[]>([]);
   performanceMetrics = signal<PerformanceMetric[]>([]);
-
-  currentPage = signal(1);
-  pageSize = signal(5);
-
-  paginatedVolunteers = computed(() => {
-    const startIndex = (this.currentPage() - 1) * this.pageSize();
-    return this.volunteerRows().slice(startIndex, startIndex + this.pageSize());
-  });
-
-  totalPages = computed(() => Math.ceil(this.volunteerRows().length / this.pageSize()));
-
-  volunteerRange = computed(() => {
-    const total = this.volunteerRows().length;
-    if (total === 0) return '0-0';
-    const start = (this.currentPage() - 1) * this.pageSize() + 1;
-    const end = Math.min(this.currentPage() * this.pageSize(), total);
-    return `${start}-${end}`;
-  });
 
   sortField = signal<'name' | 'attendance' | 'hours' | 'tasks' | 'rating'>('attendance');
   sortDirection = signal<'asc' | 'desc'>('desc');
@@ -172,29 +154,11 @@ export class AdminDashboard implements OnInit {
     });
   }
 
-  nextPage(): void {
-    if (this.currentPage() < this.totalPages()) {
-      this.currentPage.update((p) => p + 1);
-    }
-  }
-
-  prevPage(): void {
-    if (this.currentPage() > 1) {
-      this.currentPage.update((p) => p - 1);
-    }
-  }
-
-  goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages()) {
-      this.currentPage.set(page);
-    }
-  }
-
   toggleSidebar(): void {
     this.sidebarCollapsed.update((v) => !v);
   }
 
-  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup'): void {
+  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'): void {
     this.currentView.set(view);
     this.currentPage.set(1);
   }
@@ -236,6 +200,16 @@ export class AdminDashboard implements OnInit {
 
     if (query.includes('user')) {
       this.setView('users');
+      return;
+    }
+
+    if (query.includes('analytic')) {
+      this.setView('analytics');
+      return;
+    }
+
+    if (query.includes('event')) {
+      this.setView('events');
       return;
     }
 
