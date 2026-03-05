@@ -34,10 +34,19 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
 
     // Volunteer profile
     Route::get('/volunteer/profile', [VolunteerController::class, 'profile']);
-    Route::put('/volunteer/profile', [VolunteerController::class, 'updateProfile']);
+    Route::put('/volunteer/profile', [VolunteerController::class, 'updateProfile'])
+        ->middleware('throttle:profile-update');
+    Route::post('/volunteer/profile/photo', [VolunteerController::class, 'updateProfilePhoto']);
+    Route::post('/volunteer/change-password', [VolunteerController::class, 'changePassword'])
+        ->middleware('throttle:password-change');
 
     // Admin dashboard
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
+
+    // Admin volunteer management
+    Route::get('/volunteers', [VolunteerController::class, 'index']);
+    Route::get('/volunteers/{id}', [VolunteerController::class, 'show']);
+    Route::get('/admin/volunteers/{id}/change-history', [VolunteerController::class, 'changeHistory']);
 
     // Attendance
     Route::get('/volunteer/attendance', [VolunteerController::class, 'listAttendance']);

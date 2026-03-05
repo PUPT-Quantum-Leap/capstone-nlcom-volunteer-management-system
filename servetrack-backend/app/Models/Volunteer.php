@@ -32,6 +32,7 @@ class Volunteer extends Model
         'last_medical_examination',
         'emergency_contact_id',
         'user_id',
+        'profile_photo',
     ];
 
     protected $casts = [
