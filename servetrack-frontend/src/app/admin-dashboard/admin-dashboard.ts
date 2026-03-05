@@ -38,6 +38,7 @@ export class AdminDashboard implements OnInit {
   showLogoutModal = signal(false);
   showAiModal = signal(false);
   searchQuery = signal('');
+  currentPage = signal(1);
 
   notifications = signal<NotificationItem[]>([]);
 
