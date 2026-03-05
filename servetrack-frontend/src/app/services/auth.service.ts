@@ -114,40 +114,50 @@ export class AuthService {
         throw new Error('Name must be at least 2 characters');
       }
 
-      // TODO: Replace with actual API call
-      // Example: const response = await fetch('/api/auth/signup', { ... });
-      
-      // Simulate API call
-      await this.delay(2000);
-
-      // Simulate successful signup
-      const response: AuthResponse = {
-        success: true,
-        token: 'mock-jwt-token',
-        user: {
-          id: '1',
+      const response = await fetch('/api/v1/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
           name: trimmedName,
           email: data.email,
-        },
+          password: data.password,
+          password_confirmation: data.confirmPassword,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = result.message || result.error?.message || 'Signup failed';
+        throw new Error(errorMessage);
+      }
+
+      const authResponse: AuthResponse = {
+        success: result.success,
+        token: result.token,
+        user: result.user,
+        message: result.message,
       };
 
-      if (response.success && response.user) {
+      if (authResponse.success && authResponse.user) {
         this.isAuthenticated.set(true);
-        this.currentUser.set(response.user);
-        
+        this.currentUser.set(authResponse.user);
+
         // Store token securely
-        if (response.token) {
-          sessionStorage.setItem('auth_token', response.token);
+        if (authResponse.token) {
+          sessionStorage.setItem('auth_token', authResponse.token);
         }
 
         console.log('Signup successful', {
           name: data.name,
           email: data.email,
-          // Never log password
         });
       }
 
-      return response;
+      return authResponse;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Signup failed';
       this.error.set(errorMessage);
