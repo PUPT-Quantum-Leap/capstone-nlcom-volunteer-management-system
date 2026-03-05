@@ -3,7 +3,7 @@ import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 /**
  * Custom validator for password strength
  * Requires:
- * - Minimum 8 characters
+ * - Minimum 12 characters
  * - At least one uppercase letter
  * - At least one lowercase letter
  * - At least one number
@@ -19,8 +19,8 @@ export function passwordStrengthValidator(): ValidatorFn {
 
     const errors: ValidationErrors = {};
 
-    if (value.length < 8) {
-      errors['minLength'] = { requiredLength: 8, actualLength: value.length };
+    if (value.length < 12) {
+      errors['minLength'] = { requiredLength: 12, actualLength: value.length };
     }
 
     if (value.length > 128) {

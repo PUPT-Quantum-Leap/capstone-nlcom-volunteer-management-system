@@ -12,14 +12,14 @@ describe('PasswordValidators', () => {
     });
 
     it('should return null for valid passwords', () => {
-      const control = new FormControl('Valid1!pass');
+      const control = new FormControl('Valid1!pass12');
       expect(validator(control)).toBeNull();
     });
 
-    it('should return minLength error if password is less than 8 characters', () => {
+    it('should return minLength error if password is less than 12 characters', () => {
       const control = new FormControl('Val1!');
       const result = validator(control);
-      expect(result).toEqual({ minLength: { requiredLength: 8, actualLength: 5 } });
+      expect(result).toEqual({ minLength: { requiredLength: 12, actualLength: 5 } });
     });
 
     it('should return requiresUppercase error if password has no uppercase letter', () => {

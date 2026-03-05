@@ -90,7 +90,7 @@ export class Signup {
     // Password errors
     if (controlName === 'password') {
       if (errors['required']) return 'Password is required';
-      if (errors['minLength']) return 'Password must be at least 8 characters';
+      if (errors['minLength']) return 'Password must be at least 12 characters';
       if (errors['maxLength']) return 'Password is too long (max 128 characters)';
       if (errors['requiresUppercase']) return 'Password must contain an uppercase letter';
       if (errors['requiresLowercase']) return 'Password must contain a lowercase letter';
@@ -122,7 +122,7 @@ export class Signup {
     const password = this.passwordControl?.value || '';
     
     return [
-      { label: 'At least 8 characters', met: password.length >= 8 },
+      { label: 'At least 12 characters', met: password.length >= 12 },
       { label: 'One uppercase letter', met: /[A-Z]/.test(password) },
       { label: 'One lowercase letter', met: /[a-z]/.test(password) },
       { label: 'One number', met: /[0-9]/.test(password) },
