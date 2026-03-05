@@ -13,11 +13,23 @@ use App\Models\User;
 use App\Models\Volunteer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
-class VolunteerController extends Controller
+class VolunteerController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('throttle:10,1', only: ['register']),
+        ];
+    }
+
     /**
      * Register a new volunteer with all related data
      */
