@@ -117,21 +117,7 @@ class VolunteerController extends Controller
      */
     private function processTrainingExperience(Volunteer $volunteer, ?string $trainingExperience): void
     {
-        if (empty($trainingExperience)) {
-            return;
-        }
-
-        // Split by common delimiters (commas, semicolons, new lines)
-        $trainingItems = preg_split('/[,;\n]+/', $trainingExperience);
-        $trainingItems = array_map('trim', $trainingItems);
-        $trainingItems = array_filter($trainingItems, 'strlen');
-
-        foreach ($trainingItems as $trainingName) {
-            if (strlen($trainingName) > 0) {
-                $training = Training::firstOrCreate(['name' => $trainingName]);
-                $volunteer->trainings()->attach($training->training_id);
-            }
-        }
+        $this->attachItemsByNames($volunteer, 'trainings', Training::class, 'training_id', $trainingExperience);
     }
 
     /**
@@ -139,21 +125,7 @@ class VolunteerController extends Controller
      */
     private function processSkillsHobbies(Volunteer $volunteer, ?string $skillsHobbies): void
     {
-        if (empty($skillsHobbies)) {
-            return;
-        }
-
-        // Split by common delimiters
-        $skillItems = preg_split('/[,;\n]+/', $skillsHobbies);
-        $skillItems = array_map('trim', $skillItems);
-        $skillItems = array_filter($skillItems, 'strlen');
-
-        foreach ($skillItems as $skillName) {
-            if (strlen($skillName) > 0) {
-                $skill = Skill::firstOrCreate(['name' => $skillName]);
-                $volunteer->skills()->attach($skill->skill_id);
-            }
-        }
+        $this->attachItemsByNames($volunteer, 'skills', Skill::class, 'skill_id', $skillsHobbies);
     }
 
     /**
@@ -161,21 +133,60 @@ class VolunteerController extends Controller
      */
     private function processClassesTraining(Volunteer $volunteer, ?string $classesTraining): void
     {
-        if (empty($classesTraining)) {
+        $this->attachItemsByNames($volunteer, 'trainings', Training::class, 'training_id', $classesTraining);
+    }
+
+    /**
+     * Helper to process bulk items by names and attach to volunteer
+     */
+    private function attachItemsByNames(Volunteer $volunteer, string $relationName, string $modelClass, string $primaryKey, ?string $inputString): void
+    {
+        if (empty($inputString)) {
             return;
         }
 
-        // Split by common delimiters
-        $classItems = preg_split('/[,;\n]+/', $classesTraining);
-        $classItems = array_map('trim', $classItems);
-        $classItems = array_filter($classItems, 'strlen');
+        // Split by common delimiters and clean up
+        $rawNames = preg_split('/[,;\n]+/', $inputString);
+        $rawNames = array_filter(array_map('trim', $rawNames), 'strlen');
 
-        foreach ($classItems as $className) {
-            if (strlen($className) > 0) {
-                $training = Training::firstOrCreate(['name' => $className]);
-                $volunteer->trainings()->attach($training->training_id);
-            }
+        if (empty($rawNames)) {
+            return;
         }
+
+        // Case-insensitive unique names
+        $uniqueNamesMap = [];
+        foreach ($rawNames as $name) {
+            $uniqueNamesMap[strtolower($name)] = $name;
+        }
+        $names = array_values($uniqueNamesMap);
+
+        // Find existing items
+        $existingItems = $modelClass::whereIn('name', $names)->get();
+        $existingNames = $existingItems->pluck('name')->toArray();
+
+        // Identify missing items (case-insensitive comparison)
+        $missingNames = array_udiff($names, $existingNames, 'strcasecmp');
+
+        // Bulk insert missing items
+        if (! empty($missingNames)) {
+            $now = now();
+            $insertData = array_map(fn ($name) => [
+                'name' => $name,
+                // Models in this project (Skill, Training) have $timestamps = false,
+                // but we include them here if they were ever enabled or for other models.
+                // Actually Skill and Training explicitly set $timestamps = false.
+            ], $missingNames);
+            $modelClass::insert($insertData);
+
+            // Re-fetch all matching items to get their IDs
+            $allItems = $modelClass::whereIn('name', $names)->get();
+        } else {
+            $allItems = $existingItems;
+        }
+
+        // Sync without detaching to link all items in one operation
+        $ids = $allItems->pluck($primaryKey)->toArray();
+        $volunteer->$relationName()->syncWithoutDetaching($ids);
     }
 
     /**
