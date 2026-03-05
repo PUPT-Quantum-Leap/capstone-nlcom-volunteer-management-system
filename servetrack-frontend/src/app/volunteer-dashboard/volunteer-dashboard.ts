@@ -123,7 +123,7 @@ export class VolunteerDashboard {
       lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
       facebookName: [''],
       email: ['', [Validators.required, Validators.email]],
-      mobileNumber: ['', [Validators.required, Validators.pattern(/^(09|\+639)\d{9}$/)]],
+      mobileNumber: ['', [Validators.required, Validators.pattern(/^(09|\+63[ -]?9)([ -]?\d){9}$/)]],
       birthdate: ['', [Validators.required]],
       lastMedicalExam: ['', [Validators.required]],
       completeAddress: ['', [Validators.required, Validators.minLength(10)]],
@@ -264,7 +264,8 @@ export class VolunteerDashboard {
     if (control.errors['email']) return 'Enter a valid email';
     if (control.errors['minlength']) return 'Input is too short';
     if (control.errors['maxlength']) return 'Input is too long';
-    if (control.errors['pattern']) return 'Invalid format';
+    if (control.errors['pattern'])
+      return 'Enter a valid Philippine mobile number (e.g., 0917 123 4567)';
     if (control.errors['minLength']) return 'Password must be at least 8 characters';
     if (control.errors['requiresUppercase']) return 'Password needs uppercase letter';
     if (control.errors['requiresLowercase']) return 'Password needs lowercase letter';

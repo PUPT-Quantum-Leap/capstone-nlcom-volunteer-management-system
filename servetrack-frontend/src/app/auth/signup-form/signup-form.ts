@@ -33,7 +33,7 @@ export class SignupForm {
       lastName: ['', [Validators.required, Validators.minLength(2)]],
       facebookName: [''],
       email: ['', [Validators.required, Validators.email]],
-      mobileNumber: ['', [Validators.required, Validators.pattern(/^(09|\+639)\d{9}$/)]],
+      mobileNumber: ['', [Validators.required, Validators.pattern(/^(09|\+63[ -]?9)([ -]?\d){9}$/)]],
       birthdate: ['', [Validators.required]],
       lastMedicalExam: ['', [Validators.required]],
       completeAddress: ['', [Validators.required, Validators.minLength(10)]],
@@ -140,7 +140,7 @@ export class SignupForm {
       return `Minimum ${errors['minlength'].requiredLength} characters required`;
     }
     if (errors['pattern']) {
-      return 'Please enter a valid Philippine mobile number';
+      return 'Please enter a valid Philippine mobile number (e.g., 0917 123 4567)';
     }
 
     // Password strength errors

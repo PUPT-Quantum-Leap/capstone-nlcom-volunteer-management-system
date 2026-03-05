@@ -217,7 +217,8 @@
 
             <div class="form-group">
               <label for="mobileNumber">Mobile Number</label>
-              <input type="text" id="mobileNumber" formControlName="mobileNumber" placeholder="09XXXXXXXXX">
+              <input type="tel" id="mobileNumber" formControlName="mobileNumber" placeholder="0917 123 4567"
+                maxlength="16">
               @if (controlHasError('mobileNumber')) { <span class="error-text">{{ getControlError('mobileNumber')
                 }}</span> }
             </div>

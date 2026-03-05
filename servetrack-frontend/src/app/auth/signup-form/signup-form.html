@@ -98,7 +98,8 @@
             id="mobileNumber"
             formControlName="mobileNumber"
             class="form-input"
-            placeholder="09XXXXXXXXX"
+            placeholder="0917 123 4567"
+            maxlength="16"
             [class.error]="personalInfoForm.get('mobileNumber')?.invalid && personalInfoForm.get('mobileNumber')?.touched"
           />
           @if (personalInfoForm.get('mobileNumber')?.touched && personalInfoForm.get('mobileNumber')?.invalid) {
