@@ -75,10 +75,7 @@ export class AuthService {
           sessionStorage.setItem('auth_token', response.token);
         }
 
-        console.log('Login successful', {
-          email: credentials.email,
-          // Never log password
-        });
+        console.log('Login successful');
       }
 
       return response;
@@ -140,11 +137,7 @@ export class AuthService {
           sessionStorage.setItem('auth_token', response.token);
         }
 
-        console.log('Signup successful', {
-          name: data.name,
-          email: data.email,
-          // Never log password
-        });
+        console.log('Signup successful');
       }
 
       return response;
