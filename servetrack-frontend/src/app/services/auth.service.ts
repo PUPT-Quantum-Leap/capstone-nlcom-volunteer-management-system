@@ -58,7 +58,6 @@ export class AuthService {
       // Simulate successful login
       const response: AuthResponse = {
         success: true,
-        token: 'mock-jwt-token',
         user: {
           id: '1',
           name: 'John Doe',
@@ -69,16 +68,6 @@ export class AuthService {
       if (response.success && response.user) {
         this.isAuthenticated.set(true);
         this.currentUser.set(response.user);
-        
-        // Store token securely (consider using httpOnly cookies in production)
-        if (response.token) {
-          sessionStorage.setItem('auth_token', response.token);
-        }
-
-        console.log('Login successful', {
-          email: credentials.email,
-          // Never log password
-        });
       }
 
       return response;
@@ -123,7 +112,6 @@ export class AuthService {
       // Simulate successful signup
       const response: AuthResponse = {
         success: true,
-        token: 'mock-jwt-token',
         user: {
           id: '1',
           name: trimmedName,
@@ -134,17 +122,6 @@ export class AuthService {
       if (response.success && response.user) {
         this.isAuthenticated.set(true);
         this.currentUser.set(response.user);
-        
-        // Store token securely
-        if (response.token) {
-          sessionStorage.setItem('auth_token', response.token);
-        }
-
-        console.log('Signup successful', {
-          name: data.name,
-          email: data.email,
-          // Never log password
-        });
       }
 
       return response;
@@ -167,15 +144,15 @@ export class AuthService {
   async logout(): Promise<void> {
     try {
       // TODO: Call API to invalidate token on server
-      
+      // Example: await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+
       // Clear local state
       this.isAuthenticated.set(false);
       this.currentUser.set(null);
-      sessionStorage.removeItem('auth_token');
-      
+
       await this.router.navigate(['/login']);
-    } catch (error) {
-      console.error('Logout failed:', error);
+    } catch (error: unknown) {
+      // Use unknown type for error and avoid logging potentially sensitive info
     }
   }
 
@@ -183,22 +160,30 @@ export class AuthService {
    * Check if user is authenticated (e.g., on app initialization)
    */
   async checkAuthStatus(): Promise<boolean> {
-    const token = sessionStorage.getItem('auth_token');
-    
-    if (!token) {
-      return false;
-    }
-
     try {
-      // TODO: Validate token with backend
-      // Example: const response = await fetch('/api/auth/me', { ... });
-      
-      // For now, assume token is valid
-      this.isAuthenticated.set(true);
-      return true;
+      // Validate session with backend using HttpOnly cookies
+      const response = await fetch('/api/v1/user', {
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user) {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(data.user);
+          return true;
+        }
+      }
+
+      this.isAuthenticated.set(false);
+      this.currentUser.set(null);
+      return false;
     } catch (error) {
       this.isAuthenticated.set(false);
-      sessionStorage.removeItem('auth_token');
+      this.currentUser.set(null);
       return false;
     }
   }
