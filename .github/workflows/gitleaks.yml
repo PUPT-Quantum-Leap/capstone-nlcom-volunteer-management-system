@@ -29,7 +29,11 @@ jobs:
       # Optional: Upload results as artifact for review
       - name: Upload gitleaks report
         if: failure()
+<<<<<<< HEAD
         uses: actions/upload-artifact@v6
+=======
+        uses: actions/upload-artifact@v7
+>>>>>>> origin/main
         with:
           name: gitleaks-report
           path: results.sarif

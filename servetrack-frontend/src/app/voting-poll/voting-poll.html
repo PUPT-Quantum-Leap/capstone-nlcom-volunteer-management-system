@@ -11,13 +11,25 @@
 
     <!-- Poll Description -->
     <div class="poll-description">
+<<<<<<< HEAD
       <p>Select your preferred time slot for the mobile kitchen operations. Vote to help us determine the best schedule.</p>
+=======
+      <p>
+        Select your preferred time slot for the mobile kitchen operations. Vote to help us determine
+        the best schedule.
+      </p>
+>>>>>>> origin/main
     </div>
 
     <!-- Poll Options -->
     <div class="poll-options">
+<<<<<<< HEAD
       <div 
         *ngFor="let option of pollOptions" 
+=======
+      <div
+        *ngFor="let option of pollOptions"
+>>>>>>> origin/main
         class="poll-option"
         [class.selected]="option.selected"
         [class.disabled]="isFull(option)"
@@ -25,13 +37,22 @@
       >
         <div class="option-header">
           <div class="option-info">
+<<<<<<< HEAD
             <input 
               type="radio" 
+=======
+            <input
+              type="radio"
+>>>>>>> origin/main
               [id]="'option-' + option.id"
               [checked]="option.selected"
               [disabled]="isFull(option)"
               class="option-radio"
+<<<<<<< HEAD
             >
+=======
+            />
+>>>>>>> origin/main
             <label [for]="'option-' + option.id" class="option-label">
               {{ option.timeSlot }}
             </label>
@@ -42,13 +63,18 @@
             <span class="vote-text">/ {{ option.capacity }}</span>
           </div>
         </div>
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> origin/main
         <!-- Capacity Info -->
         <div class="capacity-info">
           <span class="capacity-label">
             <span *ngIf="!isFull(option)" class="remaining-slots">
               {{ getRemainingSlots(option) }} slots remaining
             </span>
+<<<<<<< HEAD
             <span *ngIf="isFull(option)" class="slots-full">
               No slots available
             </span>
@@ -58,15 +84,31 @@
         <!-- Progress Bar -->
         <div class="progress-bar-container">
           <div 
+=======
+            <span *ngIf="isFull(option)" class="slots-full"> No slots available </span>
+          </span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar-container">
+          <div
+>>>>>>> origin/main
             class="progress-bar-fill"
             [class.full]="isFull(option)"
             [style.width.%]="(option.votes / option.capacity) * 100"
           ></div>
         </div>
+<<<<<<< HEAD
         
         <!-- Percentage -->
         <div class="percentage-label">
           {{ getVotePercentage(option.votes) | number:'1.0-1' }}% of total votes
+=======
+
+        <!-- Percentage -->
+        <div class="percentage-label">
+          {{ getVotePercentage(option.votes) | number: '1.0-1' }}% of total votes
+>>>>>>> origin/main
         </div>
       </div>
     </div>
@@ -77,6 +119,7 @@
         <span class="total-label">Total Votes:</span>
         <span class="total-number">{{ totalVotes }}</span>
       </div>
+<<<<<<< HEAD
       
       <!-- Submit Button -->
       <button 
@@ -84,9 +127,17 @@
         [disabled]="!hasSelectedOption"
         (click)="submitVote()"
       >
+=======
+
+      <!-- Submit Button -->
+      <button class="btn-submit" [disabled]="!hasSelectedOption" (click)="submitVote()">
+>>>>>>> origin/main
         Submit Vote
       </button>
     </div>
   </div>
 </div>
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main

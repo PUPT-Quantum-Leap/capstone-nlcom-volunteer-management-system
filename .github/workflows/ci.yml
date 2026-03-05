@@ -33,6 +33,7 @@ jobs:
             backend:
               - 'servetrack-backend/**'
 
+<<<<<<< HEAD
   dependency-review:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
@@ -40,6 +41,8 @@ jobs:
       - uses: actions/checkout@v6
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
+=======
+>>>>>>> origin/main
 
   # Frontend (Angular 21 + Vitest)
   frontend-check:

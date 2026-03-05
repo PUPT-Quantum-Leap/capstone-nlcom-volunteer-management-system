@@ -4,11 +4,16 @@
     <div class="container">
       <div class="nav-content">
         <div class="logo">
+<<<<<<< HEAD
           <img src="/assets/nlcom.png" alt="NLCOM Logo" class="logo-image">
+=======
+          <img src="/assets/nlcom.png" alt="NLCOM Logo" class="logo-image" />
+>>>>>>> origin/main
           <span class="logo-text">ServeTrack</span>
         </div>
         <ul class="nav-links">
           <li>
+<<<<<<< HEAD
             <a href="#home" (click)="scrollToSection('home', $event)">
               Home
             </a>
@@ -22,11 +27,24 @@
             <a href="#about" (click)="scrollToSection('about', $event)">
               About NLCOM
             </a>
+=======
+            <a href="#home" (click)="scrollToSection('home', $event)"> Home </a>
+          </li>
+          <li>
+            <a href="#features" (click)="scrollToSection('features', $event)"> Features </a>
+          </li>
+          <li>
+            <a href="#about" (click)="scrollToSection('about', $event)"> About NLCOM </a>
+>>>>>>> origin/main
           </li>
         </ul>
         <div class="nav-buttons">
           <button class="btn btn-outline" routerLink="/login">Login</button>
+<<<<<<< HEAD
           <button class="btn btn-primary" routerLink="/signup">Sign Up</button>
+=======
+          <button class="btn btn-primary" (click)="showPopupModal()">Sign Up</button>
+>>>>>>> origin/main
         </div>
       </div>
     </div>
@@ -37,6 +55,7 @@
     <div class="container">
       <div class="hero-content">
         <div class="hero-text fade-in-left">
+<<<<<<< HEAD
           <h1 class="hero-title">
             Empowering Volunteers, Strengthening Communities
           </h1>
@@ -50,12 +69,26 @@
               class="btn btn-outline btn-large"
               (click)="scrollToSection('features', $event)">
                 Learn More
+=======
+          <h1 class="hero-title">Empowering Volunteers, Strengthening Communities</h1>
+          <p class="hero-description">
+            Join ServeTrack to manage your volunteer activities, track your impact, and connect with
+            meaningful opportunities in your community.
+          </p>
+          <div class="hero-buttons">
+            <button class="btn btn-primary btn-large" (click)="showPopupModal()">
+              Get Started
+            </button>
+            <button class="btn btn-outline btn-large" (click)="scrollToSection('features', $event)">
+              Learn More
+>>>>>>> origin/main
             </button>
           </div>
         </div>
         <div class="hero-image fade-in-right">
           <div class="illustration">
             <div class="illustration-card card-1">
+<<<<<<< HEAD
               <img
                 src="/assets/volunteer1.png"
                 alt="Volunteers"
@@ -72,6 +105,15 @@
                 src="/assets/group.png"
                 alt="Community Group"
                 class="card-image">
+=======
+              <img src="/assets/volunteer1.png" alt="Volunteers" class="card-image" />
+            </div>
+            <div class="illustration-card card-2">
+              <img src="/assets/nlcom_truck.png" alt="NLCOM Truck" class="card-image" />
+            </div>
+            <div class="illustration-card card-3">
+              <img src="/assets/group.png" alt="Community Group" class="card-image" />
+>>>>>>> origin/main
             </div>
           </div>
         </div>
@@ -83,16 +125,23 @@
   <section id="features" class="features-section">
     <div class="container">
       <div class="section-header fade-in-up">
+<<<<<<< HEAD
         <h2 class="section-title">
           Powerful Features for Effective Volunteer Management
         </h2>
         <p class="section-description">
           Everything you need to organize, track, and optimize your
           volunteer programs
+=======
+        <h2 class="section-title">Powerful Features for Effective Volunteer Management</h2>
+        <p class="section-description">
+          Everything you need to organize, track, and optimize your volunteer programs
+>>>>>>> origin/main
         </p>
       </div>
       <div class="features-grid">
         <div class="feature-card fade-in-up">
+<<<<<<< HEAD
           <div class="feature-icon" style="background: #EFF6FF;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
               <path
@@ -114,10 +163,32 @@
           <div class="feature-icon" style="background: #EFF6FF;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
               <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5M12 12H15M12 16H15M9 12H9.01M9 16H9.01" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
+=======
+          <div class="feature-icon" style="background: #eff6ff">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path d="M12 6V18M6 12H18" stroke="#2563EB" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </div>
+          <h3 class="feature-title">Easy Registration</h3>
+          <p class="feature-description">
+            Quick and simple volunteer registration process with intuitive forms and verification.
+          </p>
+        </div>
+        <div class="feature-card fade-in-up">
+          <div class="feature-icon" style="background: #eff6ff">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5M12 12H15M12 16H15M9 12H9.01M9 16H9.01"
+                stroke="#2563EB"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+>>>>>>> origin/main
             </svg>
           </div>
           <h3 class="feature-title">Activity Tracking</h3>
           <p class="feature-description">
+<<<<<<< HEAD
             Monitor volunteer hours, activities, and contributions with detailed
             analytics and reports.
           </p>
@@ -126,10 +197,26 @@
           <div class="feature-icon" style="background: #EFF6FF;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
               <path d="M8 7V3M16 7V3M7 11H17M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
+=======
+            Monitor volunteer hours, activities, and contributions with detailed analytics and
+            reports.
+          </p>
+        </div>
+        <div class="feature-card fade-in-up">
+          <div class="feature-icon" style="background: #eff6ff">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M8 7V3M16 7V3M7 11H17M5 21H19C20.1046 21 21 20.1046 21 19V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V19C3 20.1046 3.89543 21 5 21Z"
+                stroke="#2563EB"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+>>>>>>> origin/main
             </svg>
           </div>
           <h3 class="feature-title">Event Management</h3>
           <p class="feature-description">
+<<<<<<< HEAD
             Create, schedule, and manage volunteer events with automated
             notifications and reminders.
           </p>
@@ -138,10 +225,26 @@
           <div class="feature-icon" style="background: #EFF6FF;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
               <path d="M17 20H22V18C22 16.3431 20.6569 15 19 15C18.0444 15 17.1931 15.4468 16.6438 16.1429M17 20H7M17 20V18C17 17.3438 16.8736 16.717 16.6438 16.1429M7 20H2V18C2 16.3431 3.34315 15 5 15C5.95561 15 6.80686 15.4468 7.35625 16.1429M7 20V18C7 17.3438 7.12642 16.717 7.35625 16.1429M7.35625 16.1429C8.0935 14.301 9.89482 13 12 13C14.1052 13 15.9065 14.301 16.6438 16.1429M15 7C15 8.65685 13.6569 10 12 10C10.3431 10 9 8.65685 9 7C9 5.34315 10.3431 4 12 4C13.6569 4 15 5.34315 15 7ZM21 10C21 11.1046 20.1046 12 19 12C17.8954 12 17 11.1046 17 10C17 8.89543 17.8954 8 19 8C20.1046 8 21 8.89543 21 10ZM7 10C7 11.1046 6.10457 12 5 12C3.89543 12 3 11.1046 3 10C3 8.89543 3.89543 8 5 8C6.10457 8 7 8.89543 7 10Z" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
+=======
+            Create, schedule, and manage volunteer events with automated notifications and
+            reminders.
+          </p>
+        </div>
+        <div class="feature-card fade-in-up">
+          <div class="feature-icon" style="background: #eff6ff">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M17 20H22V18C22 16.3431 20.6569 15 19 15C18.0444 15 17.1931 15.4468 16.6438 16.1429M17 20H7M17 20V18C17 17.3438 16.8736 16.717 16.6438 16.1429M7 20H2V18C2 16.3431 3.34315 15 5 15C5.95561 15 6.80686 15.4468 7.35625 16.1429M7 20V18C7 17.3438 7.12642 16.717 7.35625 16.1429M7.35625 16.1429C8.0935 14.301 9.89482 13 12 13C14.1052 13 15.9065 14.301 16.6438 16.1429M15 7C15 8.65685 13.6569 10 12 10C10.3431 10 9 8.65685 9 7C9 5.34315 10.3431 4 12 4C13.6569 4 15 5.34315 15 7ZM21 10C21 11.1046 20.1046 12 19 12C17.8954 12 17 11.1046 17 10C17 8.89543 17.8954 8 19 8C20.1046 8 21 8.89543 21 10ZM7 10C7 11.1046 6.10457 12 5 12C3.89543 12 3 11.1046 3 10C3 8.89543 3.89543 8 5 8C6.10457 8 7 8.89543 7 10Z"
+                stroke="#2563EB"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+>>>>>>> origin/main
             </svg>
           </div>
           <h3 class="feature-title">Community Building</h3>
           <p class="feature-description">
+<<<<<<< HEAD
             Connect volunteers with opportunities and build a strong community
             of engaged members.
           </p>
@@ -150,10 +253,26 @@
           <div class="feature-icon" style="background: #EFF6FF;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
               <path d="M9 19V6L21 12L9 19Z" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+=======
+            Connect volunteers with opportunities and build a strong community of engaged members.
+          </p>
+        </div>
+        <div class="feature-card fade-in-up">
+          <div class="feature-icon" style="background: #eff6ff">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M9 19V6L21 12L9 19Z"
+                stroke="#2563EB"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+>>>>>>> origin/main
             </svg>
           </div>
           <h3 class="feature-title">Real-time Updates</h3>
           <p class="feature-description">
+<<<<<<< HEAD
             Get instant notifications about new opportunities, event changes,
             and important updates.
           </p>
@@ -162,12 +281,30 @@
           <div class="feature-icon" style="background: #EFF6FF;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
               <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#2563EB" stroke-width="2" stroke-linecap="round"/>
+=======
+            Get instant notifications about new opportunities, event changes, and important updates.
+          </p>
+        </div>
+        <div class="feature-card fade-in-up">
+          <div class="feature-icon" style="background: #eff6ff">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                stroke="#2563EB"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+>>>>>>> origin/main
             </svg>
           </div>
           <h3 class="feature-title">Certification & Recognition</h3>
           <p class="feature-description">
+<<<<<<< HEAD
             Earn certificates and recognition for your volunteer work and
             achievements.
+=======
+            Earn certificates and recognition for your volunteer work and achievements.
+>>>>>>> origin/main
           </p>
         </div>
       </div>
@@ -181,6 +318,7 @@
         <div class="about-text fade-in-left">
           <h2 class="section-title">About NLCOM</h2>
           <p class="about-description">
+<<<<<<< HEAD
             New Life Community Care Foundation International, Inc. (NLCOM) was
             established to RESPOND to the immediate needs of a community after a
             disaster or calamity, REACH OUT to help in disaster preparedness and
@@ -192,6 +330,17 @@
             organizing activities from disaster preparedness trainings, relief
             goods distribution, mobile kitchen feeding operations, Psychological
             First Aid to kids and adults traumatized by a disaster, and
+=======
+            New Life Community Care Foundation International, Inc. (NLCOM) was established to
+            RESPOND to the immediate needs of a community after a disaster or calamity, REACH OUT to
+            help in disaster preparedness and community outreach programs, REBUILD lives of families
+            and communities as they recover after a crisis or disaster.
+          </p>
+          <p class="about-description">
+            NLCOM is the compassion arm of New Life and is committed to organizing activities from
+            disaster preparedness trainings, relief goods distribution, mobile kitchen feeding
+            operations, Psychological First Aid to kids and adults traumatized by a disaster, and
+>>>>>>> origin/main
             rebuilding of damaged houses.
           </p>
           <div class="about-features">
@@ -199,19 +348,27 @@
               <div class="check-icon">✓</div>
               <div>
                 <h4>Respond</h4>
+<<<<<<< HEAD
                 <p>
                   Immediate response to community needs after disasters and
                   calamities
                 </p>
+=======
+                <p>Immediate response to community needs after disasters and calamities</p>
+>>>>>>> origin/main
               </div>
             </div>
             <div class="about-feature-item">
               <div class="check-icon">✓</div>
               <div>
                 <h4>Reach Out</h4>
+<<<<<<< HEAD
                 <p>
                   Disaster preparedness training and community outreach programs
                 </p>
+=======
+                <p>Disaster preparedness training and community outreach programs</p>
+>>>>>>> origin/main
               </div>
             </div>
             <div class="about-feature-item">
@@ -229,8 +386,13 @@
               <h3>Our Vision</h3>
             </div>
             <p>
+<<<<<<< HEAD
               Demonstrating love and compassion by responding to needs,
               reaching out, and rebuilding lives.
+=======
+              Demonstrating love and compassion by responding to needs, reaching out, and rebuilding
+              lives.
+>>>>>>> origin/main
             </p>
           </div>
           <div class="about-card">
@@ -238,10 +400,16 @@
               <h3>Our Mission</h3>
             </div>
             <p>
+<<<<<<< HEAD
               Provide natural and spiritual needs of disaster-stricken
               communities by partnering with local churches, non-government
               organizations, private institutions, individuals and different
               government agencies.
+=======
+              Provide natural and spiritual needs of disaster-stricken communities by partnering
+              with local churches, non-government organizations, private institutions, individuals
+              and different government agencies.
+>>>>>>> origin/main
             </p>
           </div>
         </div>
@@ -255,8 +423,13 @@
       <div class="cta-content fade-in-up">
         <h2 class="cta-title">Ready to Make a Difference?</h2>
         <p class="cta-description">
+<<<<<<< HEAD
           Join thousands of volunteers making an impact in their communities. 
           Sign up today and start your journey with ServeTrack.
+=======
+          Join thousands of volunteers making an impact in their communities. Sign up today and
+          start your journey with ServeTrack.
+>>>>>>> origin/main
         </p>
       </div>
     </div>
@@ -268,12 +441,21 @@
       <div class="footer-content">
         <div class="footer-column">
           <div class="footer-logo">
+<<<<<<< HEAD
             <img src="/assets/nlcom.png" alt="NLCOM Logo" class="logo-image">
             <span class="logo-text">ServeTrack</span>
           </div>
           <p class="footer-description">
             Empowering volunteers and strengthening communities through
             effective volunteer management.
+=======
+            <img src="/assets/nlcom.png" alt="NLCOM Logo" class="logo-image" />
+            <span class="logo-text">ServeTrack</span>
+          </div>
+          <p class="footer-description">
+            Empowering volunteers and strengthening communities through effective volunteer
+            management.
+>>>>>>> origin/main
           </p>
         </div>
         <div class="footer-column">
@@ -309,4 +491,24 @@
       </div>
     </div>
   </footer>
+<<<<<<< HEAD
+=======
+
+  <!-- Popup Modal -->
+  @if (showPopup()) {
+    <div class="popup-overlay" (click)="closePopup()">
+      <div class="popup-modal" (click)="$event.stopPropagation()">
+        <button class="popup-close" (click)="closePopup()">×</button>
+        <div class="popup-content">
+          <h3 class="popup-title">Already an NLCOM volunteer?</h3>
+          <p class="popup-message">Sign up here to continue your journey with us!</p>
+          <div class="popup-actions">
+            <button class="btn btn-primary" routerLink="/signup">Sign Up</button>
+            <button class="btn btn-outline" routerLink="/signup-form">I'm a new member</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+>>>>>>> origin/main
 </div>

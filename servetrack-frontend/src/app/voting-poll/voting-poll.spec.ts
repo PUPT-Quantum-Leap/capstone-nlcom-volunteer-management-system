@@ -8,9 +8,14 @@ describe('VotingPoll', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+<<<<<<< HEAD
       imports: [VotingPoll]
     })
     .compileComponents();
+=======
+      imports: [VotingPoll],
+    }).compileComponents();
+>>>>>>> origin/main
 
     fixture = TestBed.createComponent(VotingPoll);
     component = fixture.componentInstance;

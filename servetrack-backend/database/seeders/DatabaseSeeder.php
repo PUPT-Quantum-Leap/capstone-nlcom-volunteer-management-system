@@ -21,5 +21,13 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+<<<<<<< HEAD
+=======
+
+        $this->call([
+            PositionSeeder::class,
+            VolunteerSeeder::class,
+        ]);
+>>>>>>> origin/main
     }
 }

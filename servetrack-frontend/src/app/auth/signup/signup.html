@@ -2,7 +2,18 @@
   <div class="auth-card">
     <div class="auth-header">
       <div class="logo">
+<<<<<<< HEAD
         <img src="/assets/nlcom.png" alt="NLCOM Logo" class="logo-image">
+=======
+        <img
+          ngSrc="/assets/nlcom.png"
+          width="60"
+          height="60"
+          alt="NLCOM Logo"
+          class="logo-image"
+          priority
+        />
+>>>>>>> origin/main
         <span class="logo-text">ServeTrack</span>
       </div>
       <h1 class="auth-title">Join ServeTrack</h1>
@@ -17,6 +28,7 @@
 
     <form class="auth-form" [formGroup]="signupForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
+<<<<<<< HEAD
         <label for="name" class="form-label">Full Name</label>
         <input
           type="text"
@@ -31,6 +43,8 @@
       </div>
 
       <div class="form-group">
+=======
+>>>>>>> origin/main
         <label for="email" class="form-label">Email Address</label>
         <input
           type="email"
@@ -38,7 +52,13 @@
           formControlName="email"
           class="form-input"
           [class.error]="emailControl?.invalid && emailControl?.touched"
+<<<<<<< HEAD
           placeholder="Enter your email">
+=======
+          [disabled]="isLoading()"
+          placeholder="Enter your email"
+        />
+>>>>>>> origin/main
         @if (emailControl?.invalid && emailControl?.touched) {
           <span class="error-text">{{ getErrorMessage('email') }}</span>
         }
@@ -46,6 +66,7 @@
 
       <div class="form-group">
         <label for="password" class="form-label">Password</label>
+<<<<<<< HEAD
         <input
           type="password"
           id="password"
@@ -54,6 +75,68 @@
           [class.error]="passwordControl?.invalid && passwordControl?.touched"
           placeholder="Create a password"
           (focus)="showPasswordRequirements.set(true)">
+=======
+        <div class="password-input-wrapper">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            id="password"
+            formControlName="password"
+            class="form-input password-input"
+            [class.error]="
+              passwordControl?.invalid && passwordControl?.touched
+            "
+            [disabled]="isLoading()"
+            placeholder="Create a password"
+            (focus)="showPasswordRequirements.set(true)"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="
+              showPassword() ? 'Hide password' : 'Show password'
+            "
+            [disabled]="isLoading()"
+          >
+            @if (showPassword()) {
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="eye-icon"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+                />
+              </svg>
+            } @else {
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="eye-icon"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+            }
+          </button>
+        </div>
+>>>>>>> origin/main
         @if (passwordControl?.invalid && passwordControl?.touched) {
           <span class="error-text">{{ getErrorMessage('password') }}</span>
         }
@@ -73,6 +156,7 @@
       </div>
 
       <div class="form-group">
+<<<<<<< HEAD
         <label for="confirmPassword" class="form-label">Confirm Password</label>
         <input
           type="password"
@@ -83,11 +167,92 @@
           placeholder="Confirm your password">
         @if (confirmPasswordControl?.invalid && confirmPasswordControl?.touched) {
           <span class="error-text">{{ getErrorMessage('confirmPassword') }}</span>
+=======
+        <label for="confirmPassword" class="form-label">
+          Confirm Password
+        </label>
+        <div class="password-input-wrapper">
+          <input
+            [type]="showConfirmPassword() ? 'text' : 'password'"
+            id="confirmPassword"
+            formControlName="confirmPassword"
+            class="form-input password-input"
+            [class.error]="
+              confirmPasswordControl?.invalid &&
+              confirmPasswordControl?.touched
+            "
+            [disabled]="isLoading()"
+            placeholder="Confirm your password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="toggleConfirmPasswordVisibility()"
+            [attr.aria-label]="
+              showConfirmPassword() ? 'Hide password' : 'Show password'
+            "
+            [disabled]="isLoading()"
+          >
+            @if (showConfirmPassword()) {
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="eye-icon"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338
+                  7.244 19.5 12 19.5c.993 0 1.953-.138
+                  2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5
+                  c4.756 0 8.773 3.162 10.065 7.498a10.523
+                  10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228
+                  3.228l3.65 3.65m7.894 7.894L21 21m-3.228
+                  -3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243
+                  m4.242 4.242L9.88 9.88"
+                />
+              </svg>
+            } @else {
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="eye-icon"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M2.036 12.322a1.012 1.012 0 010-.639
+                  C3.423 7.51 7.36 4.5 12 4.5c4.638 0
+                  8.573 3.007 9.963 7.178.07.207.07.431 0
+                  .639C20.577 16.49 16.64 19.5 12 19.5
+                  c-4.638 0-8.573-3.007-9.963-7.178z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+            }
+          </button>
+        </div>
+        @if (confirmPasswordControl?.invalid && confirmPasswordControl?.touched) {
+          <span class="error-text">
+            {{ getErrorMessage('confirmPassword') }}
+          </span>
+>>>>>>> origin/main
         }
       </div>
 
       <div class="form-options">
         <label class="checkbox-container">
+<<<<<<< HEAD
           <input type="checkbox" formControlName="agreeToTerms" class="checkbox-input">
           <span class="checkmark"></span>
           I agree to the <a routerLink="/terms" class="link">Terms of Service</a> and 
@@ -95,13 +260,46 @@
         </label>
         @if (agreeToTermsControl?.invalid && agreeToTermsControl?.touched) {
           <span class="error-text">{{ getErrorMessage('agreeToTerms') }}</span>
+=======
+          <input
+            type="checkbox"
+            formControlName="agreeToTerms"
+            class="checkbox-input"
+            [disabled]="isLoading()"
+          />
+          <span class="checkmark"></span>
+          I agree to the
+          @if (!isLoading()) {
+            <a routerLink="/terms-of-service" class="link">
+              Terms of Service
+            </a>
+            and
+            <a routerLink="/privacy-policy" class="link">
+              Privacy Policy
+            </a>
+          } @else {
+            <span class="link disabled">Terms of Service</span>
+            and
+            <span class="link disabled">Privacy Policy</span>
+          }
+        </label>
+        @if (agreeToTermsControl?.invalid && agreeToTermsControl?.touched) {
+          <span class="error-text">
+            {{ getErrorMessage('agreeToTerms') }}
+          </span>
+>>>>>>> origin/main
         }
       </div>
 
       <button
         type="submit"
         class="btn btn-primary btn-full"
+<<<<<<< HEAD
         [disabled]="isLoading()">
+=======
+        [disabled]="isLoading()"
+      >
+>>>>>>> origin/main
         @if (isLoading()) {
           <span class="loading-spinner"></span>
         }
@@ -112,10 +310,53 @@
     <div class="auth-footer">
       <p class="auth-footer-text">
         Already have an account?
+<<<<<<< HEAD
         <a routerLink="/login" class="auth-link">
           Sign in
         </a>
+=======
+        @if (!isLoading()) {
+          <a routerLink="/login" class="auth-link">Sign in</a>
+        } @else {
+          <span class="auth-link disabled">Sign in</span>
+        }
+>>>>>>> origin/main
       </p>
     </div>
   </div>
 </div>
+<<<<<<< HEAD
+=======
+
+<!-- Success Modal -->
+@if (showSuccessModal()) {
+  <div class="popup-overlay" (click)="closeSuccessModal()">
+    <div class="popup-modal" (click)="$event.stopPropagation()">
+      <button class="popup-close" (click)="closeSuccessModal()">×</button>
+      <div class="popup-content">
+        <div class="success-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none"
+               viewBox="0 0 24 24" stroke-width="2"
+               stroke="currentColor" class="success-check">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 class="popup-title">Registration Successful! 🎉</h3>
+        <p class="popup-message">
+          Your account has been created successfully. 
+        </p>
+        <p class="popup-redirect">Redirecting to login in 5 seconds...</p>
+        <div class="popup-actions">
+          <button class="btn btn-primary" (click)="navigateToLoginNow()">
+            Go to Login Now
+          </button>
+          <button class="btn btn-outline" (click)="closeSuccessModal()">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+>>>>>>> origin/main

@@ -19,4 +19,8 @@ describe('App', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance['title']()).toBe('servetrack-frontend');
   });
+<<<<<<< HEAD
 });
+=======
+});
+>>>>>>> origin/main

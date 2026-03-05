@@ -2,7 +2,15 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
+<<<<<<< HEAD
     "packageManager": "npm"
+=======
+    "packageManager": "npm",
+    "analytics": false,
+    "schematicCollections": [
+      "angular-eslint"
+    ]
+>>>>>>> origin/main
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -43,6 +51,7 @@
               "budgets": [
                 {
                   "type": "initial",
+<<<<<<< HEAD
                   "maximumWarning": "500kB",
                   "maximumError": "1MB"
                 },
@@ -52,6 +61,25 @@
                   "maximumError": "12kB"
                 }
               ],
+=======
+                  "maximumWarning": "650kB",
+                  "maximumError": "2MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "24kB",
+                  "maximumError": "50kB"
+                }
+              ],
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": true
+              },
+>>>>>>> origin/main
               "outputHashing": "all"
             },
             "development": {
@@ -76,6 +104,18 @@
         },
         "test": {
           "builder": "@angular/build:unit-test"
+<<<<<<< HEAD
+=======
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": [
+              "src/**/*.ts",
+              "src/**/*.html"
+            ]
+          }
+>>>>>>> origin/main
         }
       }
     }

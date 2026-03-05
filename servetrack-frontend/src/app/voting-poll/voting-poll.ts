@@ -20,11 +20,19 @@ export class VotingPoll {
   pollDate = 'Sept 27';
   cutOffDay = 'THURSDAY';
   cutOffTime = '12NN';
+<<<<<<< HEAD
   
   pollOptions: PollOption[] = [
     { id: 1, timeSlot: '4:30am - 2:00pm', votes: 10, capacity: 15, selected: false },
     { id: 2, timeSlot: '4:30am - 7:00pm', votes: 6, capacity: 10, selected: false },
     { id: 3, timeSlot: '1:00pm - 7:00pm', votes: 3, capacity: 3, selected: false }
+=======
+
+  pollOptions: PollOption[] = [
+    { id: 1, timeSlot: '4:30am - 2:00pm', votes: 10, capacity: 15, selected: false },
+    { id: 2, timeSlot: '4:30am - 7:00pm', votes: 6, capacity: 10, selected: false },
+    { id: 3, timeSlot: '1:00pm - 7:00pm', votes: 3, capacity: 3, selected: false },
+>>>>>>> origin/main
   ];
 
   get totalVotes(): number {
@@ -44,25 +52,44 @@ export class VotingPoll {
   }
 
   selectOption(optionId: number): void {
+<<<<<<< HEAD
     const option = this.pollOptions.find(o => o.id === optionId);
     if (option && !this.isFull(option)) {
       this.pollOptions.forEach(opt => {
+=======
+    const option = this.pollOptions.find((o) => o.id === optionId);
+    if (option && !this.isFull(option)) {
+      this.pollOptions.forEach((opt) => {
+>>>>>>> origin/main
         opt.selected = opt.id === optionId;
       });
     }
   }
 
   submitVote(): void {
+<<<<<<< HEAD
     const selectedOption = this.pollOptions.find(option => option.selected);
     if (selectedOption && !this.isFull(selectedOption)) {
       selectedOption.votes++;
       selectedOption.selected = false;
       console.log('Vote submitted for:', selectedOption.timeSlot);
+=======
+    const selectedOption = this.pollOptions.find((option) => option.selected);
+    if (selectedOption && !this.isFull(selectedOption)) {
+      selectedOption.votes++;
+      selectedOption.selected = false;
+>>>>>>> origin/main
     }
   }
 
   get hasSelectedOption(): boolean {
+<<<<<<< HEAD
     return this.pollOptions.some(option => option.selected);
   }
 }
 
+=======
+    return this.pollOptions.some((option) => option.selected);
+  }
+}
+>>>>>>> origin/main

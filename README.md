@@ -11,6 +11,10 @@ A comprehensive volunteer management system designed for NLCOM (National League 
 - **[Quick Start Guide (GEMINI.md)](./GEMINI.md)** - Fast setup instructions
 - **[Development Guidelines (AGENTS.md)](./AGENTS.md)** - Code standards and conventions
 - **[CI/CD Documentation](./docs/CI_README.md)** - GitHub Actions workflow details
+<<<<<<< HEAD
+=======
+- **[Laravel + XAMPP Setup](./docs/LARAVEL_XAMPP_SETUP.md)** - Database connection guide
+>>>>>>> origin/main
 
 ## 🏗️ Architecture
 
