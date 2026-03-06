@@ -1,0 +1,504 @@
+// Google Fonts Import
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@400;500;600;700&display=swap');
+
+// Design Tokens (Matching Landing Page)
+$primary: #2563eb;
+$primary-dark: #1e40af;
+$primary-light: #3b82f6;
+$primary-lighter: #dbeafe;
+$primary-lightest: #eff6ff;
+
+$text-dark: #1f2937;
+$text-muted: #6b7280;
+$border: #e5e7eb;
+$white: #ffffff;
+
+// Fonts
+$font-stack-heading: 'Poppins', sans-serif;
+$font-stack-body: 'Inter', sans-serif;
+
+$spacing-unit: 1rem;
+$border-radius-card: 1rem;
+
+.legal-page {
+  background-color: $white;
+  min-height: 100vh;
+  padding: 4rem 1rem;
+  font-family: $font-stack-body;
+  color: $text-dark;
+  line-height: 1.6;
+}
+
+.legal-card {
+  background-color: $white;
+  max-width: 900px;
+  margin: 0 auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid $border;
+  border-radius: $border-radius-card;
+  overflow: hidden;
+}
+
+// Header
+.legal-header {
+  background: linear-gradient(135deg, $primary-lightest 0%, $white 100%);
+  padding: 4rem 3rem 2rem;
+  border-bottom: 1px solid $border;
+  text-align: center;
+
+  .header-content {
+    max-width: 100%;
+  }
+
+  .page-title {
+    font-family: $font-stack-heading;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: $primary;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+
+  .last-updated {
+    font-size: 0.875rem;
+    color: $text-muted;
+    font-style: italic;
+    margin-top: 0.5rem;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 2rem;
+  }
+}
+
+// Body Content
+.legal-body {
+  padding: 3rem 4rem;
+
+  @media (max-width: 768px) {
+    padding: 2rem;
+  }
+
+  p {
+    margin-bottom: 1.5rem;
+    color: $text-muted;
+    font-size: 1rem;
+    text-align: left;
+  }
+}
+
+// Sections
+.content-section {
+  margin-bottom: 3rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.section-title {
+  font-family: $font-stack-heading;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: $text-dark;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid $primary-lighter;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+
+  .section-number {
+    color: $primary;
+    font-weight: 700;
+  }
+}
+
+// Feature Grid (Information We Collect)
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  border: none;
+  background: transparent;
+  margin-bottom: 2rem;
+
+  .feature-item {
+    display: flex;
+    padding: 1.5rem;
+    border: 1px solid $border;
+    border-radius: 1rem;
+    background-color: $white;
+    align-items: flex-start;
+    transition: all 0.3s;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(37, 99, 235, 0.1);
+      border-color: $primary-lighter;
+    }
+
+    &:last-child {
+      border: 1px solid $border; // reset from previous list style
+    }
+
+    .icon {
+      flex: 0 0 3rem;
+      height: 3rem;
+      width: 3rem;
+      font-size: 1.5rem;
+      margin-right: 1rem;
+      color: $primary;
+      background: $primary-lightest;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .item-title {
+      display: block;
+      font-family: $font-stack-heading;
+      font-weight: 600;
+      color: $text-dark;
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .text {
+      color: $text-muted;
+      font-size: 0.95rem;
+      margin: 0;
+      text-align: left;
+    }
+  }
+}
+
+// Detailed List / Content Box
+.content-box {
+  background-color: $white;
+  border: 1px solid $border;
+  padding: 2rem;
+  border-radius: 1rem;
+  margin-bottom: 2rem;
+}
+
+.responsibility-list,
+.detailed-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    position: relative;
+    padding-left: 2rem;
+    margin-bottom: 1rem;
+    color: $text-muted;
+
+    &::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1.5rem;
+      height: 1.5rem;
+      background: $primary;
+      color: $white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
+    strong {
+      color: $text-dark;
+      font-weight: 600;
+      margin-right: 0.5rem;
+      display: block; // Stack for better reading
+      margin-bottom: 0.25rem;
+    }
+  }
+}
+
+// Intro Box
+.intro-box {
+  background-color: $white;
+  border: 1px solid $border;
+  padding: 2rem;
+  border-radius: 1rem;
+
+  p {
+    margin-bottom: 1.5rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .intro-emphasis {
+    font-weight: 500;
+    color: $text-dark;
+    border-left: 4px solid $primary;
+    padding-left: 1rem;
+  }
+}
+
+// Security Box
+.security-box {
+  background-color: $primary-lightest;
+  border: none;
+  border-radius: 1rem;
+  padding: 2rem;
+
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+
+    .tag {
+      background-color: $white;
+      border: 1px solid $primary-lighter;
+      color: $primary;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      border-radius: 2rem;
+      font-weight: 500;
+      transition: all 0.2s;
+
+      &:hover {
+        background-color: $primary;
+        color: $white;
+      }
+    }
+  }
+}
+
+// Rights Grid
+.rights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  border: none;
+  background: transparent;
+
+  .rights-item {
+    display: flex;
+    flex-direction: column; // Stack details
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 1.5rem;
+    border: 1px solid $border;
+    background-color: $white;
+    border-radius: 0.75rem;
+    transition: all 0.3s;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      border-color: $primary-lighter;
+    }
+
+    &:last-child {
+      border-bottom: 1px solid $border; // reset inherited
+    }
+
+    .rights-label {
+      font-weight: 600;
+      color: $text-dark;
+      font-family: $font-stack-heading;
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .rights-desc {
+      color: $text-muted;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.footer-note {
+  font-size: 0.875rem;
+  color: $text-muted;
+  text-align: center;
+  margin-top: 2rem;
+  font-style: italic;
+}
+
+// Warning / Yellow
+.warning-box {
+  background-color: #fffbeb;
+  border: 1px solid #fcd34d;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  color: #92400e;
+
+  p {
+    margin: 0;
+    color: #92400e;
+  }
+}
+
+// Subsections (Legal Grid)
+.legal-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.subsection-title {
+  font-family: $font-stack-heading;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: $text-dark;
+  margin-bottom: 0.75rem;
+}
+
+.subsection-text {
+  font-size: 0.95rem;
+  color: $text-muted;
+}
+
+.text-link {
+  color: $primary;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+
+  &:hover {
+    color: $primary-dark;
+    text-decoration: underline;
+  }
+}
+
+// Contact Section
+.contact-section {
+  margin-top: 4rem;
+  padding-top: 3rem;
+  border-top: 1px solid $border;
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid $border;
+
+  .contact-intro {
+    margin-bottom: 1.5rem;
+    color: $text-muted;
+  }
+
+  .contact-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin-top: 1.5rem;
+  }
+
+  .contact-item {
+    flex: 1;
+    min-width: 250px;
+    background: $white;
+    padding: 2rem;
+    border: 1px solid $border;
+    border-radius: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    transition: transform 0.3s;
+
+    &:hover {
+      transform: translateY(-4px);
+      border-color: $primary-lighter;
+    }
+
+    .contact-name {
+      font-family: $font-stack-heading;
+      font-weight: 600;
+      color: $text-dark;
+      margin-bottom: 0.25rem;
+      display: block;
+    }
+
+    .contact-role {
+      font-size: 0.875rem;
+      color: $primary;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .contact-text {
+      color: $text-muted;
+    }
+
+    .icon-circle {
+      display: flex;
+      width: 3rem;
+      height: 3rem;
+      background: $primary-lightest;
+      color: $primary;
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+  }
+}
+
+// Footer
+.legal-footer {
+  background-color: $white;
+  border-top: 1px solid $border;
+  padding: 2rem 4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    padding: 2rem 2rem;
+  }
+}
+
+// Button Styles (Matching Landing Page)
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  text-decoration: none;
+
+  &.btn-primary {
+    background: $primary;
+    color: $white;
+
+    &:hover {
+      background: $primary-dark;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+  }
+
+  &.btn-outline {
+    background: transparent;
+    border: 2px solid $primary;
+    color: $primary;
+
+    &:hover {
+      background: $primary-lightest;
+    }
+  }
+}

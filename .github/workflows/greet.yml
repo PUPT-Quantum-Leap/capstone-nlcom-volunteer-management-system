@@ -18,7 +18,7 @@ jobs:
     steps:
       # Post a friendly comment
       - name: Post welcome comment
-        uses: actions/github-script@v6 #version 6 of the pre-built action github-script
+        uses: actions/github-script@v8 #version 6 of the pre-built action github-script
         with:
           script: |
             github.rest.issues.createComment({

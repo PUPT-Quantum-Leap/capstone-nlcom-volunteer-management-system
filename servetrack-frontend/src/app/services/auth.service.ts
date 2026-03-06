@@ -1,26 +1,93 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, catchError, tap, of, map, switchMap } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface LoginCredentials {
   email: string;
   password: string;
 }
 
-export interface SignupData {
+export interface RegisterData {
+  email: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export interface VolunteerSignupData {
+  firstName: string;
+  lastName: string;
+  facebookName?: string;
+  email: string;
+  mobileNumber: string;
+  birthdate: string;
+  completeAddress: string;
+  educationalAttainment: string;
+  lastMedicalExam: string;
+  trainingExperience?: string;
+  skillsHobbies?: string;
+  classesTraining?: string;
+  volunteerPreference: string;
+  otherPreference?: string;
+  availability: string;
+  otherAvailability?: string;
+  partOfLifegroup: string;
+  lifegroupLeaderName?: string;
+  leadingLifegroup: string;
+  emergencyContactName: string;
+  emergencyContactNumber: string;
+  emergencyContactRelationship: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface AdminSignupData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  contactNumber?: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface CoordinatorSignupData {
   name: string;
   email: string;
   password: string;
   confirmPassword: string;
 }
 
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
 export interface AuthResponse {
   success: boolean;
   message?: string;
-  token?: string;
   user?: {
     id: string;
-    name: string;
     email: string;
+    name?: string;
+    role?: 'volunteer' | 'admin' | 'coordinator';
+    user_type?: 'volunteer' | 'admin' | 'coordinator';
+    volunteer_profile?: {
+      volunteer_id: number;
+      first_name: string;
+      last_name: string;
+    };
+    admin_profile?: {
+      id: number;
+      first_name: string;
+      last_name: string;
+      contact_number?: string;
+    };
+    coordinator_profile?: {
+      id: number;
+      name: string;
+      email: string;
+    };
   };
 }
 
@@ -29,6 +96,7 @@ export interface AuthResponse {
 })
 export class AuthService {
   private router = inject(Router);
+  private http = inject(HttpClient);
 
   // State signals
   isAuthenticated = signal(false);
@@ -37,177 +105,533 @@ export class AuthService {
   error = signal<string | null>(null);
 
   /**
-   * Login user with credentials
+   * Fetch CSRF cookie before making stateful requests
    */
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+  public ensureCsrf$(): Observable<any> {
+    const backendUrl = environment.apiUrl.replace('/api', '');
+    return this.http.get(`${backendUrl}/sanctum/csrf-cookie`, { withCredentials: true });
+  }
+
+  /**
+   * Login user with credentials.
+   */
+  login(credentials: LoginCredentials): Promise<AuthResponse> {
+    return new Promise((resolve) => {
+      this.login$(credentials).subscribe({
+        next: (response) => resolve(response),
+        error: () => resolve({ success: false, message: 'Login failed' }),
+      });
+    });
+  }
+
+  login$(credentials: LoginCredentials): Observable<AuthResponse> {
+    return this.loginWithEndpoint$(credentials, '/login');
+  }
+
+  /**
+   * Login using the admin-only endpoint.
+   */
+  adminLogin$(credentials: LoginCredentials): Observable<AuthResponse> {
+    return this.loginWithEndpoint$(credentials, '/admin/login');
+  }
+
+  private loginWithEndpoint$(
+    credentials: LoginCredentials,
+    endpoint: '/login' | '/admin/login',
+  ): Observable<AuthResponse> {
     this.isLoading.set(true);
     this.error.set(null);
 
-    try {
-      // Validate email format
-      if (!this.isValidEmail(credentials.email)) {
-        throw new Error('Invalid email format');
-      }
+    if (!this.isValidEmail(credentials.email)) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Invalid email format' } as AuthResponse);
+    }
 
-      // TODO: Replace with actual API call
-      // Example: const response = await fetch('/api/auth/login', { ... });
-      
-      // Simulate API call
-      await this.delay(2000);
-
-      // Simulate successful login
-      const response: AuthResponse = {
-        success: true,
-        token: 'mock-jwt-token',
-        user: {
-          id: '1',
-          name: 'John Doe',
-          email: credentials.email,
-        },
-      };
-
-      if (response.success && response.user) {
-        this.isAuthenticated.set(true);
-        this.currentUser.set(response.user);
-        
-        // Store token securely (consider using httpOnly cookies in production)
-        if (response.token) {
-          sessionStorage.setItem('auth_token', response.token);
+    return this.requestLogin$(credentials, endpoint).pipe(
+      switchMap((response) => {
+        if (response.user) {
+          return of({ success: true, user: response.user } as AuthResponse);
         }
 
         console.log('Login successful');
       }
-
-      return response;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      this.error.set(errorMessage);
-      
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    } finally {
-      this.isLoading.set(false);
+      return backendMessage || 'Too many login attempts. Please try again later.';
     }
+
+    if (err.status === 401 || err.status === 422) {
+      if (backendMessage === 'ERROR') {
+        return backendMessage;
+      }
+      return 'Invalid email or password.';
+    }
+
+    if (err.status >= 500) {
+      return 'Server error while logging in. Please try again shortly.';
+    }
+
+    return backendMessage || 'Login failed. Please try again.';
+  }
+
+  private normalizeAdminLoginOnlyMessage(message: string): string {
+    const normalizedMessage = message.toLowerCase();
+    if (normalizedMessage.includes('admin accounts must') && normalizedMessage.includes('/admin-login')) {
+      return 'ERROR';
+    }
+
+    return message;
   }
 
   /**
-   * Register new user
+   * Observable version of register for RxJS compatibility.
    */
-  async signup(data: SignupData): Promise<AuthResponse> {
+  register$(data: RegisterData): Observable<AuthResponse> {
     this.isLoading.set(true);
     this.error.set(null);
 
-    try {
-      // Validate email format
-      if (!this.isValidEmail(data.email)) {
-        throw new Error('Invalid email format');
-      }
+    if (!this.isValidEmail(data.email)) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Invalid email format' } as AuthResponse);
+    }
 
-      // Validate name
-      const trimmedName = data.name.trim();
-      if (trimmedName.length < 2) {
-        throw new Error('Name must be at least 2 characters');
-      }
-
-      // TODO: Replace with actual API call
-      // Example: const response = await fetch('/api/auth/signup', { ... });
-      
-      // Simulate API call
-      await this.delay(2000);
-
-      // Simulate successful signup
-      const response: AuthResponse = {
-        success: true,
-        token: 'mock-jwt-token',
-        user: {
-          id: '1',
-          name: trimmedName,
-          email: data.email,
-        },
-      };
-
-      if (response.success && response.user) {
-        this.isAuthenticated.set(true);
-        this.currentUser.set(response.user);
-        
-        // Store token securely
-        if (response.token) {
-          sessionStorage.setItem('auth_token', response.token);
+    return this.ensureCsrf$().pipe(
+      switchMap(() => 
+        this.http.post<AuthResponse>(`${environment.apiUrl}/register`, data, { withCredentials: true })
+      ),
+      tap((response) => {
+        if (response.success && response.user) {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(response.user);
         }
+      }),
+      catchError((err: HttpErrorResponse) => {
+        const message = err.error?.message || 'Registration failed';
+        this.error.set(message);
+        return of({ success: false, message } as AuthResponse);
+      }),
+      tap(() => this.isLoading.set(false)),
+    );
+  }
 
         console.log('Signup successful');
       }
 
-      return response;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Signup failed';
-      this.error.set(errorMessage);
-      
-      return {
-        success: false,
-        message: errorMessage,
-      };
-    } finally {
+  /**
+   * Register new volunteer - Observable version.
+   */
+  volunteerSignup$(data: VolunteerSignupData): Observable<AuthResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    if (!this.isValidEmail(data.email)) {
       this.isLoading.set(false);
+      return of({ success: false, message: 'Invalid email format' } as AuthResponse);
     }
+
+    return this.ensureCsrf$().pipe(
+      switchMap(() => 
+        this.http.post<AuthResponse>(`${environment.apiUrl}/volunteer/register`, data, {
+          withCredentials: true,
+        })
+      ),
+      tap((response) => {
+        if (response.success && response.user) {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(response.user);
+        }
+      }),
+      catchError((err: HttpErrorResponse) => {
+        const message = err.error?.message || 'Registration failed';
+        this.error.set(message);
+        return of({ success: false, message } as AuthResponse);
+      }),
+      tap(() => this.isLoading.set(false)),
+    );
+  }
+
+  volunteerSignup(data: VolunteerSignupData): Promise<AuthResponse> {
+    return new Promise((resolve, reject) => {
+      this.volunteerSignup$(data).subscribe({
+        next: (response) => resolve(response),
+        error: (error) => reject(error),
+      });
+    });
   }
 
   /**
-   * Logout current user
+   * Logout current user - Observable version.
    */
-  async logout(): Promise<void> {
-    try {
-      // TODO: Call API to invalidate token on server
-      
-      // Clear local state
-      this.isAuthenticated.set(false);
-      this.currentUser.set(null);
-      sessionStorage.removeItem('auth_token');
-      
-      await this.router.navigate(['/login']);
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
+  logout$(): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/logout`, {}, { withCredentials: true }).pipe(
+      tap(() => this.clearSession()),
+      catchError(() => {
+        this.clearSession();
+        return of(undefined);
+      }),
+    );
+  }
+
+  logout(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.logout$().subscribe({
+        next: () => resolve(),
+        error: (error) => reject(error),
+      });
+    });
   }
 
   /**
-   * Check if user is authenticated (e.g., on app initialization)
+   * Check authentication status - Observable version.
    */
-  async checkAuthStatus(): Promise<boolean> {
-    const token = sessionStorage.getItem('auth_token');
-    
-    if (!token) {
-      return false;
-    }
+  checkAuthStatus$(): Observable<AuthResponse> {
+    return this.http
+      .get<AuthResponse | AuthResponse['user']>(`${environment.apiUrl}/user`, { withCredentials: true })
+      .pipe(
+        map((response) => {
+          // Supports both:
+          // 1) { success, user, message } envelope
+          // 2) raw user object from /api/user
+          const maybeEnvelope = response as AuthResponse;
+          if (maybeEnvelope && typeof maybeEnvelope === 'object' && 'user' in maybeEnvelope) {
+            return {
+              success: true,
+              message: maybeEnvelope.message,
+              user: maybeEnvelope.user ?? null,
+            } as AuthResponse;
+          }
 
-    try {
-      // TODO: Validate token with backend
-      // Example: const response = await fetch('/api/auth/me', { ... });
-      
-      // For now, assume token is valid
-      this.isAuthenticated.set(true);
-      return true;
-    } catch (error) {
-      this.isAuthenticated.set(false);
-      sessionStorage.removeItem('auth_token');
-      return false;
-    }
+          return {
+            success: true,
+            user: response as AuthResponse['user'],
+          } as AuthResponse;
+        }),
+        tap((response) => {
+          if (response.user) {
+            this.isAuthenticated.set(true);
+            this.currentUser.set(response.user);
+          }
+        }),
+        catchError(() => {
+          this.isAuthenticated.set(false);
+          this.currentUser.set(null);
+          return of({ success: false } as AuthResponse);
+        }),
+      );
+  }
+
+  checkAuthStatus(): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.checkAuthStatus$().subscribe((response) => {
+        resolve(response.success);
+      });
+    });
+  }
+
+  private clearSession(): void {
+    this.isAuthenticated.set(false);
+    this.currentUser.set(null);
+
+    // Handle navigation errors gracefully
+    this.router.navigate(['/login']).catch((error) => {
+      console.error('Navigation to login failed:', error);
+    });
   }
 
   /**
-   * Validate email format
+   * Validate login credentials
    */
+  validateLogin(credentials: LoginCredentials): ValidationError[] {
+    const errors: ValidationError[] = [];
+
+    if (!credentials.email?.trim()) {
+      errors.push({ field: 'email', message: 'Email is required' });
+    } else if (!this.isValidEmail(credentials.email)) {
+      errors.push({ field: 'email', message: 'Please enter a valid email address' });
+    }
+
+    if (!credentials.password?.trim()) {
+      errors.push({ field: 'password', message: 'Password is required' });
+    } else if (credentials.password.length < 8) {
+      errors.push({ field: 'password', message: 'Password must be at least 8 characters long' });
+    }
+
+    return errors;
+  }
+
+  /**
+   * Validate registration data
+   */
+  validateRegistration(data: RegisterData): ValidationError[] {
+    const errors: ValidationError[] = [];
+
+    // Email validation
+    if (!data.email?.trim()) {
+      errors.push({ field: 'email', message: 'Email is required' });
+    } else if (!this.isValidEmail(data.email)) {
+      errors.push({ field: 'email', message: 'Please enter a valid email address' });
+    }
+
+    // Password validation
+    if (!data.password?.trim()) {
+      errors.push({ field: 'password', message: 'Password is required' });
+    } else {
+      if (data.password.length < 8) {
+        errors.push({ field: 'password', message: 'Password must be at least 8 characters long' });
+      }
+      if (!this.hasValidPasswordFormat(data.password)) {
+        errors.push({
+          field: 'password',
+          message:
+            'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+        });
+      }
+    }
+
+    // Confirm password validation
+    if (!data.password_confirmation?.trim()) {
+      errors.push({
+        field: 'password_confirmation',
+        message: 'Please confirm your password',
+      });
+    } else if (data.password !== data.password_confirmation) {
+      errors.push({
+        field: 'password_confirmation',
+        message: 'Passwords do not match',
+      });
+    }
+
+    return errors;
+  }
+
+  /**
+   * Validate volunteer signup data
+   */
+  validateVolunteerSignup(data: VolunteerSignupData): ValidationError[] {
+    const errors = this.validateRegistration({
+      email: data.email,
+      password: data.password,
+      password_confirmation: data.confirmPassword,
+    });
+
+    // Name validation
+    if (!data.firstName?.trim()) {
+      errors.push({ field: 'firstName', message: 'First name is required' });
+    }
+
+    if (!data.lastName?.trim()) {
+      errors.push({ field: 'lastName', message: 'Last name is required' });
+    }
+
+    // Mobile number validation
+    if (!data.mobileNumber?.trim()) {
+      errors.push({ field: 'mobileNumber', message: 'Mobile number is required' });
+    } else if (!this.isValidPhoneNumber(data.mobileNumber)) {
+      errors.push({ field: 'mobileNumber', message: 'Please enter a valid mobile number' });
+    }
+
+    // Birthdate validation
+    if (!data.birthdate?.trim()) {
+      errors.push({ field: 'birthdate', message: 'Birthdate is required' });
+    } else if (!this.isValidBirthdate(data.birthdate)) {
+      errors.push({
+        field: 'birthdate',
+        message: 'You must be at least 18 years old to volunteer',
+      });
+    }
+
+    // Address validation
+    if (!data.completeAddress?.trim()) {
+      errors.push({ field: 'completeAddress', message: 'Complete address is required' });
+    }
+
+    // Educational attainment validation
+    if (!data.educationalAttainment?.trim()) {
+      errors.push({
+        field: 'educationalAttainment',
+        message: 'Educational attainment is required',
+      });
+    }
+
+    // Volunteer preference validation
+    if (!data.volunteerPreference?.trim()) {
+      errors.push({ field: 'volunteerPreference', message: 'Volunteer preference is required' });
+    }
+
+    return errors;
+  }
+
   private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email.trim());
   }
 
+  private hasValidPasswordFormat(password: string): boolean {
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    return hasUpperCase && hasLowerCase && hasNumbers;
+  }
+
+  private isValidPhoneNumber(phone: string): boolean {
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
+  }
+
+  private isValidBirthdate(birthdate: string): boolean {
+    const birthDate = new Date(birthdate);
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      return age - 1 >= 18;
+    }
+
+    return age >= 18;
+  }
+
   /**
-   * Delay helper for simulating async operations
+   * Register a new coordinator user
    */
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  coordinatorRegister(data: CoordinatorSignupData): Promise<AuthResponse> {
+    return new Promise((resolve) => {
+      this.coordinatorRegister$(data).subscribe({
+        next: (response) => resolve(response),
+        error: () => resolve({ success: false, message: 'Coordinator registration failed' }),
+      });
+    });
+  }
+
+  coordinatorRegister$(data: CoordinatorSignupData): Observable<AuthResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    if (!this.isValidEmail(data.email)) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Invalid email format' } as AuthResponse);
+    }
+
+    if (data.password !== data.confirmPassword) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Passwords do not match' } as AuthResponse);
+    }
+
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/coordinator/register`, data, { withCredentials: true })
+      .pipe(
+        map((response) => response),
+        tap((response) => {
+          this.isLoading.set(false);
+          if (response.success) {
+            // Auto-login after successful registration
+            this.login({ email: data.email, password: data.password });
+          }
+        }),
+        catchError((error: HttpErrorResponse) => {
+          this.isLoading.set(false);
+          const errorMessage = error.error?.message || 'Admin registration failed';
+          this.error.set(errorMessage);
+          return of({ success: false, message: errorMessage } as AuthResponse);
+        }),
+      );
+  }
+
+  /**
+   * Validate admin registration data
+   */
+  validateAdminRegistration(data: AdminSignupData): ValidationError[] {
+    const errors: ValidationError[] = [];
+
+    // First name validation
+    if (!data.firstName?.trim()) {
+      errors.push({ field: 'firstName', message: 'First name is required' });
+    } else if (data.firstName.length < 2) {
+      errors.push({ field: 'firstName', message: 'First name must be at least 2 characters long' });
+    }
+
+    // Last name validation
+    if (!data.lastName?.trim()) {
+      errors.push({ field: 'lastName', message: 'Last name is required' });
+    } else if (data.lastName.length < 2) {
+      errors.push({ field: 'lastName', message: 'Last name must be at least 2 characters long' });
+    }
+
+    // Email validation
+    if (!data.email?.trim()) {
+      errors.push({ field: 'email', message: 'Email is required' });
+    } else if (!this.isValidEmail(data.email)) {
+      errors.push({ field: 'email', message: 'Please enter a valid email address' });
+    }
+
+    // Contact number validation (optional)
+    if (data.contactNumber?.trim() && !this.isValidPhoneNumber(data.contactNumber)) {
+      errors.push({ field: 'contactNumber', message: 'Please enter a valid contact number' });
+    }
+
+    // Password validation
+    if (!data.password?.trim()) {
+      errors.push({ field: 'password', message: 'Password is required' });
+    } else if (data.password.length < 8) {
+      errors.push({ field: 'password', message: 'Password must be at least 8 characters long' });
+    } else if (!this.hasValidPasswordFormat(data.password)) {
+      errors.push({
+        field: 'password',
+        message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+      });
+    }
+
+    // Confirm password validation
+    if (!data.confirmPassword?.trim()) {
+      errors.push({ field: 'confirmPassword', message: 'Please confirm your password' });
+    } else if (data.password !== data.confirmPassword) {
+      errors.push({ field: 'confirmPassword', message: 'Passwords do not match' });
+    }
+
+    return errors;
+  }
+
+  /**
+   * Register a new admin user
+   */
+  adminRegister(data: AdminSignupData): Promise<AuthResponse> {
+    return new Promise((resolve) => {
+      this.adminRegister$(data).subscribe({
+        next: (response) => resolve(response),
+        error: () => resolve({ success: false, message: 'Admin registration failed' }),
+      });
+    });
+  }
+
+  adminRegister$(data: AdminSignupData): Observable<AuthResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    if (!this.isValidEmail(data.email)) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Invalid email format' } as AuthResponse);
+    }
+
+    if (data.password !== data.confirmPassword) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Passwords do not match' } as AuthResponse);
+    }
+
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/admin/register`, data, { withCredentials: true })
+      .pipe(
+        map((response) => response),
+        tap((response) => {
+          this.isLoading.set(false);
+          if (response.success) {
+            // Registration successful - user will login manually
+            // No auto-login - just show success message
+          }
+        }),
+        catchError((error: HttpErrorResponse) => {
+          this.isLoading.set(false);
+          const errorMessage = error.error?.message || 'Admin registration failed';
+          this.error.set(errorMessage);
+          return of({ success: false, message: errorMessage } as AuthResponse);
+        }),
+      );
   }
 }

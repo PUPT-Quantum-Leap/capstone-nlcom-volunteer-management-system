@@ -1,14 +1,14 @@
 // Color Variables
-$primary: #2563EB;
-$primary-dark: #1E40AF;
-$primary-light: #3B82F6;
-$primary-lighter: #DBEAFE;
-$primary-lightest: #EFF6FF;
+$primary: #2563eb;
+$primary-dark: #1e40af;
+$primary-light: #3b82f6;
+$primary-lighter: #dbeafe;
+$primary-lightest: #eff6ff;
 
-$text-dark: #1F2937;
-$text-muted: #6B7280;
-$border: #E5E7EB;
-$white: #FFFFFF;
+$text-dark: #1f2937;
+$text-muted: #6b7280;
+$border: #e5e7eb;
+$white: #ffffff;
 
 .voting-poll-container {
   max-width: 800px;
@@ -28,7 +28,7 @@ $white: #FFFFFF;
 // Poll Header
 .poll-header {
   margin-bottom: 1.5rem;
-  
+
   .poll-title {
     font-family: 'Poppins', sans-serif;
     font-size: 1.75rem;
@@ -41,15 +41,15 @@ $white: #FFFFFF;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    
+
     .cutoff-label {
       color: $text-muted;
       font-size: 0.875rem;
     }
 
     .cutoff-time {
-      background: #FEF3C7;
-      color: #92400E;
+      background: #fef3c7;
+      color: #92400e;
       padding: 0.25rem 0.75rem;
       border-radius: 0.375rem;
       font-weight: 600;
@@ -105,7 +105,7 @@ $white: #FFFFFF;
   &.disabled {
     cursor: not-allowed;
     opacity: 0.6;
-    background: #F9FAFB;
+    background: #f9fafb;
     border-color: $border;
 
     &:hover {
@@ -155,7 +155,7 @@ $white: #FFFFFF;
     }
 
     .full-badge {
-      background: #DC2626;
+      background: #dc2626;
       color: $white;
       padding: 0.25rem 0.5rem;
       border-radius: 0.25rem;
@@ -194,14 +194,14 @@ $white: #FFFFFF;
 
     .remaining-slots {
       color: #059669;
-      background: #D1FAE5;
+      background: #d1fae5;
       padding: 0.25rem 0.5rem;
       border-radius: 0.25rem;
     }
 
     .slots-full {
-      color: #DC2626;
-      background: #FEE2E2;
+      color: #dc2626;
+      background: #fee2e2;
       padding: 0.25rem 0.5rem;
       border-radius: 0.25rem;
       font-weight: 600;
@@ -225,7 +225,7 @@ $white: #FFFFFF;
     transition: width 0.5s ease;
 
     &.full {
-      background: linear-gradient(90deg, #DC2626 0%, #EF4444 100%);
+      background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
     }
   }
 }

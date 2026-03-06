@@ -14,9 +14,13 @@ fi
 if git diff --cached --name-only | grep -E '.*\.php$'; then
   echo "🎨 Running Laravel Pint..."
   cd servetrack-backend
-  ./vendor/bin/pint
+  if [ -f "./vendor/bin/pint" ]; then
+    ./vendor/bin/pint
+    echo "✅ Pint formatted files, adding to commit..."
+  else
+    echo "⚠️  Laravel Pint not found, skipping formatting..."
+  fi
   cd ..
-  echo "✅ Pint formatted files, adding to commit..."
   git add servetrack-backend/
 fi
 

@@ -1,0 +1,160 @@
+name: ServeTrack CI Testing Workflow (Angular + Laravel)
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Detect changed folders
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          base: ${{ github.event.repository.default_branch || 'main' }}
+          filters: |
+            frontend:
+              - 'servetrack-frontend/**'
+            backend:
+              - 'servetrack-backend/**'
+
+
+  # Frontend (Angular 21 + Vitest)
+  frontend-check:
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.frontend == 'true'
+    defaults:
+      run:
+        working-directory: servetrack-frontend
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: servetrack-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Angular app
+        run: npm run build --if-present
+
+      - name: Run tests
+        run: npm test
+        env:
+          CI: true
+
+  # Backend (Laravel 12 w/ Pest) - Using SQLite for CI
+  backend-check:
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.backend == 'true'
+    defaults:
+      run:
+        working-directory: servetrack-backend
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, dom, filter, gd, json, pdo, zip
+          coverage: xdebug
+          tools: composer:v2
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('servetrack-backend/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader --no-interaction
+
+      - name: Setup Node.js for frontend assets
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: servetrack-backend/package-lock.json
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+
+      - name: Run database migrations
+        run: php artisan migrate --force
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+
+      - name: Run Laravel Pint
+        run: vendor/bin/pint --test
+
+      - name: Run tests with Pest
+        run: php artisan test
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+
+  # Summary job - ensures all checks pass
+  ci-success:
+    runs-on: ubuntu-latest
+    needs: [check-changes, frontend-check, backend-check]
+    if: always()
+    steps:
+      - name: Check all jobs
+        run: |
+          if [[ "${{ needs.frontend-check.result }}" == "failure" ]] || [[ "${{ needs.backend-check.result }}" == "failure" ]]; then
+            echo "❌ One or more jobs failed"
+            exit 1
+          elif [[ "${{ needs.frontend-check.result }}" == "skipped" ]] && [[ "${{ needs.backend-check.result }}" == "skipped" ]]; then
+            echo "⏭️  No code changes detected - skipping CI"
+          else
+            echo "✅ All checks passed!"
+          fi
