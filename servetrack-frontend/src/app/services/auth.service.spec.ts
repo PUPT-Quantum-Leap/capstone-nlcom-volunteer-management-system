@@ -1,140 +1,321 @@
 import { TestBed } from '@angular/core/testing';
-import { AuthService } from './auth.service';
+import {
+  AuthService,
+  LoginCredentials,
+  RegisterData,
+  VolunteerSignupData,
+} from './auth.service';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let routerSpy: any;
+  let httpMock: HttpTestingController;
+  let mockRouter: any;
 
   beforeEach(() => {
-    routerSpy = { navigate: vi.fn().mockResolvedValue(true) };
+    mockRouter = {
+      navigate: vi.fn().mockResolvedValue(true),
+    };
 
     TestBed.configureTestingModule({
-      providers: [
-        AuthService,
-        { provide: Router, useValue: routerSpy }
-      ]
+      imports: [HttpClientTestingModule],
+      providers: [AuthService, { provide: Router, useValue: mockRouter }],
     });
+
     service = TestBed.inject(AuthService);
-
-    // Clear sessionStorage before each test
-    sessionStorage.clear();
-
-    // Use fake timers for simulate API delays
-    vi.useFakeTimers();
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => {
-    vi.useRealTimers();
-    vi.restoreAllMocks();
+    httpMock.verify();
   });
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
-  });
-
-  describe('login', () => {
-    it('should login successfully with valid credentials', async () => {
-      const credentials = { email: 'test@example.com', password: 'password' };
-
-      const loginPromise = service.login(credentials);
-
-      expect(service.isLoading()).toBe(true);
-
-      // Advance timers to skip the 2000ms delay
-      await vi.runAllTimersAsync();
-
-      const response = await loginPromise;
-
-      expect(response.success).toBe(true);
-      expect(service.isAuthenticated()).toBe(true);
-      expect(service.currentUser()?.email).toBe(credentials.email);
-      expect(sessionStorage.getItem('auth_token')).toBe('mock-jwt-token');
-      expect(service.isLoading()).toBe(false);
-      expect(service.error()).toBeNull();
+  describe('Validation Methods', () => {
+    const createVolunteerData = (overrides: Partial<VolunteerSignupData> = {}): VolunteerSignupData => ({
+      firstName: 'John',
+      lastName: 'Doe',
+      facebookName: 'John Doe',
+      email: 'test@example.com',
+      mobileNumber: '+1234567890',
+      birthdate: '1990-01-01',
+      completeAddress: '123 Test St, City, Country',
+      educationalAttainment: "Bachelor's Degree",
+      lastMedicalExam: '2023-01-01',
+      trainingExperience: '',
+      skillsHobbies: '',
+      classesTraining: '',
+      volunteerPreference: 'Teaching',
+      otherPreference: '',
+      availability: 'anytime',
+      otherAvailability: '',
+      partOfLifegroup: 'no',
+      lifegroupLeaderName: '',
+      leadingLifegroup: 'no',
+      emergencyContactName: 'Jane Doe',
+      emergencyContactNumber: '+1234567891',
+      emergencyContactRelationship: 'Sibling',
+      password: 'Password123',
+      confirmPassword: 'Password123',
+      ...overrides,
     });
 
-    it('should fail with invalid email format', async () => {
-      const credentials = { email: 'invalid-email', password: 'password' };
+    describe('validateLogin', () => {
+      it('should return no errors for valid credentials', () => {
+        const credentials: LoginCredentials = {
+          email: 'test@example.com',
+          password: 'password123',
+        };
 
-      const response = await service.login(credentials);
+        const errors = service.validateLogin(credentials);
+        expect(errors).toHaveLength(0);
+      });
 
-      expect(response.success).toBe(false);
-      expect(response.message).toBe('Invalid email format');
-      expect(service.isAuthenticated()).toBe(false);
-      expect(service.error()).toBe('Invalid email format');
+      it('should return error for missing email', () => {
+        const credentials: LoginCredentials = {
+          email: '',
+          password: 'password123',
+        };
+
+        const errors = service.validateLogin(credentials);
+        expect(errors).toHaveLength(1);
+        expect(errors[0].field).toBe('email');
+        expect(errors[0].message).toBe('Email is required');
+      });
+
+      it('should return error for invalid email format', () => {
+        const credentials: LoginCredentials = {
+          email: 'invalid-email',
+          password: 'password123',
+        };
+
+        const errors = service.validateLogin(credentials);
+        expect(errors).toHaveLength(1);
+        expect(errors[0].field).toBe('email');
+        expect(errors[0].message).toBe('Please enter a valid email address');
+      });
+
+      it('should return error for short password', () => {
+        const credentials: LoginCredentials = {
+          email: 'test@example.com',
+          password: '123',
+        };
+
+        const errors = service.validateLogin(credentials);
+        expect(errors).toHaveLength(1);
+        expect(errors[0].field).toBe('password');
+        expect(errors[0].message).toBe('Password must be at least 8 characters long');
+      });
+
+      it('should return multiple errors for multiple invalid fields', () => {
+        const credentials: LoginCredentials = {
+          email: '',
+          password: '123',
+        };
+
+        const errors = service.validateLogin(credentials);
+        expect(errors).toHaveLength(2);
+        expect(errors.map((e) => e.field)).toEqual(['email', 'password']);
+      });
+    });
+
+    describe('validateRegistration', () => {
+      it('should return no errors for valid registration data', () => {
+        const data: RegisterData = {
+          email: 'test@example.com',
+          password: 'Password123',
+          password_confirmation: 'Password123',
+        };
+
+        const errors = service.validateRegistration(data);
+        expect(errors).toHaveLength(0);
+      });
+
+      it('should return error for password mismatch', () => {
+        const data: RegisterData = {
+          email: 'test@example.com',
+          password: 'Password123',
+          password_confirmation: 'DifferentPassword',
+        };
+
+        const errors = service.validateRegistration(data);
+        expect(errors).toHaveLength(1);
+        expect(errors[0].field).toBe('password_confirmation');
+        expect(errors[0].message).toBe('Passwords do not match');
+      });
+
+      it('should return error for weak password format', () => {
+        const data: RegisterData = {
+          email: 'test@example.com',
+          password: 'weakpassword',
+          password_confirmation: 'weakpassword',
+        };
+
+        const errors = service.validateRegistration(data);
+        expect(errors).toHaveLength(1);
+        expect(errors[0].field).toBe('password');
+        expect(errors[0].message).toBe(
+          'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+        );
+      });
+    });
+
+    describe('validateVolunteerSignup', () => {
+      it('should return no errors for valid volunteer data', () => {
+        const data: VolunteerSignupData = createVolunteerData();
+
+        const errors = service.validateVolunteerSignup(data);
+        expect(errors).toHaveLength(0);
+      });
+
+      it('should return errors for missing required fields', () => {
+        const data: VolunteerSignupData = createVolunteerData({
+          firstName: '',
+          lastName: '',
+        });
+
+        const errors = service.validateVolunteerSignup(data);
+        expect(errors.length).toBeGreaterThan(0);
+
+        const firstNameError = errors.find((e) => e.field === 'firstName');
+        expect(firstNameError).toBeDefined();
+        expect(firstNameError?.message).toBe('First name is required');
+
+        const lastNameError = errors.find((e) => e.field === 'lastName');
+        expect(lastNameError).toBeDefined();
+        expect(lastNameError?.message).toBe('Last name is required');
+      });
+
+      it('should return error for invalid phone number', () => {
+        const data: VolunteerSignupData = createVolunteerData({
+          mobileNumber: 'invalid-phone',
+        });
+
+        const errors = service.validateVolunteerSignup(data);
+        const phoneError = errors.find((e) => e.field === 'mobileNumber');
+        expect(phoneError).toBeDefined();
+        expect(phoneError?.message).toBe('Please enter a valid mobile number');
+      });
+
+      it('should return error for underage volunteer', () => {
+        const recentDate = new Date();
+        recentDate.setFullYear(recentDate.getFullYear() - 17); // 17 years old
+
+        const data: VolunteerSignupData = createVolunteerData({
+          birthdate: recentDate.toISOString().split('T')[0],
+        });
+
+        const errors = service.validateVolunteerSignup(data);
+        const birthdateError = errors.find((e) => e.field === 'birthdate');
+        expect(birthdateError).toBeDefined();
+        expect(birthdateError?.message).toBe('You must be at least 18 years old to volunteer');
+      });
     });
   });
 
-  describe('signup', () => {
-    it('should signup successfully with valid data', async () => {
-      const signupData = {
-        name: 'John Doe',
+  describe('Authentication Methods', () => {
+    it('should login successfully with valid credentials', () => {
+      const credentials: LoginCredentials = {
         email: 'test@example.com',
-        password: 'password',
-        confirmPassword: 'password'
+        password: 'password123',
       };
 
-      const signupPromise = service.signup(signupData);
-
-      expect(service.isLoading()).toBe(true);
-
-      await vi.runAllTimersAsync();
-
-      const response = await signupPromise;
-
-      expect(response.success).toBe(true);
-      expect(service.isAuthenticated()).toBe(true);
-      expect(service.currentUser()?.name).toBe('John Doe');
-      expect(sessionStorage.getItem('auth_token')).toBe('mock-jwt-token');
-    });
-
-    it('should fail if name is too short', async () => {
-      const signupData = {
-        name: 'J',
-        email: 'test@example.com',
-        password: 'password',
-        confirmPassword: 'password'
+      const mockResponse = {
+        user: {
+          id: '1',
+          email: 'test@example.com',
+          name: 'Test User',
+        },
       };
 
-      const response = await service.signup(signupData);
+      service.login$(credentials).subscribe((response) => {
+        expect(response.success).toBe(true);
+        expect(response.user).toEqual(mockResponse.user);
+        expect(service.isAuthenticated()).toBe(true);
+        expect(service.currentUser()).toEqual(mockResponse.user);
+      });
 
-      expect(response.success).toBe(false);
-      expect(response.message).toBe('Name must be at least 2 characters');
-      expect(service.error()).toBe('Name must be at least 2 characters');
+      const csrfReq = httpMock.expectOne(`${environment.apiUrl.replace('/api', '')}/sanctum/csrf-cookie`);
+      expect(csrfReq.request.method).toBe('GET');
+      expect(csrfReq.request.withCredentials).toBe(true);
+      csrfReq.flush({});
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/login`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.withCredentials).toBe(true);
+      req.flush({ user: mockResponse.user });
     });
-  });
 
-  describe('logout', () => {
-    it('should clear state and navigate to login', async () => {
-      // Setup initial state
+    it('should handle login error', () => {
+      const credentials: LoginCredentials = {
+        email: 'test@example.com',
+        password: 'wrongpassword',
+      };
+
+      service.login$(credentials).subscribe((response) => {
+        expect(response.success).toBe(false);
+        expect(response.message).toBe('Invalid email or password.');
+        expect(service.isAuthenticated()).toBe(false);
+        expect(service.currentUser()).toBeNull();
+      });
+
+      const csrfReq = httpMock.expectOne(`${environment.apiUrl.replace('/api', '')}/sanctum/csrf-cookie`);
+      expect(csrfReq.request.method).toBe('GET');
+      expect(csrfReq.request.withCredentials).toBe(true);
+      csrfReq.flush({});
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/login`);
+      req.flush({ message: 'Invalid credentials' }, { status: 401, statusText: 'Unauthorized' });
+    });
+
+    it('should logout successfully', () => {
+      // Set user as authenticated first
       service.isAuthenticated.set(true);
-      sessionStorage.setItem('auth_token', 'some-token');
+      service.currentUser.set({ id: '1', email: 'test@example.com' });
 
-      await service.logout();
+      service.logout$().subscribe(() => {
+        expect(service.isAuthenticated()).toBe(false);
+        expect(service.currentUser()).toBeNull();
+        expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
+      });
 
-      expect(service.isAuthenticated()).toBe(false);
-      expect(service.currentUser()).toBeNull();
-      expect(sessionStorage.getItem('auth_token')).toBeNull();
-      expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
-    });
-  });
-
-  describe('checkAuthStatus', () => {
-    it('should return true if token exists', async () => {
-      sessionStorage.setItem('auth_token', 'some-token');
-
-      const result = await service.checkAuthStatus();
-
-      expect(result).toBe(true);
-      expect(service.isAuthenticated()).toBe(true);
+      const req = httpMock.expectOne(`${environment.apiUrl}/logout`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.withCredentials).toBe(true);
+      req.flush(null);
     });
 
-    it('should return false if token does not exist', async () => {
-      const result = await service.checkAuthStatus();
+    it('should check auth status successfully', () => {
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+      };
 
-      expect(result).toBe(false);
-      expect(service.isAuthenticated()).toBe(false);
+      service.checkAuthStatus$().subscribe((response) => {
+        expect(response.success).toBe(true);
+        expect(response.user).toEqual(mockUser);
+        expect(service.isAuthenticated()).toBe(true);
+        expect(service.currentUser()).toEqual(mockUser);
+      });
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/user`);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.withCredentials).toBe(true);
+      req.flush({ user: mockUser });
+    });
+
+    it('should handle auth status check failure', () => {
+      service.checkAuthStatus$().subscribe((response) => {
+        expect(response.success).toBe(false);
+        expect(service.isAuthenticated()).toBe(false);
+        expect(service.currentUser()).toBeNull();
+      });
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/user`);
+      req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
     });
   });
 });
