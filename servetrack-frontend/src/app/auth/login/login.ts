@@ -31,6 +31,10 @@ export class Login implements OnInit {
 
   // Popup signal
   showPopup = signal(false);
+  showLoginSuccessModal = signal(false);
+  loginSuccessMessage = signal<string | null>(null);
+  isAdminLoginPage = signal(false);
+  private loginRedirectPath: '/volunteer-dashboard' | '/admin-dashboard' = '/volunteer-dashboard';
 
   // Popup methods
   showPopupModal() {
@@ -41,12 +45,30 @@ export class Login implements OnInit {
     this.showPopup.set(false);
   }
 
+  closeLoginSuccessModal(): void {
+    this.showLoginSuccessModal.set(false);
+  }
+
+  async continueAfterSuccessfulLogin(): Promise<void> {
+    this.closeLoginSuccessModal();
+    try {
+      const navigated = await this.router.navigateByUrl(this.loginRedirectPath);
+      if (!navigated) {
+        this.errorMessage.set('Login succeeded, but dashboard navigation failed. Please try again.');
+      }
+    } catch {
+      this.errorMessage.set('Login succeeded, but dashboard navigation failed. Please try again.');
+    }
+  }
+
   // Password visibility methods
   togglePasswordVisibility(): void {
     this.showPassword.set(!this.showPassword());
   }
 
   ngOnInit(): void {
+    this.isAdminLoginPage.set(this.route.snapshot?.routeConfig?.path === 'admin-login');
+
     this.route.queryParams.subscribe((params) => {
       if (params['registered'] === 'true') {
         this.registrationSuccessMessage.set(
@@ -122,11 +144,32 @@ export class Login implements OnInit {
       };
 
       // Call auth service
-      const response = await firstValueFrom(this.authService.login$(credentials));
+      const response = await firstValueFrom(
+        this.isAdminLoginPage()
+          ? this.authService.adminLogin$(credentials)
+          : this.authService.login$(credentials),
+      );
 
       if (response.success) {
-        // Navigate to volunteer dashboard on success
-        await this.router.navigate(['/volunteer-dashboard']);
+        // Smart routing based on user type
+        const userType = response.user?.user_type || response.user?.role || 'volunteer';
+
+        if (userType === 'admin' && !this.isAdminLoginPage()) {
+          this.errorMessage.set('ERROR');
+          this.showLoginSuccessModal.set(false);
+          await firstValueFrom(this.authService.logout$());
+          return;
+        }
+
+        if (userType === 'admin') {
+          this.loginRedirectPath = '/admin-dashboard';
+          this.loginSuccessMessage.set('Login successful. Redirecting to admin dashboard.');
+        } else {
+          this.loginRedirectPath = '/volunteer-dashboard';
+          this.loginSuccessMessage.set('Login successful. Redirecting to volunteer dashboard.');
+        }
+
+        this.showLoginSuccessModal.set(true);
       } else {
         this.errorMessage.set(response.message || 'Invalid email or password');
       }

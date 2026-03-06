@@ -1,10 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { DatePipe } from '@angular/common';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
+import { AdminDashboardService, DashboardVolunteerRow } from '../services/admin-dashboard.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -13,100 +21,38 @@ import { PerformanceMetric } from '../models/performance-metric';
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
-export class AdminDashboard {
+export class AdminDashboard implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private authService = inject(AuthService);
+  private adminDashboardService = inject(AdminDashboardService);
 
   readonly defaultPhoto = '/assets/nlcom.png';
 
-  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup'>('overview');
+  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Admin');
   sidebarCollapsed = signal(false);
   isLoading = signal(false);
 
   showNotifications = signal(false);
   showLogoutModal = signal(false);
+  showAiModal = signal(false);
   searchQuery = signal('');
+  currentPage = signal(1);
 
-  notifications = signal<NotificationItem[]>([
-    {
-      id: 1,
-      title: 'New Volunteer Registration',
-      description: '3 new volunteers registered today.',
-      time: '1h ago',
-      read: false,
-    },
-    {
-      id: 2,
-      title: 'Schedule Update Required',
-      description: 'Please review and approve pending schedules.',
-      time: '3h ago',
-      read: false,
-    },
-  ]);
+  notifications = signal<NotificationItem[]>([]);
 
   notificationCount = computed(
     () => this.notifications().filter((notification) => !notification.read).length,
   );
 
-  totalVolunteers = signal(42);
-  activeVolunteers = signal(35);
-  upcomingEvents = signal(8);
-  completedMissions = signal(127);
+  totalVolunteers = signal(0);
+  activeVolunteers = signal(0);
+  upcomingEvents = signal(0);
+  completedMissions = signal(0);
 
-  performanceMetrics = signal<PerformanceMetric[]>([
-    {
-      id: 1,
-      volunteerId: 1,
-      volunteerName: 'Jasmine Deleon',
-      attendanceRate: 92,
-      hoursServed: 48,
-      tasksCompleted: 15,
-      rating: 4.8,
-      lastActivity: '2025-08-15',
-    },
-    {
-      id: 2,
-      volunteerId: 2,
-      volunteerName: 'Marco Santos',
-      attendanceRate: 88,
-      hoursServed: 42,
-      tasksCompleted: 12,
-      rating: 4.5,
-      lastActivity: '2025-08-14',
-    },
-    {
-      id: 3,
-      volunteerId: 3,
-      volunteerName: 'Elena Cruz',
-      attendanceRate: 95,
-      hoursServed: 56,
-      tasksCompleted: 18,
-      rating: 4.9,
-      lastActivity: '2025-08-15',
-    },
-    {
-      id: 4,
-      volunteerId: 4,
-      volunteerName: 'Rafael Torres',
-      attendanceRate: 85,
-      hoursServed: 38,
-      tasksCompleted: 10,
-      rating: 4.3,
-      lastActivity: '2025-08-13',
-    },
-    {
-      id: 5,
-      volunteerId: 5,
-      volunteerName: 'Sofia Reyes',
-      attendanceRate: 90,
-      hoursServed: 45,
-      tasksCompleted: 14,
-      rating: 4.7,
-      lastActivity: '2025-08-15',
-    },
-  ]);
+  volunteerRows = signal<DashboardVolunteerRow[]>([]);
+  performanceMetrics = signal<PerformanceMetric[]>([]);
 
   sortField = signal<'name' | 'attendance' | 'hours' | 'tasks' | 'rating'>('attendance');
   sortDirection = signal<'asc' | 'desc'>('desc');
@@ -183,12 +129,39 @@ export class AdminDashboard {
     return (total / metrics.length).toFixed(1);
   });
 
+  ngOnInit(): void {
+    this.loadDashboardData();
+  }
+
+  private loadDashboardData(): void {
+    this.isLoading.set(true);
+
+    this.adminDashboardService.getDashboardData().subscribe((response) => {
+      if (response.success && response.data) {
+        this.totalVolunteers.set(response.data.stats.totalVolunteers);
+        this.activeVolunteers.set(response.data.stats.activeVolunteers);
+        this.upcomingEvents.set(response.data.stats.upcomingEvents);
+        this.completedMissions.set(response.data.stats.completedMissions);
+        this.notifications.set(response.data.notifications ?? []);
+        this.volunteerRows.set(response.data.volunteers ?? []);
+        this.performanceMetrics.set(response.data.performanceMetrics ?? []);
+      } else {
+        this.notifications.set([]);
+        this.volunteerRows.set([]);
+        this.performanceMetrics.set([]);
+      }
+
+      this.isLoading.set(false);
+    });
+  }
+
   toggleSidebar(): void {
     this.sidebarCollapsed.update((v) => !v);
   }
 
-  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup'): void {
+  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'): void {
     this.currentView.set(view);
+    this.currentPage.set(1);
   }
 
   setSearchQuery(value: string): void {
@@ -231,6 +204,16 @@ export class AdminDashboard {
       return;
     }
 
+    if (query.includes('analytic')) {
+      this.setView('analytics');
+      return;
+    }
+
+    if (query.includes('event')) {
+      this.setView('events');
+      return;
+    }
+
     if (query.includes('sms') || query.includes('message')) {
       this.setView('sms');
       return;
@@ -262,6 +245,14 @@ export class AdminDashboard {
 
   closeLogoutModal(): void {
     this.showLogoutModal.set(false);
+  }
+
+  openAiModal(): void {
+    this.showAiModal.set(true);
+  }
+
+  closeAiModal(): void {
+    this.showAiModal.set(false);
   }
 
   async confirmLogout(): Promise<void> {

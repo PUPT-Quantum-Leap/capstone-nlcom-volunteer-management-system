@@ -8,6 +8,13 @@
 
 ServeTrack is a volunteer management system designed to streamline volunteer coordination, event management, and activity tracking. It consists of a secure RESTful API backend and a responsive Single-Page Application (SPA) frontend.
 
+## Project Status
+
+**Current Phase:** Phase 1 - MVP (In Development)
+- **Completed:** Phase 0 (Setup & Architecture)
+- **Active:** Sprint 1 (Authentication & User Management)
+- **Upcoming:** Volunteer & Event Management
+
 ## Architecture
 
 The project is divided into two main directories:
@@ -25,64 +32,50 @@ The project is divided into two main directories:
     *   **Build Tool:** Angular CLI
     *   **Testing:** Vitest v4 (via `ng test`)
 
-## Getting Started
+## AI Interaction Guidelines
+
+As an AI agent working on this codebase, you must:
+1.  **Contextual Precedence:** Follow instructions in this file and sub-`GEMINI.md` files (found in `servetrack-backend/GEMINI.md` and `servetrack-frontend/.gemini/GEMINI.md`).
+2.  **Verify Usage:** Never assume a library is available. Check `composer.json` or `package.json` first.
+3.  **Reproduction:** For bug fixes, always reproduce the issue with a test case first.
+4.  **Validation:** Run relevant tests after every change. Use `./vendor/bin/pint --dirty` for PHP and `npm test` for Angular.
+5.  **Sub-Agents:** Use the `codebase_investigator` for complex architectural analysis.
+
+## Common Commands
+
+### Root Level
+```bash
+npm install                       # Install root and subproject dependencies
+npm run lint:backend              # Format PHP code with Laravel Pint
+npm run test-hook                # Test Husky pre-commit hooks
+```
 
 ### Backend (`servetrack-backend/`)
-
-1.  **Install PHP Dependencies:**
-    ```bash
-    composer install
-    ```
-2.  **Install Node Dependencies (for Vite/Tailwind):**
-    ```bash
-    npm install
-    ```
-3.  **Environment Setup:**
-    ```bash
-    cp .env.example .env
-    php artisan key:generate
-    ```
-4.  **Database Setup:**
-    *   Configure your database credentials in `.env`.
-    *   Run migrations:
-        ```bash
-        php artisan migrate
-        ```
-5.  **Run Development Server:**
-    ```bash
-    # Runs Laravel server, Queue worker, and Vite concurrently
-    composer run dev
-    ```
-    *   Or run individually: `php artisan serve`, `npm run dev`
+```bash
+composer run dev                  # Start Laravel server, queue, and Vite concurrently
+php artisan serve                # Start Laravel server (http://localhost:8000)
+./vendor/bin/pint --dirty         # Format only modified PHP files
+php artisan test --compact        # Run Pest tests with compact output
+php artisan test --filter=testName # Run a specific test
+php artisan migrate:fresh --seed  # Reset database and seed
+```
 
 ### Frontend (`servetrack-frontend/`)
-
-1.  **Install Dependencies:**
-    ```bash
-    npm install
-    ```
-2.  **Run Development Server:**
-    ```bash
-    npm run start
-    ```
-    *   Access the app at `http://localhost:4200`.
-
-## Testing
-
-*   **Backend:**
-    ```bash
-    php artisan test
-    ```
-*   **Frontend:**
-    ```bash
-    ng test
-    ```
+```bash
+npm run start                     # Start Angular dev server (http://localhost:4200)
+npm run build                     # Production build
+npm test                         # Run all Vitest tests
+npm test -- path/to/file.spec.ts  # Run single test file
+npm test -- -t "pattern"          # Run tests matching pattern
+```
 
 ## Development Conventions
 
 *   **Code Style:**
-    *   **PHP:** Follows PSR-12 standards. Use `laravel/pint` for formatting.
-    *   **TypeScript:** Follows standard Angular style guide.
-*   **CSS:** Utility-first approach using Tailwind CSS v4.
-*   **Version Control:** Git.
-*   **Branching:** Follow standard git-flow or feature-branch workflows.
+    *   **PHP:** PSR-12 via Laravel Pint. Use constructor property promotion and explicit return types.
+    *   **TypeScript:** Angular Style Guide. Use Signals, Standalone Components, and `inject()`.
+*   **Architecture:**
+    *   **Backend:** Use Form Requests for validation, Eloquent Resources for API responses, and Policies for authorization.
+    *   **Frontend:** Use `OnPush` change detection, native control flow (`@if`, `@for`), and avoid decorators for inputs/outputs.
+*   **CSS:** Utility-first with Tailwind CSS v4.
+*   **Testing:** Pest (Backend) and Vitest (Frontend). Aim for >80% coverage.

@@ -4,6 +4,7 @@ import { VotingPoll } from './voting-poll/voting-poll';
 import { Login } from './auth/login/login';
 import { Signup } from './auth/signup/signup';
 import { SignupForm } from './auth/signup-form/signup-form';
+import { AdminSignup } from './auth/admin-signup/admin-signup';
 import { VolunteerDashboard } from './volunteer-dashboard/volunteer-dashboard';
 import { AdminDashboard } from './admin-dashboard/admin-dashboard';
 import { NotFound } from './not-found/not-found';
@@ -12,8 +13,10 @@ import { authGuard } from './guards/auth.guard';
 export const routes: Routes = [
   { path: '', component: LandingPage },
   { path: 'login', component: Login },
+  { path: 'admin-login', component: Login },
   { path: 'signup', component: Signup },
   { path: 'signup-form', component: SignupForm },
+  { path: 'admin-signup', component: AdminSignup },
   { path: 'voting-poll', component: VotingPoll },
   { path: 'volunteer-dashboard', component: VolunteerDashboard, canActivate: [authGuard] },
   { path: 'admin-dashboard', component: AdminDashboard, canActivate: [authGuard] },

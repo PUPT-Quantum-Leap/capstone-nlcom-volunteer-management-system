@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -33,24 +34,108 @@ class LoginController extends Controller
             $request->session()->regenerate();
         }
 
-        $user = $request->user()->load('volunteer');
-        $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+        $user = $request->user();
 
-        $cookie = cookie(
-            'auth_token',
-            $token,
-            config('sanctum.expiration', 60),
-            '/',
-            null,
-            true,
-            true,
-            false,
-            'strict'
-        );
+        // Volunteer login endpoint should not authenticate admin accounts.
+        if ($user && $user->role === 'admin') {
+            Auth::guard('web')->logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
 
-        return response()->json([
-            'user' => $user,
-        ])->withCookie($cookie);
+            return response()->json([
+                'message' => 'Admin accounts must use /admin-login.',
+            ], 422)->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+                'Pragma' => 'no-cache',
+            ]);
+        }
+
+        $userData = $user->toArray();
+        $userData['user_type'] = $this->getUserType($user);
+
+        // Load specific profile data
+        switch ($userData['user_type']) {
+            case 'admin':
+                $userData['admin_profile'] = $user->admin;
+                break;
+            case 'coordinator':
+                $userData['coordinator_profile'] = $user->coordinator;
+                break;
+            case 'volunteer':
+            default:
+                $userData['volunteer_profile'] = $user->volunteer;
+                break;
+        }
+
+        return $this->buildAuthenticatedResponse($userData, $user);
+    }
+
+    /**
+     * Handle an incoming admin-only authentication request.
+     */
+    public function adminStore(LoginRequest $request): JsonResponse
+    {
+        try {
+            $request->authenticate();
+        } catch (ValidationException) {
+            return response()->json([
+                'message' => 'Invalid credentials',
+            ], 422)->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+                'Pragma' => 'no-cache',
+            ]);
+        }
+
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
+
+        $user = $request->user();
+
+        // Admin login endpoint accepts only admin role.
+        if (! $user || $user->role !== 'admin') {
+            Auth::guard('web')->logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+
+            return response()->json([
+                'message' => 'Invalid credentials',
+            ], 422)->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate',
+                'Pragma' => 'no-cache',
+            ]);
+        }
+
+        $userData = $user->toArray();
+        $userData['user_type'] = 'admin';
+        $userData['admin_profile'] = $user->admin;
+
+        return $this->buildAuthenticatedResponse($userData, $user);
+    }
+
+    /**
+     * Determine the user type based on role and profile
+     */
+    private function getUserType(User $user): string
+    {
+        if ($user->role === 'admin') {
+            return 'admin';
+        }
+
+        if ($user->role === 'coordinator') {
+            return 'coordinator';
+        }
+
+        if ($user->volunteer) {
+            return 'volunteer';
+        }
+
+        // Default to volunteer for backward compatibility
+        return 'volunteer';
     }
 
     /**
@@ -70,5 +155,31 @@ class LoginController extends Controller
         $cookie = cookie('auth_token', '', -1);
 
         return response()->noContent()->withCookie($cookie);
+    }
+
+    /**
+     * Build authenticated login response with a Sanctum auth cookie.
+     *
+     * @param  array<string, mixed>  $userData
+     */
+    private function buildAuthenticatedResponse(array $userData, User $user): JsonResponse
+    {
+        $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+
+        $cookie = cookie(
+            'auth_token',
+            $token,
+            config('sanctum.expiration', 60),
+            '/',
+            null,
+            true,
+            true,
+            false,
+            'strict'
+        );
+
+        return response()->json([
+            'user' => $userData,
+        ])->withCookie($cookie);
     }
 }

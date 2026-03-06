@@ -30,7 +30,7 @@ class LoginRequest extends FormRequest
         $emailRule = app()->isProduction() ? 'email:rfc,dns' : 'email:rfc';
 
         return [
-            'email' => ['required', 'string', 'lowercase', $emailRule],
+            'email' => ['required', 'string', $emailRule],
             'password' => ['required', 'string'],
         ];
     }
@@ -45,7 +45,7 @@ class LoginRequest extends FormRequest
                 return;
             }
 
-            $email = filter_var($this->input('email'), FILTER_SANITIZE_EMAIL);
+            $email = Str::lower(trim(filter_var((string) $this->input('email'), FILTER_SANITIZE_EMAIL)));
             $this->merge(['email' => $email]);
         });
     }

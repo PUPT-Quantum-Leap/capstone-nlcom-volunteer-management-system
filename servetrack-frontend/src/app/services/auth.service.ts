@@ -1,7 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, tap, of, map } from 'rxjs';
+import { Observable, catchError, tap, of, map, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface LoginCredentials {
@@ -30,6 +30,30 @@ export interface VolunteerSignupData {
   classesTraining?: string;
   volunteerPreference: string;
   otherPreference?: string;
+  availability: string;
+  otherAvailability?: string;
+  partOfLifegroup: string;
+  lifegroupLeaderName?: string;
+  leadingLifegroup: string;
+  emergencyContactName: string;
+  emergencyContactNumber: string;
+  emergencyContactRelationship: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface AdminSignupData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  contactNumber?: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface CoordinatorSignupData {
+  name: string;
+  email: string;
   password: string;
   confirmPassword: string;
 }
@@ -46,10 +70,23 @@ export interface AuthResponse {
     id: string;
     email: string;
     name?: string;
-    volunteer?: {
+    role?: 'volunteer' | 'admin' | 'coordinator';
+    user_type?: 'volunteer' | 'admin' | 'coordinator';
+    volunteer_profile?: {
       volunteer_id: number;
       first_name: string;
       last_name: string;
+    };
+    admin_profile?: {
+      id: number;
+      first_name: string;
+      last_name: string;
+      contact_number?: string;
+    };
+    coordinator_profile?: {
+      id: number;
+      name: string;
+      email: string;
     };
   };
 }
@@ -68,6 +105,14 @@ export class AuthService {
   error = signal<string | null>(null);
 
   /**
+   * Fetch CSRF cookie before making stateful requests
+   */
+  public ensureCsrf$(): Observable<any> {
+    const backendUrl = environment.apiUrl.replace('/api', '');
+    return this.http.get(`${backendUrl}/sanctum/csrf-cookie`, { withCredentials: true });
+  }
+
+  /**
    * Login user with credentials.
    */
   login(credentials: LoginCredentials): Promise<AuthResponse> {
@@ -80,6 +125,20 @@ export class AuthService {
   }
 
   login$(credentials: LoginCredentials): Observable<AuthResponse> {
+    return this.loginWithEndpoint$(credentials, '/login');
+  }
+
+  /**
+   * Login using the admin-only endpoint.
+   */
+  adminLogin$(credentials: LoginCredentials): Observable<AuthResponse> {
+    return this.loginWithEndpoint$(credentials, '/admin/login');
+  }
+
+  private loginWithEndpoint$(
+    credentials: LoginCredentials,
+    endpoint: '/login' | '/admin/login',
+  ): Observable<AuthResponse> {
     this.isLoading.set(true);
     this.error.set(null);
 
@@ -88,25 +147,122 @@ export class AuthService {
       return of({ success: false, message: 'Invalid email format' } as AuthResponse);
     }
 
-    return this.http
-      .post<{
-        user: AuthResponse['user'];
-      }>(`${environment.apiUrl}/login`, credentials, { withCredentials: true })
-      .pipe(
-        map((response) => ({ success: true, user: response.user })),
-        tap((response) => {
-          if (response.user) {
-            this.isAuthenticated.set(true);
-            this.currentUser.set(response.user);
-          }
-        }),
-        catchError((err: HttpErrorResponse) => {
-          const message = err.error?.message || 'Login failed';
-          this.error.set(message);
-          return of({ success: false, message } as AuthResponse);
-        }),
-        tap(() => this.isLoading.set(false)),
-      );
+    return this.requestLogin$(credentials, endpoint).pipe(
+      switchMap((response) => {
+        if (response.user) {
+          return of({ success: true, user: response.user } as AuthResponse);
+        }
+
+        // If stale/previous account is still authenticated, log it out and retry with provided credentials.
+        if (response.message === 'Already authenticated.') {
+          return this.forceLogoutForRelogin$().pipe(
+            switchMap(() => this.requestLogin$(credentials, endpoint)),
+            map((retryResponse) => {
+              if (retryResponse.user) {
+                return { success: true, user: retryResponse.user } as AuthResponse;
+              }
+
+              return {
+                success: false,
+                message: this.normalizeAdminLoginOnlyMessage(
+                  retryResponse.message || 'Login failed after resetting previous session.',
+                ),
+              } as AuthResponse;
+            }),
+          );
+        }
+
+        return of({
+          success: false,
+          message: this.normalizeAdminLoginOnlyMessage(
+            response.message || 'Login failed. Please try again.',
+          ),
+        } as AuthResponse);
+      }),
+      tap((response) => {
+        if (response.user) {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(response.user);
+        }
+      }),
+      catchError((err: HttpErrorResponse) => {
+        const message = this.getLoginErrorMessage(err);
+        this.error.set(message);
+        return of({ success: false, message } as AuthResponse);
+      }),
+      tap(() => this.isLoading.set(false)),
+    );
+  }
+
+  private requestLogin$(
+    credentials: LoginCredentials,
+    endpoint: '/login' | '/admin/login',
+  ): Observable<{ message?: string; user?: AuthResponse['user'] }> {
+    return this.ensureCsrf$().pipe(
+      switchMap(() =>
+        this.http.post<{
+          message?: string;
+          user?: AuthResponse['user'];
+        }>(`${environment.apiUrl}${endpoint}`, credentials, { withCredentials: true }),
+      ),
+    );
+  }
+
+  private forceLogoutForRelogin$(): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/logout`, {}, { withCredentials: true }).pipe(
+      tap(() => {
+        this.isAuthenticated.set(false);
+        this.currentUser.set(null);
+      }),
+      catchError(() => {
+        this.isAuthenticated.set(false);
+        this.currentUser.set(null);
+        return of(undefined);
+      }),
+    );
+  }
+
+  private getLoginErrorMessage(err: HttpErrorResponse): string {
+    const backendMessageRaw = typeof err.error?.message === 'string' ? err.error.message : '';
+    const backendMessage = this.normalizeAdminLoginOnlyMessage(backendMessageRaw);
+    const retryAfterHeader = err.headers?.get('Retry-After');
+    const retryAfterBody = err.error?.retry_after;
+    const retryAfterRaw = retryAfterBody ?? retryAfterHeader;
+    const retryAfter = Number.isFinite(Number(retryAfterRaw)) ? Number(retryAfterRaw) : null;
+
+    if (err.status === 0) {
+      return 'Cannot reach server. Please make sure backend and database are running.';
+    }
+
+    if (err.status === 429) {
+      if (retryAfter && retryAfter > 0) {
+        const minutes = Math.ceil(retryAfter / 60);
+        return `Too many attempts. Try again in about ${minutes} minute(s).`;
+      }
+      return backendMessage || 'Too many login attempts. Please try again later.';
+    }
+
+    if (err.status === 401 || err.status === 422) {
+      if (backendMessage === 'ERROR') {
+        return backendMessage;
+      }
+      return 'Invalid email or password.';
+    }
+
+    if (err.status >= 500) {
+      return 'Server error while logging in. Please try again shortly.';
+    }
+
+    return backendMessage || 'Login failed. Please try again.';
+  }
+
+  private normalizeAdminLoginOnlyMessage(message: string): string {
+    const normalizedMessage = message.toLowerCase();
+    if (normalizedMessage.includes('admin accounts must') && normalizedMessage.includes('/admin-login')) {
+      return 'ERROR';
+    }
+
+    return message;
   }
 
   /**
@@ -121,22 +277,23 @@ export class AuthService {
       return of({ success: false, message: 'Invalid email format' } as AuthResponse);
     }
 
-    return this.http
-      .post<AuthResponse>(`${environment.apiUrl}/register`, data, { withCredentials: true })
-      .pipe(
-        tap((response) => {
-          if (response.success && response.user) {
-            this.isAuthenticated.set(true);
-            this.currentUser.set(response.user);
-          }
-        }),
-        catchError((err: HttpErrorResponse) => {
-          const message = err.error?.message || 'Registration failed';
-          this.error.set(message);
-          return of({ success: false, message } as AuthResponse);
-        }),
-        tap(() => this.isLoading.set(false)),
-      );
+    return this.ensureCsrf$().pipe(
+      switchMap(() => 
+        this.http.post<AuthResponse>(`${environment.apiUrl}/register`, data, { withCredentials: true })
+      ),
+      tap((response) => {
+        if (response.success && response.user) {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(response.user);
+        }
+      }),
+      catchError((err: HttpErrorResponse) => {
+        const message = err.error?.message || 'Registration failed';
+        this.error.set(message);
+        return of({ success: false, message } as AuthResponse);
+      }),
+      tap(() => this.isLoading.set(false)),
+    );
   }
 
   register(data: RegisterData): Promise<AuthResponse> {
@@ -160,24 +317,25 @@ export class AuthService {
       return of({ success: false, message: 'Invalid email format' } as AuthResponse);
     }
 
-    return this.http
-      .post<AuthResponse>(`${environment.apiUrl}/volunteer/register`, data, {
-        withCredentials: true,
-      })
-      .pipe(
-        tap((response) => {
-          if (response.success && response.user) {
-            this.isAuthenticated.set(true);
-            this.currentUser.set(response.user);
-          }
-        }),
-        catchError((err: HttpErrorResponse) => {
-          const message = err.error?.message || 'Registration failed';
-          this.error.set(message);
-          return of({ success: false, message } as AuthResponse);
-        }),
-        tap(() => this.isLoading.set(false)),
-      );
+    return this.ensureCsrf$().pipe(
+      switchMap(() => 
+        this.http.post<AuthResponse>(`${environment.apiUrl}/volunteer/register`, data, {
+          withCredentials: true,
+        })
+      ),
+      tap((response) => {
+        if (response.success && response.user) {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(response.user);
+        }
+      }),
+      catchError((err: HttpErrorResponse) => {
+        const message = err.error?.message || 'Registration failed';
+        this.error.set(message);
+        return of({ success: false, message } as AuthResponse);
+      }),
+      tap(() => this.isLoading.set(false)),
+    );
   }
 
   volunteerSignup(data: VolunteerSignupData): Promise<AuthResponse> {
@@ -216,9 +374,26 @@ export class AuthService {
    */
   checkAuthStatus$(): Observable<AuthResponse> {
     return this.http
-      .get<AuthResponse>(`${environment.apiUrl}/user`, { withCredentials: true })
+      .get<AuthResponse | AuthResponse['user']>(`${environment.apiUrl}/user`, { withCredentials: true })
       .pipe(
-        map((response) => ({ success: true, message: response.message, user: response.user })),
+        map((response) => {
+          // Supports both:
+          // 1) { success, user, message } envelope
+          // 2) raw user object from /api/user
+          const maybeEnvelope = response as AuthResponse;
+          if (maybeEnvelope && typeof maybeEnvelope === 'object' && 'user' in maybeEnvelope) {
+            return {
+              success: true,
+              message: maybeEnvelope.message,
+              user: maybeEnvelope.user ?? null,
+            } as AuthResponse;
+          }
+
+          return {
+            success: true,
+            user: response as AuthResponse['user'],
+          } as AuthResponse;
+        }),
         tap((response) => {
           if (response.user) {
             this.isAuthenticated.set(true);
@@ -402,5 +577,151 @@ export class AuthService {
     }
 
     return age >= 18;
+  }
+
+  /**
+   * Register a new coordinator user
+   */
+  coordinatorRegister(data: CoordinatorSignupData): Promise<AuthResponse> {
+    return new Promise((resolve) => {
+      this.coordinatorRegister$(data).subscribe({
+        next: (response) => resolve(response),
+        error: () => resolve({ success: false, message: 'Coordinator registration failed' }),
+      });
+    });
+  }
+
+  coordinatorRegister$(data: CoordinatorSignupData): Observable<AuthResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    if (!this.isValidEmail(data.email)) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Invalid email format' } as AuthResponse);
+    }
+
+    if (data.password !== data.confirmPassword) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Passwords do not match' } as AuthResponse);
+    }
+
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/coordinator/register`, data, { withCredentials: true })
+      .pipe(
+        map((response) => response),
+        tap((response) => {
+          this.isLoading.set(false);
+          if (response.success) {
+            // Auto-login after successful registration
+            this.login({ email: data.email, password: data.password });
+          }
+        }),
+        catchError((error: HttpErrorResponse) => {
+          this.isLoading.set(false);
+          const errorMessage = error.error?.message || 'Admin registration failed';
+          this.error.set(errorMessage);
+          return of({ success: false, message: errorMessage } as AuthResponse);
+        }),
+      );
+  }
+
+  /**
+   * Validate admin registration data
+   */
+  validateAdminRegistration(data: AdminSignupData): ValidationError[] {
+    const errors: ValidationError[] = [];
+
+    // First name validation
+    if (!data.firstName?.trim()) {
+      errors.push({ field: 'firstName', message: 'First name is required' });
+    } else if (data.firstName.length < 2) {
+      errors.push({ field: 'firstName', message: 'First name must be at least 2 characters long' });
+    }
+
+    // Last name validation
+    if (!data.lastName?.trim()) {
+      errors.push({ field: 'lastName', message: 'Last name is required' });
+    } else if (data.lastName.length < 2) {
+      errors.push({ field: 'lastName', message: 'Last name must be at least 2 characters long' });
+    }
+
+    // Email validation
+    if (!data.email?.trim()) {
+      errors.push({ field: 'email', message: 'Email is required' });
+    } else if (!this.isValidEmail(data.email)) {
+      errors.push({ field: 'email', message: 'Please enter a valid email address' });
+    }
+
+    // Contact number validation (optional)
+    if (data.contactNumber?.trim() && !this.isValidPhoneNumber(data.contactNumber)) {
+      errors.push({ field: 'contactNumber', message: 'Please enter a valid contact number' });
+    }
+
+    // Password validation
+    if (!data.password?.trim()) {
+      errors.push({ field: 'password', message: 'Password is required' });
+    } else if (data.password.length < 8) {
+      errors.push({ field: 'password', message: 'Password must be at least 8 characters long' });
+    } else if (!this.hasValidPasswordFormat(data.password)) {
+      errors.push({
+        field: 'password',
+        message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+      });
+    }
+
+    // Confirm password validation
+    if (!data.confirmPassword?.trim()) {
+      errors.push({ field: 'confirmPassword', message: 'Please confirm your password' });
+    } else if (data.password !== data.confirmPassword) {
+      errors.push({ field: 'confirmPassword', message: 'Passwords do not match' });
+    }
+
+    return errors;
+  }
+
+  /**
+   * Register a new admin user
+   */
+  adminRegister(data: AdminSignupData): Promise<AuthResponse> {
+    return new Promise((resolve) => {
+      this.adminRegister$(data).subscribe({
+        next: (response) => resolve(response),
+        error: () => resolve({ success: false, message: 'Admin registration failed' }),
+      });
+    });
+  }
+
+  adminRegister$(data: AdminSignupData): Observable<AuthResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    if (!this.isValidEmail(data.email)) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Invalid email format' } as AuthResponse);
+    }
+
+    if (data.password !== data.confirmPassword) {
+      this.isLoading.set(false);
+      return of({ success: false, message: 'Passwords do not match' } as AuthResponse);
+    }
+
+    return this.http
+      .post<AuthResponse>(`${environment.apiUrl}/admin/register`, data, { withCredentials: true })
+      .pipe(
+        map((response) => response),
+        tap((response) => {
+          this.isLoading.set(false);
+          if (response.success) {
+            // Registration successful - user will login manually
+            // No auto-login - just show success message
+          }
+        }),
+        catchError((error: HttpErrorResponse) => {
+          this.isLoading.set(false);
+          const errorMessage = error.error?.message || 'Admin registration failed';
+          this.error.set(errorMessage);
+          return of({ success: false, message: errorMessage } as AuthResponse);
+        }),
+      );
   }
 }

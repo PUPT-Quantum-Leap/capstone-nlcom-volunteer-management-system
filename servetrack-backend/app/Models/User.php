@@ -24,10 +24,14 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
         'locked_until',
         'failed_attempts',
         'last_failed_at',
     ];
+
+    // User model is for volunteers only
+    // Admin and Coordinator have separate profile models
 
     /**
      * Get the volunteer profile associated with the user
@@ -35,6 +39,22 @@ class User extends Authenticatable
     public function volunteer(): HasOne
     {
         return $this->hasOne(Volunteer::class, 'user_id', 'id');
+    }
+
+    /**
+     * Get the admin profile associated with the user
+     */
+    public function admin(): HasOne
+    {
+        return $this->hasOne(Admin::class, 'email', 'email');
+    }
+
+    /**
+     * Get the coordinator profile associated with the user
+     */
+    public function coordinator(): HasOne
+    {
+        return $this->hasOne(Coordinator::class, 'email', 'email');
     }
 
     /**

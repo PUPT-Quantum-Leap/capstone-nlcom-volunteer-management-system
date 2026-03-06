@@ -46,6 +46,9 @@ export interface VolunteerProfileResponse {
   experiences?: Experience[];
   skills?: Skill[];
   trainings?: Training[];
+  availabilities?: any[];
+  lifegroups?: any[];
+  emergency_contact?: any;
 }
 
 export interface Experience {
