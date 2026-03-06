@@ -36,7 +36,9 @@ export class AdminDashboard implements OnInit {
 
   showNotifications = signal(false);
   showLogoutModal = signal(false);
+  showAiModal = signal(false);
   searchQuery = signal('');
+  currentPage = signal(1);
 
   notifications = signal<NotificationItem[]>([]);
 
@@ -159,6 +161,7 @@ export class AdminDashboard implements OnInit {
 
   setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'): void {
     this.currentView.set(view);
+    this.currentPage.set(1);
   }
 
   setSearchQuery(value: string): void {
@@ -242,6 +245,14 @@ export class AdminDashboard implements OnInit {
 
   closeLogoutModal(): void {
     this.showLogoutModal.set(false);
+  }
+
+  openAiModal(): void {
+    this.showAiModal.set(true);
+  }
+
+  closeAiModal(): void {
+    this.showAiModal.set(false);
   }
 
   async confirmLogout(): Promise<void> {
