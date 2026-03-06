@@ -302,8 +302,6 @@
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Department</th>
-                <th>Status</th>
-                <th>Joined Date</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -977,6 +975,14 @@
       }
       }
     </main>
+
+    <!-- AI Assistant Floating Button - Bottom Right -->
+    <button type="button" class="ai-assistant-fab" (click)="openAiModal()"
+      aria-label="Open AI Assistant" title="AI Assistant">
+      <svg class="ai-fab-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 2L14.85 8.15L21 11L14.85 13.85L12 20L9.15 13.85L3 11L9.15 8.15L12 2Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
 </div>
 
@@ -1148,6 +1154,21 @@
     <div class="modal-actions">
       <button type="button" class="outline-btn" (click)="closeDeletePollModal()">Cancel</button>
       <button type="button" class="danger-btn" (click)="deletePoll()">Delete Poll</button>
+@if (showAiModal()) {
+<div class="modal-backdrop" (click)="closeAiModal()">
+  <section class="modal-card ai-coming-soon-card" (click)="$event.stopPropagation()">
+    <div class="ai-modal-header">
+      <svg class="ai-modal-icon" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L14.85 8.15L21 11L14.85 13.85L12 20L9.15 13.85L3 11L9.15 8.15L12 2Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h3>AI Assistant</h3>
+    </div>
+    <div class="ai-modal-content">
+      <p>Our intelligent assistant is currently being trained to help you manage volunteers more effectively.</p>
+      <div class="coming-soon-badge">Coming Soon</div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="primary-btn" (click)="closeAiModal()">Got it!</button>
     </div>
   </section>
 </div>
