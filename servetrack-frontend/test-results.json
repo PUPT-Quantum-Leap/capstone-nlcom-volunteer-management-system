@@ -1,0 +1,4 @@
+
+> servetrack-frontend@0.0.0 test
+> ng test --reporter=json
+

@@ -26,8 +26,7 @@ describe('LandingPage', () => {
           },
         },
       ],
-    })
-    .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(LandingPage);
     component = fixture.componentInstance;
