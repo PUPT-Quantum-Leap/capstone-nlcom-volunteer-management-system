@@ -45,7 +45,6 @@ export class AdminDashboard implements OnInit {
   editingPoll = signal<Poll | null>(null);
   deletingPollId = signal<number | null>(null);
   showAiModal = signal(false);
-  searchQuery = signal('');
   currentPage = signal(1);
 
   notifications = signal<NotificationItem[]>([]);

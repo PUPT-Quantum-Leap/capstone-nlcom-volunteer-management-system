@@ -1154,6 +1154,11 @@
     <div class="modal-actions">
       <button type="button" class="outline-btn" (click)="closeDeletePollModal()">Cancel</button>
       <button type="button" class="danger-btn" (click)="deletePoll()">Delete Poll</button>
+    </div>
+  </section>
+</div>
+}
+
 @if (showAiModal()) {
 <div class="modal-backdrop" (click)="closeAiModal()">
   <section class="modal-card ai-coming-soon-card" (click)="$event.stopPropagation()">
