@@ -165,12 +165,26 @@ export class AdminDashboard implements OnInit {
   volunteerForm = this.fb.group({
     firstName: ['', [Validators.required, Validators.minLength(2)]],
     lastName: ['', [Validators.required, Validators.minLength(2)]],
+    facebookName: ['', [Validators.required, Validators.maxLength(100)]],
     email: ['', [Validators.required, Validators.email]],
     mobileNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{11}$/)]],
     birthdate: ['', Validators.required],
+    lastMedicalExam: ['', Validators.required],
     completeAddress: ['', Validators.required],
-    educationalAttainment: [''],
-    facebookName: [''],
+    educationalAttainment: ['', Validators.required],
+    trainingExperience: [''],
+    skillsHobbies: [''],
+    classesTraining: [''],
+    volunteerPreference: ['', Validators.required],
+    otherPreference: [''],
+    availability: ['', Validators.required],
+    otherAvailability: [''],
+    partOfLifegroup: ['', Validators.required],
+    lifegroupLeaderName: [''],
+    leadingLifegroup: ['', Validators.required],
+    emergencyContactName: ['', Validators.required],
+    emergencyContactNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{11}$/)]],
+    emergencyContactRelationship: ['', Validators.required],
   });
 
   ngOnInit(): void {
