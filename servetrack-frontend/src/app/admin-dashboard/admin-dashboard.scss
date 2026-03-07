@@ -2420,6 +2420,10 @@ a:focus-visible {
       font-size: 0.875rem;
       font-weight: 600;
       color: #374151;
+
+      .required {
+        color: #ef4444;
+      }
     }
 
     .form-input,
