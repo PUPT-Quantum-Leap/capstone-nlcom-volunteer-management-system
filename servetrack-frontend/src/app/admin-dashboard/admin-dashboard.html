@@ -1000,8 +1000,8 @@
 }
 
 @if (showPollModal()) {
-<div class="modal-backdrop" (click)="closePollModal()">
-  <section class="modal-card poll-modal" (click)="$event.stopPropagation()">
+<div class="modal-backdrop">
+  <section class="modal-card poll-modal">
     <div class="modal-header">
       <h3>{{ editingPoll() ? 'Edit Poll' : 'Create New Poll' }}</h3>
       <button type="button" class="modal-close-btn" (click)="closePollModal()">
@@ -1101,7 +1101,9 @@
             <div class="option-number">{{ i + 1 }}</div>
             <div class="option-fields">
               <div class="form-group">
+                <label [for]="'poll-option-time-' + i">Time Slot</label>
                 <input 
+                  [id]="'poll-option-time-' + i"
                   type="text" 
                   formControlName="timeSlot" 
                   placeholder="e.g., 4:30am - 2:00pm"
@@ -1109,7 +1111,9 @@
                 />
               </div>
               <div class="form-group capacity-group">
+                <label [for]="'poll-option-capacity-' + i">Capacity</label>
                 <input 
+                  [id]="'poll-option-capacity-' + i"
                   type="number" 
                   formControlName="capacity" 
                   placeholder="Capacity"
