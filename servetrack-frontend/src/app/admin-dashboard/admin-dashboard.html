@@ -1180,7 +1180,7 @@
     <form [formGroup]="volunteerForm" (ngSubmit)="saveVolunteer()">
       <div class="form-grid">
         <div class="form-group">
-          <label for="volunteer-first-name">First Name *</label>
+          <label for="volunteer-first-name">First Name <span class="required">*</span></label>
           <input
             id="volunteer-first-name"
             type="text"
@@ -1194,7 +1194,7 @@
         </div>
 
         <div class="form-group">
-          <label for="volunteer-last-name">Last Name *</label>
+          <label for="volunteer-last-name">Last Name <span class="required">*</span></label>
           <input
             id="volunteer-last-name"
             type="text"
@@ -1207,13 +1207,27 @@
           }
         </div>
 
+        <div class="form-group full-width">
+          <label for="volunteer-facebook">Facebook Name <span class="required">*</span></label>
+          <input
+            id="volunteer-facebook"
+            type="text"
+            formControlName="facebookName"
+            placeholder="Enter Facebook name"
+            class="form-input"
+          />
+          @if (volunteerForm.get('facebookName')?.invalid && volunteerForm.get('facebookName')?.touched) {
+          <span class="error-message">Facebook name is required</span>
+          }
+        </div>
+
         <div class="form-group">
-          <label for="volunteer-email">Email *</label>
+          <label for="volunteer-email">Email <span class="required">*</span></label>
           <input
             id="volunteer-email"
             type="email"
             formControlName="email"
-            placeholder="volunteer@example.com"
+            placeholder="your.email@example.com"
             class="form-input"
           />
           @if (volunteerForm.get('email')?.invalid && volunteerForm.get('email')?.touched) {
@@ -1222,12 +1236,12 @@
         </div>
 
         <div class="form-group">
-          <label for="volunteer-mobile">Mobile Number *</label>
+          <label for="volunteer-mobile">Mobile Number <span class="required">*</span></label>
           <input
             id="volunteer-mobile"
             type="tel"
             formControlName="mobileNumber"
-            placeholder="09123456789"
+            placeholder="09XXXXXXXXX"
             class="form-input"
           />
           @if (volunteerForm.get('mobileNumber')?.invalid && volunteerForm.get('mobileNumber')?.touched) {
@@ -1236,7 +1250,7 @@
         </div>
 
         <div class="form-group">
-          <label for="volunteer-birthdate">Birthdate *</label>
+          <label for="volunteer-birthdate">Birthdate <span class="required">*</span></label>
           <input
             id="volunteer-birthdate"
             type="date"
@@ -1249,18 +1263,20 @@
         </div>
 
         <div class="form-group">
-          <label for="volunteer-facebook">Facebook Name</label>
+          <label for="volunteer-medical-exam">Last Medical Examination <span class="required">*</span></label>
           <input
-            id="volunteer-facebook"
-            type="text"
-            formControlName="facebookName"
-            placeholder="Facebook name (optional)"
+            id="volunteer-medical-exam"
+            type="date"
+            formControlName="lastMedicalExam"
             class="form-input"
           />
+          @if (volunteerForm.get('lastMedicalExam')?.invalid && volunteerForm.get('lastMedicalExam')?.touched) {
+          <span class="error-message">Last medical examination date is required</span>
+          }
         </div>
 
         <div class="form-group full-width">
-          <label for="volunteer-address">Complete Address *</label>
+          <label for="volunteer-address">Complete Address <span class="required">*</span></label>
           <textarea
             id="volunteer-address"
             formControlName="completeAddress"
@@ -1274,14 +1290,221 @@
         </div>
 
         <div class="form-group full-width">
-          <label for="volunteer-education">Educational Attainment</label>
-          <input
+          <label for="volunteer-education">Educational Attainment <span class="required">*</span></label>
+          <select
             id="volunteer-education"
-            type="text"
             formControlName="educationalAttainment"
-            placeholder="e.g., Bachelor's Degree"
+            class="form-input"
+          >
+            <option value="" disabled selected>Select your educational attainment</option>
+            <option value="elementary">Elementary</option>
+            <option value="high-school">High School</option>
+            <option value="senior-high">Senior High School</option>
+            <option value="vocational">Vocational Course</option>
+            <option value="college-undergraduate">College Undergraduate</option>
+            <option value="college-graduate">College Graduate</option>
+            <option value="masters">Master's Degree</option>
+            <option value="doctorate">Doctorate Degree</option>
+          </select>
+          @if (volunteerForm.get('educationalAttainment')?.invalid && volunteerForm.get('educationalAttainment')?.touched) {
+          <span class="error-message">Educational attainment is required</span>
+          }
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-training">Training and Experience</label>
+          <textarea
+            id="volunteer-training"
+            formControlName="trainingExperience"
+            placeholder="Describe your training and work experience (optional)"
+            rows="3"
+            class="form-input"
+          ></textarea>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-skills">Skills or Hobbies</label>
+          <textarea
+            id="volunteer-skills"
+            formControlName="skillsHobbies"
+            placeholder="List your skills or hobbies (optional)"
+            rows="3"
+            class="form-input"
+          ></textarea>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-classes">Classes and Training Attended</label>
+          <textarea
+            id="volunteer-classes"
+            formControlName="classesTraining"
+            placeholder="List classes or training programs you attended (optional)"
+            rows="3"
+            class="form-input"
+          ></textarea>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-preference">Where do you want to volunteer? <span class="required">*</span></label>
+          <select
+            id="volunteer-preference"
+            formControlName="volunteerPreference"
+            class="form-input"
+          >
+            <option value="" disabled selected>Select your preference</option>
+            <option value="sidewalk-sunday-school">Metro Sidewalk Sunday School (Teaching & Education)</option>
+            <option value="mobile-kitchen">Mobile Kitchen Operations</option>
+            <option value="relief-operations">Relief Operations</option>
+            <option value="safety-emergency">Safety and Emergency Response</option>
+            <option value="medical-operations">Medical Operations</option>
+            <option value="psychological-aid">Psychological First Aid</option>
+            <option value="transportation-logistics">Transportation & Logistics Team</option>
+            <option value="purchasing">Purchasing Team</option>
+            <option value="partnerships">Individual & Corporate Partnerships</option>
+            <option value="digital-marketing">Digital Marketing & Promotions</option>
+            <option value="creatives">Creatives (Video / Photos)</option>
+            <option value="healing">Healing</option>
+            <option value="real-estate-sports">Real Estate & Sports</option>
+            <option value="kitchen-related">Anything kitchen-related</option>
+            <option value="wherever-needed">Wherever is needed</option>
+            <option value="dont-know">Don't know yet</option>
+            <option value="other">Other</option>
+          </select>
+          @if (volunteerForm.get('volunteerPreference')?.invalid && volunteerForm.get('volunteerPreference')?.touched) {
+          <span class="error-message">Volunteer preference is required</span>
+          }
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-other-preference">Other Preference (if applicable)</label>
+          <input
+            id="volunteer-other-preference"
+            type="text"
+            formControlName="otherPreference"
+            placeholder="Specify other preference"
             class="form-input"
           />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-availability">Availability <span class="required">*</span></label>
+          <select
+            id="volunteer-availability"
+            formControlName="availability"
+            class="form-input"
+          >
+            <option value="" disabled selected>Select your availability</option>
+            <option value="anytime">Anytime / On Call</option>
+            <option value="weekends-only">Weekends Only</option>
+            <option value="weekdays-only">Weekdays Only</option>
+            <option value="weekdays-weekends">Weekdays & Weekends</option>
+            <option value="friday-saturday">Friday & Saturday Only</option>
+            <option value="scheduled">Scheduled (By Arrangement)</option>
+            <option value="holidays">Holidays (If Available)</option>
+            <option value="rest-days">Rest Days / With Filed Leave</option>
+            <option value="limited-weekdays">Limited Weekdays (Not Whole Day)</option>
+            <option value="day-off">Day Off Only</option>
+            <option value="others">Others</option>
+          </select>
+          @if (volunteerForm.get('availability')?.invalid && volunteerForm.get('availability')?.touched) {
+          <span class="error-message">Availability is required</span>
+          }
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-other-availability">Other Availability (if applicable)</label>
+          <input
+            id="volunteer-other-availability"
+            type="text"
+            formControlName="otherAvailability"
+            placeholder="Specify other availability"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-lifegroup">Part of a lifegroup? <span class="required">*</span></label>
+          <select
+            id="volunteer-lifegroup"
+            formControlName="partOfLifegroup"
+            class="form-input"
+          >
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+          @if (volunteerForm.get('partOfLifegroup')?.invalid && volunteerForm.get('partOfLifegroup')?.touched) {
+          <span class="error-message">This field is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-lifegroup-leader">Lifegroup Leader Name</label>
+          <input
+            id="volunteer-lifegroup-leader"
+            type="text"
+            formControlName="lifegroupLeaderName"
+            placeholder="Enter lifegroup leader name (if applicable)"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-leading-lifegroup">Leading a lifegroup? <span class="required">*</span></label>
+          <select
+            id="volunteer-leading-lifegroup"
+            formControlName="leadingLifegroup"
+            class="form-input"
+          >
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+          @if (volunteerForm.get('leadingLifegroup')?.invalid && volunteerForm.get('leadingLifegroup')?.touched) {
+          <span class="error-message">This field is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-emergency-name">Emergency Contact Name <span class="required">*</span></label>
+          <input
+            id="volunteer-emergency-name"
+            type="text"
+            formControlName="emergencyContactName"
+            placeholder="Full name"
+            class="form-input"
+          />
+          @if (volunteerForm.get('emergencyContactName')?.invalid && volunteerForm.get('emergencyContactName')?.touched) {
+          <span class="error-message">Emergency contact name is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-emergency-number">Emergency Contact Number <span class="required">*</span></label>
+          <input
+            id="volunteer-emergency-number"
+            type="tel"
+            formControlName="emergencyContactNumber"
+            placeholder="09XXXXXXXXX"
+            class="form-input"
+          />
+          @if (volunteerForm.get('emergencyContactNumber')?.invalid && volunteerForm.get('emergencyContactNumber')?.touched) {
+          <span class="error-message">Valid 11-digit mobile number is required</span>
+          }
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-emergency-relationship">Emergency Contact Relationship <span class="required">*</span></label>
+          <input
+            id="volunteer-emergency-relationship"
+            type="text"
+            formControlName="emergencyContactRelationship"
+            placeholder="e.g., Spouse, Parent, Sibling"
+            class="form-input"
+          />
+          @if (volunteerForm.get('emergencyContactRelationship')?.invalid && volunteerForm.get('emergencyContactRelationship')?.touched) {
+          <span class="error-message">Emergency contact relationship is required</span>
+          }
         </div>
       </div>
 
