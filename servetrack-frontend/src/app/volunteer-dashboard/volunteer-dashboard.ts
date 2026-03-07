@@ -5,6 +5,7 @@ import {
   inject,
   OnInit,
   signal,
+  DestroyRef,
 } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -14,6 +15,7 @@ import {
 } from '../validators/password.validator';
 import { AuthService } from '../services/auth.service';
 import { VolunteerService } from '../services/volunteer.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { VolunteerProfile, VolunteerProfileResponse } from '../models/volunteer-profile';
 import { PollChoice } from '../models/poll-choice';
@@ -33,6 +35,7 @@ export class VolunteerDashboard implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
+  private destroyRef = inject(DestroyRef);
 
   readonly defaultPhoto = '/assets/volunteer1.png';
 
@@ -221,7 +224,7 @@ export class VolunteerDashboard implements OnInit {
   // ── Data loading ──────────────────────────────────────────────────────────
 
   private loadProfile(): void {
-    this.volunteerService.getProfile().subscribe((response) => {
+    this.volunteerService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
         this.applyProfileResponse(response.data);
       }
@@ -312,7 +315,7 @@ export class VolunteerDashboard implements OnInit {
   }
 
   private loadAttendanceStats(): void {
-    this.volunteerService.getAttendanceStats().subscribe((response) => {
+    this.volunteerService.getAttendanceStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
         const stats = response.data;
         this.attendanceTotalHours.set(stats.monthly.hours);
@@ -325,6 +328,7 @@ export class VolunteerDashboard implements OnInit {
     this.isLoading.set(true);
     this.volunteerService
       .getAttendance(this.attendancePeriod(), this.attendanceSearchQuery() || undefined)
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
         if (response.success) {
           this.attendanceItems.set(response.data ?? []);
@@ -604,7 +608,7 @@ export class VolunteerDashboard implements OnInit {
       emergencyContactRelationship: formValue.emergencyContactRelationship?.trim() ?? '',
     };
 
-    this.volunteerService.updateProfile(payload).subscribe((response) => {
+    this.volunteerService.updateProfile(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
         this.applyProfileResponse(response.data);
         // Show success modal
@@ -651,20 +655,6 @@ export class VolunteerDashboard implements OnInit {
     this.profileForm.reset();
     this.profilePreviewUrl.set(this.defaultPhoto);
     this.showOtherPreference.set(false);
-  }
-
-  async deleteProfile(profileId: number): Promise<void> {
-    this.isLoading.set(true);
-    await new Promise((res) => setTimeout(res, 400));
-    try {
-      this.profiles.update((items) => items.filter((item) => item.id !== profileId));
-
-      if (this.editingProfileId() === profileId) {
-        this.cancelEdit();
-      }
-    } finally {
-      this.isLoading.set(false);
-    }
   }
 
   onVolunteerPreferenceChange(event: Event): void {

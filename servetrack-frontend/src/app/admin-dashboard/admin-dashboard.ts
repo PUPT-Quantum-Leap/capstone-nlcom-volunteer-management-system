@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   signal,
+  DestroyRef,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -13,6 +14,7 @@ import { DatePipe, CommonModule } from '@angular/common';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
 import { AdminDashboardService, DashboardVolunteerRow } from '../services/admin-dashboard.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Poll, CreatePollDto, PollOption } from '../models/poll';
 import { PollService } from '../services/poll.service';
 
@@ -28,6 +30,7 @@ export class AdminDashboard implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private adminDashboardService = inject(AdminDashboardService);
+  private destroyRef = inject(DestroyRef);
   private pollService = inject(PollService);
 
   readonly defaultPhoto = '/assets/nlcom.png';
@@ -163,7 +166,7 @@ export class AdminDashboard implements OnInit {
   private loadDashboardData(): void {
     this.isLoading.set(true);
 
-    this.adminDashboardService.getDashboardData().subscribe((response) => {
+    this.adminDashboardService.getDashboardData().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
         this.totalVolunteers.set(response.data.stats.totalVolunteers);
         this.activeVolunteers.set(response.data.stats.activeVolunteers);

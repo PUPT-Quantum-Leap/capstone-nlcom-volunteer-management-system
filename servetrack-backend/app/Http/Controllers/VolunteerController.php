@@ -40,11 +40,7 @@ class VolunteerController extends Controller
                 'emergencyContactNumber' => preg_replace('/[\s\-()]/', '', $request->emergencyContactNumber),
             ]);
         }
-        if ($request->has('email')) {
-            $request->merge([
-                'email' => strtolower(trim((string) $request->email)),
-            ]);
-        }
+        // Email normalization is now handled by NormalizeEmail middleware
 
         // Validate incoming data
         $validator = Validator::make($request->all(), [
@@ -171,9 +167,15 @@ class VolunteerController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
+            // Log detailed error internally
+            \Log::error('Volunteer registration failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Registration failed: '.$e->getMessage(),
+                'message' => 'Registration failed. Please try again or contact support.',
             ], 500);
         }
     }
@@ -601,6 +603,9 @@ class VolunteerController extends Controller
             ? $request->query('sort')
             : 'created_at';
         $sortOrder = $request->query('order') === 'asc' ? 'asc' : 'desc';
+
+        // Log sorting for security audit
+        \Log::debug('Sorting volunteers', ['sortBy' => $sortBy, 'sortOrder' => $sortOrder]);
 
         $query->orderBy($sortBy, $sortOrder);
 

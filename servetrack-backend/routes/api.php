@@ -15,17 +15,17 @@ Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(funct
     Route::post('/register', [RegisterController::class, 'store']);
 });
 
-// Volunteer registration - public signup
+// Volunteer registration - public signup with email normalization
 Route::post('/volunteer/register', [VolunteerController::class, 'register'])
-    ->middleware(['api', 'guest', 'security.audit', 'rate.limit']);
+    ->middleware(['api', 'guest', 'security.audit', 'rate.limit', 'normalize.email']);
 
-// Admin registration - public signup
+// Admin registration - public signup with email normalization
 Route::post('/admin/register', [AdminController::class, 'register'])
-    ->middleware(['api', 'guest', 'security.audit', 'rate.limit']);
+    ->middleware(['api', 'guest', 'security.audit', 'rate.limit', 'normalize.email']);
 
-// Coordinator registration - public signup
+// Coordinator registration - public signup with email normalization
 Route::post('/coordinator/register', [CoordinatorController::class, 'register'])
-    ->middleware(['api', 'guest', 'security.audit', 'rate.limit']);
+    ->middleware(['api', 'guest', 'security.audit', 'rate.limit', 'normalize.email']);
 
 // Auth-required routes
 Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
