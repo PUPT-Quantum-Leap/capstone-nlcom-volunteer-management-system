@@ -265,7 +265,7 @@
             <h2>Volunteer Management</h2>
             <p>Manage volunteer profiles, assignments, and information</p>
           </div>
-          <button type="button" class="add-volunteer-btn">
+          <button type="button" class="add-volunteer-btn" (click)="openCreateVolunteerModal()">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -302,6 +302,8 @@
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Department</th>
+                <th>Status</th>
+                <th>Joined Date</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -331,16 +333,16 @@
                 <td>{{ volunteer.joined_date | date: 'MMM d, yyyy' }}</td>
                 <td>
                   <div class="action-buttons">
-                    <button type="button" class="action-btn view-btn" title="View">
+                    <button type="button" class="action-btn edit-btn" (click)="openEditVolunteerModal(volunteer)" title="Edit">
                       <svg viewBox="0 0 24 24" fill="none">
-                        <path
-                          d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        />
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn delete-btn" (click)="confirmDeleteVolunteer(volunteer.id)" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                     </button>
                   </div>
@@ -1158,6 +1160,155 @@
     <div class="modal-actions">
       <button type="button" class="outline-btn" (click)="closeDeletePollModal()">Cancel</button>
       <button type="button" class="danger-btn" (click)="deletePoll()">Delete Poll</button>
+    </div>
+  </section>
+</div>
+}
+
+@if (showVolunteerModal()) {
+<div class="modal-backdrop">
+  <section class="modal-card volunteer-modal">
+    <div class="modal-header">
+      <h3>{{ editingVolunteer() ? 'Edit Volunteer' : 'Add New Volunteer' }}</h3>
+      <button type="button" class="modal-close-btn" (click)="closeVolunteerModal()">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="volunteerForm" (ngSubmit)="saveVolunteer()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="volunteer-first-name">First Name *</label>
+          <input
+            id="volunteer-first-name"
+            type="text"
+            formControlName="firstName"
+            placeholder="Enter first name"
+            class="form-input"
+          />
+          @if (volunteerForm.get('firstName')?.invalid && volunteerForm.get('firstName')?.touched) {
+          <span class="error-message">First name is required (minimum 2 characters)</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-last-name">Last Name *</label>
+          <input
+            id="volunteer-last-name"
+            type="text"
+            formControlName="lastName"
+            placeholder="Enter last name"
+            class="form-input"
+          />
+          @if (volunteerForm.get('lastName')?.invalid && volunteerForm.get('lastName')?.touched) {
+          <span class="error-message">Last name is required (minimum 2 characters)</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-email">Email *</label>
+          <input
+            id="volunteer-email"
+            type="email"
+            formControlName="email"
+            placeholder="volunteer@example.com"
+            class="form-input"
+          />
+          @if (volunteerForm.get('email')?.invalid && volunteerForm.get('email')?.touched) {
+          <span class="error-message">Valid email is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-mobile">Mobile Number *</label>
+          <input
+            id="volunteer-mobile"
+            type="tel"
+            formControlName="mobileNumber"
+            placeholder="09123456789"
+            class="form-input"
+          />
+          @if (volunteerForm.get('mobileNumber')?.invalid && volunteerForm.get('mobileNumber')?.touched) {
+          <span class="error-message">Valid 11-digit mobile number is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-birthdate">Birthdate *</label>
+          <input
+            id="volunteer-birthdate"
+            type="date"
+            formControlName="birthdate"
+            class="form-input"
+          />
+          @if (volunteerForm.get('birthdate')?.invalid && volunteerForm.get('birthdate')?.touched) {
+          <span class="error-message">Birthdate is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-facebook">Facebook Name</label>
+          <input
+            id="volunteer-facebook"
+            type="text"
+            formControlName="facebookName"
+            placeholder="Facebook name (optional)"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-address">Complete Address *</label>
+          <textarea
+            id="volunteer-address"
+            formControlName="completeAddress"
+            placeholder="Enter complete address"
+            rows="3"
+            class="form-input"
+          ></textarea>
+          @if (volunteerForm.get('completeAddress')?.invalid && volunteerForm.get('completeAddress')?.touched) {
+          <span class="error-message">Complete address is required</span>
+          }
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-education">Educational Attainment</label>
+          <input
+            id="volunteer-education"
+            type="text"
+            formControlName="educationalAttainment"
+            placeholder="e.g., Bachelor's Degree"
+            class="form-input"
+          />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeVolunteerModal()">Cancel</button>
+        <button type="submit" class="primary-btn">
+          {{ editingVolunteer() ? 'Update Volunteer' : 'Add Volunteer' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>
+}
+
+@if (showDeleteVolunteerModal()) {
+<div class="modal-backdrop" (click)="closeDeleteVolunteerModal()">
+  <section class="modal-card delete-modal" (click)="$event.stopPropagation()">
+    <div class="delete-modal-icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h3>Delete Volunteer</h3>
+    <p>Are you sure you want to delete this volunteer? This action cannot be undone and all associated data will be permanently removed.</p>
+    <div class="modal-actions">
+      <button type="button" class="outline-btn" (click)="closeDeleteVolunteerModal()">Cancel</button>
+      <button type="button" class="danger-btn" (click)="deleteVolunteer()">Delete Volunteer</button>
     </div>
   </section>
 </div>
