@@ -1,147 +1,176 @@
 # ServeTrack - Volunteer Management System
 
-[![CI](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/actions/workflows/ci.yml/badge.svg)](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/actions/workflows/ci.yml)
-[![Gitleaks](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/actions/workflows/gitleaks.yml)
+[![CI](https://img.shields.io/badge/CI-Passing-green?style=flat-square)](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/actions/workflows/ci.yml)
+[![Gitleaks](https://img.shields.io/badge/Security-Secure-blue?style=flat-square)](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/actions/workflows/gitleaks.yml)
+[![PHP](https://img.shields.io/badge/PHP-8.2+-8892BF?style=flat-square)](https://www.php.net/)
+[![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?style=flat-square)](https://laravel.com/)
+[![Angular](https://img.shields.io/badge/Angular-21-DD0031?style=flat-square)](https://angular.io/)
+[![Pest](https://img.shields.io/badge/Testing-Pest%20v3-8D8387?style=flat-square)](https://pestphp.com/)
 
-A comprehensive volunteer management system designed for NLCOM (National League of Cities Operations & Management) to streamline volunteer coordination, event management, and activity tracking.
+---
 
-## 📋 Quick Links
+<div align="center">
 
-- **[Product Requirements (PRD.md)](./PRD.md)** - Detailed requirements and architecture
-- **[Quick Start Guide (GEMINI.md)](./GEMINI.md)** - Fast setup instructions
-- **[Development Guidelines (AGENTS.md)](./AGENTS.md)** - Code standards and conventions
-- **[CI/CD Documentation](./docs/CI_README.md)** - GitHub Actions workflow details
-- **[Laravel + XAMPP Setup](./docs/LARAVEL_XAMPP_SETUP.md)** - Database connection guide
+[![Frontend](https://img.shields.io/badge/Angular-21-DD0031?style=flat-square&logo=angular&logoColor=white)](./servetrack-frontend/)
+[![Backend](https://img.shields.io/badge/Laravel-12-FF2D20?style=flat-square&logo=laravel&logoColor=white)](./servetrack-backend/)
 
-## 🏗️ Architecture
+A volunteer management system designed for NLCOM (National League of Cities Operations & Management) to coordinate volunteers, manage events, and track activities.
 
-ServeTrack is a **monorepo** containing two main applications:
+| Documentation | Description |
+|---------------|-------------|
+| [Product Requirements](./PRD.md) | Detailed requirements and architecture |
+| [Quick Start Guide](./GEMINI.md) | Fast setup instructions |
+| [Development Guidelines](./AGENTS.md) | Code standards and conventions |
+| [CI/CD Documentation](./docs/CI_README.md) | GitHub Actions workflow details |
+| [Laravel Setup Guide](./docs/LARAVEL_XAMPP_SETUP.md) | Database connection instructions |
 
-### Backend - Laravel 12 API
-- **Location**: `servetrack-backend/`
-- **Tech**: PHP 8.2+, Laravel 12, MySQL
-- **Auth**: Laravel Sanctum v4
-- **Testing**: Pest v3
-- **Styling**: Tailwind CSS v4
+</div>
 
-### Frontend - Angular 21 SPA
-- **Location**: `servetrack-frontend/`
-- **Tech**: TypeScript 5.9+, Angular 21
-- **Testing**: Vitest v4
-- **Build**: Angular CLI
+---
 
-## 🚀 Quick Start
+## Architecture
+
+ServeTrack is a monorepo containing two main applications:
+
+### Backend
+
+**Location:** `servetrack-backend/`
+
+| Component | Technology | Version |
+|-----------|------------|---------|
+| Framework | Laravel | 12 |
+| PHP | PHP | 8.2+ |
+| Database | MySQL | 8.0+ |
+| Authentication | Laravel Sanctum | 4 |
+| Testing | Pest | 3 |
+| Build Tool | Vite | - |
+| Styling | Tailwind CSS | 4 |
+
+### Frontend
+
+**Location:** `servetrack-frontend/`
+
+| Component | Technology | Version |
+|-----------|------------|---------|
+| Framework | Angular | 21 |
+| TypeScript | TypeScript | 5.9+ |
+| Build Tool | Angular CLI | - |
+| Testing | Vitest | 4 |
+| State Management | Signals | - |
+| Styling | Tailwind CSS | 3/4 |
+
+---
+
+## Quick Start
 
 ### Prerequisites
 
-- **PHP** 8.2 or higher
-- **Composer** 2.x
-- **Node.js** 22.x
-- **npm** 11.x
-- **MySQL** 8.0 or higher
+| Requirement | Version |
+|-------------|---------|
+| PHP | 8.2+ |
+| Composer | 2.x |
+| Node.js | 22.x |
+| npm | 11.x |
+| MySQL | 8.0+ |
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system.git
-   cd capstone-nlcom-volunteer-management-system
-   ```
+```bash
+# Clone repository
+git clone https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system.git
+cd capstone-nlcom-volunteer-management-system
 
-2. **Install root dependencies**
-   ```bash
-   npm install
-   ```
+# Install root dependencies
+npm install
 
-3. **Setup Backend**
-   ```bash
-   cd servetrack-backend
-   composer install
-   npm install
-   cp .env.example .env
-   php artisan key:generate
-   php artisan migrate
-   ```
+# Setup backend
+cd servetrack-backend
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
 
-4. **Setup Frontend**
-   ```bash
-   cd ../servetrack-frontend
-   npm install
-   ```
+# Setup frontend
+cd ../servetrack-frontend
+npm install
+```
 
 ### Development
 
-Run both applications concurrently:
-
-**Terminal 1 - Backend:**
 ```bash
+# Terminal 1 - Backend
 cd servetrack-backend
-composer run dev  # Starts Laravel server, queue worker, and Vite
-```
+composer run dev
 
-**Terminal 2 - Frontend:**
-```bash
+# Terminal 2 - Frontend
 cd servetrack-frontend
-npm start  # Starts Angular dev server at http://localhost:4200
+npm start
 ```
 
-The backend API runs at `http://localhost:8000`
+API runs at `http://localhost:8000`, frontend at `http://localhost:4200`
 
-## 🧪 Testing
+---
 
-### Run All Tests
+## Testing
 
-**Frontend:**
 ```bash
+# Frontend tests
 cd servetrack-frontend
 npm test
-```
 
-**Backend:**
-```bash
+# Backend tests
 cd servetrack-backend
 php artisan test
 ```
 
 ### Code Quality
 
-**Format Backend Code:**
 ```bash
+# Format backend code
 cd servetrack-backend
 ./vendor/bin/pint
-```
+./vendor/bin/pint --dirty
 
-**Lint Backend (check only):**
-```bash
+# Lint backend (check only)
 npm run lint:backend
 ```
 
-## 📦 Package Manager
+---
 
-This project uses **npm** as the standard package manager across all applications. Lock files (`package-lock.json` and `composer.lock`) are committed to ensure reproducible builds.
+## Package Manager
 
-## 🔐 Security
+This project uses npm as the standard package manager across all applications. Lock files (`package-lock.json` and `composer.lock`) are committed for reproducible builds.
 
-- **Gitleaks**: Automatic secret scanning on every push
-- **Laravel Sanctum**: Token-based API authentication
-- **Dependency Review**: Automated vulnerability checks in PRs
+---
 
-## 🛠️ CI/CD
+## Security
 
-GitHub Actions automatically run tests on:
-- Pull requests to `main`
-- Pushes to `main` branch
+| Feature | Status |
+|---------|--------|
+| Gitleaks | Automatic secret scanning on every push |
+| Laravel Sanctum | Token-based API authentication |
+| Dependency Review | Automated vulnerability checks in PRs |
 
-The CI pipeline includes:
-- Frontend testing (Angular + Vitest)
-- Backend testing (Laravel + Pest)
-- Code style checks (Laravel Pint)
-- Dependency vulnerability scanning
-- Secret leak detection
+---
+
+## CI/CD
+
+GitHub Actions automatically runs tests on pull requests to `main` and pushes to `main`.
+
+### Pipeline Stages
+
+1. Frontend testing (Angular + Vitest)
+2. Backend testing (Laravel + Pest)
+3. Code style checks (Laravel Pint)
+4. Dependency vulnerability scanning
+5. Secret leak detection
 
 See [CI Documentation](./docs/CI_README.md) for details.
 
-## 📚 Project Structure
+---
+
+## Project Structure
 
 ```
 capstone-nlcom-volunteer-management-system/
@@ -154,44 +183,49 @@ capstone-nlcom-volunteer-management-system/
 │   ├── database/            # Migrations, seeders, factories
 │   ├── routes/              # API routes
 │   ├── composer.json        # PHP dependencies
-│   └── package.json         # Node dependencies (Vite, Tailwind)
+│   └── package.json         # Node dependencies
 ├── .github/workflows/        # CI/CD pipelines
 ├── docs/                     # Documentation
 ├── AGENTS.md                 # Development guidelines
 ├── GEMINI.md                 # Quick start guide
 ├── PRD.md                    # Product requirements
-└── package.json              # Root dependencies (Husky, Gitleaks)
+└── package.json              # Root dependencies
 ```
 
-## 👥 Development Team
+---
 
-**Organization**: PUPT Quantum Leap
-**Project**: Capstone Project for NLCOM
+## Development Team
 
-## 📝 License
+**Organization:** PUPT Quantum Leap  
+**Project:** Capstone Project for NLCOM
 
-[Add license information here]
+---
 
-## 🤝 Contributing
+## Contributing
 
-Please read [AGENTS.md](./AGENTS.md) for development guidelines and code standards before contributing.
+Please read [AGENTS.md](./AGENTS.md) for development guidelines and code standards.
 
-### Development Workflow
+### Workflow
 
 1. Create a feature branch
-2. Make your changes following the style guide
+2. Make changes following the style guide
 3. Write/update tests
 4. Run linters and tests locally
 5. Push and create a pull request
 6. Wait for CI checks to pass
 7. Request code review
 
-## 📞 Support
+---
+
+## Support
 
 For issues, questions, or contributions:
-- **Issues**: [GitHub Issues](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/issues)
-- **Documentation**: See `PRD.md` and `AGENTS.md`
+
+- **Issues:** [GitHub Issues](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/issues)
+- **Documentation:** See `PRD.md` and `AGENTS.md`
 
 ---
 
-**Built with ❤️ by the PUPT Quantum Leap Team**
+**Built by the PUPT Quantum Leap Team**
+
+[⬆ Back to Top](#-servetrack---volunteer-management-system)
