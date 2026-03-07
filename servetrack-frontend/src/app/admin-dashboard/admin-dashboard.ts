@@ -44,9 +44,13 @@ export class AdminDashboard implements OnInit {
   showLogoutModal = signal(false);
   showPollModal = signal(false);
   showDeletePollModal = signal(false);
+  showVolunteerModal = signal(false);
+  showDeleteVolunteerModal = signal(false);
   searchQuery = signal('');
   editingPoll = signal<Poll | null>(null);
   deletingPollId = signal<number | null>(null);
+  editingVolunteer = signal<DashboardVolunteerRow | null>(null);
+  deletingVolunteerId = signal<number | null>(null);
   showAiModal = signal(false);
   currentPage = signal(1);
 
@@ -156,6 +160,17 @@ export class AdminDashboard implements OnInit {
     cutOffTime: ['', Validators.required],
     description: ['', [Validators.required, Validators.minLength(10)]],
     options: this.fb.array([]),
+  });
+
+  volunteerForm = this.fb.group({
+    firstName: ['', [Validators.required, Validators.minLength(2)]],
+    lastName: ['', [Validators.required, Validators.minLength(2)]],
+    email: ['', [Validators.required, Validators.email]],
+    mobileNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{11}$/)]],
+    birthdate: ['', Validators.required],
+    completeAddress: ['', Validators.required],
+    educationalAttainment: [''],
+    facebookName: [''],
   });
 
   ngOnInit(): void {
@@ -460,6 +475,64 @@ export class AdminDashboard implements OnInit {
 
   setPollFilterStatus(status: 'all' | 'active' | 'closed' | 'draft'): void {
     this.pollFilterStatus.set(status);
+  }
+
+  openCreateVolunteerModal(): void {
+    this.editingVolunteer.set(null);
+    this.volunteerForm.reset();
+    this.showVolunteerModal.set(true);
+  }
+
+  openEditVolunteerModal(volunteer: DashboardVolunteerRow): void {
+    this.editingVolunteer.set(volunteer);
+    this.volunteerForm.patchValue({
+      firstName: volunteer.name.split(' ')[0],
+      lastName: volunteer.name.split(' ').slice(1).join(' '),
+      email: volunteer.email,
+      mobileNumber: volunteer.phone,
+      birthdate: '',
+      completeAddress: '',
+      educationalAttainment: '',
+      facebookName: '',
+    });
+    this.showVolunteerModal.set(true);
+  }
+
+  closeVolunteerModal(): void {
+    this.showVolunteerModal.set(false);
+    this.editingVolunteer.set(null);
+    this.volunteerForm.reset();
+  }
+
+  saveVolunteer(): void {
+    if (this.volunteerForm.invalid) {
+      this.volunteerForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.volunteerForm.value;
+    console.log('Save volunteer:', formValue);
+    this.closeVolunteerModal();
+    this.loadDashboardData();
+  }
+
+  confirmDeleteVolunteer(volunteerId: number): void {
+    this.deletingVolunteerId.set(volunteerId);
+    this.showDeleteVolunteerModal.set(true);
+  }
+
+  closeDeleteVolunteerModal(): void {
+    this.showDeleteVolunteerModal.set(false);
+    this.deletingVolunteerId.set(null);
+  }
+
+  deleteVolunteer(): void {
+    const volunteerId = this.deletingVolunteerId();
+    if (volunteerId !== null) {
+      console.log('Delete volunteer:', volunteerId);
+      this.closeDeleteVolunteerModal();
+      this.loadDashboardData();
+    }
   }
 
   getVotePercentage(poll: Poll, option: PollOption): number {
