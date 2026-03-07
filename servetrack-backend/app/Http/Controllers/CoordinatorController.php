@@ -6,7 +6,10 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class CoordinatorController extends Controller
 {
@@ -19,8 +22,8 @@ class CoordinatorController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|min:2|max:100',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:12',
-            'confirmPassword' => 'required|string|same:password',
+            'password' => ['required', 'string', Password::defaults()],
+            'confirmPassword' => ['required', 'string', 'same:password'],
         ]);
 
         if ($validator->fails()) {
@@ -36,7 +39,7 @@ class CoordinatorController extends Controller
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => bcrypt($request->password),
+                'password' => Hash::make($request->password),
                 'role' => 'coordinator',
             ]);
 
@@ -69,9 +72,14 @@ class CoordinatorController extends Controller
             ], 201)->withCookie($cookie);
 
         } catch (\Exception $e) {
+            \Log::error('Coordinator registration failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Registration failed: '.$e->getMessage(),
+                'message' => 'Registration failed. Please try again or contact support.',
             ], 500);
         }
     }

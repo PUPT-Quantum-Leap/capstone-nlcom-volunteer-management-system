@@ -11,8 +11,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class AdminController extends Controller
 {
@@ -153,8 +155,8 @@ class AdminController extends Controller
             'lastName' => 'required|string|min:2|max:50',
             'email' => 'required|email|unique:users,email|unique:admin,email',
             'contactNumber' => 'nullable|string|max:20',
-            'password' => 'required|string|min:12',
-            'confirmPassword' => 'required|string|same:password',
+            'password' => ['required', 'string', Password::defaults()],
+            'confirmPassword' => ['required', 'string', 'same:password'],
         ]);
 
         if ($validator->fails()) {
@@ -253,9 +255,14 @@ class AdminController extends Controller
             ], 201)->withCookie($cookie);
 
         } catch (\Exception $e) {
+            \Log::error('Admin registration failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Registration failed: '.$e->getMessage(),
+                'message' => 'Registration failed. Please try again or contact support.',
             ], 500);
         }
     }
