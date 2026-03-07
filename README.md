@@ -228,19 +228,16 @@ capstone-nlcom-volunteer-management-system/
 
 ---
 
-## Contributing
+## Contributors
 
-Please read [AGENTS.md](./AGENTS.md) for development guidelines and code standards.
+<div align="center">
 
-### Workflow
+| Thanks to all the contributors who made this project possible |
+|:--:|
+| <a href="https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/graphs/contributors"><img src="https://contrib.rocks/image?repo=PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system" width="600" /></a> |
+| *This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification.* |
 
-1. Create a feature branch
-2. Make changes following the style guide
-3. Write/update tests
-4. Run linters and tests locally
-5. Push and create a pull request
-6. Wait for CI checks to pass
-7. Request code review
+</div>
 
 ---
 
@@ -253,19 +250,9 @@ For issues, questions, or contributions:
 
 ---
 
-## Contributors
+**Built by the PUPT Quantum Leap Team**
 
-<div align="center">
-
-Thanks to all the contributors who made this project possible:
-
-<a href="https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system" width="600" />
-</a>
-
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
-
-</div>
+[⬆ Back to Top](#-servetrack---volunteer-management-system)
 
 ---
 
