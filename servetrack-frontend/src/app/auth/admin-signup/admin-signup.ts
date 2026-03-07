@@ -8,7 +8,7 @@ import {
   AbstractControl,
 } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
-import { firstValueFrom, Subscription } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { AuthService, AdminSignupData, ValidationError } from '../../services/auth.service';
 import { InputSanitizerService } from '../../services/input-sanitizer.service';
 import {

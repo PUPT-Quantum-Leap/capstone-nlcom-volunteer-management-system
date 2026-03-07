@@ -2,13 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
-  OnDestroy,
   computed,
   inject,
   signal,
   DestroyRef,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { DatePipe } from '@angular/common';
