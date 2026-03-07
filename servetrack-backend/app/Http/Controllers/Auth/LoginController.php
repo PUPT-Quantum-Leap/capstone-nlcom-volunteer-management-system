@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Constants\TokenAbilities;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
@@ -69,7 +70,7 @@ class LoginController extends Controller
                 break;
         }
 
-        return $this->buildAuthenticatedResponse($userData, $user);
+        return $this->buildAuthenticatedResponse($userData, $user, $this->abilitiesForRole($user->role));
     }
 
     /**
@@ -114,7 +115,7 @@ class LoginController extends Controller
         $userData['user_type'] = 'admin';
         $userData['admin_profile'] = $user->admin;
 
-        return $this->buildAuthenticatedResponse($userData, $user);
+        return $this->buildAuthenticatedResponse($userData, $user, TokenAbilities::ADMIN);
     }
 
     /**
@@ -158,13 +159,28 @@ class LoginController extends Controller
     }
 
     /**
+     * Resolve Sanctum token abilities for the given user role.
+     *
+     * @return string[]
+     */
+    private function abilitiesForRole(string $role): array
+    {
+        return match ($role) {
+            'admin' => TokenAbilities::ADMIN,
+            'coordinator' => TokenAbilities::COORDINATOR,
+            default => TokenAbilities::VOLUNTEER,
+        };
+    }
+
+    /**
      * Build authenticated login response with a Sanctum auth cookie.
      *
      * @param  array<string, mixed>  $userData
+     * @param  string[]  $abilities
      */
-    private function buildAuthenticatedResponse(array $userData, User $user): JsonResponse
+    private function buildAuthenticatedResponse(array $userData, User $user, array $abilities): JsonResponse
     {
-        $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+        $token = $user->createToken('auth-token', $abilities, now()->addMinutes((int) config('sanctum.expiration', 60)))->plainTextToken;
 
         $cookie = cookie(
             'auth_token',

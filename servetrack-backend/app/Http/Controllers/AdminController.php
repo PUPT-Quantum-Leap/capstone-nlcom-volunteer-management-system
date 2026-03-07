@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\TokenAbilities;
 use App\Models\Admin;
 use App\Models\Attendance;
 use App\Models\User;
@@ -224,7 +225,7 @@ class AdminController extends Controller
             Auth::login($result['user']);
 
             // Create Sanctum token and cookie
-            $token = $result['user']->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+            $token = $result['user']->createToken('auth-token', TokenAbilities::ADMIN, now()->addMinutes((int) config('sanctum.expiration', 60)))->plainTextToken;
             $cookie = cookie(
                 'auth_token',
                 $token,

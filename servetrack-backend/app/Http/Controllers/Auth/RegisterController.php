@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Constants\TokenAbilities;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
@@ -30,14 +31,14 @@ class RegisterController extends Controller
 
         $token = $user->createToken(
             'auth-token',
-            ['*'],
-            now()->addMinutes(config('sanctum.expiration', 60))
+            TokenAbilities::VOLUNTEER,
+            now()->addMinutes((int) config('sanctum.expiration', 60))
         )->plainTextToken;
 
         $cookie = cookie(
             'auth_token',
             $token,
-            config('sanctum.expiration', 60),
+            (int) config('sanctum.expiration', 60),
             '/',
             null,
             true,
