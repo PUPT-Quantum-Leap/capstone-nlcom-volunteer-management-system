@@ -6,6 +6,7 @@ import {
   OnInit,
   OnDestroy,
   signal,
+  DestroyRef,
 } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -35,6 +36,7 @@ export class VolunteerDashboard implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
+  private destroyRef = inject(DestroyRef);
 
   readonly defaultPhoto = '/assets/volunteer1.png';
 
@@ -223,7 +225,7 @@ export class VolunteerDashboard implements OnInit {
   // ── Data loading ──────────────────────────────────────────────────────────
 
   private loadProfile(): void {
-    this.volunteerService.getProfile().pipe(takeUntilDestroyed()).subscribe((response) => {
+    this.volunteerService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
         this.applyProfileResponse(response.data);
       }
@@ -314,7 +316,7 @@ export class VolunteerDashboard implements OnInit {
   }
 
   private loadAttendanceStats(): void {
-    this.volunteerService.getAttendanceStats().pipe(takeUntilDestroyed()).subscribe((response) => {
+    this.volunteerService.getAttendanceStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
         const stats = response.data;
         this.attendanceTotalHours.set(stats.monthly.hours);
@@ -327,7 +329,7 @@ export class VolunteerDashboard implements OnInit {
     this.isLoading.set(true);
     this.volunteerService
       .getAttendance(this.attendancePeriod(), this.attendanceSearchQuery() || undefined)
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
         if (response.success) {
           this.attendanceItems.set(response.data ?? []);
@@ -607,7 +609,7 @@ export class VolunteerDashboard implements OnInit {
       emergencyContactRelationship: formValue.emergencyContactRelationship?.trim() ?? '',
     };
 
-    this.volunteerService.updateProfile(payload).pipe(takeUntilDestroyed()).subscribe((response) => {
+    this.volunteerService.updateProfile(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
         this.applyProfileResponse(response.data);
         // Show success modal

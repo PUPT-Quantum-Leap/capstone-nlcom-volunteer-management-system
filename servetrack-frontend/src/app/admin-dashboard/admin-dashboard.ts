@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   signal,
+  DestroyRef,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -28,6 +29,7 @@ export class AdminDashboard implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private adminDashboardService = inject(AdminDashboardService);
+  private destroyRef = inject(DestroyRef);
 
   readonly defaultPhoto = '/assets/nlcom.png';
 
@@ -138,7 +140,7 @@ export class AdminDashboard implements OnInit {
   private loadDashboardData(): void {
     this.isLoading.set(true);
 
-    this.adminDashboardService.getDashboardData().pipe(takeUntilDestroyed()).subscribe((response) => {
+    this.adminDashboardService.getDashboardData().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
         this.totalVolunteers.set(response.data.stats.totalVolunteers);
         this.activeVolunteers.set(response.data.stats.activeVolunteers);
