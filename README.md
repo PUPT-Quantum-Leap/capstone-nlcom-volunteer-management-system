@@ -228,9 +228,9 @@ capstone-nlcom-volunteer-management-system/
 
 ---
 
-## Contributors
-
 <div align="center">
+
+## Contributors
 
 | Thanks to all the contributors who made this project possible |
 |:--:|
@@ -241,21 +241,10 @@ capstone-nlcom-volunteer-management-system/
 
 ---
 
-## Support
-
-For issues, questions, or contributions:
-
-- **Issues:** [GitHub Issues](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/issues)
-- **Documentation:** See `PRD.md` and `AGENTS.md`
-
----
+<div align="center">
 
 **Built by the PUPT Quantum Leap Team**
 
-[⬆ Back to Top](#-servetrack---volunteer-management-system)
+[⬆ Back to Top](#servetrack---volunteer-management-system)
 
----
-
-**Built by the PUPT Quantum Leap Team**
-
-[⬆ Back to Top](#-servetrack---volunteer-management-system)
+</div>
