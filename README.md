@@ -226,6 +226,18 @@ For issues, questions, or contributions:
 
 ---
 
+## Contributors
+
+Thanks to all the contributors who made this project possible:
+
+<a href="https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system" />
+</a>
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+
+---
+
 **Built by the PUPT Quantum Leap Team**
 
 [⬆ Back to Top](#-servetrack---volunteer-management-system)
