@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'security.audit' => \App\Http\Middleware\SecurityAudit::class,
             'rate.limit' => \App\Http\Middleware\AdvancedRateLimit::class,
+            'normalize.email' => \App\Http\Middleware\NormalizeEmail::class,
         ]);
 
         $middleware->api(prepend: [

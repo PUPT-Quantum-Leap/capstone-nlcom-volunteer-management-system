@@ -145,11 +145,7 @@ class AdminController extends Controller
      */
     public function register(Request $request): JsonResponse
     {
-        if ($request->has('email')) {
-            $request->merge([
-                'email' => strtolower(trim((string) $request->email)),
-            ]);
-        }
+        // Email normalization is now handled by NormalizeEmail middleware
 
         // Validate incoming data
         $validator = Validator::make($request->all(), [
@@ -157,7 +153,7 @@ class AdminController extends Controller
             'lastName' => 'required|string|min:2|max:50',
             'email' => 'required|email|unique:users,email|unique:admin,email',
             'contactNumber' => 'nullable|string|max:20',
-            'password' => 'required|string|min:8',
+            'password' => 'required|string|min:12',
             'confirmPassword' => 'required|string|same:password',
         ]);
 

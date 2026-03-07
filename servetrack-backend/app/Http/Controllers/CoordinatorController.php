@@ -19,7 +19,7 @@ class CoordinatorController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|min:2|max:100',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
+            'password' => 'required|string|min:12',
             'confirmPassword' => 'required|string|same:password',
         ]);
 
