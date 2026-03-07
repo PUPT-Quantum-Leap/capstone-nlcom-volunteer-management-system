@@ -16,6 +16,9 @@ export const csrfInterceptor: HttpInterceptorFn = (req, next) => {
           'X-XSRF-TOKEN': csrfToken,
         },
       });
+    } else {
+      // Log warning for debugging - CSRF token should be present after initial page load
+      console.warn('[CSRF Interceptor] XSRF-TOKEN cookie not found. Request may fail.');
     }
   }
 
