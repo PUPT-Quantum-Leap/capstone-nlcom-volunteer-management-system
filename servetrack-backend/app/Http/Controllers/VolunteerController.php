@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class VolunteerController extends Controller
 {
@@ -74,8 +75,8 @@ class VolunteerController extends Controller
             'emergencyContactRelationship' => 'required|string|max:50',
 
             // Password (for authentication)
-            'password' => 'required|string|min:12',
-            'confirmPassword' => 'required|string|same:password',
+            'password' => ['required', 'string', Password::defaults()],
+            'confirmPassword' => ['required', 'string', 'same:password'],
         ]);
 
         if ($validator->fails()) {
