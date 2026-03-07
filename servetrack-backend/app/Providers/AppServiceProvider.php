@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use App\Models\Volunteer;
+use App\Observers\UserObserver;
 use App\Observers\VolunteerObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -42,7 +44,14 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
         });
 
+        RateLimiter::for('registration', function (Request $request) {
+            return Limit::perMinute(5)->by($request->ip());
+        });
+
         // Register Volunteer observer for audit logging
         Volunteer::observe(VolunteerObserver::class);
+
+        // Register User observer for security audit logging (role/password changes)
+        User::observe(UserObserver::class);
     }
 }

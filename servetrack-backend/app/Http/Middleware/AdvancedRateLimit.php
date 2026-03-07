@@ -89,7 +89,7 @@ class AdvancedRateLimit
         $email = $request->input('email', '');
         $ip = $request->ip();
 
-        return 'rate_limit:'.($email ? md5(strtolower((string) $email)).':' : '').$ip;
+        return 'rate_limit:'.($email ? hash('sha256', strtolower((string) $email)).':' : '').$ip;
     }
 
     /**

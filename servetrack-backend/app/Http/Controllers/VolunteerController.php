@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\TokenAbilities;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Http\Requests\UpdateProfilePhotoRequest;
 use App\Http\Requests\UpdateVolunteerProfileRequest;
@@ -139,7 +140,7 @@ class VolunteerController extends Controller
             DB::commit();
 
             // Create Sanctum token and cookie for immediate authentication
-            $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+            $token = $user->createToken('auth-token', TokenAbilities::VOLUNTEER, now()->addMinutes((int) config('sanctum.expiration', 60)))->plainTextToken;
             $cookie = cookie(
                 'auth_token',
                 $token,

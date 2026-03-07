@@ -6,7 +6,7 @@ use App\Models\Volunteer;
 
 describe('Admin Volunteer Search & Filter', function (): void {
     beforeEach(function (): void {
-        $this->admin = User::factory()->create();
+        $this->admin = User::factory()->admin()->create();
         $this->actingAs($this->admin);
 
         // Seed test volunteers
@@ -53,11 +53,26 @@ describe('Admin Volunteer Search & Filter', function (): void {
             ->assertSuccessful()
             ->assertJsonPath('meta.per_page', 100);
     });
+
+    it('returns 403 for volunteer accessing admin list', function (): void {
+        $volunteer = User::factory()->volunteer()->create();
+
+        $this->actingAs($volunteer)
+            ->getJson('/api/volunteers')
+            ->assertForbidden();
+    });
+
+    it('returns 401 for unauthenticated access to admin list', function (): void {
+        $this->app['auth']->guard('web')->logout();
+
+        $this->getJson('/api/volunteers')
+            ->assertUnauthorized();
+    });
 });
 
 describe('Admin Volunteer Detail View', function (): void {
     it('returns volunteer with stats for valid ID', function (): void {
-        $admin = User::factory()->create();
+        $admin = User::factory()->admin()->create();
         $volunteer = Volunteer::factory()->create();
 
         $this->actingAs($admin)
@@ -72,17 +87,26 @@ describe('Admin Volunteer Detail View', function (): void {
     });
 
     it('returns 404 for non-existent volunteer', function (): void {
-        $admin = User::factory()->create();
+        $admin = User::factory()->admin()->create();
 
         $this->actingAs($admin)
             ->getJson('/api/volunteers/99999')
             ->assertNotFound();
     });
+
+    it('returns 403 for volunteer accessing another volunteer detail', function (): void {
+        $volunteerUser = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create();
+
+        $this->actingAs($volunteerUser)
+            ->getJson("/api/volunteers/{$volunteer->volunteer_id}")
+            ->assertForbidden();
+    });
 });
 
 describe('Volunteer Change History', function (): void {
     it('returns paginated change log for a volunteer', function (): void {
-        $admin = User::factory()->create();
+        $admin = User::factory()->admin()->create();
         $user = User::factory()->create();
         $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
 
@@ -104,12 +128,44 @@ describe('Volunteer Change History', function (): void {
     });
 
     it('returns empty list for volunteer with no changes', function (): void {
-        $admin = User::factory()->create();
+        $admin = User::factory()->admin()->create();
         $volunteer = Volunteer::factory()->create();
 
         $this->actingAs($admin)
             ->getJson("/api/admin/volunteers/{$volunteer->volunteer_id}/change-history")
             ->assertSuccessful()
             ->assertJsonCount(0, 'data');
+    });
+
+    it('returns 403 for non-admin accessing change history', function (): void {
+        $volunteerUser = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create();
+
+        $this->actingAs($volunteerUser)
+            ->getJson("/api/admin/volunteers/{$volunteer->volunteer_id}/change-history")
+            ->assertForbidden();
+    });
+});
+
+describe('Admin Dashboard Access Control', function (): void {
+    it('allows admin to access the dashboard', function (): void {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->getJson('/api/admin/dashboard')
+            ->assertSuccessful();
+    });
+
+    it('returns 403 for volunteer accessing admin dashboard', function (): void {
+        $volunteer = User::factory()->volunteer()->create();
+
+        $this->actingAs($volunteer)
+            ->getJson('/api/admin/dashboard')
+            ->assertForbidden();
+    });
+
+    it('returns 401 for unauthenticated access to admin dashboard', function (): void {
+        $this->getJson('/api/admin/dashboard')
+            ->assertUnauthorized();
     });
 });

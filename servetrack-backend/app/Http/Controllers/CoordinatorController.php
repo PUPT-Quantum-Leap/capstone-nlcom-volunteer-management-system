@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\TokenAbilities;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -47,7 +48,7 @@ class CoordinatorController extends Controller
             Auth::login($user);
 
             // Create Sanctum token and cookie
-            $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+            $token = $user->createToken('auth-token', TokenAbilities::COORDINATOR, now()->addMinutes((int) config('sanctum.expiration', 60)))->plainTextToken;
             $cookie = cookie(
                 'auth_token',
                 $token,
