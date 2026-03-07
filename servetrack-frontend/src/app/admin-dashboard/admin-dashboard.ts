@@ -6,22 +6,20 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators, FormArray, FormArray } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { DatePipe, CommonModule, CommonModule } from '@angular/common';
+import { DatePipe, CommonModule } from '@angular/common';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
 import { AdminDashboardService, DashboardVolunteerRow } from '../services/admin-dashboard.service';
-import { Poll, CreatePollDto, PollOption } from '../models/poll';
-import { PollService } from '../services/poll.service';
 import { Poll, CreatePollDto, PollOption } from '../models/poll';
 import { PollService } from '../services/poll.service';
 
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, CommonModule, CommonModule],
+  imports: [ReactiveFormsModule, DatePipe, CommonModule],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
@@ -30,7 +28,6 @@ export class AdminDashboard implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private adminDashboardService = inject(AdminDashboardService);
-  private pollService = inject(PollService);
   private pollService = inject(PollService);
 
   readonly defaultPhoto = '/assets/nlcom.png';
@@ -44,11 +41,7 @@ export class AdminDashboard implements OnInit {
   showLogoutModal = signal(false);
   showPollModal = signal(false);
   showDeletePollModal = signal(false);
-  showPollModal = signal(false);
-  showDeletePollModal = signal(false);
   searchQuery = signal('');
-  editingPoll = signal<Poll | null>(null);
-  deletingPollId = signal<number | null>(null);
   editingPoll = signal<Poll | null>(null);
   deletingPollId = signal<number | null>(null);
   showAiModal = signal(false);
@@ -67,8 +60,6 @@ export class AdminDashboard implements OnInit {
 
   volunteerRows = signal<DashboardVolunteerRow[]>([]);
   performanceMetrics = signal<PerformanceMetric[]>([]);
-  polls = signal<Poll[]>([]);
-  pollFilterStatus = signal<'all' | 'active' | 'closed' | 'draft'>('all');
   polls = signal<Poll[]>([]);
   pollFilterStatus = signal<'all' | 'active' | 'closed' | 'draft'>('all');
 
@@ -164,26 +155,8 @@ export class AdminDashboard implements OnInit {
     options: this.fb.array([]),
   });
 
-  filteredPolls = computed(() => {
-    const status = this.pollFilterStatus();
-    if (status === 'all') {
-      return this.polls();
-    }
-    return this.polls().filter((poll) => poll.status === status);
-  });
-
-  pollForm = this.fb.group({
-    title: ['', [Validators.required, Validators.minLength(3)]],
-    date: ['', Validators.required],
-    cutOffDay: ['', Validators.required],
-    cutOffTime: ['', Validators.required],
-    description: ['', [Validators.required, Validators.minLength(10)]],
-    options: this.fb.array([]),
-  });
-
   ngOnInit(): void {
     this.loadDashboardData();
-    this.loadPolls();
     this.loadPolls();
   }
 
@@ -357,145 +330,6 @@ export class AdminDashboard implements OnInit {
       return 'level-fair';
     }
     return 'level-needs-improvement';
-  }
-
-  private loadPolls(): void {
-    this.pollService.getPolls().subscribe((polls) => {
-      this.polls.set(polls);
-    });
-  }
-
-  get pollOptions(): FormArray {
-    return this.pollForm.get('options') as FormArray;
-  }
-
-  openCreatePollModal(): void {
-    this.editingPoll.set(null);
-    this.pollForm.reset();
-    this.pollOptions.clear();
-    this.addPollOption();
-    this.addPollOption();
-    this.showPollModal.set(true);
-  }
-
-  openEditPollModal(poll: Poll): void {
-    this.editingPoll.set(poll);
-    this.pollOptions.clear();
-    
-    poll.options.forEach((option) => {
-      this.pollOptions.push(
-        this.fb.group({
-          timeSlot: [option.timeSlot, Validators.required],
-          capacity: [option.capacity, [Validators.required, Validators.min(1)]],
-        })
-      );
-    });
-
-    this.pollForm.patchValue({
-      title: poll.title,
-      date: poll.date,
-      cutOffDay: poll.cutOffDay,
-      cutOffTime: poll.cutOffTime,
-      description: poll.description,
-    });
-
-    this.showPollModal.set(true);
-  }
-
-  closePollModal(): void {
-    this.showPollModal.set(false);
-    this.editingPoll.set(null);
-    this.pollForm.reset();
-  }
-
-  addPollOption(): void {
-    this.pollOptions.push(
-      this.fb.group({
-        timeSlot: ['', Validators.required],
-        capacity: [10, [Validators.required, Validators.min(1)]],
-      })
-    );
-  }
-
-  removePollOption(index: number): void {
-    if (this.pollOptions.length > 1) {
-      this.pollOptions.removeAt(index);
-    }
-  }
-
-  savePoll(): void {
-    if (this.pollForm.invalid) {
-      this.pollForm.markAllAsTouched();
-      return;
-    }
-
-    const formValue = this.pollForm.value;
-    const dto: CreatePollDto = {
-      title: formValue.title!,
-      date: formValue.date!,
-      cutOffDay: formValue.cutOffDay!,
-      cutOffTime: formValue.cutOffTime!,
-      description: formValue.description!,
-      options: (formValue.options as Array<{ timeSlot: string; capacity: number }>).map((opt) => ({
-        timeSlot: opt.timeSlot,
-        capacity: opt.capacity,
-      })),
-    };
-
-    const editingPoll = this.editingPoll();
-    if (editingPoll) {
-      this.pollService.updatePoll(editingPoll.id, dto).subscribe(() => {
-        this.loadPolls();
-        this.closePollModal();
-      });
-    } else {
-      this.pollService.createPoll(dto).subscribe(() => {
-        this.loadPolls();
-        this.closePollModal();
-      });
-    }
-  }
-
-  confirmDeletePoll(pollId: number): void {
-    this.deletingPollId.set(pollId);
-    this.showDeletePollModal.set(true);
-  }
-
-  closeDeletePollModal(): void {
-    this.showDeletePollModal.set(false);
-    this.deletingPollId.set(null);
-  }
-
-  deletePoll(): void {
-    const pollId = this.deletingPollId();
-    if (pollId !== null) {
-      this.pollService.deletePoll(pollId).subscribe(() => {
-        this.loadPolls();
-        this.closeDeletePollModal();
-      });
-    }
-  }
-
-  updatePollStatus(pollId: number, status: 'active' | 'closed' | 'draft'): void {
-    this.pollService.updatePollStatus(pollId, status).subscribe(() => {
-      this.loadPolls();
-    });
-  }
-
-  setPollFilterStatus(status: 'all' | 'active' | 'closed' | 'draft'): void {
-    this.pollFilterStatus.set(status);
-  }
-
-  getVotePercentage(poll: Poll, option: PollOption): number {
-    return poll.totalVotes > 0 ? (option.votes / poll.totalVotes) * 100 : 0;
-  }
-
-  getRemainingSlots(option: PollOption): number {
-    return option.capacity - option.votes;
-  }
-
-  isFull(option: PollOption): boolean {
-    return option.votes >= option.capacity;
   }
 
   private loadPolls(): void {
