@@ -1,6 +1,7 @@
 import { Component, signal, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AuthService } from './services/auth.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-root',
@@ -13,6 +14,6 @@ export class App implements OnInit {
   private authService = inject(AuthService);
 
   ngOnInit(): void {
-    this.authService.checkAuthStatus$().subscribe();
+    this.authService.checkAuthStatus$().pipe(takeUntilDestroyed()).subscribe();
   }
 }

@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
+  OnDestroy,
   computed,
   inject,
   signal,
@@ -13,6 +14,7 @@ import { DatePipe } from '@angular/common';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
 import { AdminDashboardService, DashboardVolunteerRow } from '../services/admin-dashboard.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -136,7 +138,7 @@ export class AdminDashboard implements OnInit {
   private loadDashboardData(): void {
     this.isLoading.set(true);
 
-    this.adminDashboardService.getDashboardData().subscribe((response) => {
+    this.adminDashboardService.getDashboardData().pipe(takeUntilDestroyed()).subscribe((response) => {
       if (response.success && response.data) {
         this.totalVolunteers.set(response.data.stats.totalVolunteers);
         this.activeVolunteers.set(response.data.stats.activeVolunteers);

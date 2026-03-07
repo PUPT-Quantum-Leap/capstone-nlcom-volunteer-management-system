@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal, inject, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import {
   FormBuilder,
@@ -7,7 +7,7 @@ import {
   Validators,
   AbstractControl,
 } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -17,7 +17,7 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
-export class Login implements OnInit {
+export class Login implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
@@ -35,6 +35,7 @@ export class Login implements OnInit {
   loginSuccessMessage = signal<string | null>(null);
   isAdminLoginPage = signal(false);
   private loginRedirectPath: '/volunteer-dashboard' | '/admin-dashboard' = '/volunteer-dashboard';
+  private queryParamsSubscription?: Subscription;
 
   // Popup methods
   showPopupModal() {
@@ -69,7 +70,7 @@ export class Login implements OnInit {
   ngOnInit(): void {
     this.isAdminLoginPage.set(this.route.snapshot?.routeConfig?.path === 'admin-login');
 
-    this.route.queryParams.subscribe((params) => {
+    this.queryParamsSubscription = this.route.queryParams.subscribe((params) => {
       if (params['registered'] === 'true') {
         this.registrationSuccessMessage.set(
           'Registration successful! Please log in with your new credentials.',
@@ -78,6 +79,10 @@ export class Login implements OnInit {
         this.router.navigate([], { queryParams: {}, replaceUrl: true });
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.queryParamsSubscription?.unsubscribe();
   }
 
   // Form group with validators
