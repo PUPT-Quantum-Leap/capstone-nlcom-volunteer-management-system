@@ -194,40 +194,6 @@ capstone-nlcom-volunteer-management-system/
 
 ---
 
-## Development Team
-
-<div align="center">
-
-<table>
-  <tr>
-    <td align="center" width="33.33%">
-      <a href="https://github.com/PUPT-Quantum-Leap">
-        <img src="https://github.com/PUPT-Quantum-Leap.png" width="100px;" alt="PUPT Quantum Leap"/><br />
-      </a>
-      <sub><b>PUPT Quantum Leap</b></sub><br />
-      <sup>Organization</sup>
-    </td>
-    <td align="center" width="33.33%">
-      <a href="https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system">
-        <img src="https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system.png" width="100px;" alt="ServeTrack Project"/><br />
-      </a>
-      <sub><b>Capstone Project</b></sub><br />
-      <sup>NLCOM</sup>
-    </td>
-    <td align="center" width="33.33%">
-      <a href="https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/issues">
-        <img src="https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/issues.png" width="100px;" alt="Issues"/><br />
-      </a>
-      <sub><b>GitHub</b></sub><br />
-      <sup>Repository</sup>
-    </td>
-  </tr>
-</table>
-
-</div>
-
----
-
 <div align="center">
 
 ## Contributors
