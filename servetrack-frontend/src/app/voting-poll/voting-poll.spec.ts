@@ -3,6 +3,9 @@ import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 import { VotingPoll } from './voting-poll';
@@ -23,6 +26,7 @@ describe('VotingPoll', () => {
 
     await TestBed.configureTestingModule({
       imports: [VotingPoll],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     })
       .overrideComponent(VotingPoll, {
         remove: {
