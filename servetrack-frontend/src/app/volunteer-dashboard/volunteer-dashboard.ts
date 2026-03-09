@@ -15,11 +15,12 @@ import {
 } from '../validators/password.validator';
 import { AuthService } from '../services/auth.service';
 import { VolunteerService } from '../services/volunteer.service';
+import { PollService } from '../services/poll.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { InputSanitizerService } from '../services/input-sanitizer.service';
 
 import { VolunteerProfile, VolunteerProfileResponse } from '../models/volunteer-profile';
-import { PollChoice } from '../models/poll-choice';
+import { Poll, PollOption } from '../models/poll';
 import { NotificationItem } from '../models/notification-item';
 import { Attendance, AttendancePeriod } from '../models/attendance';
 
@@ -36,6 +37,7 @@ export class VolunteerDashboard implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
+  private pollService = inject(PollService);
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(InputSanitizerService);
 
@@ -81,17 +83,15 @@ export class VolunteerDashboard implements OnInit {
   );
 
   // ── Polls ─────────────────────────────────────────────────────────────────
-  selectedPollChoiceId = signal<number | null>(null);
+  polls = signal<Poll[]>([]);
+  activePoll = signal<Poll | null>(null);
+  selectedOptionId = signal<number | null>(null);
   hasSubmittedVote = signal(false);
+  pollError = signal<string | null>(null);
 
-  pollChoices = signal<PollChoice[]>([]);
-
-  totalVotes = computed(() => this.pollChoices().reduce((sum, choice) => sum + choice.votes, 0));
-
-  selectedPollLabel = computed(() => {
-    const selectedId = this.selectedPollChoiceId();
-    const choice = this.pollChoices().find((item) => item.id === selectedId);
-    return choice?.label ?? 'No vote submitted yet';
+  totalVotes = computed(() => {
+    const poll = this.activePoll();
+    return poll ? poll.totalVotes : 0;
   });
 
   // ── Profile ───────────────────────────────────────────────────────────────
@@ -221,6 +221,7 @@ export class VolunteerDashboard implements OnInit {
     this.loadProfile();
     this.loadAttendanceStats();
     this.loadAttendance();
+    this.loadPolls();
   }
 
   // ── Data loading ──────────────────────────────────────────────────────────
@@ -314,6 +315,24 @@ export class VolunteerDashboard implements OnInit {
     }
 
     this.editingProfileId.set(data.volunteer_id);
+  }
+
+  private loadPolls(): void {
+    this.pollService.getPolls().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
+      const active = response.data.filter((p) => p.status === 'active');
+      this.polls.set(active);
+      // Auto-select the first active poll if none is selected
+      if (active.length > 0 && !this.activePoll()) {
+        this.setActivePoll(active[0]);
+      }
+    });
+  }
+
+  setActivePoll(poll: Poll): void {
+    this.activePoll.set(poll);
+    this.selectedOptionId.set(null);
+    this.hasSubmittedVote.set(false);
+    this.pollError.set(null);
   }
 
   private loadAttendanceStats(): void {
@@ -479,44 +498,54 @@ export class VolunteerDashboard implements OnInit {
 
   // ── Polls ─────────────────────────────────────────────────────────────────
 
-  selectPollChoice(choiceId: number): void {
-    if (this.hasSubmittedVote()) {
+  selectOption(optionId: number): void {
+    const poll = this.activePoll();
+    if (!poll || this.hasSubmittedVote()) {
       return;
     }
-
-    this.selectedPollChoiceId.set(choiceId);
+    const option = poll.options.find((o) => o.id === optionId);
+    if (option && option.votes < option.capacity) {
+      this.selectedOptionId.set(optionId);
+    }
   }
 
-  async submitPollVote(): Promise<void> {
-    const selectedId = this.selectedPollChoiceId();
-    if (selectedId === null || this.hasSubmittedVote()) {
+  submitPollVote(): void {
+    const poll = this.activePoll();
+    const optionId = this.selectedOptionId();
+    if (!poll || optionId === null || this.hasSubmittedVote()) {
       return;
     }
 
     this.isLoading.set(true);
-    await new Promise((res) => setTimeout(res, 400));
-    try {
-      this.pollChoices.update((choices) =>
-        choices.map((choice) => {
-          if (choice.id === selectedId) {
-            return { ...choice, votes: choice.votes + 1 };
-          }
-          return choice;
-        }),
-      );
-      this.hasSubmittedVote.set(true);
-    } finally {
-      this.isLoading.set(false);
-    }
+    this.pollError.set(null);
+    this.pollService.vote(poll.id, optionId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.hasSubmittedVote.set(true);
+        this.isLoading.set(false);
+        // Refresh poll data to show updated vote counts
+        this.loadPolls();
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.pollError.set(err?.error?.message ?? 'Failed to submit vote. Please try again.');
+        this.isLoading.set(false);
+      },
+    });
   }
 
-  getVotePercentage(votes: number): number {
-    const total = this.totalVotes();
-    if (total === 0) {
+  getVotePercentage(option: PollOption): number {
+    const poll = this.activePoll();
+    if (!poll || poll.totalVotes === 0) {
       return 0;
     }
+    return Math.round((option.votes / poll.totalVotes) * 100);
+  }
 
-    return Math.round((votes / total) * 100);
+  getRemainingSlots(option: PollOption): number {
+    return option.capacity - option.votes;
+  }
+
+  isOptionFull(option: PollOption): boolean {
+    return option.votes >= option.capacity;
   }
 
   // ── Photo ─────────────────────────────────────────────────────────────────
