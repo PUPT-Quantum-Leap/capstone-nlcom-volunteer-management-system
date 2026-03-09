@@ -16,6 +16,7 @@ import {
 import { AuthService } from '../services/auth.service';
 import { VolunteerService } from '../services/volunteer.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { InputSanitizerService } from '../services/input-sanitizer.service';
 
 import { VolunteerProfile, VolunteerProfileResponse } from '../models/volunteer-profile';
 import { PollChoice } from '../models/poll-choice';
@@ -36,6 +37,7 @@ export class VolunteerDashboard implements OnInit {
   private authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
   private destroyRef = inject(DestroyRef);
+  private sanitizer = inject(InputSanitizerService);
 
   readonly defaultPhoto = '/assets/volunteer1.png';
 
@@ -578,34 +580,34 @@ export class VolunteerDashboard implements OnInit {
     this.isLoading.set(true);
 
     const formValue = this.profileForm.getRawValue();
-    
+
     // Convert keys to names for the backend
     const volunteerPreferenceName = this.getPositionName(formValue.volunteerPreference ?? '');
     const availabilityName = this.getAvailabilityName(formValue.availability ?? '');
-    
+
     const payload = {
-      firstName: formValue.firstName?.trim() ?? '',
-      lastName: formValue.lastName?.trim() ?? '',
-      facebookName: formValue.facebookName?.trim() ?? '',
-      email: formValue.email?.trim() ?? '',
-      mobileNumber: formValue.mobileNumber?.trim() ?? '',
+      firstName: this.sanitizer.sanitizeInput(formValue.firstName ?? '', 'both'),
+      lastName: this.sanitizer.sanitizeInput(formValue.lastName ?? '', 'both'),
+      facebookName: this.sanitizer.sanitizeInput(formValue.facebookName ?? '', 'both'),
+      email: this.sanitizer.sanitizeInput(formValue.email ?? '', 'text'),
+      mobileNumber: this.sanitizer.sanitizeInput(formValue.mobileNumber ?? '', 'text'),
       birthdate: formValue.birthdate ?? '',
       lastMedicalExam: formValue.lastMedicalExam ?? '',
-      completeAddress: formValue.completeAddress?.trim() ?? '',
-      educationalAttainment: formValue.educationalAttainment ?? '',
-      trainingExperience: formValue.trainingExperience?.trim() ?? '',
-      skillsHobbies: formValue.skillsHobbies?.trim() ?? '',
-      classesTraining: formValue.classesTraining?.trim() ?? '',
+      completeAddress: this.sanitizer.sanitizeInput(formValue.completeAddress ?? '', 'both'),
+      educationalAttainment: this.sanitizer.sanitizeInput(formValue.educationalAttainment ?? '', 'both'),
+      trainingExperience: this.sanitizer.sanitizeInput(formValue.trainingExperience ?? '', 'both'),
+      skillsHobbies: this.sanitizer.sanitizeInput(formValue.skillsHobbies ?? '', 'both'),
+      classesTraining: this.sanitizer.sanitizeInput(formValue.classesTraining ?? '', 'both'),
       volunteerPreference: volunteerPreferenceName,
-      otherPreference: formValue.otherPreference?.trim() ?? '',
+      otherPreference: this.sanitizer.sanitizeInput(formValue.otherPreference ?? '', 'both'),
       availability: availabilityName,
-      otherAvailability: formValue.otherAvailability?.trim() ?? '',
+      otherAvailability: this.sanitizer.sanitizeInput(formValue.otherAvailability ?? '', 'both'),
       partOfLifegroup: formValue.partOfLifegroup ?? 'no',
-      lifegroupLeaderName: formValue.lifegroupLeaderName?.trim() ?? '',
+      lifegroupLeaderName: this.sanitizer.sanitizeInput(formValue.lifegroupLeaderName ?? '', 'both'),
       leadingLifegroup: formValue.leadingLifegroup ?? 'no',
-      emergencyContactName: formValue.emergencyContactName?.trim() ?? '',
-      emergencyContactNumber: formValue.emergencyContactNumber?.trim() ?? '',
-      emergencyContactRelationship: formValue.emergencyContactRelationship?.trim() ?? '',
+      emergencyContactName: this.sanitizer.sanitizeInput(formValue.emergencyContactName ?? '', 'both'),
+      emergencyContactNumber: this.sanitizer.sanitizeInput(formValue.emergencyContactNumber ?? '', 'text'),
+      emergencyContactRelationship: this.sanitizer.sanitizeInput(formValue.emergencyContactRelationship ?? '', 'both'),
     };
 
     this.volunteerService.updateProfile(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {

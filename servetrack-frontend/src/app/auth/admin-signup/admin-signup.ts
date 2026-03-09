@@ -178,10 +178,10 @@ export class AdminSignup implements OnDestroy {
     try {
       const formValue = this.adminForm.value;
       const adminData: AdminSignupData = {
-        firstName: formValue.firstName.trim(),
-        lastName: formValue.lastName.trim(),
-        email: formValue.email.trim(),
-        contactNumber: formValue.contactNumber,
+        firstName: this.sanitizer.sanitizeInput(formValue.firstName ?? '', 'both'),
+        lastName: this.sanitizer.sanitizeInput(formValue.lastName ?? '', 'both'),
+        email: this.sanitizer.sanitizeInput(formValue.email ?? '', 'text'),
+        contactNumber: this.sanitizer.sanitizeInput(formValue.contactNumber ?? '', 'text'),
         password: formValue.password,
         confirmPassword: formValue.confirmPassword,
       };

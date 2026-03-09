@@ -319,10 +319,14 @@ class VolunteerController extends Controller
             } catch (\Exception $e) {
                 DB::rollBack();
 
+                \Log::error('Profile creation failed', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to create profile. Please try again.',
-                    'errors' => ['server' => $e->getMessage()],
+                    'message' => 'Failed to create profile. Please try again or contact support.',
                 ], 500);
             }
         }
@@ -417,10 +421,14 @@ class VolunteerController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
+            \Log::error('Profile update failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update profile. Please try again.',
-                'errors' => ['server' => $e->getMessage()],
+                'message' => 'Failed to update profile. Please try again or contact support.',
             ], 500);
         }
     }
