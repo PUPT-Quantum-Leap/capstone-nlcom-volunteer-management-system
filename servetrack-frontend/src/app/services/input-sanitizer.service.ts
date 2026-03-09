@@ -1,11 +1,9 @@
 import { Injectable } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
 
 @Injectable({
   providedIn: 'root'
 })
 export class InputSanitizerService {
-  constructor(private sanitizer: DomSanitizer) {}
 
   /**
    * Sanitize text input to prevent XSS attacks
@@ -27,19 +25,19 @@ export class InputSanitizerService {
   }
 
   /**
-   * Sanitize input to prevent injection patterns
+   * Sanitize input for safe storage/transmission.
+   * Note: SQL injection prevention is handled by parameterized queries on backend.
    */
-  sanitizeForSQL(input: string): string {
+  sanitizeForStorage(input: string): string {
     if (!input) return '';
     
-    // Keep valid characters like hyphens and single quotes
     return input.trim();
   }
 
   /**
    * Comprehensive sanitization for form inputs
    */
-  sanitizeInput(input: string, context: 'text' | 'sql' | 'both' = 'both'): string {
+  sanitizeInput(input: string, context: 'text' | 'storage' | 'both' = 'both'): string {
     if (!input) return '';
     
     let sanitized = input;
@@ -48,8 +46,8 @@ export class InputSanitizerService {
       sanitized = this.sanitizeText(sanitized);
     }
     
-    if (context === 'sql' || context === 'both') {
-      sanitized = this.sanitizeForSQL(sanitized);
+    if (context === 'storage' || context === 'both') {
+      sanitized = this.sanitizeForStorage(sanitized);
     }
     
     return sanitized;
