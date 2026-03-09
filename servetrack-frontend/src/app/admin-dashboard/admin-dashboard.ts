@@ -15,7 +15,7 @@ import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
 import { AdminDashboardService, DashboardVolunteerRow } from '../services/admin-dashboard.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Poll, CreatePollDto, PollOption } from '../models/poll';
+import { Poll, PollOption } from '../models/poll';
 import { PollService } from '../services/poll.service';
 import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
 
@@ -366,8 +366,8 @@ export class AdminDashboard implements OnInit {
   }
 
   private loadPolls(): void {
-    this.pollService.getPolls().subscribe((polls) => {
-      this.polls.set(polls);
+    this.pollService.getPolls().subscribe((response) => {
+      this.polls.set(response.data);
     });
   }
 
@@ -436,26 +436,32 @@ export class AdminDashboard implements OnInit {
     }
 
     const formValue = this.pollForm.value;
-    const dto: CreatePollDto = {
+
+    // Build a snake_case payload that matches the Laravel backend expectations.
+    // The frontend form / DTO uses camelCase; the API requires snake_case field names.
+    const payload = {
       title: formValue.title!,
       date: formValue.date!,
-      cutOffDay: formValue.cutOffDay!,
-      cutOffTime: formValue.cutOffTime!,
+      cutoff_day: formValue.cutOffDay!,
+      cutoff_time: formValue.cutOffTime!,
       description: formValue.description!,
       options: (formValue.options as Array<{ timeSlot: string; capacity: number }>).map((opt) => ({
-        timeSlot: opt.timeSlot,
+        // `text` is required by the backend (stored in the `option` lookup table).
+        // Use the time slot as the option text since that is the human-readable label.
+        text: opt.timeSlot,
+        time_slot: opt.timeSlot,
         capacity: opt.capacity,
       })),
     };
 
     const editingPoll = this.editingPoll();
     if (editingPoll) {
-      this.pollService.updatePoll(editingPoll.id, dto).subscribe(() => {
+      this.pollService.updatePoll(editingPoll.id, payload).subscribe(() => {
         this.loadPolls();
         this.closePollModal();
       });
     } else {
-      this.pollService.createPoll(dto).subscribe(() => {
+      this.pollService.createPoll(payload).subscribe(() => {
         this.loadPolls();
         this.closePollModal();
       });
