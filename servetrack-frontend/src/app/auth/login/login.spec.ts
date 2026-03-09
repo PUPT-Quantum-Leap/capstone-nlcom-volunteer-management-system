@@ -9,17 +9,25 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 describe('Login Component', () => {
   let component: Login;
   let fixture: ComponentFixture<Login>;
-  let mockAuthService: { login$: ReturnType<typeof vi.fn> };
-  let mockRouter: { navigate: ReturnType<typeof vi.fn> };
+  let mockAuthService: {
+    login$: ReturnType<typeof vi.fn>;
+    logout$: ReturnType<typeof vi.fn>;
+  };
+  let mockRouter: {
+    navigate: ReturnType<typeof vi.fn>;
+    navigateByUrl: ReturnType<typeof vi.fn>;
+  };
   let mockActivatedRoute: { queryParams: Observable<Record<string, unknown>> };
 
   beforeEach(async () => {
     mockAuthService = {
       login$: vi.fn(),
+      logout$: vi.fn().mockReturnValue(of(undefined)),
     };
 
     mockRouter = {
-      navigate: vi.fn(),
+      navigate: vi.fn().mockResolvedValue(true),
+      navigateByUrl: vi.fn().mockResolvedValue(true),
     };
 
     mockActivatedRoute = {
@@ -158,7 +166,7 @@ describe('Login Component', () => {
       });
     });
 
-    it('should navigate to volunteer dashboard on successful login', async () => {
+    it('should show success modal on successful login', async () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
@@ -167,8 +175,24 @@ describe('Login Component', () => {
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
       mockAuthService.login$.mockReturnValue(of({ success: true }));
       await component.onSubmit();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/volunteer-dashboard']);
+      expect(component.showLoginSuccessModal()).toBe(true);
+      expect(mockRouter.navigateByUrl).not.toHaveBeenCalled();
       expect(component.errorMessage()).toBeNull();
+    });
+
+    it('should navigate to volunteer dashboard when continue is clicked after successful login', async () => {
+      component.loginForm.setValue({
+        email: 'test@example.com',
+        password: 'password123',
+        rememberMe: false,
+      });
+      Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
+      mockAuthService.login$.mockReturnValue(of({ success: true }));
+
+      await component.onSubmit();
+      await component.continueAfterSuccessfulLogin();
+
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/volunteer-dashboard');
     });
 
     it('should set errorMessage on failed login', async () => {
@@ -199,6 +223,27 @@ describe('Login Component', () => {
       mockAuthService.login$.mockReturnValue(of({ success: false }));
       await component.onSubmit();
       expect(component.errorMessage()).toBe('Invalid email or password');
+    });
+
+    it('should show error when admin logs in from /login and logout the session', async () => {
+      component.loginForm.setValue({
+        email: 'admin@example.com',
+        password: 'password123',
+        rememberMe: false,
+      });
+      Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
+      mockAuthService.login$.mockReturnValue(
+        of({
+          success: true,
+          user: { id: '1', email: 'admin@example.com', role: 'admin' },
+        }),
+      );
+
+      await component.onSubmit();
+
+      expect(component.errorMessage()).toBe('ERROR');
+      expect(component.showLoginSuccessModal()).toBe(false);
+      expect(mockAuthService.logout$).toHaveBeenCalled();
     });
 
     it('should catch errors and set generic error message', async () => {

@@ -1,44 +1,46 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
-import { AuthService } from '../services/auth.service';
+import { AuthService, AuthResponse } from '../services/auth.service';
 import { map, take } from 'rxjs/operators';
 
-export const authGuard: CanActivateFn = () => {
+function resolveUserType(user: AuthResponse['user'] | null | undefined): string {
+  return user?.user_type || user?.role || '';
+}
+
+function canAccessTarget(targetUrl: string, userType: string): boolean {
+  if (targetUrl.startsWith('/volunteer-dashboard')) {
+    return userType === 'volunteer';
+  }
+
+  if (targetUrl.startsWith('/admin-dashboard')) {
+    return userType === 'admin';
+  }
+
+  return true;
+}
+
+function getFallbackRoute(userType: string): string {
+  if (userType === 'admin') {
+    return '/admin-dashboard';
+  }
+
+  return '/volunteer-dashboard';
+}
+
+export const authGuard: CanActivateFn = (_route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
+  const targetUrl = state.url;
 
   // Check if there is a cached authentication state
   if (authService.isAuthenticated()) {
     const user = authService.currentUser();
-
-    // Route based on user type
-    if (user?.user_type === 'volunteer') {
-      return true;
-    } else if (user?.user_type === 'admin') {
-      // Redirect to admin dashboard if trying to access volunteer dashboard
-      const currentUrl = router.url;
-      if (currentUrl.includes('volunteer-dashboard')) {
-        return router.parseUrl('/admin-dashboard');
-      }
-      return true;
-    } else if (user?.user_type === 'coordinator') {
-      // Future: coordinator dashboard routing
-      return true;
-    } else {
-      // Fallback to role for backward compatibility
-      if (user?.role === 'volunteer') {
-        return true;
-      } else if (user?.role === 'admin') {
-        const currentUrl = router.url;
-        if (currentUrl.includes('volunteer-dashboard')) {
-          return router.parseUrl('/admin-dashboard');
-        }
-        return true;
-      } else if (user?.role === 'coordinator') {
-        return true;
-      }
+    const userType = resolveUserType(user);
+    if (canAccessTarget(targetUrl, userType)) {
       return true;
     }
+
+    return router.parseUrl(getFallbackRoute(userType));
   }
 
   // If not cached, check with backend
@@ -46,37 +48,12 @@ export const authGuard: CanActivateFn = () => {
     take(1),
     map((response) => {
       if (response.success && response.user) {
-        const user = response.user;
-
-        // Route based on user type
-        if (user?.user_type === 'volunteer') {
-          return true;
-        } else if (user?.user_type === 'admin') {
-          // Redirect to admin dashboard if trying to access volunteer dashboard
-          const currentUrl = router.url;
-          if (currentUrl.includes('volunteer-dashboard')) {
-            return router.parseUrl('/admin-dashboard');
-          }
-          return true;
-        } else if (user?.user_type === 'coordinator') {
-          // Future: coordinator dashboard routing
-          return true;
-        } else {
-          // Fallback to role for backward compatibility
-          if (user?.role === 'volunteer') {
-            return true;
-          } else if (user?.role === 'admin') {
-            const currentUrl = router.url;
-            if (currentUrl.includes('volunteer-dashboard')) {
-              return router.parseUrl('/admin-dashboard');
-            }
-            return true;
-          } else if (user?.role === 'coordinator') {
-            return true;
-          }
-          // Default to volunteer dashboard
+        const userType = resolveUserType(response.user);
+        if (canAccessTarget(targetUrl, userType)) {
           return true;
         }
+
+        return router.parseUrl(getFallbackRoute(userType));
       }
 
       // Not authenticated, redirect to login

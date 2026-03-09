@@ -10,18 +10,22 @@ else
   echo "   Install from: https://github.com/gitleaks/gitleaks/releases"
 fi
 
-# Run Laravel Pint on backend files if any PHP files changed
-if git diff --cached --name-only | grep -E '.*\.php$'; then
-  echo "🎨 Running Laravel Pint..."
-  cd servetrack-backend
-  if [ -f "./vendor/bin/pint" ]; then
-    ./vendor/bin/pint
-    echo "✅ Pint formatted files, adding to commit..."
+# Run Laravel Pint only on staged PHP files (not the entire backend)
+STAGED_PHP_FILES=$(git diff --cached --name-only | grep -E 'servetrack-backend/.*\.php$' || true)
+if [ -n "$STAGED_PHP_FILES" ]; then
+  echo "🎨 Running Laravel Pint on staged files..."
+  if [ -f "servetrack-backend/vendor/bin/pint" ]; then
+    # Strip the servetrack-backend/ prefix — pint runs from inside the backend dir
+    PINT_FILES=$(echo "$STAGED_PHP_FILES" | sed 's|servetrack-backend/||')
+    cd servetrack-backend
+    ./vendor/bin/pint $PINT_FILES
+    cd ..
+    # Re-stage only the originally staged PHP files, not the entire directory
+    echo "$STAGED_PHP_FILES" | xargs git add
+    echo "✅ Pint formatted staged files, re-added to commit..."
   else
     echo "⚠️  Laravel Pint not found, skipping formatting..."
   fi
-  cd ..
-  git add servetrack-backend/
 fi
 
 echo "✅ Pre-commit checks passed!"

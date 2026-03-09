@@ -120,12 +120,17 @@ describe('GuestOnly (RedirectIfAuthenticated) middleware', function (): void {
 });
 
 describe('LoginRequest validation', function (): void {
-    it('rejects uppercase email inputs', function (): void {
+    it('accepts uppercase email inputs by normalizing them', function (): void {
+        $user = User::factory()->create([
+            'email' => 'uppercase@example.com',
+            'password' => bcrypt('password'),
+        ]);
+
         $this->postJson('/api/login', [
             'email' => 'UPPERCASE@EXAMPLE.COM',
             'password' => 'password',
-        ])->assertUnprocessable()
-            ->assertJsonValidationErrors(['email']);
+        ])->assertOk()
+            ->assertJsonStructure(['user']);
     });
 
     it('accepts lowercase email inputs', function (): void {

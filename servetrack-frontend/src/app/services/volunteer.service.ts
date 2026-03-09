@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, of } from 'rxjs';
+import { Observable, catchError, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Attendance, AttendanceStats, CreateAttendancePayload } from '../models/attendance';
+import { Attendance, AttendanceStats } from '../models/attendance';
 import { VolunteerProfileResponse } from '../models/volunteer-profile';
+import { AuthService } from './auth.service';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -18,6 +19,7 @@ export type AttendancePeriod = 'daily' | 'weekly' | 'monthly';
 })
 export class VolunteerService {
   private http = inject(HttpClient);
+  private authService = inject(AuthService);
   private readonly baseUrl = `${environment.apiUrl}/volunteer`;
 
   /** Fetch the authenticated volunteer's profile. */
@@ -27,7 +29,10 @@ export class VolunteerService {
         withCredentials: true,
       })
       .pipe(
-        catchError(() => of({ success: false, data: null as unknown as VolunteerProfileResponse })),
+        catchError((error) => {
+          console.error('[VolunteerService] getProfile failed:', error);
+          throw error;
+        }),
       );
   }
 
@@ -35,17 +40,17 @@ export class VolunteerService {
   updateProfile(
     payload: Record<string, unknown>,
   ): Observable<ApiResponse<VolunteerProfileResponse>> {
-    return this.http
-      .put<ApiResponse<VolunteerProfileResponse>>(`${this.baseUrl}/profile`, payload, {
-        withCredentials: true,
-      })
-      .pipe(
-        catchError((error) => {
-          // Return the error message from the server if available
-          const errorMessage = error.error?.message || 'Failed to update profile';
-          return of({ success: false, message: errorMessage, data: null as unknown as VolunteerProfileResponse });
-        }),
-      );
+    return this.authService.ensureCsrf$().pipe(
+      switchMap(() =>
+        this.http.put<ApiResponse<VolunteerProfileResponse>>(`${this.baseUrl}/profile`, payload, {
+          withCredentials: true,
+        })
+      ),
+      catchError((error) => {
+        console.error('[VolunteerService] updateProfile failed:', error);
+        throw error;
+      }),
+    );
   }
 
   /**
@@ -65,16 +70,12 @@ export class VolunteerService {
         withCredentials: true,
         params,
       })
-      .pipe(catchError(() => of({ success: false, data: [] })));
-  }
-
-  /** Submit a new manual attendance entry. */
-  createAttendance(payload: CreateAttendancePayload): Observable<ApiResponse<Attendance>> {
-    return this.http
-      .post<ApiResponse<Attendance>>(`${this.baseUrl}/attendance`, payload, {
-        withCredentials: true,
-      })
-      .pipe(catchError(() => of({ success: false, data: null as unknown as Attendance })));
+      .pipe(
+        catchError((error) => {
+          console.error('[VolunteerService] getAttendance failed:', error);
+          throw error;
+        }),
+      );
   }
 
   /** Fetch attendance statistics (total, daily, weekly, monthly). */
@@ -83,6 +84,11 @@ export class VolunteerService {
       .get<ApiResponse<AttendanceStats>>(`${this.baseUrl}/attendance/stats`, {
         withCredentials: true,
       })
-      .pipe(catchError(() => of({ success: false, data: null as unknown as AttendanceStats })));
+      .pipe(
+        catchError((error) => {
+          console.error('[VolunteerService] getAttendanceStats failed:', error);
+          throw error;
+        }),
+      );
   }
 }

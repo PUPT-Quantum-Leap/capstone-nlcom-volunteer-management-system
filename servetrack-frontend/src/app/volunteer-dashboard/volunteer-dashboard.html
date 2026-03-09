@@ -62,7 +62,25 @@
             (click)="setView('schedule')"
             aria-label="View Attendance Log"
           >
-            <span class="label">Attendance Log</span>
+            <span class="label nav-label">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M8 3V6M16 3V6M4 9H20M6 6H18C19.105 6 20 6.895 20 8V19C20 20.105 19.105 21 18 21H6C4.895 21 4 20.105 4 19V8C4 6.895 4.895 6 6 6Z"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M9.5 14L11 15.5L14.5 12"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Attendance Log
+            </span>
           </button>
         </li>
         <li>
@@ -238,16 +256,6 @@
                 </div>
               </div>
 
-              @if (showProfileSuccess()) {
-                <div class="success-notification">
-                  <svg class="success-icon" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                  <span>{{ profileSuccessMessage() }}</span>
-                </div>
-              }
-
               <form class="form-grid" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
                 <div class="photo-row">
                   <img [src]="profilePreviewUrl()" alt="Profile preview" class="profile-image" />
@@ -286,13 +294,18 @@
                 </div>
 
                 <div class="form-group">
-                  <label for="facebookName">Facebook Name</label>
+                  <label for="facebookName">
+                    Facebook Name <span class="required">*</span>
+                  </label>
                   <input
                     type="text"
                     id="facebookName"
                     formControlName="facebookName"
-                    placeholder="Optional facebook display name"
+                    placeholder="Enter your Facebook name"
                   />
+                  @if (controlHasError('facebookName')) {
+                    <span class="error-text">{{ getControlError('facebookName') }}</span>
+                  }
                 </div>
 
                 <div class="form-group">
@@ -400,6 +413,110 @@
                   ></textarea>
                 </div>
 
+                <h3 class="section-title wide">Availability and Lifegroup</h3>
+
+                <div class="form-group wide">
+                  <label for="availability">Availability</label>
+                  <select id="availability" formControlName="availability">
+                    <option value="" disabled>Select your availability</option>
+                    <option value="anytime">Anytime / On Call</option>
+                    <option value="weekends-only">Weekends Only</option>
+                    <option value="weekdays-only">Weekdays Only</option>
+                    <option value="weekdays-weekends">Weekdays & Weekends</option>
+                    <option value="friday-saturday">Friday & Saturday Only</option>
+                    <option value="scheduled">Scheduled (By Arrangement)</option>
+                    <option value="holidays">Holidays (If Available)</option>
+                    <option value="rest-days">Rest Days / With Filed Leave</option>
+                    <option value="limited-weekdays">Limited Weekdays (Not Whole Day)</option>
+                    <option value="day-off">Day Off Only</option>
+                    <option value="others">Others</option>
+                  </select>
+                  @if (controlHasError('availability')) {
+                    <span class="error-text">{{ getControlError('availability') }}</span>
+                  }
+                </div>
+
+                @if (profileForm.get('availability')?.value === 'others') {
+                  <div class="form-group wide">
+                    <label for="otherAvailability">Please specify your availability</label>
+                    <input
+                      type="text"
+                      id="otherAvailability"
+                      formControlName="otherAvailability"
+                      placeholder="Enter your availability"
+                    />
+                  </div>
+                }
+
+                <div class="form-group">
+                  <label for="partOfLifegroup">Are you part of a lifegroup?</label>
+                  <select id="partOfLifegroup" formControlName="partOfLifegroup">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="leadingLifegroup">Are you leading a lifegroup?</label>
+                  <select id="leadingLifegroup" formControlName="leadingLifegroup">
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+
+                @if (profileForm.get('partOfLifegroup')?.value === 'yes') {
+                  <div class="form-group wide">
+                    <label for="lifegroupLeaderName">Name of your Lifegroup Leader</label>
+                    <input
+                      type="text"
+                      id="lifegroupLeaderName"
+                      formControlName="lifegroupLeaderName"
+                      placeholder="Enter your lifegroup leader's name"
+                    />
+                  </div>
+                }
+
+                <h3 class="section-title wide">Emergency Contact</h3>
+
+                <div class="form-group wide">
+                  <label for="emergencyContactName">Contact Name</label>
+                  <input
+                    type="text"
+                    id="emergencyContactName"
+                    formControlName="emergencyContactName"
+                    placeholder="Full name"
+                  />
+                  @if (controlHasError('emergencyContactName')) {
+                    <span class="error-text">{{ getControlError('emergencyContactName') }}</span>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="emergencyContactNumber">Contact Number</label>
+                  <input
+                    type="text"
+                    id="emergencyContactNumber"
+                    formControlName="emergencyContactNumber"
+                    placeholder="09XXXXXXXXX"
+                  />
+                  @if (controlHasError('emergencyContactNumber')) {
+                    <span class="error-text">{{ getControlError('emergencyContactNumber') }}</span>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="emergencyContactRelationship">Relationship</label>
+                  <input
+                    type="text"
+                    id="emergencyContactRelationship"
+                    formControlName="emergencyContactRelationship"
+                    placeholder="e.g. Spouse, Parent"
+                  />
+                  @if (controlHasError('emergencyContactRelationship')) {
+                    <span class="error-text">{{ getControlError('emergencyContactRelationship') }}</span>
+                  }
+                </div>
+
                 <h3 class="section-title wide">Volunteer Preferences and Account</h3>
 
                 <div class="form-group wide">
@@ -481,9 +598,6 @@
                       <button type="button" class="outline-btn" (click)="editProfile(profile)">
                         Edit
                       </button>
-                      <button type="button" class="danger-btn" (click)="deleteProfile(profile.id)">
-                        Remove
-                      </button>
                     </div>
                   </article>
                 } @empty {
@@ -546,12 +660,13 @@
             </div>
 
             <div class="schedule-controls">
-              <div class="period-toggle">
+              <div class="period-toggle" role="tablist" aria-label="Attendance period">
                 <button
                   type="button"
                   class="outline-btn"
                   [class.active]="attendancePeriod() === 'daily'"
                   (click)="setAttendancePeriod('daily')"
+                  [attr.aria-pressed]="attendancePeriod() === 'daily'"
                 >
                   Daily
                 </button>
@@ -560,6 +675,7 @@
                   class="outline-btn"
                   [class.active]="attendancePeriod() === 'weekly'"
                   (click)="setAttendancePeriod('weekly')"
+                  [attr.aria-pressed]="attendancePeriod() === 'weekly'"
                 >
                   Weekly
                 </button>
@@ -568,12 +684,13 @@
                   class="outline-btn"
                   [class.active]="attendancePeriod() === 'monthly'"
                   (click)="setAttendancePeriod('monthly')"
+                  [attr.aria-pressed]="attendancePeriod() === 'monthly'"
                 >
                   Monthly
                 </button>
               </div>
 
-              <div class="search-inline">
+              <div class="search-inline schedule-search">
                 <input
                   #attendanceSearch
                   type="text"
@@ -587,62 +704,11 @@
                   Search
                 </button>
               </div>
-
-              <button type="button" class="primary-btn" (click)="toggleAddAttendance()">
-                {{ showAddAttendance() ? 'Cancel' : '+ Log Hours' }}
-              </button>
             </div>
 
-            @if (showAddAttendance()) {
-              <form
-                class="attendance-form form-grid"
-                [formGroup]="attendanceForm"
-                (ngSubmit)="submitAttendance()"
-              >
-                <div class="form-group">
-                  <label for="attendanceDate">Date</label>
-                  <input type="date" id="attendanceDate" formControlName="date" />
-                  @if (attendanceForm.get('date')?.invalid && attendanceForm.get('date')?.touched) {
-                    <span class="error-text">Date is required</span>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="attendanceHours">Hours</label>
-                  <input
-                    type="number"
-                    id="attendanceHours"
-                    formControlName="hours"
-                    min="0.5"
-                    max="24"
-                    step="0.5"
-                    placeholder="e.g. 2.5"
-                  />
-                  @if (
-                    attendanceForm.get('hours')?.invalid && attendanceForm.get('hours')?.touched
-                  ) {
-                    <span class="error-text">Enter a valid number of hours (0.5–24)</span>
-                  }
-                </div>
-
-                <div class="form-group wide">
-                  <label for="attendanceDesc">Description (optional)</label>
-                  <input
-                    type="text"
-                    id="attendanceDesc"
-                    formControlName="description"
-                    placeholder="What did you do?"
-                  />
-                </div>
-
-                <div class="form-actions wide">
-                  <button type="submit" class="primary-btn">Save Entry</button>
-                  <button type="button" class="outline-btn" (click)="toggleAddAttendance()">
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            }
+            <p class="meta">
+              Attendance entries are managed by admins. This log is read-only for volunteers.
+            </p>
 
             <div class="schedule-list">
               @for (item of attendanceItems(); track item.attendance_id) {
@@ -692,6 +758,18 @@
       <div class="modal-actions">
         <button type="button" class="outline-btn" (click)="closeSaveConfirmModal()">Cancel</button>
         <button type="button" class="primary-btn" (click)="confirmSaveProfile()">Yes, Save</button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (showProfileSuccess()) {
+  <div class="modal-backdrop" (click)="closeProfileSuccess()">
+    <section class="modal-card" (click)="$event.stopPropagation()">
+      <h3>Profile Updated</h3>
+      <p>{{ profileSuccessMessage() || 'Your profile was updated successfully.' }}</p>
+      <div class="modal-actions">
+        <button type="button" class="primary-btn" (click)="closeProfileSuccess()">OK</button>
       </div>
     </section>
   </div>

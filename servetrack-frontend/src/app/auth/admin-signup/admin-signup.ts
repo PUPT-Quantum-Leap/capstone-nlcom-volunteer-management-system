@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject, OnDestroy } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import {
   FormBuilder,
@@ -24,7 +24,7 @@ import { emailValidator } from '../../validators/form.validator';
   templateUrl: './admin-signup.html',
   styleUrl: './admin-signup.scss',
 })
-export class AdminSignup {
+export class AdminSignup implements OnDestroy {
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
@@ -39,6 +39,9 @@ export class AdminSignup {
   showSuccessModal = signal(false);
   countdown = signal(5);
   validationErrors = signal<ValidationError[]>([]);
+
+  // Interval reference for cleanup
+  private countdownInterval?: ReturnType<typeof setInterval>;
 
   // Form group with validators
   adminForm: FormGroup = this.fb.group(
@@ -207,12 +210,12 @@ export class AdminSignup {
    * Start countdown timer for success modal
    */
   startCountdown(): void {
-    const timer = setInterval(() => {
+    this.countdownInterval = setInterval(() => {
       const current = this.countdown() - 1;
       this.countdown.set(Math.max(0, current));
-      
+
       if (current <= 0) {
-        clearInterval(timer);
+        this.clearCountdownInterval();
         // Auto-navigate to login when countdown reaches zero
         this.navigateToLogin();
       }
@@ -220,11 +223,28 @@ export class AdminSignup {
   }
 
   /**
+   * Clear countdown interval
+   */
+  private clearCountdownInterval(): void {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+      this.countdownInterval = undefined;
+    }
+  }
+
+  /**
+   * Component cleanup
+   */
+  ngOnDestroy(): void {
+    this.clearCountdownInterval();
+  }
+
+  /**
    * Navigate to login page
    */
   async navigateToLogin(): Promise<void> {
     try {
-      await this.router.navigate(['/login']);
+      await this.router.navigate(['/admin-login']);
     } catch (error) {
       // Navigation failed - handle silently
     }

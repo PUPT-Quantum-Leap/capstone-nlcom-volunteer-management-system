@@ -1,112 +1,74 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  DestroyRef,
+} from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { DatePipe } from '@angular/common';
+import { DatePipe, CommonModule } from '@angular/common';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
+import { AdminDashboardService, DashboardVolunteerRow } from '../services/admin-dashboard.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Poll, CreatePollDto, PollOption } from '../models/poll';
+import { PollService } from '../services/poll.service';
 
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, CommonModule],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
-export class AdminDashboard {
+export class AdminDashboard implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private authService = inject(AuthService);
+  private adminDashboardService = inject(AdminDashboardService);
+  private destroyRef = inject(DestroyRef);
+  private pollService = inject(PollService);
 
   readonly defaultPhoto = '/assets/nlcom.png';
 
-  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup'>('overview');
+  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Admin');
   sidebarCollapsed = signal(false);
   isLoading = signal(false);
 
   showNotifications = signal(false);
   showLogoutModal = signal(false);
+  showPollModal = signal(false);
+  showDeletePollModal = signal(false);
+  showVolunteerModal = signal(false);
+  showDeleteVolunteerModal = signal(false);
   searchQuery = signal('');
+  editingPoll = signal<Poll | null>(null);
+  deletingPollId = signal<number | null>(null);
+  editingVolunteer = signal<DashboardVolunteerRow | null>(null);
+  deletingVolunteerId = signal<number | null>(null);
+  showAiModal = signal(false);
+  currentPage = signal(1);
 
-  notifications = signal<NotificationItem[]>([
-    {
-      id: 1,
-      title: 'New Volunteer Registration',
-      description: '3 new volunteers registered today.',
-      time: '1h ago',
-      read: false,
-    },
-    {
-      id: 2,
-      title: 'Schedule Update Required',
-      description: 'Please review and approve pending schedules.',
-      time: '3h ago',
-      read: false,
-    },
-  ]);
+  notifications = signal<NotificationItem[]>([]);
 
   notificationCount = computed(
     () => this.notifications().filter((notification) => !notification.read).length,
   );
 
-  totalVolunteers = signal(42);
-  activeVolunteers = signal(35);
-  upcomingEvents = signal(8);
-  completedMissions = signal(127);
+  totalVolunteers = signal(0);
+  activeVolunteers = signal(0);
+  upcomingEvents = signal(0);
+  completedMissions = signal(0);
 
-  performanceMetrics = signal<PerformanceMetric[]>([
-    {
-      id: 1,
-      volunteerId: 1,
-      volunteerName: 'Jasmine Deleon',
-      attendanceRate: 92,
-      hoursServed: 48,
-      tasksCompleted: 15,
-      rating: 4.8,
-      lastActivity: '2025-08-15',
-    },
-    {
-      id: 2,
-      volunteerId: 2,
-      volunteerName: 'Marco Santos',
-      attendanceRate: 88,
-      hoursServed: 42,
-      tasksCompleted: 12,
-      rating: 4.5,
-      lastActivity: '2025-08-14',
-    },
-    {
-      id: 3,
-      volunteerId: 3,
-      volunteerName: 'Elena Cruz',
-      attendanceRate: 95,
-      hoursServed: 56,
-      tasksCompleted: 18,
-      rating: 4.9,
-      lastActivity: '2025-08-15',
-    },
-    {
-      id: 4,
-      volunteerId: 4,
-      volunteerName: 'Rafael Torres',
-      attendanceRate: 85,
-      hoursServed: 38,
-      tasksCompleted: 10,
-      rating: 4.3,
-      lastActivity: '2025-08-13',
-    },
-    {
-      id: 5,
-      volunteerId: 5,
-      volunteerName: 'Sofia Reyes',
-      attendanceRate: 90,
-      hoursServed: 45,
-      tasksCompleted: 14,
-      rating: 4.7,
-      lastActivity: '2025-08-15',
-    },
-  ]);
+  volunteerRows = signal<DashboardVolunteerRow[]>([]);
+  performanceMetrics = signal<PerformanceMetric[]>([]);
+  polls = signal<Poll[]>([]);
+  pollFilterStatus = signal<'all' | 'active' | 'closed' | 'draft'>('all');
 
   sortField = signal<'name' | 'attendance' | 'hours' | 'tasks' | 'rating'>('attendance');
   sortDirection = signal<'asc' | 'desc'>('desc');
@@ -183,12 +145,82 @@ export class AdminDashboard {
     return (total / metrics.length).toFixed(1);
   });
 
+  filteredPolls = computed(() => {
+    const status = this.pollFilterStatus();
+    if (status === 'all') {
+      return this.polls();
+    }
+    return this.polls().filter((poll) => poll.status === status);
+  });
+
+  pollForm = this.fb.group({
+    title: ['', [Validators.required, Validators.minLength(3)]],
+    date: ['', Validators.required],
+    cutOffDay: ['', Validators.required],
+    cutOffTime: ['', Validators.required],
+    description: ['', [Validators.required, Validators.minLength(10)]],
+    options: this.fb.array([]),
+  });
+
+  volunteerForm = this.fb.group({
+    firstName: ['', [Validators.required, Validators.minLength(2)]],
+    lastName: ['', [Validators.required, Validators.minLength(2)]],
+    facebookName: ['', [Validators.required, Validators.maxLength(100)]],
+    email: ['', [Validators.required, Validators.email]],
+    mobileNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{11}$/)]],
+    birthdate: ['', Validators.required],
+    lastMedicalExam: ['', Validators.required],
+    completeAddress: ['', Validators.required],
+    educationalAttainment: ['', Validators.required],
+    trainingExperience: [''],
+    skillsHobbies: [''],
+    classesTraining: [''],
+    volunteerPreference: ['', Validators.required],
+    otherPreference: [''],
+    availability: ['', Validators.required],
+    otherAvailability: [''],
+    partOfLifegroup: ['', Validators.required],
+    lifegroupLeaderName: [''],
+    leadingLifegroup: ['', Validators.required],
+    emergencyContactName: ['', Validators.required],
+    emergencyContactNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{11}$/)]],
+    emergencyContactRelationship: ['', Validators.required],
+  });
+
+  ngOnInit(): void {
+    this.loadDashboardData();
+    this.loadPolls();
+  }
+
+  private loadDashboardData(): void {
+    this.isLoading.set(true);
+
+    this.adminDashboardService.getDashboardData().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
+      if (response.success && response.data) {
+        this.totalVolunteers.set(response.data.stats.totalVolunteers);
+        this.activeVolunteers.set(response.data.stats.activeVolunteers);
+        this.upcomingEvents.set(response.data.stats.upcomingEvents);
+        this.completedMissions.set(response.data.stats.completedMissions);
+        this.notifications.set(response.data.notifications ?? []);
+        this.volunteerRows.set(response.data.volunteers ?? []);
+        this.performanceMetrics.set(response.data.performanceMetrics ?? []);
+      } else {
+        this.notifications.set([]);
+        this.volunteerRows.set([]);
+        this.performanceMetrics.set([]);
+      }
+
+      this.isLoading.set(false);
+    });
+  }
+
   toggleSidebar(): void {
     this.sidebarCollapsed.update((v) => !v);
   }
 
-  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'sms' | 'backup'): void {
+  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'): void {
     this.currentView.set(view);
+    this.currentPage.set(1);
   }
 
   setSearchQuery(value: string): void {
@@ -231,6 +263,16 @@ export class AdminDashboard {
       return;
     }
 
+    if (query.includes('analytic')) {
+      this.setView('analytics');
+      return;
+    }
+
+    if (query.includes('event')) {
+      this.setView('events');
+      return;
+    }
+
     if (query.includes('sms') || query.includes('message')) {
       this.setView('sms');
       return;
@@ -262,6 +304,14 @@ export class AdminDashboard {
 
   closeLogoutModal(): void {
     this.showLogoutModal.set(false);
+  }
+
+  openAiModal(): void {
+    this.showAiModal.set(true);
+  }
+
+  closeAiModal(): void {
+    this.showAiModal.set(false);
   }
 
   async confirmLogout(): Promise<void> {
@@ -312,5 +362,202 @@ export class AdminDashboard {
       return 'level-fair';
     }
     return 'level-needs-improvement';
+  }
+
+  private loadPolls(): void {
+    this.pollService.getPolls().subscribe((polls) => {
+      this.polls.set(polls);
+    });
+  }
+
+  get pollOptions(): FormArray {
+    return this.pollForm.get('options') as FormArray;
+  }
+
+  openCreatePollModal(): void {
+    this.editingPoll.set(null);
+    this.pollForm.reset();
+    this.pollOptions.clear();
+    this.addPollOption();
+    this.addPollOption();
+    this.showPollModal.set(true);
+  }
+
+  openEditPollModal(poll: Poll): void {
+    this.editingPoll.set(poll);
+    this.pollOptions.clear();
+    
+    poll.options.forEach((option) => {
+      this.pollOptions.push(
+        this.fb.group({
+          timeSlot: [option.timeSlot, Validators.required],
+          capacity: [option.capacity, [Validators.required, Validators.min(1)]],
+        })
+      );
+    });
+
+    this.pollForm.patchValue({
+      title: poll.title,
+      date: poll.date,
+      cutOffDay: poll.cutOffDay,
+      cutOffTime: poll.cutOffTime,
+      description: poll.description,
+    });
+
+    this.showPollModal.set(true);
+  }
+
+  closePollModal(): void {
+    this.showPollModal.set(false);
+    this.editingPoll.set(null);
+    this.pollForm.reset();
+  }
+
+  addPollOption(): void {
+    this.pollOptions.push(
+      this.fb.group({
+        timeSlot: ['', Validators.required],
+        capacity: [10, [Validators.required, Validators.min(1)]],
+      })
+    );
+  }
+
+  removePollOption(index: number): void {
+    if (this.pollOptions.length > 1) {
+      this.pollOptions.removeAt(index);
+    }
+  }
+
+  savePoll(): void {
+    if (this.pollForm.invalid) {
+      this.pollForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.pollForm.value;
+    const dto: CreatePollDto = {
+      title: formValue.title!,
+      date: formValue.date!,
+      cutOffDay: formValue.cutOffDay!,
+      cutOffTime: formValue.cutOffTime!,
+      description: formValue.description!,
+      options: (formValue.options as Array<{ timeSlot: string; capacity: number }>).map((opt) => ({
+        timeSlot: opt.timeSlot,
+        capacity: opt.capacity,
+      })),
+    };
+
+    const editingPoll = this.editingPoll();
+    if (editingPoll) {
+      this.pollService.updatePoll(editingPoll.id, dto).subscribe(() => {
+        this.loadPolls();
+        this.closePollModal();
+      });
+    } else {
+      this.pollService.createPoll(dto).subscribe(() => {
+        this.loadPolls();
+        this.closePollModal();
+      });
+    }
+  }
+
+  confirmDeletePoll(pollId: number): void {
+    this.deletingPollId.set(pollId);
+    this.showDeletePollModal.set(true);
+  }
+
+  closeDeletePollModal(): void {
+    this.showDeletePollModal.set(false);
+    this.deletingPollId.set(null);
+  }
+
+  deletePoll(): void {
+    const pollId = this.deletingPollId();
+    if (pollId !== null) {
+      this.pollService.deletePoll(pollId).subscribe(() => {
+        this.loadPolls();
+        this.closeDeletePollModal();
+      });
+    }
+  }
+
+  updatePollStatus(pollId: number, status: 'active' | 'closed' | 'draft'): void {
+    this.pollService.updatePollStatus(pollId, status).subscribe(() => {
+      this.loadPolls();
+    });
+  }
+
+  setPollFilterStatus(status: 'all' | 'active' | 'closed' | 'draft'): void {
+    this.pollFilterStatus.set(status);
+  }
+
+  openCreateVolunteerModal(): void {
+    this.editingVolunteer.set(null);
+    this.volunteerForm.reset();
+    this.showVolunteerModal.set(true);
+  }
+
+  openEditVolunteerModal(volunteer: DashboardVolunteerRow): void {
+    this.editingVolunteer.set(volunteer);
+    this.volunteerForm.patchValue({
+      firstName: volunteer.name.split(' ')[0],
+      lastName: volunteer.name.split(' ').slice(1).join(' '),
+      email: volunteer.email,
+      mobileNumber: volunteer.phone,
+      birthdate: '',
+      completeAddress: '',
+      educationalAttainment: '',
+      facebookName: '',
+    });
+    this.showVolunteerModal.set(true);
+  }
+
+  closeVolunteerModal(): void {
+    this.showVolunteerModal.set(false);
+    this.editingVolunteer.set(null);
+    this.volunteerForm.reset();
+  }
+
+  saveVolunteer(): void {
+    if (this.volunteerForm.invalid) {
+      this.volunteerForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.volunteerForm.value;
+    console.log('Save volunteer:', formValue);
+    this.closeVolunteerModal();
+    this.loadDashboardData();
+  }
+
+  confirmDeleteVolunteer(volunteerId: number): void {
+    this.deletingVolunteerId.set(volunteerId);
+    this.showDeleteVolunteerModal.set(true);
+  }
+
+  closeDeleteVolunteerModal(): void {
+    this.showDeleteVolunteerModal.set(false);
+    this.deletingVolunteerId.set(null);
+  }
+
+  deleteVolunteer(): void {
+    const volunteerId = this.deletingVolunteerId();
+    if (volunteerId !== null) {
+      console.log('Delete volunteer:', volunteerId);
+      this.closeDeleteVolunteerModal();
+      this.loadDashboardData();
+    }
+  }
+
+  getVotePercentage(poll: Poll, option: PollOption): number {
+    return poll.totalVotes > 0 ? (option.votes / poll.totalVotes) * 100 : 0;
+  }
+
+  getRemainingSlots(option: PollOption): number {
+    return option.capacity - option.votes;
+  }
+
+  isFull(option: PollOption): boolean {
+    return option.votes >= option.capacity;
   }
 }

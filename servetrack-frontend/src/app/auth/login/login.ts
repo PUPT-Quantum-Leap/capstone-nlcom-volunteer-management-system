@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, signal, inject, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import {
   FormBuilder,
@@ -7,7 +7,7 @@ import {
   Validators,
   AbstractControl,
 } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -17,7 +17,7 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
-export class Login implements OnInit {
+export class Login implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
@@ -31,6 +31,11 @@ export class Login implements OnInit {
 
   // Popup signal
   showPopup = signal(false);
+  showLoginSuccessModal = signal(false);
+  loginSuccessMessage = signal<string | null>(null);
+  isAdminLoginPage = signal(false);
+  private loginRedirectPath: '/volunteer-dashboard' | '/admin-dashboard' = '/volunteer-dashboard';
+  private queryParamsSubscription?: Subscription;
 
   // Popup methods
   showPopupModal() {
@@ -41,13 +46,31 @@ export class Login implements OnInit {
     this.showPopup.set(false);
   }
 
+  closeLoginSuccessModal(): void {
+    this.showLoginSuccessModal.set(false);
+  }
+
+  async continueAfterSuccessfulLogin(): Promise<void> {
+    this.closeLoginSuccessModal();
+    try {
+      const navigated = await this.router.navigateByUrl(this.loginRedirectPath);
+      if (!navigated) {
+        this.errorMessage.set('Login succeeded, but dashboard navigation failed. Please try again.');
+      }
+    } catch {
+      this.errorMessage.set('Login succeeded, but dashboard navigation failed. Please try again.');
+    }
+  }
+
   // Password visibility methods
   togglePasswordVisibility(): void {
     this.showPassword.set(!this.showPassword());
   }
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe((params) => {
+    this.isAdminLoginPage.set(this.route.snapshot?.routeConfig?.path === 'admin-login');
+
+    this.queryParamsSubscription = this.route.queryParams.subscribe((params) => {
       if (params['registered'] === 'true') {
         this.registrationSuccessMessage.set(
           'Registration successful! Please log in with your new credentials.',
@@ -56,6 +79,10 @@ export class Login implements OnInit {
         this.router.navigate([], { queryParams: {}, replaceUrl: true });
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.queryParamsSubscription?.unsubscribe();
   }
 
   // Form group with validators
@@ -122,17 +149,32 @@ export class Login implements OnInit {
       };
 
       // Call auth service
-      const response = await firstValueFrom(this.authService.login$(credentials));
+      const response = await firstValueFrom(
+        this.isAdminLoginPage()
+          ? this.authService.adminLogin$(credentials)
+          : this.authService.login$(credentials),
+      );
 
       if (response.success) {
         // Smart routing based on user type
         const userType = response.user?.user_type || response.user?.role || 'volunteer';
-        
-        if (userType === 'admin') {
-          await this.router.navigate(['/admin-dashboard']);
-        } else {
-          await this.router.navigate(['/volunteer-dashboard']);
+
+        if (userType === 'admin' && !this.isAdminLoginPage()) {
+          this.errorMessage.set('ERROR');
+          this.showLoginSuccessModal.set(false);
+          await firstValueFrom(this.authService.logout$());
+          return;
         }
+
+        if (userType === 'admin') {
+          this.loginRedirectPath = '/admin-dashboard';
+          this.loginSuccessMessage.set('Login successful. Redirecting to admin dashboard.');
+        } else {
+          this.loginRedirectPath = '/volunteer-dashboard';
+          this.loginSuccessMessage.set('Login successful. Redirecting to volunteer dashboard.');
+        }
+
+        this.showLoginSuccessModal.set(true);
       } else {
         this.errorMessage.set(response.message || 'Invalid email or password');
       }

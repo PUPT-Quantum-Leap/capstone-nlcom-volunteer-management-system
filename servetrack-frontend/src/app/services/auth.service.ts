@@ -1,7 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, tap, of, map } from 'rxjs';
+import { Observable, catchError, tap, of, map, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface LoginCredentials {
@@ -30,6 +30,14 @@ export interface VolunteerSignupData {
   classesTraining?: string;
   volunteerPreference: string;
   otherPreference?: string;
+  availability: string;
+  otherAvailability?: string;
+  partOfLifegroup: string;
+  lifegroupLeaderName?: string;
+  leadingLifegroup: string;
+  emergencyContactName: string;
+  emergencyContactNumber: string;
+  emergencyContactRelationship: string;
   password: string;
   confirmPassword: string;
 }
@@ -97,6 +105,14 @@ export class AuthService {
   error = signal<string | null>(null);
 
   /**
+   * Fetch CSRF cookie before making stateful requests
+   */
+  public ensureCsrf$(): Observable<void> {
+    const backendUrl = environment.apiUrl.replace('/api', '');
+    return this.http.get<void>(`${backendUrl}/sanctum/csrf-cookie`, { withCredentials: true });
+  }
+
+  /**
    * Login user with credentials.
    */
   login(credentials: LoginCredentials): Promise<AuthResponse> {
@@ -109,6 +125,20 @@ export class AuthService {
   }
 
   login$(credentials: LoginCredentials): Observable<AuthResponse> {
+    return this.loginWithEndpoint$(credentials, '/login');
+  }
+
+  /**
+   * Login using the admin-only endpoint.
+   */
+  adminLogin$(credentials: LoginCredentials): Observable<AuthResponse> {
+    return this.loginWithEndpoint$(credentials, '/admin/login');
+  }
+
+  private loginWithEndpoint$(
+    credentials: LoginCredentials,
+    endpoint: '/login' | '/admin/login',
+  ): Observable<AuthResponse> {
     this.isLoading.set(true);
     this.error.set(null);
 
@@ -117,25 +147,122 @@ export class AuthService {
       return of({ success: false, message: 'Invalid email format' } as AuthResponse);
     }
 
-    return this.http
-      .post<{
-        user: AuthResponse['user'];
-      }>(`${environment.apiUrl}/login`, credentials, { withCredentials: true })
-      .pipe(
-        map((response) => ({ success: true, user: response.user })),
-        tap((response) => {
-          if (response.user) {
-            this.isAuthenticated.set(true);
-            this.currentUser.set(response.user);
-          }
-        }),
-        catchError((err: HttpErrorResponse) => {
-          const message = err.error?.message || 'Login failed';
-          this.error.set(message);
-          return of({ success: false, message } as AuthResponse);
-        }),
-        tap(() => this.isLoading.set(false)),
-      );
+    return this.requestLogin$(credentials, endpoint).pipe(
+      switchMap((response) => {
+        if (response.user) {
+          return of({ success: true, user: response.user } as AuthResponse);
+        }
+
+        // If stale/previous account is still authenticated, log it out and retry with provided credentials.
+        if (response.message === 'Already authenticated.') {
+          return this.forceLogoutForRelogin$().pipe(
+            switchMap(() => this.requestLogin$(credentials, endpoint)),
+            map((retryResponse) => {
+              if (retryResponse.user) {
+                return { success: true, user: retryResponse.user } as AuthResponse;
+              }
+
+              return {
+                success: false,
+                message: this.normalizeAdminLoginOnlyMessage(
+                  retryResponse.message || 'Login failed after resetting previous session.',
+                ),
+              } as AuthResponse;
+            }),
+          );
+        }
+
+        return of({
+          success: false,
+          message: this.normalizeAdminLoginOnlyMessage(
+            response.message || 'Login failed. Please try again.',
+          ),
+        } as AuthResponse);
+      }),
+      tap((response) => {
+        if (response.user) {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(response.user);
+        }
+      }),
+      catchError((err: HttpErrorResponse) => {
+        const message = this.getLoginErrorMessage(err);
+        this.error.set(message);
+        return of({ success: false, message } as AuthResponse);
+      }),
+      tap(() => this.isLoading.set(false)),
+    );
+  }
+
+  private requestLogin$(
+    credentials: LoginCredentials,
+    endpoint: '/login' | '/admin/login',
+  ): Observable<{ message?: string; user?: AuthResponse['user'] }> {
+    return this.ensureCsrf$().pipe(
+      switchMap(() =>
+        this.http.post<{
+          message?: string;
+          user?: AuthResponse['user'];
+        }>(`${environment.apiUrl}${endpoint}`, credentials, { withCredentials: true }),
+      ),
+    );
+  }
+
+  private forceLogoutForRelogin$(): Observable<void> {
+    return this.http.post<void>(`${environment.apiUrl}/logout`, {}, { withCredentials: true }).pipe(
+      tap(() => {
+        this.isAuthenticated.set(false);
+        this.currentUser.set(null);
+      }),
+      catchError(() => {
+        this.isAuthenticated.set(false);
+        this.currentUser.set(null);
+        return of(undefined);
+      }),
+    );
+  }
+
+  private getLoginErrorMessage(err: HttpErrorResponse): string {
+    const backendMessageRaw = typeof err.error?.message === 'string' ? err.error.message : '';
+    const backendMessage = this.normalizeAdminLoginOnlyMessage(backendMessageRaw);
+    const retryAfterHeader = err.headers?.get('Retry-After');
+    const retryAfterBody = err.error?.retry_after;
+    const retryAfterRaw = retryAfterBody ?? retryAfterHeader;
+    const retryAfter = Number.isFinite(Number(retryAfterRaw)) ? Number(retryAfterRaw) : null;
+
+    if (err.status === 0) {
+      return 'Cannot reach server. Please make sure backend and database are running.';
+    }
+
+    if (err.status === 429) {
+      if (retryAfter && retryAfter > 0) {
+        const minutes = Math.ceil(retryAfter / 60);
+        return `Too many attempts. Try again in about ${minutes} minute(s).`;
+      }
+      return backendMessage || 'Too many login attempts. Please try again later.';
+    }
+
+    if (err.status === 401 || err.status === 422) {
+      if (backendMessage === 'ERROR') {
+        return backendMessage;
+      }
+      return 'Invalid email or password.';
+    }
+
+    if (err.status >= 500) {
+      return 'Server error while logging in. Please try again shortly.';
+    }
+
+    return backendMessage || 'Login failed. Please try again.';
+  }
+
+  private normalizeAdminLoginOnlyMessage(message: string): string {
+    const normalizedMessage = message.toLowerCase();
+    if (normalizedMessage.includes('admin accounts must') && normalizedMessage.includes('/admin-login')) {
+      return 'ERROR';
+    }
+
+    return message;
   }
 
   /**
@@ -150,22 +277,23 @@ export class AuthService {
       return of({ success: false, message: 'Invalid email format' } as AuthResponse);
     }
 
-    return this.http
-      .post<AuthResponse>(`${environment.apiUrl}/register`, data, { withCredentials: true })
-      .pipe(
-        tap((response) => {
-          if (response.success && response.user) {
-            this.isAuthenticated.set(true);
-            this.currentUser.set(response.user);
-          }
-        }),
-        catchError((err: HttpErrorResponse) => {
-          const message = err.error?.message || 'Registration failed';
-          this.error.set(message);
-          return of({ success: false, message } as AuthResponse);
-        }),
-        tap(() => this.isLoading.set(false)),
-      );
+    return this.ensureCsrf$().pipe(
+      switchMap(() => 
+        this.http.post<AuthResponse>(`${environment.apiUrl}/register`, data, { withCredentials: true })
+      ),
+      tap((response) => {
+        if (response.success && response.user) {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(response.user);
+        }
+      }),
+      catchError((err: HttpErrorResponse) => {
+        const message = err.error?.message || 'Registration failed';
+        this.error.set(message);
+        return of({ success: false, message } as AuthResponse);
+      }),
+      tap(() => this.isLoading.set(false)),
+    );
   }
 
   register(data: RegisterData): Promise<AuthResponse> {
@@ -189,24 +317,25 @@ export class AuthService {
       return of({ success: false, message: 'Invalid email format' } as AuthResponse);
     }
 
-    return this.http
-      .post<AuthResponse>(`${environment.apiUrl}/volunteer/register`, data, {
-        withCredentials: true,
-      })
-      .pipe(
-        tap((response) => {
-          if (response.success && response.user) {
-            this.isAuthenticated.set(true);
-            this.currentUser.set(response.user);
-          }
-        }),
-        catchError((err: HttpErrorResponse) => {
-          const message = err.error?.message || 'Registration failed';
-          this.error.set(message);
-          return of({ success: false, message } as AuthResponse);
-        }),
-        tap(() => this.isLoading.set(false)),
-      );
+    return this.ensureCsrf$().pipe(
+      switchMap(() => 
+        this.http.post<AuthResponse>(`${environment.apiUrl}/volunteer/register`, data, {
+          withCredentials: true,
+        })
+      ),
+      tap((response) => {
+        if (response.success && response.user) {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(response.user);
+        }
+      }),
+      catchError((err: HttpErrorResponse) => {
+        const message = err.error?.message || 'Registration failed';
+        this.error.set(message);
+        return of({ success: false, message } as AuthResponse);
+      }),
+      tap(() => this.isLoading.set(false)),
+    );
   }
 
   volunteerSignup(data: VolunteerSignupData): Promise<AuthResponse> {
@@ -245,9 +374,26 @@ export class AuthService {
    */
   checkAuthStatus$(): Observable<AuthResponse> {
     return this.http
-      .get<AuthResponse>(`${environment.apiUrl}/user`, { withCredentials: true })
+      .get<AuthResponse | AuthResponse['user']>(`${environment.apiUrl}/user`, { withCredentials: true })
       .pipe(
-        map((response) => ({ success: true, message: response.message, user: response.user })),
+        map((response) => {
+          // Supports both:
+          // 1) { success, user, message } envelope
+          // 2) raw user object from /api/user
+          const maybeEnvelope = response as AuthResponse;
+          if (maybeEnvelope && typeof maybeEnvelope === 'object' && 'user' in maybeEnvelope) {
+            return {
+              success: true,
+              message: maybeEnvelope.message,
+              user: maybeEnvelope.user ?? null,
+            } as AuthResponse;
+          }
+
+          return {
+            success: true,
+            user: response as AuthResponse['user'],
+          } as AuthResponse;
+        }),
         tap((response) => {
           if (response.user) {
             this.isAuthenticated.set(true);

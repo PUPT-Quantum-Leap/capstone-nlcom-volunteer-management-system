@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $primary: #2563eb;
 $primary-dark: #1e40af;
 $primary-light: #3b82f6;
@@ -450,6 +452,71 @@ $success: #059669;
 
 .btn-next:hover:not(:disabled) .arrow {
   transform: translateX(4px);
+}
+
+.btn-error {
+  background: $error;
+  color: $white;
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: color.adjust($error, $lightness: -10%);
+  }
+}
+
+.popup-error {
+  border-top: 5px solid $error;
+
+  .popup-title {
+    color: $error;
+  }
+}
+
+.error-icon {
+  width: 64px;
+  height: 64px;
+  background: $error-light;
+  color: $error;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+
+  .error-cross {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+.error-list-container {
+  text-align: left;
+  background: $gray-50;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid $border;
+}
+
+.error-list {
+  padding-left: 1.5rem;
+  margin: 0;
+  color: $error;
+  font-size: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  li {
+    line-height: 1.4;
+  }
 }
 
 .spinner {

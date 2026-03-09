@@ -45,15 +45,15 @@ class SecurityHeaders
 
     /**
      * Build the Content-Security-Policy directive string.
-     * Loosens script/style restrictions on localhost to allow Angular's dev tooling.
+     * Loosens script/style restrictions in local development to allow Angular's dev tooling.
      */
     protected function buildCSP(Request $request): string
     {
-        $isLocal = in_array($request->getHost(), ['localhost', '127.0.0.1']);
+        $isDevelopment = app()->environment('local', 'testing');
 
         $directives = [
             'default-src' => "'self'",
-            'script-src' => $isLocal ? "'self' 'unsafe-inline' 'unsafe-eval'" : "'self'",
+            'script-src' => $isDevelopment ? "'self' 'unsafe-inline' 'unsafe-eval'" : "'self'",
             'style-src' => "'self' 'unsafe-inline'", // Required for Tailwind inline styles
             'img-src' => "'self' data: https:",
             'font-src' => "'self' data:",
