@@ -215,7 +215,15 @@
 
               <article class="stat-card">
                 <p class="label">Last Vote</p>
-                <p class="value value-text">{{ selectedPollLabel() }}</p>
+                <p class="value value-text">
+                  @if (hasSubmittedVote()) {
+                    Voted
+                  } @else if (activePoll()) {
+                    Pending
+                  } @else {
+                    —
+                  }
+                </p>
                 <p class="meta">
                   @if (hasSubmittedVote()) {
                     Vote Recorded
@@ -610,42 +618,92 @@
 
         @case ('polls') {
           <section class="poll-grid">
-            <article class="panel">
-              <div class="panel-header">
-                <h2>Active Deployment Polls</h2>
-                <p>Shape the next mission logistics.</p>
-              </div>
-
-              <h3 class="section-text">Preferred Volunteer Schedule</h3>
-
-              <div class="poll-options">
-                @for (choice of pollChoices(); track choice.id) {
-                  <button
-                    type="button"
-                    class="poll-option"
-                    [class.active]="selectedPollChoiceId() === choice.id"
-                    [disabled]="hasSubmittedVote()"
-                    (click)="selectPollChoice(choice.id)"
-                  >
-                    <span class="option-label">{{ choice.label }}</span>
-                    <span class="poll-meta"
-                      >{{ getVotePercentage(choice.votes) }}% ({{ choice.votes }})</span
+            @if (polls().length === 0) {
+              <article class="panel">
+                <div class="panel-header">
+                  <h2>Active Deployment Polls</h2>
+                  <p>No active polls at the moment. Check back soon.</p>
+                </div>
+              </article>
+            } @else {
+              <!-- Poll selector when more than one poll is active -->
+              @if (polls().length > 1) {
+                <div class="poll-tabs">
+                  @for (poll of polls(); track poll.id) {
+                    <button
+                      type="button"
+                      class="poll-tab"
+                      [class.active]="activePoll()?.id === poll.id"
+                      (click)="setActivePoll(poll)"
                     >
-                  </button>
-                }
-              </div>
+                      {{ poll.title }}
+                    </button>
+                  }
+                </div>
+              }
 
-              <div class="poll-actions">
-                <button
-                  type="button"
-                  class="primary-btn"
-                  [disabled]="selectedPollChoiceId() === null || hasSubmittedVote()"
-                  (click)="submitPollVote()"
-                >
-                  {{ hasSubmittedVote() ? 'Vote Recorded' : 'Submit Selection' }}
-                </button>
-              </div>
-            </article>
+              @if (activePoll(); as poll) {
+                <article class="panel">
+                  <div class="panel-header">
+                    <h2>{{ poll.title }} ({{ poll.date }})</h2>
+                    <p>
+                      Cut-off:&nbsp;<strong>{{ poll.cutOffDay }} {{ poll.cutOffTime }}</strong>
+                    </p>
+                  </div>
+
+                  @if (poll.description) {
+                    <p class="section-text">{{ poll.description }}</p>
+                  }
+
+                  <h3 class="section-text">Select your preferred time slot</h3>
+
+                  <div class="poll-options">
+                    @for (option of poll.options; track option.id) {
+                      <button
+                        type="button"
+                        class="poll-option"
+                        [class.active]="selectedOptionId() === option.id"
+                        [class.disabled]="isOptionFull(option)"
+                        [disabled]="hasSubmittedVote() || isOptionFull(option)"
+                        (click)="selectOption(option.id)"
+                      >
+                        <span class="option-label">{{ option.timeSlot }}</span>
+                        <span class="poll-meta">
+                          {{ getVotePercentage(option) }}%
+                          &nbsp;({{ option.votes }}&nbsp;/&nbsp;{{ option.capacity }})
+                        </span>
+                        @if (isOptionFull(option)) {
+                          <span class="full-badge">FULL</span>
+                        } @else {
+                          <span class="slots-remaining">{{ getRemainingSlots(option) }} slots left</span>
+                        }
+                      </button>
+                    }
+                  </div>
+
+                  @if (pollError()) {
+                    <p class="error-message">{{ pollError() }}</p>
+                  }
+
+                  <div class="poll-actions">
+                    <button
+                      type="button"
+                      class="primary-btn"
+                      [disabled]="selectedOptionId() === null || hasSubmittedVote() || isLoading()"
+                      (click)="submitPollVote()"
+                    >
+                      @if (isLoading()) {
+                        Submitting…
+                      } @else if (hasSubmittedVote()) {
+                        Vote Recorded
+                      } @else {
+                        Submit Selection
+                      }
+                    </button>
+                  </div>
+                </article>
+              }
+            }
           </section>
         }
 
