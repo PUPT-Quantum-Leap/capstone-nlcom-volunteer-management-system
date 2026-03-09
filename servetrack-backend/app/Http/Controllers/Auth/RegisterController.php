@@ -24,8 +24,13 @@ class RegisterController extends Controller
         try {
             $user = User::create($userData);
         } catch (\Exception $e) {
+            \Log::error('Generic registration failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
-                'message' => 'Registration failed: '.$e->getMessage(),
+                'message' => 'Registration failed. Please try again or contact support.',
             ], 500);
         }
 
