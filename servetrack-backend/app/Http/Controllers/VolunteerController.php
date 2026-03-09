@@ -2,8 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\TokenAbilities;
+use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\UpdateProfilePhotoRequest;
 use App\Http\Requests\UpdateVolunteerProfileRequest;
+use App\Http\Resources\ProfileChangeLogResource;
+use App\Http\Resources\VolunteerProfileResource;
 use App\Models\Position;
+use App\Models\ProfileChangeLog;
 use App\Models\Skill;
 use App\Models\Training;
 use App\Models\User;
@@ -12,7 +18,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class VolunteerController extends Controller
 {
@@ -32,11 +41,7 @@ class VolunteerController extends Controller
                 'emergencyContactNumber' => preg_replace('/[\s\-()]/', '', $request->emergencyContactNumber),
             ]);
         }
-        if ($request->has('email')) {
-            $request->merge([
-                'email' => strtolower(trim((string) $request->email)),
-            ]);
-        }
+        // Email normalization is now handled by NormalizeEmail middleware
 
         // Validate incoming data
         $validator = Validator::make($request->all(), [
@@ -71,8 +76,8 @@ class VolunteerController extends Controller
             'emergencyContactRelationship' => 'required|string|max:50',
 
             // Password (for authentication)
-            'password' => 'required|string|min:8',
-            'confirmPassword' => 'required|string|same:password',
+            'password' => ['required', 'string', Password::defaults()],
+            'confirmPassword' => ['required', 'string', 'same:password'],
         ]);
 
         if ($validator->fails()) {
@@ -135,7 +140,7 @@ class VolunteerController extends Controller
             DB::commit();
 
             // Create Sanctum token and cookie for immediate authentication
-            $token = $user->createToken('auth-token', ['*'], now()->addMinutes(config('sanctum.expiration', 60)))->plainTextToken;
+            $token = $user->createToken('auth-token', TokenAbilities::VOLUNTEER, now()->addMinutes((int) config('sanctum.expiration', 60)))->plainTextToken;
             $cookie = cookie(
                 'auth_token',
                 $token,
@@ -163,9 +168,15 @@ class VolunteerController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
+            // Log detailed error internally
+            \Log::error('Volunteer registration failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Registration failed: '.$e->getMessage(),
+                'message' => 'Registration failed. Please try again or contact support.',
             ], 500);
         }
     }
@@ -415,6 +426,62 @@ class VolunteerController extends Controller
     }
 
     /**
+     * Change the authenticated volunteer's password.
+     */
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! Hash::check($request->currentPassword, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect.',
+            ], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->newPassword),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password changed successfully.',
+        ]);
+    }
+
+    /**
+     * Update the authenticated volunteer's profile photo.
+     */
+    public function updateProfilePhoto(UpdateProfilePhotoRequest $request): JsonResponse
+    {
+        $volunteer = $request->user()->volunteer;
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Volunteer profile not found.',
+            ], 404);
+        }
+
+        // Delete old photo if exists
+        if ($volunteer->profile_photo) {
+            Storage::disk('public')->delete($volunteer->profile_photo);
+        }
+
+        $path = $request->file('photo')->store('profile-photos', 'public');
+
+        $volunteer->update(['profile_photo' => $path]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile photo updated successfully.',
+            'data' => [
+                'profile_photo_url' => Storage::disk('public')->url($path),
+            ],
+        ]);
+    }
+
+    /**
      * List attendance records for the authenticated volunteer.
      * Supports ?period=daily|weekly|monthly and ?search= filters.
      */
@@ -501,27 +568,66 @@ class VolunteerController extends Controller
     }
 
     /**
-     * Get all volunteers with their relationships
+     * Get all volunteers with search, filter, sort, and pagination.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $volunteers = Volunteer::with([
+        $query = Volunteer::with([
             'experiences',
             'skills',
             'trainings',
             'positions',
             'availabilities',
             'lifegroups',
-        ])->get();
+        ]);
+
+        // Search by name, email, or mobile number
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', '%'.$search.'%')
+                    ->orWhere('last_name', 'like', '%'.$search.'%')
+                    ->orWhere('email', 'like', '%'.$search.'%')
+                    ->orWhere('mobile_number', 'like', '%'.$search.'%');
+            });
+        }
+
+        // Filter by position
+        if ($position = $request->query('position')) {
+            $query->whereHas('positions', function ($q) use ($position) {
+                $q->where('name', $position);
+            });
+        }
+
+        // Sort — allowlist to prevent SQL injection
+        $allowedSorts = ['first_name', 'last_name', 'email', 'created_at', 'updated_at'];
+        $sortBy = in_array($request->query('sort'), $allowedSorts)
+            ? $request->query('sort')
+            : 'created_at';
+        $sortOrder = $request->query('order') === 'asc' ? 'asc' : 'desc';
+
+        // Log sorting for security audit
+        \Log::debug('Sorting volunteers', ['sortBy' => $sortBy, 'sortOrder' => $sortOrder]);
+
+        $query->orderBy($sortBy, $sortOrder);
+
+        // Paginate
+        $perPage = min((int) $request->query('per_page', 15), 100);
+        $volunteers = $query->paginate($perPage);
 
         return response()->json([
             'success' => true,
-            'data' => $volunteers,
+            'data' => VolunteerProfileResource::collection($volunteers),
+            'meta' => [
+                'total' => $volunteers->total(),
+                'per_page' => $volunteers->perPage(),
+                'current_page' => $volunteers->currentPage(),
+                'last_page' => $volunteers->lastPage(),
+            ],
         ]);
     }
 
     /**
-     * Get a specific volunteer with their relationships
+     * Get a specific volunteer with their relationships and attendance stats.
      */
     public function show(int $id): JsonResponse
     {
@@ -541,9 +647,57 @@ class VolunteerController extends Controller
             ], 404);
         }
 
+        // Calculate attendance stats
+        $attendances = $volunteer->attendances();
+        $totalAttendances = $attendances->count();
+        $approvedAttendances = $attendances->where('status', 'approved')->count();
+        $pendingAttendances = $attendances->where('status', 'pending')->count();
+        $rejectedAttendances = $attendances->where('status', 'rejected')->count();
+        $totalHours = $attendances->where('status', 'approved')->sum('hours');
+
         return response()->json([
             'success' => true,
-            'data' => $volunteer,
+            'data' => [
+                'volunteer' => new VolunteerProfileResource($volunteer),
+                'stats' => [
+                    'total_attendances' => $totalAttendances,
+                    'approved_attendances' => $approvedAttendances,
+                    'pending_attendances' => $pendingAttendances,
+                    'rejected_attendances' => $rejectedAttendances,
+                    'total_hours' => (float) $totalHours,
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Get the change history for a specific volunteer (admin only).
+     */
+    public function changeHistory(int $id): JsonResponse
+    {
+        $volunteer = Volunteer::find($id);
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Volunteer not found',
+            ], 404);
+        }
+
+        $changes = ProfileChangeLog::where('volunteer_id', $volunteer->volunteer_id)
+            ->with('changedByUser')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return response()->json([
+            'success' => true,
+            'data' => ProfileChangeLogResource::collection($changes),
+            'meta' => [
+                'total' => $changes->total(),
+                'per_page' => $changes->perPage(),
+                'current_page' => $changes->currentPage(),
+                'last_page' => $changes->lastPage(),
+            ],
         ]);
     }
 

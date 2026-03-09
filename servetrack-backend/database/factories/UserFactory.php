@@ -41,4 +41,34 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Indicate that the user has the admin role.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'admin',
+        ]);
+    }
+
+    /**
+     * Indicate that the user has the volunteer role.
+     */
+    public function volunteer(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'volunteer',
+        ]);
+    }
+
+    /**
+     * Indicate that the user has the coordinator role.
+     */
+    public function coordinator(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'coordinator',
+        ]);
+    }
 }

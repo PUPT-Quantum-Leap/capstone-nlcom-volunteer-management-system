@@ -5,30 +5,24 @@ import {
   computed,
   inject,
   signal,
+  DestroyRef,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { DatePipe } from '@angular/common';
+import { DatePipe, CommonModule } from '@angular/common';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
 import { AdminDashboardService, DashboardVolunteerRow } from '../services/admin-dashboard.service';
-<<<<<<< Updated upstream
-=======
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Poll, CreatePollDto, PollOption } from '../models/poll';
 import { PollService } from '../services/poll.service';
 import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
->>>>>>> Stashed changes
 
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-<<<<<<< Updated upstream
-  imports: [ReactiveFormsModule, DatePipe],
-=======
   imports: [ReactiveFormsModule, DatePipe, CommonModule, IncidentCommandSystemComponent],
->>>>>>> Stashed changes
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
@@ -37,6 +31,8 @@ export class AdminDashboard implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private adminDashboardService = inject(AdminDashboardService);
+  private destroyRef = inject(DestroyRef);
+  private pollService = inject(PollService);
 
   readonly defaultPhoto = '/assets/nlcom.png';
 
@@ -47,8 +43,16 @@ export class AdminDashboard implements OnInit {
 
   showNotifications = signal(false);
   showLogoutModal = signal(false);
-  showAiModal = signal(false);
+  showPollModal = signal(false);
+  showDeletePollModal = signal(false);
+  showVolunteerModal = signal(false);
+  showDeleteVolunteerModal = signal(false);
   searchQuery = signal('');
+  editingPoll = signal<Poll | null>(null);
+  deletingPollId = signal<number | null>(null);
+  editingVolunteer = signal<DashboardVolunteerRow | null>(null);
+  deletingVolunteerId = signal<number | null>(null);
+  showAiModal = signal(false);
   currentPage = signal(1);
 
   notifications = signal<NotificationItem[]>([]);
@@ -64,6 +68,8 @@ export class AdminDashboard implements OnInit {
 
   volunteerRows = signal<DashboardVolunteerRow[]>([]);
   performanceMetrics = signal<PerformanceMetric[]>([]);
+  polls = signal<Poll[]>([]);
+  pollFilterStatus = signal<'all' | 'active' | 'closed' | 'draft'>('all');
 
   sortField = signal<'name' | 'attendance' | 'hours' | 'tasks' | 'rating'>('attendance');
   sortDirection = signal<'asc' | 'desc'>('desc');
@@ -140,14 +146,57 @@ export class AdminDashboard implements OnInit {
     return (total / metrics.length).toFixed(1);
   });
 
+  filteredPolls = computed(() => {
+    const status = this.pollFilterStatus();
+    if (status === 'all') {
+      return this.polls();
+    }
+    return this.polls().filter((poll) => poll.status === status);
+  });
+
+  pollForm = this.fb.group({
+    title: ['', [Validators.required, Validators.minLength(3)]],
+    date: ['', Validators.required],
+    cutOffDay: ['', Validators.required],
+    cutOffTime: ['', Validators.required],
+    description: ['', [Validators.required, Validators.minLength(10)]],
+    options: this.fb.array([]),
+  });
+
+  volunteerForm = this.fb.group({
+    firstName: ['', [Validators.required, Validators.minLength(2)]],
+    lastName: ['', [Validators.required, Validators.minLength(2)]],
+    facebookName: ['', [Validators.required, Validators.maxLength(100)]],
+    email: ['', [Validators.required, Validators.email]],
+    mobileNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{11}$/)]],
+    birthdate: ['', Validators.required],
+    lastMedicalExam: ['', Validators.required],
+    completeAddress: ['', Validators.required],
+    educationalAttainment: ['', Validators.required],
+    trainingExperience: [''],
+    skillsHobbies: [''],
+    classesTraining: [''],
+    volunteerPreference: ['', Validators.required],
+    otherPreference: [''],
+    availability: ['', Validators.required],
+    otherAvailability: [''],
+    partOfLifegroup: ['', Validators.required],
+    lifegroupLeaderName: [''],
+    leadingLifegroup: ['', Validators.required],
+    emergencyContactName: ['', Validators.required],
+    emergencyContactNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{11}$/)]],
+    emergencyContactRelationship: ['', Validators.required],
+  });
+
   ngOnInit(): void {
     this.loadDashboardData();
+    this.loadPolls();
   }
 
   private loadDashboardData(): void {
     this.isLoading.set(true);
 
-    this.adminDashboardService.getDashboardData().subscribe((response) => {
+    this.adminDashboardService.getDashboardData().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
         this.totalVolunteers.set(response.data.stats.totalVolunteers);
         this.activeVolunteers.set(response.data.stats.activeVolunteers);
@@ -314,5 +363,202 @@ export class AdminDashboard implements OnInit {
       return 'level-fair';
     }
     return 'level-needs-improvement';
+  }
+
+  private loadPolls(): void {
+    this.pollService.getPolls().subscribe((polls) => {
+      this.polls.set(polls);
+    });
+  }
+
+  get pollOptions(): FormArray {
+    return this.pollForm.get('options') as FormArray;
+  }
+
+  openCreatePollModal(): void {
+    this.editingPoll.set(null);
+    this.pollForm.reset();
+    this.pollOptions.clear();
+    this.addPollOption();
+    this.addPollOption();
+    this.showPollModal.set(true);
+  }
+
+  openEditPollModal(poll: Poll): void {
+    this.editingPoll.set(poll);
+    this.pollOptions.clear();
+    
+    poll.options.forEach((option) => {
+      this.pollOptions.push(
+        this.fb.group({
+          timeSlot: [option.timeSlot, Validators.required],
+          capacity: [option.capacity, [Validators.required, Validators.min(1)]],
+        })
+      );
+    });
+
+    this.pollForm.patchValue({
+      title: poll.title,
+      date: poll.date,
+      cutOffDay: poll.cutOffDay,
+      cutOffTime: poll.cutOffTime,
+      description: poll.description,
+    });
+
+    this.showPollModal.set(true);
+  }
+
+  closePollModal(): void {
+    this.showPollModal.set(false);
+    this.editingPoll.set(null);
+    this.pollForm.reset();
+  }
+
+  addPollOption(): void {
+    this.pollOptions.push(
+      this.fb.group({
+        timeSlot: ['', Validators.required],
+        capacity: [10, [Validators.required, Validators.min(1)]],
+      })
+    );
+  }
+
+  removePollOption(index: number): void {
+    if (this.pollOptions.length > 1) {
+      this.pollOptions.removeAt(index);
+    }
+  }
+
+  savePoll(): void {
+    if (this.pollForm.invalid) {
+      this.pollForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.pollForm.value;
+    const dto: CreatePollDto = {
+      title: formValue.title!,
+      date: formValue.date!,
+      cutOffDay: formValue.cutOffDay!,
+      cutOffTime: formValue.cutOffTime!,
+      description: formValue.description!,
+      options: (formValue.options as Array<{ timeSlot: string; capacity: number }>).map((opt) => ({
+        timeSlot: opt.timeSlot,
+        capacity: opt.capacity,
+      })),
+    };
+
+    const editingPoll = this.editingPoll();
+    if (editingPoll) {
+      this.pollService.updatePoll(editingPoll.id, dto).subscribe(() => {
+        this.loadPolls();
+        this.closePollModal();
+      });
+    } else {
+      this.pollService.createPoll(dto).subscribe(() => {
+        this.loadPolls();
+        this.closePollModal();
+      });
+    }
+  }
+
+  confirmDeletePoll(pollId: number): void {
+    this.deletingPollId.set(pollId);
+    this.showDeletePollModal.set(true);
+  }
+
+  closeDeletePollModal(): void {
+    this.showDeletePollModal.set(false);
+    this.deletingPollId.set(null);
+  }
+
+  deletePoll(): void {
+    const pollId = this.deletingPollId();
+    if (pollId !== null) {
+      this.pollService.deletePoll(pollId).subscribe(() => {
+        this.loadPolls();
+        this.closeDeletePollModal();
+      });
+    }
+  }
+
+  updatePollStatus(pollId: number, status: 'active' | 'closed' | 'draft'): void {
+    this.pollService.updatePollStatus(pollId, status).subscribe(() => {
+      this.loadPolls();
+    });
+  }
+
+  setPollFilterStatus(status: 'all' | 'active' | 'closed' | 'draft'): void {
+    this.pollFilterStatus.set(status);
+  }
+
+  openCreateVolunteerModal(): void {
+    this.editingVolunteer.set(null);
+    this.volunteerForm.reset();
+    this.showVolunteerModal.set(true);
+  }
+
+  openEditVolunteerModal(volunteer: DashboardVolunteerRow): void {
+    this.editingVolunteer.set(volunteer);
+    this.volunteerForm.patchValue({
+      firstName: volunteer.name.split(' ')[0],
+      lastName: volunteer.name.split(' ').slice(1).join(' '),
+      email: volunteer.email,
+      mobileNumber: volunteer.phone,
+      birthdate: '',
+      completeAddress: '',
+      educationalAttainment: '',
+      facebookName: '',
+    });
+    this.showVolunteerModal.set(true);
+  }
+
+  closeVolunteerModal(): void {
+    this.showVolunteerModal.set(false);
+    this.editingVolunteer.set(null);
+    this.volunteerForm.reset();
+  }
+
+  saveVolunteer(): void {
+    if (this.volunteerForm.invalid) {
+      this.volunteerForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.volunteerForm.value;
+    console.log('Save volunteer:', formValue);
+    this.closeVolunteerModal();
+    this.loadDashboardData();
+  }
+
+  confirmDeleteVolunteer(volunteerId: number): void {
+    this.deletingVolunteerId.set(volunteerId);
+    this.showDeleteVolunteerModal.set(true);
+  }
+
+  closeDeleteVolunteerModal(): void {
+    this.showDeleteVolunteerModal.set(false);
+    this.deletingVolunteerId.set(null);
+  }
+
+  deleteVolunteer(): void {
+    const volunteerId = this.deletingVolunteerId();
+    if (volunteerId !== null) {
+      console.log('Delete volunteer:', volunteerId);
+      this.closeDeleteVolunteerModal();
+      this.loadDashboardData();
+    }
+  }
+
+  getVotePercentage(poll: Poll, option: PollOption): number {
+    return poll.totalVotes > 0 ? (option.votes / poll.totalVotes) * 100 : 0;
+  }
+
+  getRemainingSlots(option: PollOption): number {
+    return option.capacity - option.votes;
+  }
+
+  isFull(option: PollOption): boolean {
+    return option.votes >= option.capacity;
   }
 }

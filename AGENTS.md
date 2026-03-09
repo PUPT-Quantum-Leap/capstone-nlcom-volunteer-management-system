@@ -1,6 +1,6 @@
 # ServeTrack Agent Guidelines
 
-This is a **monorepo** containing an Angular 21 frontend and Laravel 12 backend. Follow these guidelines for consistent, high-quality code across both applications.
+This is a **monorepo** containing an Angular 21 frontend and Laravel 12 backend. Follow these guidelines for consistent, high-quality code.
 
 ## Project Structure
 
@@ -9,52 +9,44 @@ capstone-nlcom-volunteer-management-system/
 ├── servetrack-frontend/     # Angular 21 SPA (TypeScript 5.9+, Vitest v4)
 ├── servetrack-backend/      # Laravel 12 API (PHP 8.2+, Pest v3)
 ├── .github/workflows/       # CI/CD workflows
-└── docs/                    # Project documentation
+└── docs/                   # Project documentation
 ```
 
 ## Build, Lint & Test Commands
 
 ### Root Level
 ```bash
-# Install dependencies
-npm install                       # Frontend & backend Node deps
+npm install                       # Install all dependencies
 cd servetrack-backend && composer install  # Backend PHP deps
-
-# Run linters
 npm run lint:backend              # Laravel Pint code formatter
-
-# Pre-commit hook test
 npm run test-hook                 # Test Husky hooks manually
 ```
 
 ### Frontend (servetrack-frontend/)
 ```bash
-# Development
 npm start                         # Start dev server (http://localhost:4200)
 npm run watch                     # Build with watch mode
+npm run build                     # Production build
 
-# Production build
-npm run build                     # Build for production
-
-# Testing
+# Testing - Single Test Commands
 npm test                          # Run all Vitest tests
-npm test -- --reporter=verbose    # Run tests with detailed output
-npm test -- path/to/test.spec.ts  # Run a single test file
+npm test -- --reporter=verbose    # Run with detailed output
+npm test -- path/to/test.spec.ts  # Run single test file
 npm test -- -t "test name"        # Run tests matching pattern
+npm test -- --run                 # Run tests once (no watch)
 ```
 
 ### Backend (servetrack-backend/)
 ```bash
-# Development
-composer run dev                  # Start server, queue, and Vite concurrently
-php artisan serve                 # Start Laravel server (http://localhost:8000)
+composer run dev                  # Start server, queue, Vite concurrently
+php artisan serve                # Start Laravel server (http://localhost:8000)
 
-# Code formatting
+# Code Formatting
 ./vendor/bin/pint                 # Format all PHP files
 ./vendor/bin/pint --dirty         # Format only modified files
 ./vendor/bin/pint path/to/file.php # Format specific file
 
-# Testing
+# Testing - Single Test Commands
 composer test                     # Run all Pest tests
 php artisan test --compact        # Run all tests (compact output)
 php artisan test --compact tests/Feature/ExampleTest.php  # Run single file
@@ -74,7 +66,7 @@ php artisan db:seed               # Run seeders only
 **Types & Imports**
 - Use strict type checking; avoid `any`, prefer `unknown` for uncertain types
 - Import Angular APIs: `import { Component, signal, computed } from '@angular/core'`
-- Use relative imports for local files: `import { AuthService } from './auth.service'`
+- Use relative imports for local files
 
 **Components**
 - Always use standalone components (default in Angular 21, don't set `standalone: true`)
@@ -83,6 +75,7 @@ php artisan db:seed               # Run seeders only
 - Set `changeDetection: ChangeDetectionStrategy.OnPush` in `@Component` decorator
 - Use `host` object for bindings, NOT `@HostBinding` or `@HostListener` decorators
 - Prefer inline templates for small components
+- Use `NgOptimizedImage` for static images (not inline base64)
 
 **Templates**
 - Use native control flow: `@if`, `@for`, `@switch` (NOT `*ngIf`, `*ngFor`, `*ngSwitch`)
@@ -96,6 +89,11 @@ php artisan db:seed               # Run seeders only
 
 **Forms**
 - Prefer Reactive forms over Template-driven forms
+
+**State Management**
+- Use signals for local component state
+- Use `computed()` for derived state
+- Do NOT use `mutate` on signals, use `update` or `set` instead
 
 **Error Handling**
 - Use RxJS `catchError` operator for observables
@@ -126,7 +124,7 @@ php artisan db:seed               # Run seeders only
 - Use Form Request classes for validation (not inline)
 - Use named routes with `route()` function
 - Use `config('app.name')` NOT `env('APP_NAME')` outside config files
-- Use middleware registered in `bootstrap/app.php`
+- Middleware registered in `bootstrap/app.php` (Laravel 12)
 - Use queued jobs with `ShouldQueue` for time-consuming operations
 - Use Laravel Sanctum for API authentication
 
@@ -145,12 +143,12 @@ php artisan db:seed               # Run seeders only
 ## Formatting Standards
 
 **Frontend**
-- Prettier config: 100 char width, single quotes, Angular parser for HTML
+- Prettier: 100 char width, single quotes, Angular parser for HTML
 - Use semicolons, trailing commas in multiline
 
 **Backend**
 - Laravel Pint handles all formatting (PSR-12 style)
-- Run `./vendor/bin/pint` before committing
+- Run `./vendor/bin/pint --dirty` before committing
 
 ## Testing Philosophy
 
@@ -162,18 +160,9 @@ php artisan db:seed               # Run seeders only
 
 ## Additional Notes
 
-- **Package Manager**: Use `npm` (not pnpm) for frontend per angular.json config
+- **Package Manager**: Use `npm` (not pnpm) for frontend per angular.json
 - **Architecture**: Follow existing directory structure, get approval for new base folders
 - **Documentation**: Only create docs when explicitly requested
 - **Dependencies**: Get approval before adding/changing dependencies
 - **Vite Error**: If you see Vite manifest errors, run `composer run dev`
 - **CI/CD**: GitHub Actions runs tests on PR, requires all checks to pass
-
-## Reference Files
-
-- Frontend guidelines: `servetrack-frontend/AGENTS.md`
-- Backend guidelines: `servetrack-backend/AGENTS.md`
-- Cursor rules: `.cursor/rules/*.mdc` in each subdirectory
-- Copilot instructions: `.github/copilot-instructions.md` in each subdirectory
-- Product requirements: `PRD.md`
-- Project overview: `GEMINI.md`

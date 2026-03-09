@@ -41,7 +41,37 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+use App\Models\User;
+use App\Models\Volunteer;
+
+function createVolunteerUser(array $userOverrides = [], array $volunteerOverrides = []): array
 {
-    // ..
+    $user = User::factory()->create($userOverrides);
+    $volunteer = Volunteer::factory()->create(
+        array_merge(['user_id' => $user->id], $volunteerOverrides)
+    );
+
+    return ['user' => $user, 'volunteer' => $volunteer];
+}
+
+function baseProfileData(Volunteer $volunteer): array
+{
+    return [
+        'firstName' => $volunteer->first_name,
+        'lastName' => $volunteer->last_name,
+        'facebookName' => $volunteer->facebook_name,
+        'email' => $volunteer->email,
+        'mobileNumber' => $volunteer->mobile_number,
+        'birthdate' => $volunteer->birthdate->format('Y-m-d'),
+        'completeAddress' => $volunteer->address,
+        'lastMedicalExam' => $volunteer->last_medical_examination->format('Y-m-d'),
+        'educationalAttainment' => $volunteer->educational_attainment,
+        'volunteerPreference' => 'wherever-needed',
+        'availability' => 'weekends',
+        'partOfLifegroup' => 'no',
+        'leadingLifegroup' => 'no',
+        'emergencyContactName' => 'Jane Doe',
+        'emergencyContactNumber' => '09123456789',
+        'emergencyContactRelationship' => 'friend',
+    ];
 }

@@ -265,7 +265,7 @@
             <h2>Volunteer Management</h2>
             <p>Manage volunteer profiles, assignments, and information</p>
           </div>
-          <button type="button" class="add-volunteer-btn">
+          <button type="button" class="add-volunteer-btn" (click)="openCreateVolunteerModal()">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -302,6 +302,8 @@
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Department</th>
+                <th>Status</th>
+                <th>Joined Date</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -331,16 +333,16 @@
                 <td>{{ volunteer.joined_date | date: 'MMM d, yyyy' }}</td>
                 <td>
                   <div class="action-buttons">
-                    <button type="button" class="action-btn view-btn" title="View">
+                    <button type="button" class="action-btn edit-btn" (click)="openEditVolunteerModal(volunteer)" title="Edit">
                       <svg viewBox="0 0 24 24" fill="none">
-                        <path
-                          d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z"
-                          stroke="currentColor"
-                          stroke-width="2"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                        />
-                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn delete-btn" (click)="confirmDeleteVolunteer(volunteer.id)" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                     </button>
                   </div>
@@ -526,17 +528,186 @@
       }
 
       @case ('polls') {
-      <section class="panel">
-        <div class="panel-header">
-          <h2>Polls Management</h2>
-          <p>Create and manage volunteer polls and surveys</p>
+      <section class="polls-layout">
+        <div class="polls-header">
+          <div class="header-content">
+            <h2>Polls Management</h2>
+            <p>Create, manage, and monitor volunteer polls and surveys</p>
+          </div>
+          <button type="button" class="add-poll-btn" (click)="openCreatePollModal()">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Create New Poll
+          </button>
         </div>
-        <p class="empty-state">Polls management features coming soon.</p>
+
+        <div class="polls-filters">
+          <div class="filter-tabs">
+            <button 
+              type="button" 
+              class="filter-tab" 
+              [class.active]="pollFilterStatus() === 'all'"
+              (click)="setPollFilterStatus('all')"
+            >
+              All Polls
+            </button>
+            <button 
+              type="button" 
+              class="filter-tab" 
+              [class.active]="pollFilterStatus() === 'active'"
+              (click)="setPollFilterStatus('active')"
+            >
+              Active
+            </button>
+            <button 
+              type="button" 
+              class="filter-tab" 
+              [class.active]="pollFilterStatus() === 'draft'"
+              (click)="setPollFilterStatus('draft')"
+            >
+              Draft
+            </button>
+            <button 
+              type="button" 
+              class="filter-tab" 
+              [class.active]="pollFilterStatus() === 'closed'"
+              (click)="setPollFilterStatus('closed')"
+            >
+              Closed
+            </button>
+          </div>
+        </div>
+
+        <div class="polls-grid">
+          @for (poll of filteredPolls(); track poll.id) {
+          <article class="poll-item-card">
+            <div class="poll-item-header">
+              <div class="poll-item-title-section">
+                <h3 class="poll-item-title">{{ poll.title }}</h3>
+                <span 
+                  class="poll-status-badge" 
+                  [class.status-active]="poll.status === 'active'"
+                  [class.status-draft]="poll.status === 'draft'"
+                  [class.status-closed]="poll.status === 'closed'"
+                >
+                  {{ poll.status === 'active' ? 'Active' : poll.status === 'draft' ? 'Draft' : 'Closed' }}
+                </span>
+              </div>
+              <div class="poll-item-actions">
+                <button 
+                  type="button" 
+                  class="poll-action-btn edit-btn" 
+                  (click)="openEditPollModal(poll)"
+                  title="Edit Poll"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.1022 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.1022 21.5 2.5C21.8978 2.8978 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.1022 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <button 
+                  type="button" 
+                  class="poll-action-btn delete-btn" 
+                  (click)="confirmDeletePoll(poll.id)"
+                  title="Delete Poll"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="poll-item-meta">
+              <div class="poll-meta-item">
+                <svg class="meta-icon" viewBox="0 0 24 24" fill="none">
+                  <path d="M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>{{ poll.date }}</span>
+              </div>
+              <div class="poll-meta-item">
+                <svg class="meta-icon" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                  <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>Cut-off: {{ poll.cutOffDay }} {{ poll.cutOffTime }}</span>
+              </div>
+            </div>
+
+            <p class="poll-item-description">{{ poll.description }}</p>
+
+            <div class="poll-options-preview">
+              @for (option of poll.options; track option.id) {
+              <div class="poll-option-preview">
+                <div class="option-preview-header">
+                  <span class="option-timeslot">{{ option.timeSlot }}</span>
+                  <span class="option-votes">{{ option.votes }}/{{ option.capacity }}</span>
+                </div>
+                <div class="option-preview-progress">
+                  <div 
+                    class="option-preview-fill" 
+                    [class.full]="isFull(option)"
+                    [style.width.%]="(option.votes / option.capacity) * 100"
+                  ></div>
+                </div>
+                <div class="option-preview-meta">
+                  <span class="option-percentage">{{ getVotePercentage(poll, option) | number: '1.0-1' }}% of votes</span>
+                  <span 
+                    class="option-slots" 
+                    [class.slots-full]="isFull(option)"
+                    [class.slots-available]="!isFull(option)"
+                  >
+                    {{ isFull(option) ? 'FULL' : getRemainingSlots(option) + ' slots left' }}
+                  </span>
+                </div>
+              </div>
+              }
+            </div>
+
+            <div class="poll-item-footer">
+              <div class="poll-total-votes">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M17 20C17 18.3431 14.7614 17 12 17C9.23858 17 7 18.3431 7 20M21 17C21 15.3431 19.2091 14 17 14M3 17C3 15.3431 4.79086 14 7 14M12 14C9.79086 14 8 12.2091 8 10C8 7.79086 9.79086 6 12 6C14.2091 6 16 7.79086 16 10C16 12.2091 14.2091 14 12 14ZM19 10C19 8.34315 17.6569 7 16 7M5 10C5 8.34315 6.34315 7 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>{{ poll.totalVotes }} total votes</span>
+              </div>
+              <div class="poll-status-actions">
+                @if (poll.status === 'draft') {
+                <button type="button" class="status-action-btn activate-btn" (click)="updatePollStatus(poll.id, 'active')">
+                  Activate
+                </button>
+                } @else if (poll.status === 'active') {
+                <button type="button" class="status-action-btn close-btn" (click)="updatePollStatus(poll.id, 'closed')">
+                  Close Poll
+                </button>
+                } @else {
+                <button type="button" class="status-action-btn reopen-btn" (click)="updatePollStatus(poll.id, 'active')">
+                  Reopen
+                </button>
+                }
+              </div>
+            </div>
+          </article>
+          } @empty {
+          <div class="empty-state-container">
+            <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none">
+              <path d="M4 7H20V20H4V7Z" stroke="currentColor" stroke-width="2" />
+              <path d="M8 11L12 15L16 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M9 4H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+            <h3>No polls found</h3>
+            <p>Create your first poll to get started with volunteer surveys.</p>
+            <button type="button" class="create-first-btn" (click)="openCreatePollModal()">
+              Create Poll
+            </button>
+          </div>
+          }
+        </div>
       </section>
       }
 
       @case ('ics') {
-      <app-incident-command-system></app-incident-command-system>
+      <app-incident-command-system />
       }
 
       @case ('users') {
@@ -819,6 +990,542 @@
     <div class="modal-actions">
       <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
       <button type="button" class="primary-btn" (click)="confirmLogout()">Yes, Logout</button>
+    </div>
+  </section>
+</div>
+}
+
+@if (showPollModal()) {
+<div class="modal-backdrop">
+  <section class="modal-card poll-modal">
+    <div class="modal-header">
+      <h3>{{ editingPoll() ? 'Edit Poll' : 'Create New Poll' }}</h3>
+      <button type="button" class="modal-close-btn" (click)="closePollModal()">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="pollForm" (ngSubmit)="savePoll()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="poll-title">Poll Title *</label>
+          <input 
+            id="poll-title" 
+            type="text" 
+            formControlName="title" 
+            placeholder="e.g., Mobile Kitchen Operations"
+            class="form-input"
+          />
+          @if (pollForm.get('title')?.invalid && pollForm.get('title')?.touched) {
+          <span class="form-error">Title is required (min 3 characters)</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="poll-date">Event Date *</label>
+          <input 
+            id="poll-date" 
+            type="text" 
+            formControlName="date" 
+            placeholder="e.g., Sept 27"
+            class="form-input"
+          />
+          @if (pollForm.get('date')?.invalid && pollForm.get('date')?.touched) {
+          <span class="form-error">Date is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="poll-cutoff-day">Cut-off Day *</label>
+          <input 
+            id="poll-cutoff-day" 
+            type="text" 
+            formControlName="cutOffDay" 
+            placeholder="e.g., THURSDAY"
+            class="form-input"
+          />
+          @if (pollForm.get('cutOffDay')?.invalid && pollForm.get('cutOffDay')?.touched) {
+          <span class="form-error">Cut-off day is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="poll-cutoff-time">Cut-off Time *</label>
+          <input 
+            id="poll-cutoff-time" 
+            type="text" 
+            formControlName="cutOffTime" 
+            placeholder="e.g., 12NN"
+            class="form-input"
+          />
+          @if (pollForm.get('cutOffTime')?.invalid && pollForm.get('cutOffTime')?.touched) {
+          <span class="form-error">Cut-off time is required</span>
+          }
+        </div>
+      </div>
+
+      <div class="form-group full-width">
+        <label for="poll-description">Description *</label>
+        <textarea 
+          id="poll-description" 
+          formControlName="description" 
+          placeholder="Describe the purpose of this poll..."
+          class="form-textarea"
+          rows="3"
+        ></textarea>
+        @if (pollForm.get('description')?.invalid && pollForm.get('description')?.touched) {
+        <span class="form-error">Description is required (min 10 characters)</span>
+        }
+      </div>
+
+      <div class="form-group full-width">
+        <div class="options-header">
+          <label>Poll Options *</label>
+          <button type="button" class="add-option-btn" (click)="addPollOption()">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Add Option
+          </button>
+        </div>
+
+        <div formArrayName="options" class="poll-options-form">
+          @for (option of pollOptions.controls; track $index; let i = $index) {
+          <div [formGroupName]="i" class="poll-option-form-item">
+            <div class="option-number">{{ i + 1 }}</div>
+            <div class="option-fields">
+              <div class="form-group">
+                <label [for]="'poll-option-time-' + i">Time Slot</label>
+                <input 
+                  [id]="'poll-option-time-' + i"
+                  type="text" 
+                  formControlName="timeSlot" 
+                  placeholder="e.g., 4:30am - 2:00pm"
+                  class="form-input"
+                />
+              </div>
+              <div class="form-group capacity-group">
+                <label [for]="'poll-option-capacity-' + i">Capacity</label>
+                <input 
+                  [id]="'poll-option-capacity-' + i"
+                  type="number" 
+                  formControlName="capacity" 
+                  placeholder="Capacity"
+                  min="1"
+                  class="form-input"
+                />
+              </div>
+            </div>
+            @if (pollOptions.length > 1) {
+            <button type="button" class="remove-option-btn" (click)="removePollOption(i)" title="Remove option">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            }
+          </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closePollModal()">Cancel</button>
+        <button type="submit" class="primary-btn">
+          {{ editingPoll() ? 'Update Poll' : 'Create Poll' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>
+}
+
+@if (showDeletePollModal()) {
+<div class="modal-backdrop" (click)="closeDeletePollModal()">
+  <section class="modal-card delete-modal" (click)="$event.stopPropagation()">
+    <div class="delete-modal-icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h3>Delete Poll</h3>
+    <p>Are you sure you want to delete this poll? This action cannot be undone and all vote data will be lost.</p>
+    <div class="modal-actions">
+      <button type="button" class="outline-btn" (click)="closeDeletePollModal()">Cancel</button>
+      <button type="button" class="danger-btn" (click)="deletePoll()">Delete Poll</button>
+    </div>
+  </section>
+</div>
+}
+
+@if (showVolunteerModal()) {
+<div class="modal-backdrop">
+  <section class="modal-card volunteer-modal">
+    <div class="modal-header">
+      <h3>{{ editingVolunteer() ? 'Edit Volunteer' : 'Add New Volunteer' }}</h3>
+      <button type="button" class="modal-close-btn" (click)="closeVolunteerModal()">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="volunteerForm" (ngSubmit)="saveVolunteer()">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="volunteer-first-name">First Name <span class="required">*</span></label>
+          <input
+            id="volunteer-first-name"
+            type="text"
+            formControlName="firstName"
+            placeholder="Enter first name"
+            class="form-input"
+          />
+          @if (volunteerForm.get('firstName')?.invalid && volunteerForm.get('firstName')?.touched) {
+          <span class="error-message">First name is required (minimum 2 characters)</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-last-name">Last Name <span class="required">*</span></label>
+          <input
+            id="volunteer-last-name"
+            type="text"
+            formControlName="lastName"
+            placeholder="Enter last name"
+            class="form-input"
+          />
+          @if (volunteerForm.get('lastName')?.invalid && volunteerForm.get('lastName')?.touched) {
+          <span class="error-message">Last name is required (minimum 2 characters)</span>
+          }
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-facebook">Facebook Name <span class="required">*</span></label>
+          <input
+            id="volunteer-facebook"
+            type="text"
+            formControlName="facebookName"
+            placeholder="Enter Facebook name"
+            class="form-input"
+          />
+          @if (volunteerForm.get('facebookName')?.invalid && volunteerForm.get('facebookName')?.touched) {
+          <span class="error-message">Facebook name is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-email">Email <span class="required">*</span></label>
+          <input
+            id="volunteer-email"
+            type="email"
+            formControlName="email"
+            placeholder="your.email@example.com"
+            class="form-input"
+          />
+          @if (volunteerForm.get('email')?.invalid && volunteerForm.get('email')?.touched) {
+          <span class="error-message">Valid email is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-mobile">Mobile Number <span class="required">*</span></label>
+          <input
+            id="volunteer-mobile"
+            type="tel"
+            formControlName="mobileNumber"
+            placeholder="09XXXXXXXXX"
+            class="form-input"
+          />
+          @if (volunteerForm.get('mobileNumber')?.invalid && volunteerForm.get('mobileNumber')?.touched) {
+          <span class="error-message">Valid 11-digit mobile number is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-birthdate">Birthdate <span class="required">*</span></label>
+          <input
+            id="volunteer-birthdate"
+            type="date"
+            formControlName="birthdate"
+            class="form-input"
+          />
+          @if (volunteerForm.get('birthdate')?.invalid && volunteerForm.get('birthdate')?.touched) {
+          <span class="error-message">Birthdate is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-medical-exam">Last Medical Examination <span class="required">*</span></label>
+          <input
+            id="volunteer-medical-exam"
+            type="date"
+            formControlName="lastMedicalExam"
+            class="form-input"
+          />
+          @if (volunteerForm.get('lastMedicalExam')?.invalid && volunteerForm.get('lastMedicalExam')?.touched) {
+          <span class="error-message">Last medical examination date is required</span>
+          }
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-address">Complete Address <span class="required">*</span></label>
+          <textarea
+            id="volunteer-address"
+            formControlName="completeAddress"
+            placeholder="Enter complete address"
+            rows="3"
+            class="form-input"
+          ></textarea>
+          @if (volunteerForm.get('completeAddress')?.invalid && volunteerForm.get('completeAddress')?.touched) {
+          <span class="error-message">Complete address is required</span>
+          }
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-education">Educational Attainment <span class="required">*</span></label>
+          <select
+            id="volunteer-education"
+            formControlName="educationalAttainment"
+            class="form-input"
+          >
+            <option value="" disabled selected>Select your educational attainment</option>
+            <option value="elementary">Elementary</option>
+            <option value="high-school">High School</option>
+            <option value="senior-high">Senior High School</option>
+            <option value="vocational">Vocational Course</option>
+            <option value="college-undergraduate">College Undergraduate</option>
+            <option value="college-graduate">College Graduate</option>
+            <option value="masters">Master's Degree</option>
+            <option value="doctorate">Doctorate Degree</option>
+          </select>
+          @if (volunteerForm.get('educationalAttainment')?.invalid && volunteerForm.get('educationalAttainment')?.touched) {
+          <span class="error-message">Educational attainment is required</span>
+          }
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-training">Training and Experience</label>
+          <textarea
+            id="volunteer-training"
+            formControlName="trainingExperience"
+            placeholder="Describe your training and work experience (optional)"
+            rows="3"
+            class="form-input"
+          ></textarea>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-skills">Skills or Hobbies</label>
+          <textarea
+            id="volunteer-skills"
+            formControlName="skillsHobbies"
+            placeholder="List your skills or hobbies (optional)"
+            rows="3"
+            class="form-input"
+          ></textarea>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-classes">Classes and Training Attended</label>
+          <textarea
+            id="volunteer-classes"
+            formControlName="classesTraining"
+            placeholder="List classes or training programs you attended (optional)"
+            rows="3"
+            class="form-input"
+          ></textarea>
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-preference">Where do you want to volunteer? <span class="required">*</span></label>
+          <select
+            id="volunteer-preference"
+            formControlName="volunteerPreference"
+            class="form-input"
+          >
+            <option value="" disabled selected>Select your preference</option>
+            <option value="sidewalk-sunday-school">Metro Sidewalk Sunday School (Teaching & Education)</option>
+            <option value="mobile-kitchen">Mobile Kitchen Operations</option>
+            <option value="relief-operations">Relief Operations</option>
+            <option value="safety-emergency">Safety and Emergency Response</option>
+            <option value="medical-operations">Medical Operations</option>
+            <option value="psychological-aid">Psychological First Aid</option>
+            <option value="transportation-logistics">Transportation & Logistics Team</option>
+            <option value="purchasing">Purchasing Team</option>
+            <option value="partnerships">Individual & Corporate Partnerships</option>
+            <option value="digital-marketing">Digital Marketing & Promotions</option>
+            <option value="creatives">Creatives (Video / Photos)</option>
+            <option value="healing">Healing</option>
+            <option value="real-estate-sports">Real Estate & Sports</option>
+            <option value="kitchen-related">Anything kitchen-related</option>
+            <option value="wherever-needed">Wherever is needed</option>
+            <option value="dont-know">Don't know yet</option>
+            <option value="other">Other</option>
+          </select>
+          @if (volunteerForm.get('volunteerPreference')?.invalid && volunteerForm.get('volunteerPreference')?.touched) {
+          <span class="error-message">Volunteer preference is required</span>
+          }
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-other-preference">Other Preference (if applicable)</label>
+          <input
+            id="volunteer-other-preference"
+            type="text"
+            formControlName="otherPreference"
+            placeholder="Specify other preference"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-availability">Availability <span class="required">*</span></label>
+          <select
+            id="volunteer-availability"
+            formControlName="availability"
+            class="form-input"
+          >
+            <option value="" disabled selected>Select your availability</option>
+            <option value="anytime">Anytime / On Call</option>
+            <option value="weekends-only">Weekends Only</option>
+            <option value="weekdays-only">Weekdays Only</option>
+            <option value="weekdays-weekends">Weekdays & Weekends</option>
+            <option value="friday-saturday">Friday & Saturday Only</option>
+            <option value="scheduled">Scheduled (By Arrangement)</option>
+            <option value="holidays">Holidays (If Available)</option>
+            <option value="rest-days">Rest Days / With Filed Leave</option>
+            <option value="limited-weekdays">Limited Weekdays (Not Whole Day)</option>
+            <option value="day-off">Day Off Only</option>
+            <option value="others">Others</option>
+          </select>
+          @if (volunteerForm.get('availability')?.invalid && volunteerForm.get('availability')?.touched) {
+          <span class="error-message">Availability is required</span>
+          }
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-other-availability">Other Availability (if applicable)</label>
+          <input
+            id="volunteer-other-availability"
+            type="text"
+            formControlName="otherAvailability"
+            placeholder="Specify other availability"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-lifegroup">Part of a lifegroup? <span class="required">*</span></label>
+          <select
+            id="volunteer-lifegroup"
+            formControlName="partOfLifegroup"
+            class="form-input"
+          >
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+          @if (volunteerForm.get('partOfLifegroup')?.invalid && volunteerForm.get('partOfLifegroup')?.touched) {
+          <span class="error-message">This field is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-lifegroup-leader">Lifegroup Leader Name</label>
+          <input
+            id="volunteer-lifegroup-leader"
+            type="text"
+            formControlName="lifegroupLeaderName"
+            placeholder="Enter lifegroup leader name (if applicable)"
+            class="form-input"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-leading-lifegroup">Leading a lifegroup? <span class="required">*</span></label>
+          <select
+            id="volunteer-leading-lifegroup"
+            formControlName="leadingLifegroup"
+            class="form-input"
+          >
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+          @if (volunteerForm.get('leadingLifegroup')?.invalid && volunteerForm.get('leadingLifegroup')?.touched) {
+          <span class="error-message">This field is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-emergency-name">Emergency Contact Name <span class="required">*</span></label>
+          <input
+            id="volunteer-emergency-name"
+            type="text"
+            formControlName="emergencyContactName"
+            placeholder="Full name"
+            class="form-input"
+          />
+          @if (volunteerForm.get('emergencyContactName')?.invalid && volunteerForm.get('emergencyContactName')?.touched) {
+          <span class="error-message">Emergency contact name is required</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="volunteer-emergency-number">Emergency Contact Number <span class="required">*</span></label>
+          <input
+            id="volunteer-emergency-number"
+            type="tel"
+            formControlName="emergencyContactNumber"
+            placeholder="09XXXXXXXXX"
+            class="form-input"
+          />
+          @if (volunteerForm.get('emergencyContactNumber')?.invalid && volunteerForm.get('emergencyContactNumber')?.touched) {
+          <span class="error-message">Valid 11-digit mobile number is required</span>
+          }
+        </div>
+
+        <div class="form-group full-width">
+          <label for="volunteer-emergency-relationship">Emergency Contact Relationship <span class="required">*</span></label>
+          <input
+            id="volunteer-emergency-relationship"
+            type="text"
+            formControlName="emergencyContactRelationship"
+            placeholder="e.g., Spouse, Parent, Sibling"
+            class="form-input"
+          />
+          @if (volunteerForm.get('emergencyContactRelationship')?.invalid && volunteerForm.get('emergencyContactRelationship')?.touched) {
+          <span class="error-message">Emergency contact relationship is required</span>
+          }
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeVolunteerModal()">Cancel</button>
+        <button type="submit" class="primary-btn">
+          {{ editingVolunteer() ? 'Update Volunteer' : 'Add Volunteer' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>
+}
+
+@if (showDeleteVolunteerModal()) {
+<div class="modal-backdrop" (click)="closeDeleteVolunteerModal()">
+  <section class="modal-card delete-modal" (click)="$event.stopPropagation()">
+    <div class="delete-modal-icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h3>Delete Volunteer</h3>
+    <p>Are you sure you want to delete this volunteer? This action cannot be undone and all associated data will be permanently removed.</p>
+    <div class="modal-actions">
+      <button type="button" class="outline-btn" (click)="closeDeleteVolunteerModal()">Cancel</button>
+      <button type="button" class="danger-btn" (click)="deleteVolunteer()">Delete Volunteer</button>
     </div>
   </section>
 </div>

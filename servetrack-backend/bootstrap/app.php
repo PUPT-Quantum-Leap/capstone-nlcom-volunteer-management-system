@@ -16,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
             'security.audit' => \App\Http\Middleware\SecurityAudit::class,
             'rate.limit' => \App\Http\Middleware\AdvancedRateLimit::class,
+            'normalize.email' => \App\Http\Middleware\NormalizeEmail::class,
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
 
         $middleware->api(prepend: [
@@ -27,5 +29,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->renderable(function (\Illuminate\Database\QueryException $e) {
+            if (! app()->environment('local', 'testing')) {
+                return response()->json(['message' => 'A server error occurred.'], 500);
+            }
+        });
     })->create();

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, of, switchMap } from 'rxjs';
+import { Observable, catchError, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Attendance, AttendanceStats } from '../models/attendance';
 import { VolunteerProfileResponse } from '../models/volunteer-profile';
@@ -29,7 +29,10 @@ export class VolunteerService {
         withCredentials: true,
       })
       .pipe(
-        catchError(() => of({ success: false, data: null as unknown as VolunteerProfileResponse })),
+        catchError((error) => {
+          console.error('[VolunteerService] getProfile failed:', error);
+          throw error;
+        }),
       );
   }
 
@@ -38,15 +41,14 @@ export class VolunteerService {
     payload: Record<string, unknown>,
   ): Observable<ApiResponse<VolunteerProfileResponse>> {
     return this.authService.ensureCsrf$().pipe(
-      switchMap(() => 
+      switchMap(() =>
         this.http.put<ApiResponse<VolunteerProfileResponse>>(`${this.baseUrl}/profile`, payload, {
           withCredentials: true,
         })
       ),
       catchError((error) => {
-        // Return the error message from the server if available
-        const errorMessage = error.error?.message || 'Failed to update profile';
-        return of({ success: false, message: errorMessage, data: null as unknown as VolunteerProfileResponse });
+        console.error('[VolunteerService] updateProfile failed:', error);
+        throw error;
       }),
     );
   }
@@ -68,7 +70,12 @@ export class VolunteerService {
         withCredentials: true,
         params,
       })
-      .pipe(catchError(() => of({ success: false, data: [] })));
+      .pipe(
+        catchError((error) => {
+          console.error('[VolunteerService] getAttendance failed:', error);
+          throw error;
+        }),
+      );
   }
 
   /** Fetch attendance statistics (total, daily, weekly, monthly). */
@@ -77,6 +84,11 @@ export class VolunteerService {
       .get<ApiResponse<AttendanceStats>>(`${this.baseUrl}/attendance/stats`, {
         withCredentials: true,
       })
-      .pipe(catchError(() => of({ success: false, data: null as unknown as AttendanceStats })));
+      .pipe(
+        catchError((error) => {
+          console.error('[VolunteerService] getAttendanceStats failed:', error);
+          throw error;
+        }),
+      );
   }
 }
