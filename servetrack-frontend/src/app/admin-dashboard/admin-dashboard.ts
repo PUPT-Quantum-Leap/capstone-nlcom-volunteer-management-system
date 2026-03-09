@@ -17,11 +17,12 @@ import { AdminDashboardService, DashboardVolunteerRow } from '../services/admin-
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Poll, CreatePollDto, PollOption } from '../models/poll';
 import { PollService } from '../services/poll.service';
+import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
 
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, CommonModule],
+  imports: [ReactiveFormsModule, DatePipe, CommonModule, IncidentCommandSystemComponent],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
