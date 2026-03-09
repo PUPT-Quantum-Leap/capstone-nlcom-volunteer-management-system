@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
@@ -169,7 +170,7 @@ class VolunteerController extends Controller
             DB::rollBack();
 
             // Log detailed error internally
-            \Log::error('Volunteer registration failed', [
+            Log::error('Volunteer registration failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -319,7 +320,7 @@ class VolunteerController extends Controller
             } catch (\Exception $e) {
                 DB::rollBack();
 
-                \Log::error('Profile creation failed', [
+                Log::error('Profile creation failed', [
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
                 ]);
@@ -421,7 +422,7 @@ class VolunteerController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
-            \Log::error('Profile update failed', [
+            Log::error('Profile update failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -614,7 +615,7 @@ class VolunteerController extends Controller
         $sortOrder = $request->query('order') === 'asc' ? 'asc' : 'desc';
 
         // Log sorting for security audit
-        \Log::debug('Sorting volunteers', ['sortBy' => $sortBy, 'sortOrder' => $sortOrder]);
+        Log::debug('Sorting volunteers', ['sortBy' => $sortBy, 'sortOrder' => $sortOrder]);
 
         $query->orderBy($sortBy, $sortOrder);
 
