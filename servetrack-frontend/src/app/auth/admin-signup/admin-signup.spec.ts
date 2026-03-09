@@ -1,4 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+  BrowserDynamicTestingModule,
+  platformBrowserDynamicTesting,
+} from '@angular/platform-browser-dynamic/testing';
 import { Router } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { of, Observable, throwError } from 'rxjs';
@@ -16,6 +20,15 @@ describe('AdminSignup', () => {
   let mockSanitizer: any;
 
   beforeEach(async () => {
+    try {
+      TestBed.initTestEnvironment(
+        BrowserDynamicTestingModule,
+        platformBrowserDynamicTesting(),
+      );
+    } catch (e) {
+      // already initialized
+    }
+
     mockAuthService = {
       adminRegister$: vi.fn(),
     };
@@ -25,7 +38,8 @@ describe('AdminSignup', () => {
     };
 
     mockSanitizer = {
-      sanitize: vi.fn((input: string) => input),
+      sanitizeInput: vi.fn((input: string) => input.trim()),
+      sanitizeText: vi.fn((input: string) => input.trim()),
       validateEmail: vi.fn((email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);

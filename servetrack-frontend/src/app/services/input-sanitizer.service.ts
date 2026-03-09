@@ -14,7 +14,7 @@ export class InputSanitizerService {
     if (!input) return '';
     
     // Remove potentially dangerous HTML/JS patterns
-    const sanitized = input
+    const sanitized = input.trim()
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
       .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
       .replace(/<img\b[^>]*onerror\s*=/gi, '')
@@ -71,8 +71,9 @@ export class InputSanitizerService {
    * Validate email format
    */
   validateEmail(email: string): boolean {
+    if (!email) return false;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return emailRegex.test(email.trim());
   }
 
   /**
