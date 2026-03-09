@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 class RegisterController extends Controller
 {
@@ -24,7 +25,7 @@ class RegisterController extends Controller
         try {
             $user = User::create($userData);
         } catch (\Exception $e) {
-            \Log::error('Generic registration failed', [
+            Log::error('Generic registration failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
