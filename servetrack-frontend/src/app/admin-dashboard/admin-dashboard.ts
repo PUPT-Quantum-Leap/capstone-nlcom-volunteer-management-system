@@ -13,11 +13,22 @@ import { DatePipe } from '@angular/common';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
 import { AdminDashboardService, DashboardVolunteerRow } from '../services/admin-dashboard.service';
+<<<<<<< Updated upstream
+=======
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Poll, CreatePollDto, PollOption } from '../models/poll';
+import { PollService } from '../services/poll.service';
+import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
+>>>>>>> Stashed changes
 
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
+<<<<<<< Updated upstream
   imports: [ReactiveFormsModule, DatePipe],
+=======
+  imports: [ReactiveFormsModule, DatePipe, CommonModule, IncidentCommandSystemComponent],
+>>>>>>> Stashed changes
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })

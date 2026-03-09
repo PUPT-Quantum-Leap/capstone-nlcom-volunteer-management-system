@@ -1,0 +1,341 @@
+:host {
+  --blue-900: #0f2a6b;
+  --blue-800: #1e3a8a;
+  --blue-700: #1d4ed8;
+  --blue-600: #2563eb;
+  --blue-100: #dbeafe;
+  --slate-900: #0f172a;
+  --slate-800: #1e293b;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748b;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --white: #ffffff;
+  --danger: #b91c1c;
+
+  display: block;
+  padding: 1.5rem;
+  background: #f5f7fb;
+  font-family: 'Inter', sans-serif;
+}
+
+.ics-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 1. Header Section */
+.operation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--white);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--slate-200);
+
+  .logo-title {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+
+    .logo-img {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+    }
+
+    .title-group {
+      .org-name {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--slate-500);
+        letter-spacing: 0.05em;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: var(--blue-900);
+        margin: 0;
+      }
+    }
+  }
+
+  .operation-info {
+    display: flex;
+    gap: 3rem;
+
+    .info-column {
+      p {
+        margin: 0.25rem 0;
+        color: var(--slate-600);
+        font-size: 0.9375rem;
+
+        strong {
+          color: var(--slate-800);
+        }
+
+        .info-value {
+          font-weight: 600;
+          color: var(--blue-700);
+        }
+      }
+    }
+  }
+}
+
+/* 2. Command Hierarchy */
+.command-structure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--white);
+  padding: 2rem;
+  border-radius: 1rem;
+  border: 1px solid var(--slate-200);
+
+  .command-level {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .connector-down {
+    width: 2px;
+    height: 1.5rem;
+    background: var(--slate-300);
+    margin: 0.25rem 0;
+  }
+
+  .command-box {
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 200px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    .role {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
+    }
+
+    .name {
+      font-size: 1.125rem;
+      font-weight: 700;
+    }
+
+    &.high-level {
+      background: var(--blue-900);
+      color: var(--white);
+      .role { color: var(--blue-100); }
+    }
+
+    &.mid-level {
+      background: var(--blue-700);
+      color: var(--white);
+      .role { color: var(--blue-100); }
+    }
+
+    &.support-level {
+      background: var(--slate-100);
+      border: 1px solid var(--slate-200);
+      color: var(--slate-900);
+      .role { color: var(--slate-500); }
+      .name { font-size: 0.9375rem; }
+    }
+  }
+
+  .support-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+}
+
+/* 3. Operational Grid */
+.operational-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+
+  .op-column {
+    background: var(--white);
+    border-radius: 1rem;
+    border: 1px solid var(--slate-200);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    .column-header {
+      padding: 1.25rem;
+      background: var(--blue-100);
+      border-bottom: 1px solid var(--slate-200);
+
+      h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--blue-900);
+      }
+
+      .leader {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--blue-700);
+      }
+    }
+
+    .team-cards {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+
+      .team-card {
+        background: var(--slate-100);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--slate-200);
+
+        h4 {
+          margin: 0 0 0.5rem 0;
+          font-size: 0.9375rem;
+          font-weight: 700;
+          color: var(--slate-800);
+          border-bottom: 1px solid var(--slate-200);
+          padding-bottom: 0.25rem;
+        }
+
+        ul {
+          margin: 0;
+          padding: 0;
+          list-style: none;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.25rem;
+
+          li {
+            font-size: 0.875rem;
+            color: var(--slate-700);
+            display: flex;
+            align-items: center;
+            
+            &::before {
+              content: '•';
+              color: var(--blue-600);
+              margin-right: 0.5rem;
+            }
+          }
+        }
+
+        .empty-team {
+          font-size: 0.875rem;
+          color: var(--slate-500);
+          font-style: italic;
+          margin: 0;
+        }
+      }
+    }
+  }
+}
+
+/* Footer Section */
+.info-footer {
+  background: var(--white);
+  padding: 1.5rem;
+  border-radius: 1rem;
+  border: 1px solid var(--slate-200);
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+
+    .footer-box {
+      h4 {
+        margin: 0 0 0.75rem 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--blue-900);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .symbol-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+
+        li {
+          font-size: 0.875rem;
+          color: var(--slate-700);
+          margin-bottom: 0.25rem;
+          
+          strong {
+            display: inline-block;
+            width: 2.5rem;
+            color: var(--blue-700);
+          }
+        }
+      }
+
+      .meal-stats {
+        p {
+          font-size: 0.875rem;
+          color: var(--slate-700);
+          margin: 0.25rem 0;
+          display: flex;
+          justify-content: space-between;
+
+          .count {
+            font-weight: 700;
+            color: var(--blue-900);
+          }
+        }
+      }
+
+      .vehicle-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.25rem 1rem;
+
+        .vehicle-item {
+          font-size: 0.8125rem;
+          color: var(--slate-700);
+          
+          span {
+            font-weight: 700;
+            color: var(--slate-900);
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 1024px) {
+  .operational-grid, .info-grid, .support-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .operation-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+}
