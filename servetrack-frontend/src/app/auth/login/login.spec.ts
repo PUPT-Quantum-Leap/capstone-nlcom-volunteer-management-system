@@ -1,10 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+  BrowserDynamicTestingModule,
+  platformBrowserDynamicTesting,
+} from '@angular/platform-browser-dynamic/testing';
 import { Login } from './login';
 import { AuthService } from '../../services/auth.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { of, Observable } from 'rxjs';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { InputSanitizerService } from '../../services/input-sanitizer.service';
 
 describe('Login Component', () => {
   let component: Login;
@@ -20,6 +25,15 @@ describe('Login Component', () => {
   let mockActivatedRoute: { queryParams: Observable<Record<string, unknown>> };
 
   beforeEach(async () => {
+    try {
+      TestBed.initTestEnvironment(
+        BrowserDynamicTestingModule,
+        platformBrowserDynamicTesting(),
+      );
+    } catch (e) {
+      // already initialized
+    }
+
     mockAuthService = {
       login$: vi.fn(),
       logout$: vi.fn().mockReturnValue(of(undefined)),
@@ -28,6 +42,10 @@ describe('Login Component', () => {
     mockRouter = {
       navigate: vi.fn().mockResolvedValue(true),
       navigateByUrl: vi.fn().mockResolvedValue(true),
+    };
+
+    const mockSanitizer = {
+      sanitizeInput: vi.fn((input: string) => input.trim()),
     };
 
     mockActivatedRoute = {
@@ -40,6 +58,7 @@ describe('Login Component', () => {
         { provide: AuthService, useValue: mockAuthService },
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
+        { provide: InputSanitizerService, useValue: mockSanitizer },
       ],
     })
       .overrideComponent(Login, {
