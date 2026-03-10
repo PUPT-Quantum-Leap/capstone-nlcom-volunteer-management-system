@@ -397,11 +397,34 @@ export class AdminDashboard implements OnInit {
       );
     });
 
+    // Convert backend date strings to date input format (YYYY-MM-DD)
+    const parseBackendDate = (dateString: string): string => {
+      if (!dateString) return '';
+      
+      const date = new Date(dateString + (dateString.match(/\d{4}/) ? '' : ' 2024'));
+      return date.toISOString().split('T')[0]; 
+    };
+
+    // Convert backend time strings to time input format (HH:MM)
+    const parseBackendTime = (timeString: string): string => {
+      if (!timeString) return '';
+    
+      const timeMatch = timeString.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
+      if (timeMatch) {
+        let [, hours, minutes, ampm] = timeMatch;
+        let hour = parseInt(hours);
+        if (ampm.toUpperCase() === 'PM' && hour !== 12) hour += 12;
+        if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
+        return `${hour.toString().padStart(2, '0')}:${minutes}`;
+      }
+      return '';
+    };
+
     this.pollForm.patchValue({
       title: poll.title,
-      date: poll.date,
-      cutOffDay: poll.cutOffDay,
-      cutOffTime: poll.cutOffTime,
+      date: parseBackendDate(poll.date),
+      cutOffDay: parseBackendDate(poll.cutOffDay),
+      cutOffTime: parseBackendTime(poll.cutOffTime),
       description: poll.description,
     });
 
@@ -437,13 +460,30 @@ export class AdminDashboard implements OnInit {
 
     const formValue = this.pollForm.value;
 
+    // Format dates for backend - date inputs return ISO strings
+    const formatDateForBackend = (dateString: string): string => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
+    // Format time for backend - time input returns HH:MM format
+    const formatTimeForBackend = (timeString: string): string => {
+      if (!timeString) return '';
+      const [hours, minutes] = timeString.split(':');
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 || 12; 
+      return `${displayHour}:${minutes}${ampm}`;
+    };
+
     // Build a snake_case payload that matches the Laravel backend expectations.
     // The frontend form / DTO uses camelCase; the API requires snake_case field names.
     const payload = {
       title: formValue.title!,
-      date: formValue.date!,
-      cutoff_day: formValue.cutOffDay!,
-      cutoff_time: formValue.cutOffTime!,
+      date: formatDateForBackend(formValue.date!),
+      cutoff_day: formatDateForBackend(formValue.cutOffDay!),
+      cutoff_time: formatTimeForBackend(formValue.cutOffTime!),
       description: formValue.description!,
       options: (formValue.options as Array<{ timeSlot: string; capacity: number }>).map((opt) => ({
         // `text` is required by the backend (stored in the `option` lookup table).
