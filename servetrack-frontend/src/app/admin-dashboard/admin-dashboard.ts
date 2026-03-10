@@ -400,15 +400,23 @@ export class AdminDashboard implements OnInit {
     // Convert backend date strings to date input format (YYYY-MM-DD)
     const parseBackendDate = (dateString: string): string => {
       if (!dateString) return '';
-      
-      const date = new Date(dateString + (dateString.match(/\d{4}/) ? '' : ' 2024'));
+      // If it's already in YYYY-MM-DD format, return as-is
+      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return dateString;
+      }
+     
+      const date = new Date(dateString);
       return date.toISOString().split('T')[0]; 
     };
 
     // Convert backend time strings to time input format (HH:MM)
     const parseBackendTime = (timeString: string): string => {
       if (!timeString) return '';
-    
+      // Handle HH:MM:SS format from MySQL TIME column
+      if (timeString.match(/^\d{2}:\d{2}:\d{2}$/)) {
+        return timeString.substring(0, 5); 
+      }
+     
       const timeMatch = timeString.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
       if (timeMatch) {
         let [, hours, minutes, ampm] = timeMatch;
@@ -464,17 +472,14 @@ export class AdminDashboard implements OnInit {
     const formatDateForBackend = (dateString: string): string => {
       if (!dateString) return '';
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return date.toISOString().split('T')[0];
     };
 
     // Format time for backend - time input returns HH:MM format
     const formatTimeForBackend = (timeString: string): string => {
       if (!timeString) return '';
-      const [hours, minutes] = timeString.split(':');
-      const hour = parseInt(hours);
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      const displayHour = hour % 12 || 12; 
-      return `${displayHour}:${minutes}${ampm}`;
+      // Return HH:MM:SS format for MySQL TIME column
+      return timeString + ':00';
     };
 
     // Build a snake_case payload that matches the Laravel backend expectations.
