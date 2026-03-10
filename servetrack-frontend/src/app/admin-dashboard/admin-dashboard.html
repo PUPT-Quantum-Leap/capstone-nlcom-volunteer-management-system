@@ -1027,9 +1027,8 @@
           <label for="poll-date">Event Date *</label>
           <input 
             id="poll-date" 
-            type="text" 
+            type="date" 
             formControlName="date" 
-            placeholder="e.g., Sept 27"
             class="form-input"
           />
           @if (pollForm.get('date')?.invalid && pollForm.get('date')?.touched) {
@@ -1038,16 +1037,15 @@
         </div>
 
         <div class="form-group">
-          <label for="poll-cutoff-day">Cut-off Day *</label>
+          <label for="poll-cutoff-day">Cut-off Date *</label>
           <input 
             id="poll-cutoff-day" 
-            type="text" 
+            type="date" 
             formControlName="cutOffDay" 
-            placeholder="e.g., THURSDAY"
             class="form-input"
           />
           @if (pollForm.get('cutOffDay')?.invalid && pollForm.get('cutOffDay')?.touched) {
-          <span class="form-error">Cut-off day is required</span>
+          <span class="form-error">Cut-off date is required</span>
           }
         </div>
 
@@ -1055,9 +1053,8 @@
           <label for="poll-cutoff-time">Cut-off Time *</label>
           <input 
             id="poll-cutoff-time" 
-            type="text" 
+            type="time" 
             formControlName="cutOffTime" 
-            placeholder="e.g., 12NN"
             class="form-input"
           />
           @if (pollForm.get('cutOffTime')?.invalid && pollForm.get('cutOffTime')?.touched) {
