@@ -1,8 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting,
-} from '@angular/platform-browser-dynamic/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
@@ -15,14 +11,6 @@ describe('VotingPoll', () => {
   let fixture: ComponentFixture<VotingPoll>;
 
   beforeEach(async () => {
-    try {
-      TestBed.initTestEnvironment(
-        BrowserDynamicTestingModule,
-        platformBrowserDynamicTesting(),
-      );
-    } catch (e) {
-      // already initialized
-    }
 
     await TestBed.configureTestingModule({
       imports: [VotingPoll],
