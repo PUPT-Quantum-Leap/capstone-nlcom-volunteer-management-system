@@ -117,8 +117,8 @@ describe('POST /api/polls', function (): void {
                 'title' => 'Mobile Kitchen Operations',
                 'description' => 'Pick your preferred shift.',
                 'date' => '2026-09-27',
-                'cutoff_day' => 'Thursday',
-                'cutoff_time' => '12NN',
+                'cutoff_day' => '2026-09-26',
+                'cutoff_time' => '12:00',
                 'options' => [
                     ['text' => '4:30am - 2:00pm', 'time_slot' => '4:30am - 2:00pm', 'capacity' => 15],
                     ['text' => '1:00pm - 7:00pm', 'time_slot' => '1:00pm - 7:00pm', 'capacity' => 10],
