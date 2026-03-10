@@ -18,11 +18,11 @@ export class PollService {
   }
 
   getPolls(): Observable<{ data: Poll[] }> {
-    return this.http.get<{ data: Poll[] }>(this.apiUrl);
+    return this.http.get<{ data: Poll[] }>(this.apiUrl, { withCredentials: true });
   }
 
   getPollById(id: number): Observable<{ data: Poll }> {
-    return this.http.get<{ data: Poll }>(`${this.apiUrl}/${id}`);
+    return this.http.get<{ data: Poll }>(`${this.apiUrl}/${id}`, { withCredentials: true });
   }
 
   /** Body is sent as-is to the backend; must use snake_case field names. */
@@ -34,11 +34,13 @@ export class PollService {
 
   /** Body is sent as-is to the backend; must use snake_case field names. */
   updatePoll(id: number, body: Record<string, unknown>): Observable<{ data: Poll }> {
-    return this.http.put<{ data: Poll }>(`${this.apiUrl}/${id}`, body);
+    return this.ensureCsrf().pipe(
+      switchMap(() => this.http.put<{ data: Poll }>(`${this.apiUrl}/${id}`, body, { withCredentials: true }))
+    );
   }
 
   deletePoll(id: number): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`, { withCredentials: true });
   }
 
   updatePollStatus(
@@ -47,12 +49,14 @@ export class PollService {
   ): Observable<{ message: string; status: string }> {
     return this.http.patch<{ message: string; status: string }>(`${this.apiUrl}/${id}/status`, {
       status,
-    });
+    }, { withCredentials: true });
   }
 
   vote(pollId: number, optionId: number): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/${pollId}/vote`, {
-      option_id: optionId,
-    });
+    return this.ensureCsrf().pipe(
+      switchMap(() => this.http.post<{ message: string }>(`${this.apiUrl}/${pollId}/vote`, {
+        option_id: optionId,
+      }, { withCredentials: true }))
+    );
   }
 }
