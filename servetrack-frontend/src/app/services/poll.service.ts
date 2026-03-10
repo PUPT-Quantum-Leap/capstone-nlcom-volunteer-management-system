@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, switchMap } from 'rxjs';
 import { Poll } from '../models/poll';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root',
@@ -10,6 +11,11 @@ import { environment } from '../../environments/environment';
 export class PollService {
   private http = inject(HttpClient);
   private apiUrl = environment.apiUrl + '/polls';
+  private authService = inject(AuthService);
+
+  private ensureCsrf(): Observable<void> {
+    return this.authService.ensureCsrf$();
+  }
 
   getPolls(): Observable<{ data: Poll[] }> {
     return this.http.get<{ data: Poll[] }>(this.apiUrl);
@@ -21,7 +27,9 @@ export class PollService {
 
   /** Body is sent as-is to the backend; must use snake_case field names. */
   createPoll(body: Record<string, unknown>): Observable<{ data: Poll }> {
-    return this.http.post<{ data: Poll }>(this.apiUrl, body);
+    return this.ensureCsrf().pipe(
+      switchMap(() => this.http.post<{ data: Poll }>(this.apiUrl, body, { withCredentials: true }))
+    );
   }
 
   /** Body is sent as-is to the backend; must use snake_case field names. */
