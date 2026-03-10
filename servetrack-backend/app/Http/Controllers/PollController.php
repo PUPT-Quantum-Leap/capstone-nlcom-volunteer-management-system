@@ -162,12 +162,12 @@ class PollController extends Controller
         ]);
 
         $poll = Poll::query()->find($id);
-
         if (! $poll) {
             return response()->json(['message' => 'Poll not found.'], 404);
         }
 
         $poll->update(['status' => $request->input('status')]);
+        $poll->refresh();
 
         return response()->json(['message' => 'Poll status updated.', 'status' => $poll->status]);
     }
