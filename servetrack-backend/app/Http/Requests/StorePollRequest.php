@@ -22,17 +22,17 @@ class StorePollRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['required', 'string', 'max:100'],
-            'description' => ['nullable', 'string'],
-            'date' => ['required', 'date'],
-            'cutoff_day' => ['required', 'string', 'max:20'],
-            'cutoff_time' => ['required', 'string', 'max:20'],
+            'title' => ['required', 'string', 'max:100', 'min:3'],
+            'description' => ['required', 'string', 'min:10'],
+            'date' => ['required', 'date', 'after_or_equal:today'],
+            'cutoff_day' => ['required', 'date', 'after_or_equal:today'],
+            'cutoff_time' => ['required', 'regex:/^([01]?[0-9]|1[0-9]|2[0-3]):00$/', 'max:20'],
             'status' => ['sometimes', 'in:draft,active,closed'],
             'share_url' => ['nullable', 'string', 'max:500'],
             'options' => ['required', 'array', 'min:1'],
             'options.*.text' => ['required', 'string', 'max:255'],
             'options.*.time_slot' => ['required', 'string', 'max:100'],
-            'options.*.capacity' => ['required', 'integer', 'min:1'],
+            'options.*.capacity' => ['required', 'integer', 'min:1', 'max:2147483647'],
         ];
     }
 
