@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('title', 100);
             $table->text('description')->nullable();
             $table->date('date');
-            $table->string('cutoff_day', 20);
-            $table->string('cutoff_time', 20);
+            $table->date('cutoff_day');
+            $table->time('cutoff_time');
             $table->enum('status', ['draft', 'active', 'closed'])->default('draft');
             $table->string('share_url', 500)->nullable();
             $table->timestamps();
