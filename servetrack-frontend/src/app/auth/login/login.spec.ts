@@ -1,8 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import {
-  BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting,
-} from '@angular/platform-browser-dynamic/testing';
 import { Login } from './login';
 import { AuthService } from '../../services/auth.service';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -25,14 +21,6 @@ describe('Login Component', () => {
   let mockActivatedRoute: { queryParams: Observable<Record<string, unknown>> };
 
   beforeEach(async () => {
-    try {
-      TestBed.initTestEnvironment(
-        BrowserDynamicTestingModule,
-        platformBrowserDynamicTesting(),
-      );
-    } catch (e) {
-      // already initialized
-    }
 
     mockAuthService = {
       login$: vi.fn(),
