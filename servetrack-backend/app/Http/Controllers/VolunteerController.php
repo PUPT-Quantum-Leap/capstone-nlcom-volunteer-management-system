@@ -583,7 +583,7 @@ class VolunteerController extends Controller
     {
         // Check if we want archived volunteers
         $showArchived = $request->query('archived') === 'true';
-        
+
         // Build query with proper soft delete handling
         if ($showArchived) {
             // Show only archived (soft-deleted) volunteers
@@ -592,7 +592,7 @@ class VolunteerController extends Controller
             // Show only active volunteers (default)
             $query = Volunteer::query();
         }
-        
+
         // Add eager loading
         $query->with([
             'experiences',
@@ -910,7 +910,7 @@ class VolunteerController extends Controller
         }
 
         // Use Laravel's soft delete method
-        if (!$volunteer->trashed()) {
+        if (! $volunteer->trashed()) {
             $volunteer->delete(); // This sets deleted_at automatically
         }
 

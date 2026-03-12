@@ -16,13 +16,19 @@ class UserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = User::query();
+        $showArchived = $request->query('archived') === 'true';
+
+        if ($showArchived) {
+            $query = User::onlyTrashed();
+        } else {
+            $query = User::query();
+        }
 
         // Search by name or email
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('email', 'like', '%' . $search . '%');
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('email', 'like', '%'.$search.'%');
             });
         }
 
@@ -78,7 +84,7 @@ class UserController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create user',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -90,7 +96,7 @@ class UserController extends Controller
     {
         $user = User::find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
                 'message' => 'User not found',
@@ -110,7 +116,7 @@ class UserController extends Controller
     {
         $user = User::find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
                 'message' => 'User not found',
@@ -119,7 +125,7 @@ class UserController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
+            'email' => 'required|email|unique:users,email,'.$id,
             'role' => 'required|in:admin,coordinator,volunteer',
         ]);
 
@@ -147,7 +153,7 @@ class UserController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update user',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -157,9 +163,9 @@ class UserController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        $user = User::find($id);
+        $user = User::withTrashed()->find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
                 'message' => 'User not found',
@@ -167,7 +173,7 @@ class UserController extends Controller
         }
 
         try {
-            $user->delete();
+            $user->forceDelete();
 
             return response()->json([
                 'success' => true,
@@ -177,9 +183,55 @@ class UserController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete user',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Soft delete the specified user.
+     */
+    public function softDelete(Request $request, int $id): JsonResponse
+    {
+        $user = User::withTrashed()->find($id);
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        if (! $user->trashed()) {
+            $user->delete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User archived successfully',
+        ]);
+    }
+
+    /**
+     * Restore a soft-deleted user.
+     */
+    public function restore(Request $request, int $id): JsonResponse
+    {
+        $user = User::onlyTrashed()->find($id);
+
+        if (! $user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Archived user not found',
+            ], 404);
+        }
+
+        $user->restore();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User restored successfully',
+        ]);
     }
 
     /**
@@ -189,7 +241,7 @@ class UserController extends Controller
     {
         $user = User::find($id);
 
-        if (!$user) {
+        if (! $user) {
             return response()->json([
                 'success' => false,
                 'message' => 'User not found',
@@ -221,7 +273,7 @@ class UserController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to reset password',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }

@@ -63,6 +63,8 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
 
     // User management — CRUD for users (admin only)
     Route::apiResource('/users', UserController::class);
+    Route::patch('/users/{id}/soft-delete', [UserController::class, 'softDelete']);
+    Route::patch('/users/{id}/restore', [UserController::class, 'restore']);
     Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
 
     // Poll management — full CRUD + status toggle (admin only)
