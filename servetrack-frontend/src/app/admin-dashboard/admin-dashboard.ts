@@ -13,7 +13,7 @@ import { AuthService } from '../services/auth.service';
 import { DatePipe, CommonModule } from '@angular/common';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
-import { AdminDashboardService, DashboardVolunteerRow } from '../services/admin-dashboard.service';
+import { AdminDashboardService, DashboardVolunteerRow, VolunteerUser } from '../services/admin-dashboard.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Poll, PollOption } from '../models/poll';
 import { PollService } from '../services/poll.service';
@@ -38,6 +38,7 @@ export class AdminDashboard implements OnInit {
   private userService = inject(UserService);
 
   readonly defaultPhoto = '/assets/nlcom.png';
+  readonly Math = Math;
 
   currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Admin');
@@ -53,6 +54,7 @@ export class AdminDashboard implements OnInit {
   showUserModal = signal(false);
   showDeleteUserModal = signal(false);
   showResetPasswordModal = signal(false);
+  showUserDetailsModal = signal(false);
 
   searchQuery = signal('');
   userSearchQuery = signal('');
@@ -65,9 +67,23 @@ export class AdminDashboard implements OnInit {
   editingUser = signal<User | null>(null);
   deletingUserId = signal<number | null>(null);
   resettingPasswordUserId = signal<number | null>(null);
+  viewingUser = signal<User | null>(null);
 
   showAiModal = signal(false);
   currentPage = signal(1);
+  usersPerPage = signal(5);
+  usersTotalPages = computed(() => Math.ceil(this.filteredUsers().length / this.usersPerPage()));
+  
+  volunteersPage = signal(1);
+  volunteersPerPage = signal(5);
+  volunteersTotalPages = computed(() => Math.ceil(this.volunteerRows().length / this.volunteersPerPage()));
+  showArchivedVolunteers = signal(false);
+  archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
+
+  // Snackbar notifications
+  snackbarMessage = signal<string>('');
+  snackbarVisible = signal(false);
+  snackbarType = signal<'success' | 'error' | 'info'>('success');
 
   notifications = signal<NotificationItem[]>([]);
 
@@ -85,6 +101,7 @@ export class AdminDashboard implements OnInit {
   polls = signal<Poll[]>([]);
   pollFilterStatus = signal<'all' | 'active' | 'closed' | 'draft'>('all');
   users = signal<User[]>([]);
+  volunteers = signal<VolunteerUser[]>([]);
 
   sortField = signal<'name' | 'attendance' | 'hours' | 'tasks' | 'rating'>('attendance');
   sortDirection = signal<'asc' | 'desc'>('desc');
@@ -170,7 +187,19 @@ export class AdminDashboard implements OnInit {
   });
 
   filteredUsers = computed(() => {
-    let filtered = this.users();
+    let filtered = this.volunteers().map((v: VolunteerUser) => ({
+      id: v.volunteer_id,
+      name: v.full_name,
+      email: v.email,
+      role: 'volunteer' as 'admin' | 'coordinator' | 'volunteer',
+      created_at: v.created_at,
+      updated_at: v.updated_at,
+      deleted_at: null
+    }));
+    
+    // Filter out soft-deleted users
+    filtered = filtered.filter(u => !u.deleted_at);
+    
     const role = this.userRoleFilter();
     const search = this.userSearchQuery().toLowerCase().trim();
 
@@ -181,6 +210,26 @@ export class AdminDashboard implements OnInit {
       filtered = filtered.filter(u => u.name.toLowerCase().includes(search) || u.email.toLowerCase().includes(search));
     }
     return filtered;
+  });
+
+  paginatedUsers = computed(() => {
+    const filtered = this.filteredUsers();
+    const page = this.currentPage();
+    const perPage = this.usersPerPage();
+    const start = (page - 1) * perPage;
+    const end = start + perPage;
+    return filtered.slice(start, end);
+  });
+
+  paginatedVolunteers = computed(() => {
+    const volunteers = this.showArchivedVolunteers() 
+      ? this.archivedVolunteerRows() 
+      : this.volunteerRows();
+    const page = this.volunteersPage();
+    const perPage = this.volunteersPerPage();
+    const start = (page - 1) * perPage;
+    const end = start + perPage;
+    return volunteers.slice(start, end);
   });
 
   pollForm = this.fb.group({
@@ -368,10 +417,96 @@ export class AdminDashboard implements OnInit {
 
   setUserSearchQuery(query: string): void {
     this.userSearchQuery.set(query);
+    this.currentPage.set(1); // Reset to first page when searching
   }
 
   setUserRoleFilter(role: string): void {
     this.userRoleFilter.set(role);
+    this.currentPage.set(1); // Reset to first page when filtering
+  }
+
+  goToPage(page: number): void {
+    const totalPages = this.usersTotalPages();
+    if (page >= 1 && page <= totalPages) {
+      this.currentPage.set(page);
+    }
+  }
+
+  nextPage(): void {
+    const totalPages = this.usersTotalPages();
+    if (this.currentPage() < totalPages) {
+      this.currentPage.update(page => page + 1);
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.update(page => page - 1);
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const total = this.usersTotalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (current <= 3) {
+        pages.push(1, 2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(1, -1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(1, -1, current - 1, current, current + 1, -1, total);
+      }
+    }
+    
+    return pages;
+  }
+
+  goToVolunteersPage(page: number): void {
+    const totalPages = this.volunteersTotalPages();
+    if (page >= 1 && page <= totalPages) {
+      this.volunteersPage.set(page);
+    }
+  }
+
+  nextVolunteersPage(): void {
+    const totalPages = this.volunteersTotalPages();
+    if (this.volunteersPage() < totalPages) {
+      this.volunteersPage.update(page => page + 1);
+    }
+  }
+
+  previousVolunteersPage(): void {
+    if (this.volunteersPage() > 1) {
+      this.volunteersPage.update(page => page - 1);
+    }
+  }
+
+  getVolunteersPageNumbers(): number[] {
+    const total = this.volunteersTotalPages();
+    const current = this.volunteersPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (current <= 3) {
+        pages.push(1, 2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(1, -1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(1, -1, current - 1, current, current + 1, -1, total);
+      }
+    }
+    
+    return pages;
   }
 
   openCreateUserModal(): void {
@@ -408,6 +543,16 @@ export class AdminDashboard implements OnInit {
   closeUserModal(): void {
     this.showUserModal.set(false);
     this.editingUser.set(null);
+  }
+
+  openUserDetailsModal(user: User): void {
+    this.viewingUser.set(user);
+    this.showUserDetailsModal.set(true);
+  }
+
+  closeUserDetailsModal(): void {
+    this.showUserDetailsModal.set(false);
+    this.viewingUser.set(null);
   }
 
   saveUser(): void {
@@ -458,11 +603,17 @@ export class AdminDashboard implements OnInit {
   deleteUser(): void {
     const id = this.deletingUserId();
     if (id !== null) {
-      this.userService.deleteUser(id).subscribe(() => {
+      this.userService.softDeleteUser(id).subscribe(() => {
         this.loadUsers();
         this.closeDeleteUserModal();
       });
     }
+  }
+
+  restoreUser(userId: number): void {
+    this.userService.restoreUser(userId).subscribe(() => {
+      this.loadUsers();
+    });
   }
 
   openResetPasswordModal(userId: number): void {
@@ -776,10 +927,115 @@ export class AdminDashboard implements OnInit {
   deleteVolunteer(): void {
     const volunteerId = this.deletingVolunteerId();
     if (volunteerId !== null) {
-      console.log('Delete volunteer:', volunteerId);
-      this.closeDeleteVolunteerModal();
-      this.loadDashboardData();
+      this.adminDashboardService.softDeleteVolunteer(volunteerId).subscribe({
+        next: (response) => {
+          if (response.success) {
+            console.log('Volunteer archived successfully');
+            
+            // Immediately remove from active volunteers list
+            const currentRows = this.volunteerRows();
+            const updatedRows = currentRows.filter(v => v.id !== volunteerId);
+            this.volunteerRows.set(updatedRows);
+            
+            // Reset to page 1 if current page becomes empty
+            if (updatedRows.length > 0 && this.volunteersPage() > Math.ceil(updatedRows.length / this.volunteersPerPage())) {
+              this.volunteersPage.set(1);
+            }
+
+            // Show success snackbar
+            this.showSnackbar('Volunteer archived successfully', 'success');
+          }
+          this.closeDeleteVolunteerModal();
+        },
+        error: (error) => {
+          console.error('Error archiving volunteer:', error);
+          this.showSnackbar('Failed to archive volunteer', 'error');
+          this.closeDeleteVolunteerModal();
+        }
+      });
     }
+  }
+
+  restoreVolunteer(volunteerId: number): void {
+    this.adminDashboardService.restoreVolunteer(volunteerId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          console.log('Volunteer restored successfully');
+          
+          // Immediately remove from archived volunteers list
+          const currentArchived = this.archivedVolunteerRows();
+          const updatedArchived = currentArchived.filter(v => v.id !== volunteerId);
+          this.archivedVolunteerRows.set(updatedArchived);
+          
+          // Reset to page 1 if current page becomes empty
+          if (updatedArchived.length > 0 && this.volunteersPage() > Math.ceil(updatedArchived.length / this.volunteersPerPage())) {
+            this.volunteersPage.set(1);
+          }
+          
+          // Show success snackbar
+          this.showSnackbar('Volunteer restored successfully', 'success');
+          
+          // Reload active volunteers to include restored one
+          this.loadDashboardData();
+        }
+      },
+      error: (error) => {
+        console.error('Error restoring volunteer:', error);
+        this.showSnackbar('Failed to restore volunteer', 'error');
+      }
+    });
+  }
+
+  toggleArchivedVolunteers(): void {
+    this.showArchivedVolunteers.update(show => !show);
+  }
+
+  showSnackbar(message: string, type: 'success' | 'error' | 'info' = 'success'): void {
+    this.snackbarMessage.set(message);
+    this.snackbarType.set(type);
+    this.snackbarVisible.set(true);
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      this.snackbarVisible.set(false);
+    }, 3000);
+  }
+
+  loadArchivedVolunteers(): void {
+    this.adminDashboardService.getArchivedVolunteers().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Map archived volunteers to DashboardVolunteerRow format
+          const archivedRows: DashboardVolunteerRow[] = response.data.map(v => ({
+            id: v.volunteer_id,
+            name: v.full_name,
+            email: v.email,
+            phone: v.mobile_number || 'N/A',
+            department: 'Volunteer', // Default department
+            status: 'inactive' as 'active' | 'inactive',
+            joined_date: v.created_at
+          }));
+          this.archivedVolunteerRows.set(archivedRows);
+        } else {
+          this.archivedVolunteerRows.set([]);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading archived volunteers:', error);
+        this.archivedVolunteerRows.set([]);
+      }
+    });
+  }
+
+  switchToActiveVolunteers(): void {
+    this.showArchivedVolunteers.set(false);
+    this.volunteersPage.set(1);
+  }
+
+  switchToArchivedVolunteers(): void {
+    this.showArchivedVolunteers.set(true);
+    this.volunteersPage.set(1);
+    this.loadArchivedVolunteers();
   }
 
   getVotePercentage(poll: Poll, option: PollOption): number {
