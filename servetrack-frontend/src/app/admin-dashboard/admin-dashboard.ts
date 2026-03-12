@@ -18,6 +18,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Poll, PollOption } from '../models/poll';
 import { PollService } from '../services/poll.service';
 import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
+import { User } from '../models/user';
+import { UserService } from '../services/user.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -33,6 +35,7 @@ export class AdminDashboard implements OnInit {
   private adminDashboardService = inject(AdminDashboardService);
   private destroyRef = inject(DestroyRef);
   private pollService = inject(PollService);
+  private userService = inject(UserService);
 
   readonly defaultPhoto = '/assets/nlcom.png';
 
@@ -47,11 +50,22 @@ export class AdminDashboard implements OnInit {
   showDeletePollModal = signal(false);
   showVolunteerModal = signal(false);
   showDeleteVolunteerModal = signal(false);
+  showUserModal = signal(false);
+  showDeleteUserModal = signal(false);
+  showResetPasswordModal = signal(false);
+
   searchQuery = signal('');
+  userSearchQuery = signal('');
+  userRoleFilter = signal('');
+
   editingPoll = signal<Poll | null>(null);
   deletingPollId = signal<number | null>(null);
   editingVolunteer = signal<DashboardVolunteerRow | null>(null);
   deletingVolunteerId = signal<number | null>(null);
+  editingUser = signal<User | null>(null);
+  deletingUserId = signal<number | null>(null);
+  resettingPasswordUserId = signal<number | null>(null);
+
   showAiModal = signal(false);
   currentPage = signal(1);
 
@@ -70,6 +84,7 @@ export class AdminDashboard implements OnInit {
   performanceMetrics = signal<PerformanceMetric[]>([]);
   polls = signal<Poll[]>([]);
   pollFilterStatus = signal<'all' | 'active' | 'closed' | 'draft'>('all');
+  users = signal<User[]>([]);
 
   sortField = signal<'name' | 'attendance' | 'hours' | 'tasks' | 'rating'>('attendance');
   sortDirection = signal<'asc' | 'desc'>('desc');
@@ -154,6 +169,20 @@ export class AdminDashboard implements OnInit {
     return this.polls().filter((poll) => poll.status === status);
   });
 
+  filteredUsers = computed(() => {
+    let filtered = this.users();
+    const role = this.userRoleFilter();
+    const search = this.userSearchQuery().toLowerCase().trim();
+
+    if (role) {
+      filtered = filtered.filter(u => u.role === role);
+    }
+    if (search) {
+      filtered = filtered.filter(u => u.name.toLowerCase().includes(search) || u.email.toLowerCase().includes(search));
+    }
+    return filtered;
+  });
+
   pollForm = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
     date: ['', Validators.required],
@@ -188,9 +217,23 @@ export class AdminDashboard implements OnInit {
     emergencyContactRelationship: ['', Validators.required],
   });
 
+  userForm = this.fb.group({
+    name: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    role: ['', Validators.required],
+    password: [''],
+    confirmPassword: [''],
+  });
+
+  resetPasswordForm = this.fb.group({
+    password: ['', [Validators.required, Validators.minLength(8)]],
+    confirmPassword: ['', Validators.required],
+  });
+
   ngOnInit(): void {
     this.loadDashboardData();
     this.loadPolls();
+    this.loadUsers();
   }
 
   private loadDashboardData(): void {
@@ -313,6 +356,138 @@ export class AdminDashboard implements OnInit {
 
   closeAiModal(): void {
     this.showAiModal.set(false);
+  }
+
+  loadUsers(): void {
+    this.userService.getUsers().subscribe((response) => {
+      if (response.success) {
+        this.users.set(response.data);
+      }
+    });
+  }
+
+  setUserSearchQuery(query: string): void {
+    this.userSearchQuery.set(query);
+  }
+
+  setUserRoleFilter(role: string): void {
+    this.userRoleFilter.set(role);
+  }
+
+  openCreateUserModal(): void {
+    this.editingUser.set(null);
+    this.userForm.reset();
+    this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(8)]);
+    this.userForm.get('confirmPassword')?.setValidators(Validators.required);
+    this.userForm.get('password')?.updateValueAndValidity();
+    this.userForm.get('confirmPassword')?.updateValueAndValidity();
+    this.showUserModal.set(true);
+  }
+
+  openEditUserModal(user: User): void {
+    this.editingUser.set(user);
+    this.userForm.reset();
+    this.userForm.get('password')?.clearValidators();
+    this.userForm.get('confirmPassword')?.clearValidators();
+    this.userForm.get('password')?.updateValueAndValidity();
+    this.userForm.get('confirmPassword')?.updateValueAndValidity();
+    this.userForm.patchValue({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
+    this.showUserModal.set(true);
+  }
+
+  closeUserModal(): void {
+    this.showUserModal.set(false);
+    this.editingUser.set(null);
+  }
+
+  saveUser(): void {
+    if (this.userForm.invalid) {
+      this.userForm.markAllAsTouched();
+      return;
+    }
+
+    const val = this.userForm.value;
+    const editingUser = this.editingUser();
+
+    if (!editingUser) {
+      if (val.password !== val.confirmPassword) {
+        this.userForm.get('confirmPassword')?.setErrors({ mismatch: true });
+        return;
+      }
+      this.userService.createUser({
+        name: val.name!,
+        email: val.email!,
+        role: val.role as any,
+        password: val.password!
+      }).subscribe(() => {
+        this.loadUsers();
+        this.closeUserModal();
+      });
+    } else {
+      this.userService.updateUser(editingUser.id, {
+        name: val.name!,
+        email: val.email!,
+        role: val.role as any,
+      }).subscribe(() => {
+        this.loadUsers();
+        this.closeUserModal();
+      });
+    }
+  }
+
+  confirmDeleteUser(userId: number): void {
+    this.deletingUserId.set(userId);
+    this.showDeleteUserModal.set(true);
+  }
+
+  closeDeleteUserModal(): void {
+    this.showDeleteUserModal.set(false);
+    this.deletingUserId.set(null);
+  }
+
+  deleteUser(): void {
+    const id = this.deletingUserId();
+    if (id !== null) {
+      this.userService.deleteUser(id).subscribe(() => {
+        this.loadUsers();
+        this.closeDeleteUserModal();
+      });
+    }
+  }
+
+  openResetPasswordModal(userId: number): void {
+    this.resettingPasswordUserId.set(userId);
+    this.resetPasswordForm.reset();
+    this.showResetPasswordModal.set(true);
+  }
+
+  closeResetPasswordModal(): void {
+    this.showResetPasswordModal.set(false);
+    this.resettingPasswordUserId.set(null);
+  }
+
+  resetPassword(): void {
+    if (this.resetPasswordForm.invalid) {
+      this.resetPasswordForm.markAllAsTouched();
+      return;
+    }
+
+    const val = this.resetPasswordForm.value;
+    if (val.password !== val.confirmPassword) {
+      this.resetPasswordForm.get('confirmPassword')?.setErrors({ mismatch: true });
+      return;
+    }
+
+    const id = this.resettingPasswordUserId();
+    if (id !== null) {
+      this.userService.resetPassword(id, val.password!).subscribe(() => {
+        this.closeResetPasswordModal();
+      });
+    }
   }
 
   async confirmLogout(): Promise<void> {

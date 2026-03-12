@@ -711,12 +711,98 @@
       }
 
       @case ('users') {
-      <section class="panel">
-        <div class="panel-header">
-          <h2>User Management</h2>
-          <p>Manage system users, roles, and permissions</p>
+      <section class="users-layout">
+        <div class="users-header">
+          <div class="header-content">
+            <h2>User Management</h2>
+            <p>Manage system users, roles, and permissions</p>
+          </div>
+          <button type="button" class="add-user-btn" (click)="openCreateUserModal()">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Add New User
+          </button>
         </div>
-        <p class="empty-state">User management features coming soon.</p>
+
+        <div class="users-filters">
+          <div class="search-filter">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+              <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <input type="text" placeholder="Search users by name or email..." class="filter-input" [value]="userSearchQuery()" (input)="setUserSearchQuery(userSearchInput.value)" #userSearchInput>
+          </div>
+          <select class="filter-select" [value]="userRoleFilter()" (change)="setUserRoleFilter(roleSelect.value)" #roleSelect>
+            <option value="">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="coordinator">Coordinator</option>
+            <option value="volunteer">Volunteer</option>
+          </select>
+        </div>
+
+        <div class="users-table-container">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Joined Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of filteredUsers(); track user.id) {
+              <tr>
+                <td>#{{ user.id }}</td>
+                <td class="user-name">{{ user.name }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <span class="role-badge" [class]="'role-' + user.role">
+                    {{ user.role }}
+                  </span>
+                </td>
+                <td>{{ user.created_at | date: 'MMM d, yyyy' }}</td>
+                <td>
+                  <div class="action-buttons">
+                    <button type="button" class="action-btn edit-btn" (click)="openEditUserModal(user)" title="Edit">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn reset-btn" (click)="openResetPasswordModal(user.id)" title="Reset Password">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M12 15V17M6 21H18C19.1046 21 20 20.1046 20 19V11C20 9.89543 19.1046 9 18 9H6C4.89543 9 4 9.89543 4 11V19C4 20.1046 4.89543 21 6 21ZM16 9V7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7V9H16Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <button type="button" class="action-btn delete-btn" (click)="confirmDeleteUser(user.id)" title="Delete">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              } @empty {
+              <tr>
+                <td colspan="6">
+                  <p class="empty-state">No user records found.</p>
+                </td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination-container">
+          <div class="pagination-info">
+            Showing <strong>{{ filteredUsers().length }}</strong> user(s)
+          </div>
+        </div>
       </section>
       }
 
@@ -1524,6 +1610,128 @@
       <button type="button" class="outline-btn" (click)="closeDeleteVolunteerModal()">Cancel</button>
       <button type="button" class="danger-btn" (click)="deleteVolunteer()">Delete Volunteer</button>
     </div>
+  </section>
+</div>
+}
+
+@if (showUserModal()) {
+<div class="modal-backdrop">
+  <section class="modal-card user-modal">
+    <div class="modal-header">
+      <h3>{{ editingUser() ? 'Edit User' : 'Add New User' }}</h3>
+      <button type="button" class="modal-close-btn" (click)="closeUserModal()">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="userForm" (ngSubmit)="saveUser()">
+      <div class="form-group">
+        <label for="user-name">Full Name *</label>
+        <input id="user-name" type="text" formControlName="name" placeholder="John Doe" class="form-input" />
+        @if (userForm.get('name')?.invalid && userForm.get('name')?.touched) {
+          <span class="form-error">Name is required</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="user-email">Email Address *</label>
+        <input id="user-email" type="email" formControlName="email" placeholder="john@example.com" class="form-input" />
+        @if (userForm.get('email')?.invalid && userForm.get('email')?.touched) {
+          <span class="form-error">Valid email is required</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="user-role">Role *</label>
+        <select id="user-role" formControlName="role" class="form-input">
+          <option value="" disabled selected>Select Role</option>
+          <option value="admin">Admin</option>
+          <option value="coordinator">Coordinator</option>
+          <option value="volunteer">Volunteer</option>
+        </select>
+        @if (userForm.get('role')?.invalid && userForm.get('role')?.touched) {
+          <span class="form-error">Role is required</span>
+        }
+      </div>
+
+      @if (!editingUser()) {
+        <div class="form-group">
+          <label for="user-password">Password *</label>
+          <input id="user-password" type="password" formControlName="password" placeholder="Min 8 characters" class="form-input" />
+          @if (userForm.get('password')?.invalid && userForm.get('password')?.touched) {
+            <span class="form-error">Valid password is required</span>
+          }
+        </div>
+        <div class="form-group">
+          <label for="user-confirm-password">Confirm Password *</label>
+          <input id="user-confirm-password" type="password" formControlName="confirmPassword" placeholder="Confirm password" class="form-input" />
+          @if (userForm.get('confirmPassword')?.invalid && userForm.get('confirmPassword')?.touched) {
+            <span class="form-error">Passwords must match</span>
+          }
+        </div>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeUserModal()">Cancel</button>
+        <button type="submit" class="primary-btn">{{ editingUser() ? 'Update User' : 'Create User' }}</button>
+      </div>
+    </form>
+  </section>
+</div>
+}
+
+@if (showDeleteUserModal()) {
+<div class="modal-backdrop" (click)="closeDeleteUserModal()">
+  <section class="modal-card delete-modal" (click)="$event.stopPropagation()">
+    <div class="delete-modal-icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h3>Delete User</h3>
+    <p>Are you sure you want to delete this user? This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button type="button" class="outline-btn" (click)="closeDeleteUserModal()">Cancel</button>
+      <button type="button" class="danger-btn" (click)="deleteUser()">Delete User</button>
+    </div>
+  </section>
+</div>
+}
+
+@if (showResetPasswordModal()) {
+<div class="modal-backdrop">
+  <section class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Reset Password</h3>
+      <button type="button" class="modal-close-btn" (click)="closeResetPasswordModal()">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="resetPasswordForm" (ngSubmit)="resetPassword()">
+      <div class="form-group">
+        <label for="reset-password">New Password *</label>
+        <input id="reset-password" type="password" formControlName="password" class="form-input" />
+        @if (resetPasswordForm.get('password')?.invalid && resetPasswordForm.get('password')?.touched) {
+          <span class="form-error">Valid password is required</span>
+        }
+      </div>
+      <div class="form-group">
+        <label for="reset-confirm-password">Confirm New Password *</label>
+        <input id="reset-confirm-password" type="password" formControlName="confirmPassword" class="form-input" />
+        @if (resetPasswordForm.get('confirmPassword')?.invalid && resetPasswordForm.get('confirmPassword')?.touched) {
+          <span class="form-error">Passwords must match</span>
+        }
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeResetPasswordModal()">Cancel</button>
+        <button type="submit" class="primary-btn">Reset Password</button>
+      </div>
+    </form>
   </section>
 </div>
 }
