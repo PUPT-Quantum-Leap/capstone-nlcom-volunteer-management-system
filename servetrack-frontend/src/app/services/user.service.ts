@@ -52,6 +52,18 @@ export class UserService {
     });
   }
 
+  softDeleteUser(id: number): Observable<ApiResponse<void>> {
+    return this.http.patch<ApiResponse<void>>(`${this.baseUrl}/${id}/soft-delete`, {}, {
+      withCredentials: true,
+    });
+  }
+
+  restoreUser(id: number): Observable<ApiResponse<void>> {
+    return this.http.patch<ApiResponse<void>>(`${this.baseUrl}/${id}/restore`, {}, {
+      withCredentials: true,
+    });
+  }
+
   resetPassword(id: number, password: string): Observable<ApiResponse<void>> {
     return this.http.post<ApiResponse<void>>(`${this.baseUrl}/${id}/reset-password`, { password }, {
       withCredentials: true,
