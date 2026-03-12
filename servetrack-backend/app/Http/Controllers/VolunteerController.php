@@ -581,7 +581,20 @@ class VolunteerController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Volunteer::with([
+        // Check if we want archived volunteers
+        $showArchived = $request->query('archived') === 'true';
+
+        // Build query with proper soft delete handling
+        if ($showArchived) {
+            // Show only archived (soft-deleted) volunteers
+            $query = Volunteer::onlyTrashed();
+        } else {
+            // Show only active volunteers (default)
+            $query = Volunteer::query();
+        }
+
+        // Add eager loading
+        $query->with([
             'experiences',
             'skills',
             'trainings',
@@ -615,7 +628,7 @@ class VolunteerController extends Controller
         $sortOrder = $request->query('order') === 'asc' ? 'asc' : 'desc';
 
         // Log sorting for security audit
-        Log::debug('Sorting volunteers', ['sortBy' => $sortBy, 'sortOrder' => $sortOrder]);
+        Log::debug('Sorting volunteers', ['sortBy' => $sortBy, 'sortOrder' => $sortOrder, 'showArchived' => $showArchived]);
 
         $query->orderBy($sortBy, $sortOrder);
 
@@ -880,5 +893,53 @@ class VolunteerController extends Controller
                 ['is_leader' => $leadingLifegroup === 'yes' ? 1 : 0]
             );
         }
+    }
+
+    /**
+     * Soft delete a volunteer (archive)
+     */
+    public function softDelete(Request $request, int $id): JsonResponse
+    {
+        $volunteer = Volunteer::withTrashed()->find($id);
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Volunteer not found.',
+            ], 404);
+        }
+
+        // Use Laravel's soft delete method
+        if (! $volunteer->trashed()) {
+            $volunteer->delete(); // This sets deleted_at automatically
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Volunteer archived successfully.',
+        ]);
+    }
+
+    /**
+     * Restore a soft-deleted volunteer
+     */
+    public function restore(Request $request, int $id): JsonResponse
+    {
+        $volunteer = Volunteer::onlyTrashed()->find($id);
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Archived volunteer not found.',
+            ], 404);
+        }
+
+        // Use Laravel's restore method
+        $volunteer->restore(); // This clears deleted_at automatically
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Volunteer restored successfully.',
+        ]);
     }
 }

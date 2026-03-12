@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\PollController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\VolunteerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -56,7 +57,15 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
     Route::get('/volunteers', [VolunteerController::class, 'index']);
     Route::get('/volunteers/{id}', [VolunteerController::class, 'show']);
+    Route::patch('/volunteers/{id}/soft-delete', [VolunteerController::class, 'softDelete']);
+    Route::patch('/volunteers/{id}/restore', [VolunteerController::class, 'restore']);
     Route::get('/admin/volunteers/{id}/change-history', [VolunteerController::class, 'changeHistory']);
+
+    // User management — CRUD for users (admin only)
+    Route::apiResource('/users', UserController::class);
+    Route::patch('/users/{id}/soft-delete', [UserController::class, 'softDelete']);
+    Route::patch('/users/{id}/restore', [UserController::class, 'restore']);
+    Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
 
     // Poll management — full CRUD + status toggle (admin only)
     Route::post('/polls', [PollController::class, 'store']);
