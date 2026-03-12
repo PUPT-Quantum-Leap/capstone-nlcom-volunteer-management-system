@@ -5,4 +5,5 @@ export interface User {
   role: 'admin' | 'coordinator' | 'volunteer';
   created_at: string;
   updated_at: string;
+  deleted_at?: string | null;
 }
