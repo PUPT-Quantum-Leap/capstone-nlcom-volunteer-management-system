@@ -2416,11 +2416,13 @@ a:focus-visible {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    margin-bottom: 1rem;
 
     label {
       font-size: 0.875rem;
       font-weight: 600;
       color: #374151;
+      padding-bottom: 0.25rem;
 
       .required {
         color: #ef4444;
@@ -2430,7 +2432,7 @@ a:focus-visible {
     .form-input,
     textarea {
       width: 100%;
-      padding: 0.75rem;
+      padding: 0.75rem 1rem;
       border: 1px solid #d1d5db;
       border-radius: 8px;
       font-size: 0.875rem;
@@ -2456,7 +2458,7 @@ a:focus-visible {
     .error-message {
       font-size: 0.75rem;
       color: #ef4444;
-      margin-top: -0.25rem;
+      margin-top: 0.25rem;
     }
   }
 
@@ -2670,4 +2672,43 @@ a:focus-visible {
 .user-modal {
   max-width: 600px;
   width: 95%;
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+
+    label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--slate-700);
+      padding-bottom: 0.25rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--slate-300);
+      border-radius: 8px;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+
+      &:focus {
+        outline: none;
+        border-color: var(--blue-600);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+
+      &::placeholder {
+        color: var(--slate-400);
+      }
+    }
+
+    .form-error {
+      font-size: 0.75rem;
+      color: #ef4444;
+      margin-top: 0.25rem;
+    }
+  }
 }
