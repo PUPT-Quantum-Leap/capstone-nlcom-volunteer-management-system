@@ -1568,7 +1568,7 @@
       </button>
     </div>
 
-    <form [formGroup]="userForm" (ngSubmit)="saveUser()">
+    <form [formGroup]="userForm" (ngSubmit)="saveUser()" autocomplete="off">
       <div class="form-group">
         <label for="user-name">Full Name *</label>
         <input id="user-name" type="text" formControlName="name" class="form-input" />

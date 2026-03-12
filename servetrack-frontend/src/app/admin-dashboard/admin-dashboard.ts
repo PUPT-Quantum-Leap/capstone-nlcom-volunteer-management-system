@@ -376,7 +376,13 @@ export class AdminDashboard implements OnInit {
 
   openCreateUserModal(): void {
     this.editingUser.set(null);
-    this.userForm.reset();
+    this.userForm.reset({
+      name: '',
+      email: '',
+      role: '',
+      password: '',
+      confirmPassword: ''
+    });
     this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(8)]);
     this.userForm.get('confirmPassword')?.setValidators(Validators.required);
     this.userForm.get('password')?.updateValueAndValidity();
