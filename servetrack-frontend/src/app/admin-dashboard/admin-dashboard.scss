@@ -2771,6 +2771,10 @@ a:focus-visible {
   z-index: 10000;
   animation: slideInRight 0.3s ease-out;
   
+  &.slide-out {
+    animation: slideOutRight 0.3s ease-out forwards;
+  }
+  
   &.snackbar-success {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     border-left: 4px solid #047857;
@@ -2882,6 +2886,17 @@ a:focus-visible {
   to {
     transform: translateX(0);
     opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
   }
 }
 
@@ -3086,5 +3101,23 @@ a:focus-visible {
       color: #ef4444;
       margin-top: 0.25rem;
     }
+  }
+}
+
+// Loading Spinner
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
