@@ -6,7 +6,6 @@ import {
   inject,
   OnInit,
   OnDestroy,
-  output,
 } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import {
@@ -17,27 +16,13 @@ import {
   AbstractControl,
 } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
+import { AuthService, AdminSignupData } from '../../services/auth.service';
 import { InputSanitizerService } from '../../services/input-sanitizer.service';
 import { passwordStrengthValidator, passwordMatchValidator } from '../../validators/password.validator';
 import { emailValidator } from '../../validators/form.validator';
 
 export type AuthTab = 'login' | 'signup';
-
-export interface AdminLoginPayload {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
-
-export interface AdminSignupPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  contactNumber: string;
-  password: string;
-  confirmPassword: string;
-}
 
 @Component({
   selector: 'app-auth-page',
@@ -50,11 +35,8 @@ export class AuthPage implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
   private sanitizer = inject(InputSanitizerService);
-
-  // ─── Outputs (emit instead of calling API) ───────────────────────────────
-  loginSubmit = output<AdminLoginPayload>();
-  signupSubmit = output<AdminSignupPayload>();
 
   // ─── Tab state ────────────────────────────────────────────────────────────
   activeTab = signal<AuthTab>('login');
@@ -267,41 +249,68 @@ export class AuthPage implements OnInit, OnDestroy {
   }
 
   // ─── Form submission ──────────────────────────────────────────────────────
-  onLoginSubmit(): void {
+  async onLoginSubmit(): Promise<void> {
     if (this.isLoginLoading() || this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
     }
 
-    const raw = this.loginForm.value;
-    const payload: AdminLoginPayload = {
-      email: this.sanitizer.sanitizeInput(raw.email ?? '', 'text'),
-      password: raw.password,
-      rememberMe: raw.rememberMe ?? false,
-    };
-
+    this.isLoginLoading.set(true);
     this.loginError.set(null);
-    this.loginSubmit.emit(payload);
+
+    try {
+      const raw = this.loginForm.value;
+      const credentials = {
+        email: this.sanitizer.sanitizeInput(raw.email ?? '', 'text'),
+        password: raw.password,
+      };
+
+      const response = await firstValueFrom(this.authService.adminLogin$(credentials));
+
+      if (response.success) {
+        await this.router.navigateByUrl('/admin-dashboard');
+      } else {
+        this.loginError.set(response.message || 'Invalid email or password');
+      }
+    } catch {
+      this.loginError.set('An unexpected error occurred. Please try again.');
+    } finally {
+      this.isLoginLoading.set(false);
+    }
   }
 
-  onSignupSubmit(): void {
+  async onSignupSubmit(): Promise<void> {
     if (this.isSignupLoading() || this.signupForm.invalid) {
       this.signupForm.markAllAsTouched();
       return;
     }
 
-    const raw = this.signupForm.value;
-    const payload: AdminSignupPayload = {
-      firstName: this.sanitizer.sanitizeInput(raw.firstName ?? '', 'both'),
-      lastName: this.sanitizer.sanitizeInput(raw.lastName ?? '', 'both'),
-      email: this.sanitizer.sanitizeInput(raw.email ?? '', 'text'),
-      contactNumber: this.sanitizer.sanitizeInput(raw.contactNumber ?? '', 'text'),
-      password: raw.password,
-      confirmPassword: raw.confirmPassword,
-    };
-
+    this.isSignupLoading.set(true);
     this.signupError.set(null);
-    this.signupSubmit.emit(payload);
+
+    try {
+      const raw = this.signupForm.value;
+      const adminData: AdminSignupData = {
+        firstName: this.sanitizer.sanitizeInput(raw.firstName ?? '', 'both'),
+        lastName: this.sanitizer.sanitizeInput(raw.lastName ?? '', 'both'),
+        email: this.sanitizer.sanitizeInput(raw.email ?? '', 'text'),
+        contactNumber: this.sanitizer.sanitizeInput(raw.contactNumber ?? '', 'text'),
+        password: raw.password,
+        confirmPassword: raw.confirmPassword,
+      };
+
+      const response = await firstValueFrom(this.authService.adminRegister$(adminData));
+
+      if (response.success) {
+        this.startSuccessCountdown();
+      } else {
+        this.signupError.set(response.message || 'Signup failed. Please try again.');
+      }
+    } catch {
+      this.signupError.set('An unexpected error occurred. Please try again.');
+    } finally {
+      this.isSignupLoading.set(false);
+    }
   }
 
   // ─── Success modal ────────────────────────────────────────────────────────

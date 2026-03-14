@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AuthPage } from './auth-page';
+import { AuthService } from '../../services/auth.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { of, Observable } from 'rxjs';
@@ -9,15 +10,26 @@ import { InputSanitizerService } from '../../services/input-sanitizer.service';
 describe('AuthPage Component', () => {
   let component: AuthPage;
   let fixture: ComponentFixture<AuthPage>;
+  let mockAuthService: {
+    adminLogin$: ReturnType<typeof vi.fn>;
+    adminRegister$: ReturnType<typeof vi.fn>;
+  };
   let mockRouter: {
     navigate: ReturnType<typeof vi.fn>;
+    navigateByUrl: ReturnType<typeof vi.fn>;
   };
   let mockActivatedRoute: { queryParams: Observable<Record<string, unknown>> };
   let mockSanitizer: { sanitizeInput: ReturnType<typeof vi.fn>; validateEmail: ReturnType<typeof vi.fn> };
 
   const setupTestBed = async (queryParams: Record<string, unknown> = {}) => {
+    mockAuthService = {
+      adminLogin$: vi.fn(),
+      adminRegister$: vi.fn(),
+    };
+
     mockRouter = {
       navigate: vi.fn().mockResolvedValue(true),
+      navigateByUrl: vi.fn().mockResolvedValue(true),
     };
 
     mockSanitizer = {
@@ -32,6 +44,7 @@ describe('AuthPage Component', () => {
     await TestBed.configureTestingModule({
       imports: [AuthPage, ReactiveFormsModule],
       providers: [
+        { provide: AuthService, useValue: mockAuthService },
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: InputSanitizerService, useValue: mockSanitizer },
@@ -58,6 +71,8 @@ describe('AuthPage Component', () => {
     TestBed.resetTestingModule();
   });
 
+  // ─── Creation ─────────────────────────────────────────────────────────────
+
   describe('Creation', () => {
     beforeEach(async () => {
       await setupTestBed();
@@ -67,6 +82,8 @@ describe('AuthPage Component', () => {
       expect(component).toBeTruthy();
     });
   });
+
+  // ─── Tab initialization ───────────────────────────────────────────────────
 
   describe('Tab initialization', () => {
     it('should default to login tab when no query param', async () => {
@@ -95,6 +112,8 @@ describe('AuthPage Component', () => {
     });
   });
 
+  // ─── Tab switching ────────────────────────────────────────────────────────
+
   describe('Tab switching', () => {
     beforeEach(async () => {
       await setupTestBed();
@@ -121,10 +140,9 @@ describe('AuthPage Component', () => {
       expect(component.signupError()).toBeNull();
     });
 
-    it('should not update state when switching to already active tab', () => {
-      const navigateSpy = mockRouter.navigate;
+    it('should not call router.navigate when switching to already active tab', () => {
       component.switchTab('login'); // already on login
-      expect(navigateSpy).not.toHaveBeenCalled();
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
     });
 
     it('should update query param via router.navigate when switching tabs', () => {
@@ -135,6 +153,8 @@ describe('AuthPage Component', () => {
       );
     });
   });
+
+  // ─── Keyboard navigation ──────────────────────────────────────────────────
 
   describe('Keyboard navigation', () => {
     beforeEach(async () => {
@@ -160,6 +180,8 @@ describe('AuthPage Component', () => {
       expect(component.activeTab()).toBe('login');
     });
   });
+
+  // ─── Login form ───────────────────────────────────────────────────────────
 
   describe('Login form', () => {
     beforeEach(async () => {
@@ -192,6 +214,8 @@ describe('AuthPage Component', () => {
       expect(component.loginEmailControl?.hasError('email')).toBe(false);
     });
   });
+
+  // ─── getLoginError ────────────────────────────────────────────────────────
 
   describe('getLoginError', () => {
     beforeEach(async () => {
@@ -230,67 +254,107 @@ describe('AuthPage Component', () => {
     });
   });
 
+  // ─── onLoginSubmit ────────────────────────────────────────────────────────
+
   describe('onLoginSubmit', () => {
     beforeEach(async () => {
       await setupTestBed();
     });
 
-    it('should mark form touched and not emit when form is invalid', () => {
+    it('should mark form touched and not call adminLogin$ when form is invalid', async () => {
       const markSpy = vi.spyOn(component.loginForm, 'markAllAsTouched');
-      const emitSpy = vi.fn();
-      component.loginSubmit.subscribe(emitSpy);
-
-      component.onLoginSubmit();
-
+      await component.onLoginSubmit();
       expect(markSpy).toHaveBeenCalled();
-      expect(emitSpy).not.toHaveBeenCalled();
+      expect(mockAuthService.adminLogin$).not.toHaveBeenCalled();
     });
 
-    it('should not emit when isLoginLoading is true', () => {
+    it('should not call adminLogin$ when isLoginLoading is true', async () => {
       component.loginForm.setValue({ email: 'test@example.com', password: 'password123', rememberMe: false });
       component.isLoginLoading.set(true);
-
-      const emitSpy = vi.fn();
-      component.loginSubmit.subscribe(emitSpy);
-      component.onLoginSubmit();
-
-      expect(emitSpy).not.toHaveBeenCalled();
+      await component.onLoginSubmit();
+      expect(mockAuthService.adminLogin$).not.toHaveBeenCalled();
     });
 
-    it('should emit loginSubmit with sanitized payload when form is valid', () => {
-      component.loginForm.setValue({
-        email: '  test@example.com  ',
-        password: 'password123',
-        rememberMe: true,
-      });
+    it('should call adminLogin$ with sanitized credentials when form is valid', async () => {
+      component.loginForm.setValue({ email: '  test@example.com  ', password: 'password123', rememberMe: false });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
+      mockAuthService.adminLogin$.mockReturnValue(of({ success: true }));
 
-      const emitSpy = vi.fn();
-      component.loginSubmit.subscribe(emitSpy);
-      component.onLoginSubmit();
+      await component.onLoginSubmit();
 
-      expect(emitSpy).toHaveBeenCalledWith({
+      expect(mockAuthService.adminLogin$).toHaveBeenCalledWith({
         email: 'test@example.com',
         password: 'password123',
-        rememberMe: true,
       });
     });
 
-    it('should clear loginError before emitting', () => {
-      component.loginForm.setValue({
-        email: 'test@example.com',
-        password: 'password123',
-        rememberMe: false,
-      });
+    it('should navigate to /admin-dashboard on successful login', async () => {
+      component.loginForm.setValue({ email: 'test@example.com', password: 'password123', rememberMe: false });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      component.loginError.set('some previous error');
+      mockAuthService.adminLogin$.mockReturnValue(of({ success: true }));
 
-      component.loginSubmit.subscribe(() => {});
-      component.onLoginSubmit();
+      await component.onLoginSubmit();
 
-      expect(component.loginError()).toBeNull();
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/admin-dashboard');
+    });
+
+    it('should set loginError from response.message on failed login', async () => {
+      component.loginForm.setValue({ email: 'test@example.com', password: 'password123', rememberMe: false });
+      Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
+      mockAuthService.adminLogin$.mockReturnValue(of({ success: false, message: 'Invalid credentials' }));
+
+      await component.onLoginSubmit();
+
+      expect(component.loginError()).toBe('Invalid credentials');
+      expect(mockRouter.navigateByUrl).not.toHaveBeenCalled();
+    });
+
+    it('should set default loginError when response.message is absent on failure', async () => {
+      component.loginForm.setValue({ email: 'test@example.com', password: 'password123', rememberMe: false });
+      Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
+      mockAuthService.adminLogin$.mockReturnValue(of({ success: false }));
+
+      await component.onLoginSubmit();
+
+      expect(component.loginError()).toBe('Invalid email or password');
+    });
+
+    it('should set generic loginError on thrown error', async () => {
+      component.loginForm.setValue({ email: 'test@example.com', password: 'password123', rememberMe: false });
+      Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
+      mockAuthService.adminLogin$.mockReturnValue(
+        new Observable(() => {
+          throw new Error('Network error');
+        }),
+      );
+
+      await component.onLoginSubmit();
+
+      expect(component.loginError()).toBe('An unexpected error occurred. Please try again.');
+    });
+
+    it('should reset isLoginLoading to false after success', async () => {
+      component.loginForm.setValue({ email: 'test@example.com', password: 'password123', rememberMe: false });
+      Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
+      mockAuthService.adminLogin$.mockReturnValue(of({ success: true }));
+
+      await component.onLoginSubmit();
+
+      expect(component.isLoginLoading()).toBe(false);
+    });
+
+    it('should reset isLoginLoading to false after failure', async () => {
+      component.loginForm.setValue({ email: 'test@example.com', password: 'password123', rememberMe: false });
+      Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
+      mockAuthService.adminLogin$.mockReturnValue(of({ success: false }));
+
+      await component.onLoginSubmit();
+
+      expect(component.isLoginLoading()).toBe(false);
     });
   });
+
+  // ─── Signup form ──────────────────────────────────────────────────────────
 
   describe('Signup form', () => {
     beforeEach(async () => {
@@ -328,6 +392,8 @@ describe('AuthPage Component', () => {
       expect(component.agreeToTermsControl?.hasError('required')).toBe(true);
     });
   });
+
+  // ─── getSignupError ───────────────────────────────────────────────────────
 
   describe('getSignupError', () => {
     beforeEach(async () => {
@@ -393,7 +459,6 @@ describe('AuthPage Component', () => {
       component.signupPasswordControl?.setValue('ValidPass1!ABC');
       component.confirmPasswordControl?.setValue('DifferentPass1!');
       component.confirmPasswordControl?.markAsTouched();
-      // Trigger the form-level validator by updating form validity
       component.signupForm.updateValueAndValidity();
       expect(component.getSignupError('confirmPassword')).toBe('Passwords do not match');
     });
@@ -410,33 +475,27 @@ describe('AuthPage Component', () => {
     });
   });
 
+  // ─── onSignupSubmit ───────────────────────────────────────────────────────
+
   describe('onSignupSubmit', () => {
     beforeEach(async () => {
       await setupTestBed();
     });
 
-    it('should mark form touched and not emit when form is invalid', () => {
+    it('should mark form touched and not call adminRegister$ when form is invalid', async () => {
       const markSpy = vi.spyOn(component.signupForm, 'markAllAsTouched');
-      const emitSpy = vi.fn();
-      component.signupSubmit.subscribe(emitSpy);
-
-      component.onSignupSubmit();
-
+      await component.onSignupSubmit();
       expect(markSpy).toHaveBeenCalled();
-      expect(emitSpy).not.toHaveBeenCalled();
+      expect(mockAuthService.adminRegister$).not.toHaveBeenCalled();
     });
 
-    it('should not emit when isSignupLoading is true', () => {
+    it('should not call adminRegister$ when isSignupLoading is true', async () => {
       component.isSignupLoading.set(true);
-      const emitSpy = vi.fn();
-      component.signupSubmit.subscribe(emitSpy);
-
-      component.onSignupSubmit();
-
-      expect(emitSpy).not.toHaveBeenCalled();
+      await component.onSignupSubmit();
+      expect(mockAuthService.adminRegister$).not.toHaveBeenCalled();
     });
 
-    it('should emit signupSubmit with sanitized payload when form is valid', () => {
+    it('should call adminRegister$ with sanitized payload when form is valid', async () => {
       component.signupForm.setValue({
         firstName: '  John  ',
         lastName: '  Doe  ',
@@ -447,12 +506,11 @@ describe('AuthPage Component', () => {
         agreeToTerms: true,
       });
       Object.defineProperty(component.signupForm, 'invalid', { get: () => false });
+      mockAuthService.adminRegister$.mockReturnValue(of({ success: true }));
 
-      const emitSpy = vi.fn();
-      component.signupSubmit.subscribe(emitSpy);
-      component.onSignupSubmit();
+      await component.onSignupSubmit();
 
-      expect(emitSpy).toHaveBeenCalledWith({
+      expect(mockAuthService.adminRegister$).toHaveBeenCalledWith({
         firstName: 'John',
         lastName: 'Doe',
         email: 'john@example.com',
@@ -462,7 +520,7 @@ describe('AuthPage Component', () => {
       });
     });
 
-    it('should clear signupError before emitting', () => {
+    it('should show success modal on successful signup', async () => {
       component.signupForm.setValue({
         firstName: 'John',
         lastName: 'Doe',
@@ -473,14 +531,96 @@ describe('AuthPage Component', () => {
         agreeToTerms: true,
       });
       Object.defineProperty(component.signupForm, 'invalid', { get: () => false });
-      component.signupError.set('previous error');
+      mockAuthService.adminRegister$.mockReturnValue(of({ success: true }));
+      vi.useFakeTimers();
 
-      component.signupSubmit.subscribe(() => {});
-      component.onSignupSubmit();
+      await component.onSignupSubmit();
 
-      expect(component.signupError()).toBeNull();
+      expect(component.showSuccessModal()).toBe(true);
+      expect(component.countdown()).toBe(5);
+      vi.useRealTimers();
+    });
+
+    it('should set signupError from response.message on failed signup', async () => {
+      component.signupForm.setValue({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example.com',
+        contactNumber: '',
+        password: 'ValidPass1!AB',
+        confirmPassword: 'ValidPass1!AB',
+        agreeToTerms: true,
+      });
+      Object.defineProperty(component.signupForm, 'invalid', { get: () => false });
+      mockAuthService.adminRegister$.mockReturnValue(of({ success: false, message: 'Email already taken' }));
+
+      await component.onSignupSubmit();
+
+      expect(component.signupError()).toBe('Email already taken');
+    });
+
+    it('should set default signupError when response.message is absent on failure', async () => {
+      component.signupForm.setValue({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example.com',
+        contactNumber: '',
+        password: 'ValidPass1!AB',
+        confirmPassword: 'ValidPass1!AB',
+        agreeToTerms: true,
+      });
+      Object.defineProperty(component.signupForm, 'invalid', { get: () => false });
+      mockAuthService.adminRegister$.mockReturnValue(of({ success: false }));
+
+      await component.onSignupSubmit();
+
+      expect(component.signupError()).toBe('Signup failed. Please try again.');
+    });
+
+    it('should set generic signupError on thrown error', async () => {
+      component.signupForm.setValue({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example.com',
+        contactNumber: '',
+        password: 'ValidPass1!AB',
+        confirmPassword: 'ValidPass1!AB',
+        agreeToTerms: true,
+      });
+      Object.defineProperty(component.signupForm, 'invalid', { get: () => false });
+      mockAuthService.adminRegister$.mockReturnValue(
+        new Observable(() => {
+          throw new Error('Network error');
+        }),
+      );
+
+      await component.onSignupSubmit();
+
+      expect(component.signupError()).toBe('An unexpected error occurred. Please try again.');
+    });
+
+    it('should reset isSignupLoading to false after success', async () => {
+      component.signupForm.setValue({
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@example.com',
+        contactNumber: '',
+        password: 'ValidPass1!AB',
+        confirmPassword: 'ValidPass1!AB',
+        agreeToTerms: true,
+      });
+      Object.defineProperty(component.signupForm, 'invalid', { get: () => false });
+      mockAuthService.adminRegister$.mockReturnValue(of({ success: true }));
+      vi.useFakeTimers();
+
+      await component.onSignupSubmit();
+
+      expect(component.isSignupLoading()).toBe(false);
+      vi.useRealTimers();
     });
   });
+
+  // ─── Password visibility toggles ──────────────────────────────────────────
 
   describe('Password visibility toggles', () => {
     beforeEach(async () => {
@@ -508,16 +648,20 @@ describe('AuthPage Component', () => {
     });
   });
 
+  // ─── getPasswordRequirements ───────────────────────────────────────────────
+
   describe('getPasswordRequirements', () => {
     beforeEach(async () => {
       await setupTestBed();
     });
 
-    it('should return all character requirements unmet for empty password', () => {
+    it('should return 6 requirements', () => {
+      expect(component.getPasswordRequirements()).toHaveLength(6);
+    });
+
+    it('should return character requirements unmet for empty password', () => {
       component.signupPasswordControl?.setValue('');
       const reqs = component.getPasswordRequirements();
-      // Empty string: length/uppercase/lowercase/number/special are unmet;
-      // "No repeated characters" is technically met (no chars = no repeats)
       const lengthReq = reqs.find((r) => r.label === 'At least 12 characters');
       const upperReq = reqs.find((r) => r.label === 'One uppercase letter (A-Z)');
       const lowerReq = reqs.find((r) => r.label === 'One lowercase letter (a-z)');
@@ -551,6 +695,8 @@ describe('AuthPage Component', () => {
     });
   });
 
+  // ─── Success modal ────────────────────────────────────────────────────────
+
   describe('Success modal', () => {
     beforeEach(async () => {
       await setupTestBed();
@@ -561,7 +707,7 @@ describe('AuthPage Component', () => {
       vi.useRealTimers();
     });
 
-    it('should show success modal and start countdown', () => {
+    it('should show success modal and set countdown to 5', () => {
       component.startSuccessCountdown();
       expect(component.showSuccessModal()).toBe(true);
       expect(component.countdown()).toBe(5);
@@ -597,6 +743,8 @@ describe('AuthPage Component', () => {
       expect(component.activeTab()).toBe('login');
     });
   });
+
+  // ─── Form state preservation ───────────────────────────────────────────────
 
   describe('Form state preservation on tab switch', () => {
     beforeEach(async () => {
