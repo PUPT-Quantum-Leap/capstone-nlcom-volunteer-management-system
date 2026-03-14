@@ -574,18 +574,32 @@ export class AdminDashboard implements OnInit {
         email: val.email!,
         role: val.role as any,
         password: val.password!
-      }).subscribe(() => {
-        this.loadUsers();
-        this.closeUserModal();
+      }).subscribe({
+        next: () => {
+          this.loadUsers();
+          this.closeUserModal();
+          this.showSnackbar('User created successfully', 'success');
+        },
+        error: (error) => {
+          console.error('Error creating user:', error);
+          this.showSnackbar('Failed to create user', 'error');
+        }
       });
     } else {
       this.userService.updateUser(editingUser.id, {
         name: val.name!,
         email: val.email!,
         role: val.role as any,
-      }).subscribe(() => {
-        this.loadUsers();
-        this.closeUserModal();
+      }).subscribe({
+        next: () => {
+          this.loadUsers();
+          this.closeUserModal();
+          this.showSnackbar('User updated successfully', 'success');
+        },
+        error: (error) => {
+          console.error('Error updating user:', error);
+          this.showSnackbar('Failed to update user', 'error');
+        }
       });
     }
   }
@@ -603,16 +617,30 @@ export class AdminDashboard implements OnInit {
   deleteUser(): void {
     const id = this.deletingUserId();
     if (id !== null) {
-      this.userService.softDeleteUser(id).subscribe(() => {
-        this.loadUsers();
-        this.closeDeleteUserModal();
+      this.userService.softDeleteUser(id).subscribe({
+        next: () => {
+          this.loadUsers();
+          this.closeDeleteUserModal();
+          this.showSnackbar('User archived successfully', 'success');
+        },
+        error: (error) => {
+          console.error('Error archiving user:', error);
+          this.showSnackbar('Failed to archive user', 'error');
+        }
       });
     }
   }
 
   restoreUser(userId: number): void {
-    this.userService.restoreUser(userId).subscribe(() => {
-      this.loadUsers();
+    this.userService.restoreUser(userId).subscribe({
+      next: () => {
+        this.loadUsers();
+        this.showSnackbar('User restored successfully', 'success');
+      },
+      error: (error) => {
+        console.error('Error restoring user:', error);
+        this.showSnackbar('Failed to restore user', 'error');
+      }
     });
   }
 
@@ -641,8 +669,15 @@ export class AdminDashboard implements OnInit {
 
     const id = this.resettingPasswordUserId();
     if (id !== null) {
-      this.userService.resetPassword(id, val.password!).subscribe(() => {
-        this.closeResetPasswordModal();
+      this.userService.resetPassword(id, val.password!).subscribe({
+        next: () => {
+          this.closeResetPasswordModal();
+          this.showSnackbar('Password reset successfully', 'success');
+        },
+        error: (error) => {
+          console.error('Error resetting password:', error);
+          this.showSnackbar('Failed to reset password', 'error');
+        }
       });
     }
   }
