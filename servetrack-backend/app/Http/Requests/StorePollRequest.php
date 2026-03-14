@@ -26,7 +26,7 @@ class StorePollRequest extends FormRequest
             'description' => ['required', 'string', 'min:10'],
             'date' => ['required', 'date', 'after_or_equal:today'],
             'cutoff_day' => ['required', 'date', 'after_or_equal:today'],
-            'cutoff_time' => ['required', 'regex:/^([01]?[0-9]|1[0-9]|2[0-3]):00$/', 'max:20'],
+            'cutoff_time' => ['required', 'regex:/^([01]?[0-9]|1[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/', 'max:20'],
             'status' => ['sometimes', 'in:draft,active,closed'],
             'share_url' => ['nullable', 'string', 'max:500'],
             'options' => ['required', 'array', 'min:1'],
