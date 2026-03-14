@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { AuthPage } from './auth-page';
+import { AdminAuthPage } from './admin-auth-page';
 import { AuthService } from '../../services/auth.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -7,9 +7,9 @@ import { of, Observable } from 'rxjs';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { InputSanitizerService } from '../../services/input-sanitizer.service';
 
-describe('AuthPage Component', () => {
-  let component: AuthPage;
-  let fixture: ComponentFixture<AuthPage>;
+describe('AdminAuthPage Component', () => {
+  let component: AdminAuthPage;
+  let fixture: ComponentFixture<AdminAuthPage>;
   let mockAuthService: {
     adminLogin$: ReturnType<typeof vi.fn>;
     adminRegister$: ReturnType<typeof vi.fn>;
@@ -42,7 +42,7 @@ describe('AuthPage Component', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [AuthPage, ReactiveFormsModule],
+      imports: [AdminAuthPage, ReactiveFormsModule],
       providers: [
         { provide: AuthService, useValue: mockAuthService },
         { provide: Router, useValue: mockRouter },
@@ -50,19 +50,19 @@ describe('AuthPage Component', () => {
         { provide: InputSanitizerService, useValue: mockSanitizer },
       ],
     })
-      .overrideComponent(AuthPage, {
+      .overrideComponent(AdminAuthPage, {
         remove: {
-          templateUrl: './auth-page.html',
-          styleUrl: './auth-page.scss',
+          templateUrl: './admin-auth-page.html',
+          styleUrl: './admin-auth-page.scss',
         },
         add: {
-          template: '<div>AuthPage Mock Template</div>',
+          template: '<div>AdminAuthPage Mock Template</div>',
           styles: [],
         },
       })
       .compileComponents();
 
-    fixture = TestBed.createComponent(AuthPage);
+    fixture = TestBed.createComponent(AdminAuthPage);
     component = fixture.componentInstance;
     fixture.detectChanges();
   };

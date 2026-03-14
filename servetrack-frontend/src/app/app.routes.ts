@@ -4,7 +4,7 @@ import { VotingPoll } from './voting-poll/voting-poll';
 import { Login } from './auth/login/login';
 import { Signup } from './auth/signup/signup';
 import { SignupForm } from './auth/signup-form/signup-form';
-import { AuthPage } from './auth/auth-page/auth-page';
+import { AdminAuthPage } from './auth/admin-auth-page/admin-auth-page';
 import { VolunteerDashboard } from './volunteer-dashboard/volunteer-dashboard';
 import { AdminDashboard } from './admin-dashboard/admin-dashboard';
 import { NotFound } from './not-found/not-found';
@@ -16,7 +16,7 @@ export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'signup', component: Signup },
   { path: 'signup-form', component: SignupForm },
-  { path: 'admin-auth', component: AuthPage },
+  { path: 'admin-auth', component: AdminAuthPage },
   { path: 'admin-login', redirectTo: 'admin-auth', pathMatch: 'full' },
   { path: 'admin-signup', redirectTo: 'admin-auth?tab=signup', pathMatch: 'full' },
   { path: 'voting-poll', component: VotingPoll },
