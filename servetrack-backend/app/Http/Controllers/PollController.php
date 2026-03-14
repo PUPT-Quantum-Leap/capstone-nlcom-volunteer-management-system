@@ -66,7 +66,8 @@ class PollController extends Controller
             ]);
 
             foreach ($request->input('options') as $optionData) {
-                $option = Option::query()->create(['text' => $optionData['text']]);
+                // Find existing option or create new one
+                $option = Option::query()->firstOrCreate(['text' => $optionData['text']]);
 
                 $poll->options()->attach($option->option_id, [
                     'time_slot' => $optionData['time_slot'],
@@ -121,7 +122,8 @@ class PollController extends Controller
 
                 // Create and attach new options
                 foreach ($request->input('options') as $optionData) {
-                    $option = Option::query()->create(['text' => $optionData['text']]);
+                    // Find existing option or create new one
+                    $option = Option::query()->firstOrCreate(['text' => $optionData['text']]);
 
                     $poll->options()->attach($option->option_id, [
                         'time_slot' => $optionData['time_slot'],
