@@ -246,6 +246,7 @@ export class AdminDashboard implements OnInit {
   });
 
   // Custom validator to ensure cutoff date is not after event date
+  // and not before current date
   private cutoffDateValidator(): ValidatorFn {
     return (formGroup: AbstractControl): ValidationErrors | null => {
       const eventDate = formGroup.get('date')?.value;
@@ -257,9 +258,15 @@ export class AdminDashboard implements OnInit {
 
       const event = new Date(eventDate);
       const cutoff = new Date(cutoffDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set to start of day
 
       if (cutoff > event) {
         return { cutoffAfterEvent: true };
+      }
+
+      if (cutoff < today) {
+        return { cutoffBeforeToday: true };
       }
 
       return null;
@@ -805,7 +812,40 @@ export class AdminDashboard implements OnInit {
       if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
         return dateString;
       }
+      
+      const shortDateMatch = dateString.match(/^(\w{3})\s+(\d{1,2})$/);
+      if (shortDateMatch) {
+        const [, month, day] = shortDateMatch;
+        const year = new Date().getFullYear();
+        const months: { [key: string]: number } = {
+          'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+          'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+        };
+        const monthNum = months[month];
+        const dayNum = parseInt(day);
+        const y = year.toString().padStart(4, '0');
+        const m = (monthNum + 1).toString().padStart(2, '0');
+        const d = dayNum.toString().padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+      
+      const fullDateMatch = dateString.match(/^(\w{3})\s+(\d{1,2}),\s+(\d{4})$/);
+      if (fullDateMatch) {
+        const [, month, day, year] = fullDateMatch;
+        const months: { [key: string]: number } = {
+          'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+          'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+        };
+        const monthNum = months[month];
+        const dayNum = parseInt(day);
+        const yearNum = parseInt(year);
+        const y = yearNum.toString().padStart(4, '0');
+        const m = (monthNum + 1).toString().padStart(2, '0');
+        const d = dayNum.toString().padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
      
+      // Fallback to original parsing
       const date = new Date(dateString);
       return date.toISOString().split('T')[0]; 
     };
