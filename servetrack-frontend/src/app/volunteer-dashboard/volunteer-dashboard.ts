@@ -17,6 +17,7 @@ import { AuthService } from '../services/auth.service';
 import { VolunteerService } from '../services/volunteer.service';
 import { PollService } from '../services/poll.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
 import { InputSanitizerService } from '../services/input-sanitizer.service';
 
 import { VolunteerProfile, VolunteerProfileResponse } from '../models/volunteer-profile';
@@ -349,12 +350,14 @@ export class VolunteerDashboard implements OnInit {
     this.isLoading.set(true);
     this.volunteerService
       .getAttendance(this.attendancePeriod(), this.attendanceSearchQuery() || undefined)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isLoading.set(false)),
+      )
       .subscribe((response) => {
         if (response.success) {
           this.attendanceItems.set(response.data ?? []);
         }
-        this.isLoading.set(false);
       });
   }
 
