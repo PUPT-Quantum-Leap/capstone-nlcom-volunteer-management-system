@@ -7,7 +7,15 @@ import {
   signal,
   DestroyRef,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
+import { 
+  FormBuilder, 
+  ReactiveFormsModule, 
+  Validators, 
+  FormArray, 
+  AbstractControl, 
+  ValidationErrors, 
+  ValidatorFn 
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { DatePipe, CommonModule } from '@angular/common';
@@ -232,6 +240,27 @@ export class AdminDashboard implements OnInit {
     return volunteers.slice(start, end);
   });
 
+  // Custom validator to ensure cutoff date is not after event date
+  private cutoffDateValidator(): ValidatorFn {
+    return (formGroup: AbstractControl): ValidationErrors | null => {
+      const eventDate = formGroup.get('date')?.value;
+      const cutoffDate = formGroup.get('cutOffDay')?.value;
+
+      if (!eventDate || !cutoffDate) {
+        return null;
+      }
+
+      const event = new Date(eventDate);
+      const cutoff = new Date(cutoffDate);
+
+      if (cutoff > event) {
+        return { cutoffAfterEvent: true };
+      }
+
+      return null;
+    };
+  }
+
   pollForm = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
     date: ['', Validators.required],
@@ -239,7 +268,7 @@ export class AdminDashboard implements OnInit {
     cutOffTime: ['', Validators.required],
     description: ['', [Validators.required, Validators.minLength(10)]],
     options: this.fb.array([]),
-  });
+  }, { validators: this.cutoffDateValidator() });
 
   volunteerForm = this.fb.group({
     firstName: ['', [Validators.required, Validators.minLength(2)]],

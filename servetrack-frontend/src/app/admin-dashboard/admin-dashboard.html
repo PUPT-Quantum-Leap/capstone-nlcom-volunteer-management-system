@@ -1296,6 +1296,9 @@
           @if (pollForm.get('cutOffDay')?.invalid && pollForm.get('cutOffDay')?.touched) {
           <span class="form-error">Cut-off date is required</span>
           }
+          @if (pollForm.errors?.['cutoffAfterEvent']) {
+          <span class="form-error">Cut-off date must not be after the event date</span>
+          }
         </div>
 
         <div class="form-group">
