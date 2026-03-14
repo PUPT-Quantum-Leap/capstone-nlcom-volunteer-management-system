@@ -1865,6 +1865,134 @@
 </div>
 }
 
+@if (showUserModal()) {
+<div class="modal-backdrop">
+  <section class="modal-card user-modal">
+    <div class="modal-header">
+      <h3>{{ editingUser() ? 'Edit User' : 'Add New User' }}</h3>
+      <button type="button" class="modal-close-btn" (click)="closeUserModal()">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="userForm" (ngSubmit)="saveUser()" autocomplete="off">
+      <div class="form-group">
+        <label for="user-name">Full Name *</label>
+        <input id="user-name" type="text" formControlName="name" class="form-input" />
+        @if (userForm.get('name')?.invalid && userForm.get('name')?.touched) {
+        <span class="form-error">Name is required</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="user-email">Email Address *</label>
+        <input id="user-email" type="email" formControlName="email" class="form-input" />
+        @if (userForm.get('email')?.invalid && userForm.get('email')?.touched) {
+        <span class="form-error">Valid email is required</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="user-role">Role *</label>
+        <select id="user-role" formControlName="role" placeholder="Select Role" class="form-input">
+          <option value="" disabled selected>Select Role</option>
+          <option value="admin">Admin</option>
+          <option value="coordinator">Coordinator</option>
+          <option value="volunteer">Volunteer</option>
+        </select>
+        @if (userForm.get('role')?.invalid && userForm.get('role')?.touched) {
+        <span class="form-error">Role is required</span>
+        }
+      </div>
+
+      @if (!editingUser()) {
+      <div class="form-group">
+        <label for="user-password">Password *</label>
+        <input id="user-password" type="password" formControlName="password"
+          class="form-input" />
+        @if (userForm.get('password')?.invalid && userForm.get('password')?.touched) {
+        <span class="form-error">Valid password is required</span>
+        }
+      </div>
+      <div class="form-group">
+        <label for="user-confirm-password">Confirm Password *</label>
+        <input id="user-confirm-password" type="password" formControlName="confirmPassword"
+          class="form-input" />
+        @if (userForm.get('confirmPassword')?.invalid && userForm.get('confirmPassword')?.touched) {
+        <span class="form-error">Passwords must match</span>
+        }
+      </div>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeUserModal()">Cancel</button>
+        <button type="submit" class="primary-btn">{{ editingUser() ? 'Update User' : 'Create User' }}</button>
+      </div>
+    </form>
+  </section>
+</div>
+}
+
+@if (showDeleteUserModal()) {
+<div class="modal-backdrop" (click)="closeDeleteUserModal()">
+  <section class="modal-card delete-modal" (click)="$event.stopPropagation()">
+    <div class="delete-modal-icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path
+          d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </div>
+    <h3>Archive User</h3>
+    <p>Are you sure you want to archive this user? The user will be hidden but can be restored later.</p>
+    <div class="modal-actions">
+      <button type="button" class="outline-btn" (click)="closeDeleteUserModal()">Cancel</button>
+      <button type="button" class="danger-btn" (click)="deleteUser()">Archive User</button>
+    </div>
+  </section>
+</div>
+}
+
+@if (showResetPasswordModal()) {
+<div class="modal-backdrop">
+  <section class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Reset Password</h3>
+      <button type="button" class="modal-close-btn" (click)="closeResetPasswordModal()">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="resetPasswordForm" (ngSubmit)="resetPassword()">
+      <div class="form-group">
+        <label for="reset-password">New Password *</label>
+        <input id="reset-password" type="password" formControlName="password" class="form-input" />
+        @if (resetPasswordForm.get('password')?.invalid && resetPasswordForm.get('password')?.touched) {
+        <span class="form-error">Valid password is required</span>
+        }
+      </div>
+      <div class="form-group">
+        <label for="reset-confirm-password">Confirm New Password *</label>
+        <input id="reset-confirm-password" type="password" formControlName="confirmPassword" class="form-input" />
+        @if (resetPasswordForm.get('confirmPassword')?.invalid && resetPasswordForm.get('confirmPassword')?.touched) {
+        <span class="form-error">Passwords must match</span>
+        }
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeResetPasswordModal()">Cancel</button>
+        <button type="submit" class="primary-btn">Reset Password</button>
+      </div>
+    </form>
+  </section>
+</div>
+}
+
 @if (showAiModal()) {
 <div class="modal-backdrop" (click)="closeAiModal()">
   <section class="modal-card ai-coming-soon-card" (click)="$event.stopPropagation()">
