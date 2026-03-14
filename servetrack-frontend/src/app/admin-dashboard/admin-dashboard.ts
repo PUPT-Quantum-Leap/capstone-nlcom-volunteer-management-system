@@ -88,10 +88,15 @@ export class AdminDashboard implements OnInit {
   showArchivedVolunteers = signal(false);
   archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
 
+  // Poll creation loading state
+  isCreatingPoll = signal(false);
+  isDeletingPoll = signal(false);
+
   // Snackbar notifications
   snackbarMessage = signal<string>('');
   snackbarVisible = signal(false);
   snackbarType = signal<'success' | 'error' | 'info'>('success');
+  snackbarSlideOut = signal(false);
 
   notifications = signal<NotificationItem[]>([]);
 
@@ -862,6 +867,9 @@ export class AdminDashboard implements OnInit {
       return;
     }
 
+    // Set loading state
+    this.isCreatingPoll.set(true);
+
     const formValue = this.pollForm.value;
 
     // Format dates for backend - date inputs return ISO strings
@@ -897,14 +905,30 @@ export class AdminDashboard implements OnInit {
 
     const editingPoll = this.editingPoll();
     if (editingPoll) {
-      this.pollService.updatePoll(editingPoll.id, payload).subscribe(() => {
-        this.loadPolls();
-        this.closePollModal();
+      this.pollService.updatePoll(editingPoll.id, payload).subscribe({
+        next: () => {
+          this.loadPolls();
+          this.closePollModal();
+          this.showSnackbar('Poll updated successfully', 'success');
+          this.isCreatingPoll.set(false);
+        },
+        error: () => {
+          this.showSnackbar('Poll update failed', 'error');
+          this.isCreatingPoll.set(false);
+        }
       });
     } else {
-      this.pollService.createPoll(payload).subscribe(() => {
-        this.loadPolls();
-        this.closePollModal();
+      this.pollService.createPoll(payload).subscribe({
+        next: () => {
+          this.loadPolls();
+          this.closePollModal();
+          this.showSnackbar('Poll created successfully', 'success');
+          this.isCreatingPoll.set(false);
+        },
+        error: () => {
+          this.showSnackbar('Poll creation failed', 'error');
+          this.isCreatingPoll.set(false);
+        }
       });
     }
   }
@@ -922,9 +946,20 @@ export class AdminDashboard implements OnInit {
   deletePoll(): void {
     const pollId = this.deletingPollId();
     if (pollId !== null) {
-      this.pollService.deletePoll(pollId).subscribe(() => {
-        this.loadPolls();
-        this.closeDeletePollModal();
+      // Set loading state
+      this.isDeletingPoll.set(true);
+
+      this.pollService.deletePoll(pollId).subscribe({
+        next: () => {
+          this.loadPolls();
+          this.closeDeletePollModal();
+          this.showSnackbar('Poll deleted successfully', 'success');
+          this.isDeletingPoll.set(false);
+        },
+        error: () => {
+          this.showSnackbar('Poll deletion failed', 'error');
+          this.isDeletingPoll.set(false);
+        }
       });
     }
   }
@@ -1057,11 +1092,17 @@ export class AdminDashboard implements OnInit {
   showSnackbar(message: string, type: 'success' | 'error' | 'info' = 'success'): void {
     this.snackbarMessage.set(message);
     this.snackbarType.set(type);
+    this.snackbarSlideOut.set(false);
     this.snackbarVisible.set(true);
 
-    // Auto-hide after 3 seconds
+    // Auto-hide after 3 seconds with slide-out animation
     setTimeout(() => {
-      this.snackbarVisible.set(false);
+      this.snackbarSlideOut.set(true);
+      
+      setTimeout(() => {
+        this.snackbarVisible.set(false);
+        this.snackbarSlideOut.set(false);
+      }, 300);
     }, 3000);
   }
 
