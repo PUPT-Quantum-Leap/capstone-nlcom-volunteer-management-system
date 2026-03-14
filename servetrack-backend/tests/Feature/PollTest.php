@@ -137,8 +137,8 @@ describe('POST /api/polls', function (): void {
             ->postJson('/api/polls', [
                 'title' => 'Rogue Poll',
                 'date' => '2026-09-27',
-                'cutoff_day' => 'Thursday',
-                'cutoff_time' => '12NN',
+                'cutoff_day' => '2026-09-26',
+                'cutoff_time' => '12:00',
                 'options' => [
                     ['text' => 'Morning', 'time_slot' => '8am - 12pm', 'capacity' => 5],
                 ],
@@ -162,8 +162,8 @@ describe('POST /api/polls', function (): void {
             ->postJson('/api/polls', [
                 'title' => 'No Options Poll',
                 'date' => '2026-09-27',
-                'cutoff_day' => 'Thursday',
-                'cutoff_time' => '12NN',
+                'cutoff_day' => '2026-09-26',
+                'cutoff_time' => '12:00',
                 'options' => [],
             ])
             ->assertUnprocessable()
@@ -177,8 +177,8 @@ describe('POST /api/polls', function (): void {
             ->postJson('/api/polls', [
                 'title' => 'Bad Options Poll',
                 'date' => '2026-09-27',
-                'cutoff_day' => 'Thursday',
-                'cutoff_time' => '12NN',
+                'cutoff_day' => '2026-09-26',
+                'cutoff_time' => '12:00',
                 'options' => [['capacity' => 0]],
             ])
             ->assertUnprocessable()
@@ -197,8 +197,8 @@ describe('PUT /api/polls/{id}', function (): void {
             ->putJson("/api/polls/{$poll->poll_id}", [
                 'title' => 'Updated Title',
                 'date' => '2026-10-01',
-                'cutoff_day' => 'Wednesday',
-                'cutoff_time' => '5PM',
+                'cutoff_day' => '2026-09-30',
+                'cutoff_time' => '17:00',
                 'options' => [
                     ['text' => 'Morning shift', 'time_slot' => '7am - 1pm', 'capacity' => 20],
                 ],
