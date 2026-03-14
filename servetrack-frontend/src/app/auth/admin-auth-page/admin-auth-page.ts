@@ -25,13 +25,13 @@ import { emailValidator } from '../../validators/form.validator';
 export type AuthTab = 'login' | 'signup';
 
 @Component({
-  selector: 'app-auth-page',
+  selector: 'app-admin-auth-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, RouterLink, NgOptimizedImage],
-  templateUrl: './auth-page.html',
-  styleUrl: './auth-page.scss',
+  templateUrl: './admin-auth-page.html',
+  styleUrl: './admin-auth-page.scss',
 })
-export class AuthPage implements OnInit, OnDestroy {
+export class AdminAuthPage implements OnInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
