@@ -1792,6 +1792,207 @@
 </div>
 }
 
+@if (showUserDetailsModal()) {
+<div class="modal-backdrop" (click)="closeUserDetailsModal()">
+  <section class="modal-card user-details-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>User Details</h3>
+      <button type="button" class="modal-close-btn" (click)="closeUserDetailsModal()">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    @if (viewingUser(); as user) {
+    <div class="user-details-content">
+      <div class="user-details-header">
+        <div class="user-avatar">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21M16 7C16 9.20914 14.2091 11 12 11C9.79086 11 8 9.20914 8 7C8 4.79086 9.79086 3 12 3C14.2091 3 16 4.79086 16 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="user-header-info">
+          <h4>{{ user.name }}</h4>
+          <span class="role-badge" [class]="'role-' + user.role">{{ user.role }}</span>
+        </div>
+      </div>
+
+      <div class="user-details-grid">
+        <div class="detail-item">
+          <label>User ID</label>
+          <p>#{{ user.id }}</p>
+        </div>
+        <div class="detail-item">
+          <label>Email Address</label>
+          <p>{{ user.email }}</p>
+        </div>
+        <div class="detail-item">
+          <label>Date Joined</label>
+          <p>{{ user.created_at | date: 'MMM d, yyyy' }}</p>
+        </div>
+        <div class="detail-item">
+          <label>Last Updated</label>
+          <p>{{ user.updated_at | date: 'MMM d, yyyy h:mm a' }}</p>
+        </div>
+        @if (user.deleted_at) {
+        <div class="detail-item full-width">
+          <label>Archived On</label>
+          <p class="text-danger">{{ user.deleted_at | date: 'MMM d, yyyy h:mm a' }}</p>
+        </div>
+        }
+      </div>
+
+      <div class="user-details-actions">
+        <button type="button" class="action-btn-full edit-btn" (click)="closeUserDetailsModal(); openEditUserModal(user)">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Edit User
+        </button>
+        <button type="button" class="action-btn-full reset-btn" (click)="closeUserDetailsModal(); openResetPasswordModal(user.id)">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 15V17M6 21H18C19.1046 21 20 20.1046 20 19V11C20 9.89543 19.1046 9 18 9H6C4.89543 9 4 9.89543 4 11V19C4 20.1046 4.89543 21 6 21ZM16 9V7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7V9H16Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Reset Password
+        </button>
+      </div>
+    </div>
+    }
+  </section>
+</div>
+}
+
+@if (showUserModal()) {
+<div class="modal-backdrop">
+  <section class="modal-card user-modal">
+    <div class="modal-header">
+      <h3>{{ editingUser() ? 'Edit User' : 'Add New User' }}</h3>
+      <button type="button" class="modal-close-btn" (click)="closeUserModal()">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="userForm" (ngSubmit)="saveUser()" autocomplete="off">
+      <div class="form-group">
+        <label for="user-name">Full Name *</label>
+        <input id="user-name" type="text" formControlName="name" class="form-input" />
+        @if (userForm.get('name')?.invalid && userForm.get('name')?.touched) {
+        <span class="form-error">Name is required</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="user-email">Email Address *</label>
+        <input id="user-email" type="email" formControlName="email" class="form-input" />
+        @if (userForm.get('email')?.invalid && userForm.get('email')?.touched) {
+        <span class="form-error">Valid email is required</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="user-role">Role *</label>
+        <select id="user-role" formControlName="role" placeholder="Select Role" class="form-input">
+          <option value="" disabled selected>Select Role</option>
+          <option value="admin">Admin</option>
+          <option value="coordinator">Coordinator</option>
+          <option value="volunteer">Volunteer</option>
+        </select>
+        @if (userForm.get('role')?.invalid && userForm.get('role')?.touched) {
+        <span class="form-error">Role is required</span>
+        }
+      </div>
+
+      @if (!editingUser()) {
+      <div class="form-group">
+        <label for="user-password">Password *</label>
+        <input id="user-password" type="password" formControlName="password"
+          class="form-input" />
+        @if (userForm.get('password')?.invalid && userForm.get('password')?.touched) {
+        <span class="form-error">Valid password is required</span>
+        }
+      </div>
+      <div class="form-group">
+        <label for="user-confirm-password">Confirm Password *</label>
+        <input id="user-confirm-password" type="password" formControlName="confirmPassword"
+          class="form-input" />
+        @if (userForm.get('confirmPassword')?.invalid && userForm.get('confirmPassword')?.touched) {
+        <span class="form-error">Passwords must match</span>
+        }
+      </div>
+      }
+
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeUserModal()">Cancel</button>
+        <button type="submit" class="primary-btn">{{ editingUser() ? 'Update User' : 'Create User' }}</button>
+      </div>
+    </form>
+  </section>
+</div>
+}
+
+@if (showDeleteUserModal()) {
+<div class="modal-backdrop" (click)="closeDeleteUserModal()">
+  <section class="modal-card delete-modal" (click)="$event.stopPropagation()">
+    <div class="delete-modal-icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path
+          d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </div>
+    <h3>Archive User</h3>
+    <p>Are you sure you want to archive this user? The user will be hidden but can be restored later.</p>
+    <div class="modal-actions">
+      <button type="button" class="outline-btn" (click)="closeDeleteUserModal()">Cancel</button>
+      <button type="button" class="danger-btn" (click)="deleteUser()">Archive User</button>
+    </div>
+  </section>
+</div>
+}
+
+@if (showResetPasswordModal()) {
+<div class="modal-backdrop">
+  <section class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Reset Password</h3>
+      <button type="button" class="modal-close-btn" (click)="closeResetPasswordModal()">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="resetPasswordForm" (ngSubmit)="resetPassword()">
+      <div class="form-group">
+        <label for="reset-password">New Password *</label>
+        <input id="reset-password" type="password" formControlName="password" class="form-input" />
+        @if (resetPasswordForm.get('password')?.invalid && resetPasswordForm.get('password')?.touched) {
+        <span class="form-error">Valid password is required</span>
+        }
+      </div>
+      <div class="form-group">
+        <label for="reset-confirm-password">Confirm New Password *</label>
+        <input id="reset-confirm-password" type="password" formControlName="confirmPassword" class="form-input" />
+        @if (resetPasswordForm.get('confirmPassword')?.invalid && resetPasswordForm.get('confirmPassword')?.touched) {
+        <span class="form-error">Passwords must match</span>
+        }
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeResetPasswordModal()">Cancel</button>
+        <button type="submit" class="primary-btn">Reset Password</button>
+      </div>
+    </form>
+  </section>
+</div>
+}
+
 @if (showAiModal()) {
 <div class="modal-backdrop" (click)="closeAiModal()">
   <section class="modal-card ai-coming-soon-card" (click)="$event.stopPropagation()">
