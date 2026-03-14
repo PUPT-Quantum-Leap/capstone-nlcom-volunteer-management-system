@@ -27,6 +27,7 @@ class Poll extends Model
     {
         return [
             'date' => 'date',
+            'cutoff_day' => 'date',
             'status' => 'string',
         ];
     }
