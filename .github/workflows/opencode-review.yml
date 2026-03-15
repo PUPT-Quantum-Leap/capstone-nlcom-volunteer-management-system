@@ -22,7 +22,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          model: openrouter/anthropic/claude-sonnet-4-20250514
+          model: openrouter/arcee-ai/trinity-large-preview:free
           use_github_token: true
           prompt: |
             Review this pull request for our Angular 21 + Laravel 12 monorepo:
