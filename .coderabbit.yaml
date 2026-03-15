@@ -1,0 +1,65 @@
+language: en-US
+
+reviews:
+  profile: chill
+  high_level_summary: true
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+  path_filters:
+    - '!**/node_modules/**'
+    - '!**/vendor/**'
+    - '!**/dist/**'
+    - '!**/.angular/**'
+    - '!**/storage/framework/**'
+    - '!**/storage/logs/**'
+  path_instructions:
+    - path: 'servetrack-frontend/**'
+      instructions: |
+        This is an Angular 21 project. Follow these guidelines:
+        - Use signals (signal(), computed()) instead of BehaviorSubjects
+        - Use standalone components with OnPush change detection
+        - Use input() and output() functions, not @Input/@Output decorators
+        - Use native control flow: @if, @for, @switch (NOT *ngIf, *ngFor)
+        - Use class bindings instead of ngClass
+        - Prefer Reactive Forms over Template-driven forms
+    - path: 'servetrack-backend/**'
+      instructions: |
+        This is a Laravel 12 project with PHP 8.2+. Follow these guidelines:
+        - Use constructor property promotion
+        - Use explicit return type declarations
+        - Follow PSR-12 coding standards (handled by Pint)
+        - Use Eloquent relationships with return type hints
+        - Avoid DB::, prefer Model::query()
+        - Use named routes with route() function
+
+tools:
+  phpstan:
+    enabled: true
+    level: max
+  phpcs:
+    enabled: true
+  phpmd:
+    enabled: true
+  eslint:
+    enabled: true
+  biome:
+    enabled: true
+  github-checks:
+    enabled: true
+  ruff:
+    enabled: false
+  trivy:
+    enabled: true
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - '**/AGENTS.md'
+      - '**/README.md'
