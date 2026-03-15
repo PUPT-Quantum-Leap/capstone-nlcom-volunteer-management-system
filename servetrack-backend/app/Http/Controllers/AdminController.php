@@ -150,6 +150,29 @@ class AdminController extends Controller
     {
         // Email normalization is now handled by NormalizeEmail middleware
 
+        // Security gate: verify invite code and email domain before any other processing.
+        $genericError = 'Registration failed. Please contact your administrator.';
+
+        $inviteCode = config('services.admin.invite_code');
+        if (empty($inviteCode) || $request->input('inviteCode') !== $inviteCode) {
+            return response()->json(['success' => false, 'message' => $genericError], 422);
+        }
+
+        $allowedDomainsRaw = config('services.admin.allowed_domains');
+        if (empty($allowedDomainsRaw)) {
+            return response()->json(['success' => false, 'message' => $genericError], 422);
+        }
+
+        $allowedDomains = array_map(
+            fn (string $d) => strtolower(trim($d)),
+            explode(',', $allowedDomainsRaw),
+        );
+
+        $emailDomain = strtolower(substr(strrchr((string) $request->input('email', ''), '@'), 1));
+        if (! in_array($emailDomain, $allowedDomains, true)) {
+            return response()->json(['success' => false, 'message' => $genericError], 422);
+        }
+
         // Validate incoming data
         $validator = Validator::make($request->all(), [
             'firstName' => 'required|string|min:2|max:50',

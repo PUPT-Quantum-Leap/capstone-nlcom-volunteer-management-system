@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'admin' => [
+        'invite_code' => env('ADMIN_INVITE_CODE'),
+        'allowed_domains' => env('ADMIN_ALLOWED_DOMAINS'),
+    ],
+
 ];
