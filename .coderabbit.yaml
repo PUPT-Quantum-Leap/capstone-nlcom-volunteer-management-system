@@ -33,25 +33,24 @@ reviews:
         - Use Eloquent relationships with return type hints
         - Avoid DB::, prefer Model::query()
         - Use named routes with route() function
-
-tools:
-  phpstan:
-    enabled: true
-    level: max
-  phpcs:
-    enabled: true
-  phpmd:
-    enabled: true
-  eslint:
-    enabled: true
-  biome:
-    enabled: true
-  github-checks:
-    enabled: true
-  ruff:
-    enabled: false
-  trivy:
-    enabled: true
+  tools:
+    phpstan:
+      enabled: true
+      level: max
+    phpcs:
+      enabled: true
+    phpmd:
+      enabled: true
+    eslint:
+      enabled: true
+    biome:
+      enabled: true
+    github-checks:
+      enabled: true
+    ruff:
+      enabled: false
+    trivy:
+      enabled: true
 
 chat:
   auto_reply: true
