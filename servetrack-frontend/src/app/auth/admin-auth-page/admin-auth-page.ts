@@ -54,6 +54,7 @@ export class AdminAuthPage implements OnInit, OnDestroy {
   showLoginPassword = signal(false);
   showSignupPassword = signal(false);
   showConfirmPassword = signal(false);
+  showInviteCode = signal(false);
   showPasswordRequirements = signal(false);
 
   // ─── Signup success modal ─────────────────────────────────────────────────
@@ -77,6 +78,7 @@ export class AdminAuthPage implements OnInit, OnDestroy {
       lastName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       email: ['', [Validators.required, emailValidator(this.sanitizer)]],
       contactNumber: ['', [Validators.pattern(/^[\+]?[1-9][\d]{0,15}$/)]],
+      inviteCode: ['', [Validators.required, Validators.minLength(8)]],
       password: ['', [Validators.required, passwordStrengthValidator()]],
       confirmPassword: ['', [Validators.required]],
       agreeToTerms: [false, [Validators.requiredTrue]],
@@ -108,6 +110,10 @@ export class AdminAuthPage implements OnInit, OnDestroy {
 
   get contactNumberControl(): AbstractControl | null {
     return this.signupForm.get('contactNumber');
+  }
+
+  get inviteCodeControl(): AbstractControl | null {
+    return this.signupForm.get('inviteCode');
   }
 
   get signupPasswordControl(): AbstractControl | null {
@@ -177,6 +183,10 @@ export class AdminAuthPage implements OnInit, OnDestroy {
     this.showConfirmPassword.update((v) => !v);
   }
 
+  toggleInviteCodeVisibility(): void {
+    this.showInviteCode.update((v) => !v);
+  }
+
   // ─── Password strength requirements ───────────────────────────────────────
   getPasswordRequirements(): { label: string; met: boolean }[] {
     const password = this.signupPasswordControl?.value ?? '';
@@ -226,6 +236,10 @@ export class AdminAuthPage implements OnInit, OnDestroy {
     }
     if (controlName === 'contactNumber') {
       if (e['pattern']) return 'Please enter a valid phone number (e.g. +639XXXXXXXXX)';
+    }
+    if (controlName === 'inviteCode') {
+      if (e['required']) return 'Invite code is required';
+      if (e['minlength']) return 'Invite code is too short';
     }
     if (controlName === 'password') {
       if (e['required']) return 'Password is required';
@@ -295,6 +309,7 @@ export class AdminAuthPage implements OnInit, OnDestroy {
         lastName: this.sanitizer.sanitizeInput(raw.lastName ?? '', 'both'),
         email: this.sanitizer.sanitizeInput(raw.email ?? '', 'text'),
         contactNumber: this.sanitizer.sanitizeInput(raw.contactNumber ?? '', 'text'),
+        inviteCode: raw.inviteCode,
         password: raw.password,
         confirmPassword: raw.confirmPassword,
       };
