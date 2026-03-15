@@ -367,6 +367,7 @@ describe('AdminAuthPage Component', () => {
         lastName: '',
         email: '',
         contactNumber: '',
+        inviteCode: '',
         password: '',
         confirmPassword: '',
         agreeToTerms: false,
@@ -378,6 +379,7 @@ describe('AdminAuthPage Component', () => {
       expect(component.lastNameControl).toBeTruthy();
       expect(component.signupEmailControl).toBeTruthy();
       expect(component.contactNumberControl).toBeTruthy();
+      expect(component.inviteCodeControl).toBeTruthy();
       expect(component.signupPasswordControl).toBeTruthy();
       expect(component.confirmPasswordControl).toBeTruthy();
       expect(component.agreeToTermsControl).toBeTruthy();
@@ -387,6 +389,7 @@ describe('AdminAuthPage Component', () => {
       expect(component.firstNameControl?.hasError('required')).toBe(true);
       expect(component.lastNameControl?.hasError('required')).toBe(true);
       expect(component.signupEmailControl?.hasError('required')).toBe(true);
+      expect(component.inviteCodeControl?.hasError('required')).toBe(true);
       expect(component.signupPasswordControl?.hasError('required')).toBe(true);
       expect(component.confirmPasswordControl?.hasError('required')).toBe(true);
       expect(component.agreeToTermsControl?.hasError('required')).toBe(true);
@@ -475,6 +478,35 @@ describe('AdminAuthPage Component', () => {
     });
   });
 
+  // ─── getSignupError — inviteCode ───────────────────────────────────────────
+
+  describe('getSignupError — inviteCode', () => {
+    beforeEach(async () => {
+      await setupTestBed();
+    });
+
+    it('should return empty string when inviteCode is not touched', () => {
+      expect(component.getSignupError('inviteCode')).toBe('');
+    });
+
+    it('should return "Invite code is required" when empty and touched', () => {
+      component.inviteCodeControl?.markAsTouched();
+      expect(component.getSignupError('inviteCode')).toBe('Invite code is required');
+    });
+
+    it('should return "Invite code is too short" when value is under 8 chars and touched', () => {
+      component.inviteCodeControl?.setValue('short');
+      component.inviteCodeControl?.markAsTouched();
+      expect(component.getSignupError('inviteCode')).toBe('Invite code is too short');
+    });
+
+    it('should return empty string when inviteCode meets minimum length', () => {
+      component.inviteCodeControl?.setValue('LongEnough1!');
+      component.inviteCodeControl?.markAsTouched();
+      expect(component.getSignupError('inviteCode')).toBe('');
+    });
+  });
+
   // ─── onSignupSubmit ───────────────────────────────────────────────────────
 
   describe('onSignupSubmit', () => {
@@ -501,6 +533,7 @@ describe('AdminAuthPage Component', () => {
         lastName: '  Doe  ',
         email: '  john@example.com  ',
         contactNumber: '+639123456789',
+        inviteCode: 'ChangeMe123!',
         password: 'ValidPass1!AB',
         confirmPassword: 'ValidPass1!AB',
         agreeToTerms: true,
@@ -515,6 +548,7 @@ describe('AdminAuthPage Component', () => {
         lastName: 'Doe',
         email: 'john@example.com',
         contactNumber: '+639123456789',
+        inviteCode: 'ChangeMe123!',
         password: 'ValidPass1!AB',
         confirmPassword: 'ValidPass1!AB',
       });
@@ -526,6 +560,7 @@ describe('AdminAuthPage Component', () => {
         lastName: 'Doe',
         email: 'john@example.com',
         contactNumber: '',
+        inviteCode: 'ChangeMe123!',
         password: 'ValidPass1!AB',
         confirmPassword: 'ValidPass1!AB',
         agreeToTerms: true,
@@ -547,6 +582,7 @@ describe('AdminAuthPage Component', () => {
         lastName: 'Doe',
         email: 'john@example.com',
         contactNumber: '',
+        inviteCode: 'ChangeMe123!',
         password: 'ValidPass1!AB',
         confirmPassword: 'ValidPass1!AB',
         agreeToTerms: true,
@@ -565,6 +601,7 @@ describe('AdminAuthPage Component', () => {
         lastName: 'Doe',
         email: 'john@example.com',
         contactNumber: '',
+        inviteCode: 'ChangeMe123!',
         password: 'ValidPass1!AB',
         confirmPassword: 'ValidPass1!AB',
         agreeToTerms: true,
@@ -583,6 +620,7 @@ describe('AdminAuthPage Component', () => {
         lastName: 'Doe',
         email: 'john@example.com',
         contactNumber: '',
+        inviteCode: 'ChangeMe123!',
         password: 'ValidPass1!AB',
         confirmPassword: 'ValidPass1!AB',
         agreeToTerms: true,
@@ -605,6 +643,7 @@ describe('AdminAuthPage Component', () => {
         lastName: 'Doe',
         email: 'john@example.com',
         contactNumber: '',
+        inviteCode: 'ChangeMe123!',
         password: 'ValidPass1!AB',
         confirmPassword: 'ValidPass1!AB',
         agreeToTerms: true,
@@ -645,6 +684,14 @@ describe('AdminAuthPage Component', () => {
       expect(component.showConfirmPassword()).toBe(false);
       component.toggleConfirmPasswordVisibility();
       expect(component.showConfirmPassword()).toBe(true);
+    });
+
+    it('should toggle invite code visibility', () => {
+      expect(component.showInviteCode()).toBe(false);
+      component.toggleInviteCodeVisibility();
+      expect(component.showInviteCode()).toBe(true);
+      component.toggleInviteCodeVisibility();
+      expect(component.showInviteCode()).toBe(false);
     });
   });
 
