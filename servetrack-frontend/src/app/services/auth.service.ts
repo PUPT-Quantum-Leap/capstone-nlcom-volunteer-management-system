@@ -49,6 +49,7 @@ export interface AdminSignupData {
   contactNumber?: string;
   password: string;
   confirmPassword: string;
+  inviteCode: string;
 }
 
 export interface CoordinatorSignupData {
