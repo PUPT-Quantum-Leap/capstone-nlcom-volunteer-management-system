@@ -51,6 +51,12 @@ export function nameValidator(sanitizer: InputSanitizerService): ValidatorFn {
   };
 }
 
+/**
+ * Validates an email control's value for presence and proper email format.
+ *
+ * @param sanitizer - Service used to validate the email format
+ * @returns `{ required: 'Email is required' }` if the value is empty, `{ invalidEmail: 'Invalid email format' }` if the value fails validation, or `null` if the value is valid
+ */
 export function emailValidator(sanitizer: InputSanitizerService): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = control.value;
@@ -69,7 +75,14 @@ export function emailValidator(sanitizer: InputSanitizerService): ValidatorFn {
   };
 }
 
-export function dateValidator(sanitizer: InputSanitizerService, fieldName: string = 'Date'): ValidatorFn {
+/**
+ * Validates a date control ensuring a value is present and not in the future.
+ *
+ * @param sanitizer - Service used to sanitize and validate the date (used to detect future dates)
+ * @param fieldName - Label used in generated error messages (defaults to `'Date'`)
+ * @returns A `ValidationErrors` object with a `required` or `futureDate` message when invalid, or `null` when valid
+ */
+export function dateValidator(sanitizer: InputSanitizerService, fieldName = 'Date'): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = control.value;
     
