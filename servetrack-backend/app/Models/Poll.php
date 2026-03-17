@@ -63,12 +63,11 @@ class Poll extends Model
             return false;
         }
 
-        $timeString = is_numeric($cutoffTime) ? $cutoffTime : strtotime($cutoffTime);
-        $cutoffDateTime = \Carbon\Carbon::parse($cutoffDay)->setTime(
-            date('H', $timeString),
-            date('i', $timeString),
-            0
-        );
+        try {
+            $cutoffDateTime = \Carbon\Carbon::parse($cutoffDay)->setTimeFromTimeString($cutoffTime);
+        } catch (\Throwable) {
+            return false;
+        }
 
         return now()->greaterThan($cutoffDateTime);
     }
