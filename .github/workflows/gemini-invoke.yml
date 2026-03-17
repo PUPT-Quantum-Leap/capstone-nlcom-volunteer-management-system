@@ -40,6 +40,9 @@ jobs:
       - name: 'Checkout Code'
         uses: 'actions/checkout@v4' # ratchet:exclude
 
+      - name: 'Create Gemini config directory'
+        run: mkdir -p ~/.gemini
+
       - name: 'Run Gemini CLI'
         id: 'run_gemini'
         uses: 'google-github-actions/run-gemini-cli@v0' # ratchet:exclude
