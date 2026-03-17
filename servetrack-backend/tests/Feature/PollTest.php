@@ -425,4 +425,76 @@ describe('POST /api/polls/{id}/vote', function (): void {
             ->postJson("/api/polls/{$poll->poll_id}/vote", ['option_id' => $options[0]->option_id])
             ->assertForbidden();
     });
+
+    it('rejects a vote when the cutoff date has passed', function (): void {
+        $user = User::factory()->volunteer()->create();
+        Volunteer::factory()->create(['user_id' => $user->id]);
+        ['poll' => $poll, 'options' => $options] = createPollWithOptions([
+            'status' => 'active',
+            'cutoff_day' => now()->subDay()->toDateString(),
+            'cutoff_time' => '23:59',
+        ]);
+
+        $this->actingAs($user)
+            ->postJson("/api/polls/{$poll->poll_id}/vote", ['option_id' => $options[0]->option_id])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'This poll has closed and is no longer accepting votes.');
+    });
+
+    it('rejects a vote when the cutoff time has passed on the same day', function (): void {
+        $user = User::factory()->volunteer()->create();
+        Volunteer::factory()->create(['user_id' => $user->id]);
+        ['poll' => $poll, 'options' => $options] = createPollWithOptions([
+            'status' => 'active',
+            'cutoff_day' => now()->toDateString(),
+            'cutoff_time' => now()->subHour()->format('H:i'),
+        ]);
+
+        $this->actingAs($user)
+            ->postJson("/api/polls/{$poll->poll_id}/vote", ['option_id' => $options[0]->option_id])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'This poll has closed and is no longer accepting votes.');
+    });
+
+    it('allows a vote when the cutoff is in the future', function (): void {
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        ['poll' => $poll, 'options' => $options] = createPollWithOptions([
+            'status' => 'active',
+            'cutoff_day' => now()->addDay()->toDateString(),
+            'cutoff_time' => '23:59',
+        ]);
+
+        $this->actingAs($user)
+            ->postJson("/api/polls/{$poll->poll_id}/vote", ['option_id' => $options[0]->option_id])
+            ->assertSuccessful()
+            ->assertJsonPath('message', 'Vote recorded successfully.');
+
+        $this->assertDatabaseHas('poll_vote', [
+            'volunteer_id' => $volunteer->volunteer_id,
+            'poll_id' => $poll->poll_id,
+            'option_id' => $options[0]->option_id,
+        ]);
+    });
+
+    it('allows a vote when cutoff is far in the future', function (): void {
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        ['poll' => $poll, 'options' => $options] = createPollWithOptions([
+            'status' => 'active',
+            'cutoff_day' => now()->addYear()->toDateString(),
+            'cutoff_time' => '23:59',
+        ]);
+
+        $this->actingAs($user)
+            ->postJson("/api/polls/{$poll->poll_id}/vote", ['option_id' => $options[0]->option_id])
+            ->assertSuccessful()
+            ->assertJsonPath('message', 'Vote recorded successfully.');
+
+        $this->assertDatabaseHas('poll_vote', [
+            'volunteer_id' => $volunteer->volunteer_id,
+            'poll_id' => $poll->poll_id,
+            'option_id' => $options[0]->option_id,
+        ]);
+    });
 });
