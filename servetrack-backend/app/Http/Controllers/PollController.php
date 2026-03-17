@@ -175,8 +175,15 @@ class PollController extends Controller
     }
 
     /**
-     * Cast a vote on a poll option.
-     * Authenticated volunteers only. One vote per volunteer per poll.
+     * Record a volunteer's vote for a specific poll option.
+     *
+     * Validates the request, enforces that the poll exists, is active, and has not passed its cutoff;
+     * requires an associated volunteer profile; ensures the volunteer has not already voted on the poll;
+     * verifies the selected option belongs to the poll and has available capacity; creates a PollVote record.
+     *
+     * @param Request $request Expects `option_id` (integer) in the request data identifying the poll option to vote for.
+     * @param int $id The poll identifier.
+     * @return JsonResponse JSON object with a `message` field confirming success or describing the error (e.g., not found, forbidden, validation or capacity errors).
      */
     public function vote(Request $request, int $id): JsonResponse
     {
@@ -192,6 +199,10 @@ class PollController extends Controller
 
         if ($poll->status !== 'active') {
             return response()->json(['message' => 'This poll is not accepting votes.'], 422);
+        }
+
+        if ($poll->isCutoffPassed()) {
+            return response()->json(['message' => 'This poll has closed and is no longer accepting votes.'], 422);
         }
 
         $volunteer = $request->user()->volunteer;

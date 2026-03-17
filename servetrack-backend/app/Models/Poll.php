@@ -43,10 +43,38 @@ class Poll extends Model
     }
 
     /**
-     * Votes cast on this poll.
+     * Get votes cast for this poll.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany HasMany relation of PollVote models using `poll_id` as the foreign key.
      */
     public function votes(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(PollVote::class, 'poll_id');
+    }
+
+    /**
+     * Determine whether the poll's cutoff datetime has already passed.
+     *
+     * If either `cutoff_day` or `cutoff_time` is empty, the method returns `false`.
+     *
+     * @return bool `true` if the current time is after the poll's cutoff datetime, `false` otherwise.
+     */
+    public function isCutoffPassed(): bool
+    {
+        $cutoffDay = $this->cutoff_day;
+        $cutoffTime = $this->cutoff_time;
+
+        if (empty($cutoffDay) || empty($cutoffTime)) {
+            return false;
+        }
+
+        $timeString = is_numeric($cutoffTime) ? $cutoffTime : strtotime($cutoffTime);
+        $cutoffDateTime = \Carbon\Carbon::parse($cutoffDay)->setTime(
+            date('H', $timeString),
+            date('i', $timeString),
+            0
+        );
+
+        return now()->greaterThan($cutoffDateTime);
     }
 }
