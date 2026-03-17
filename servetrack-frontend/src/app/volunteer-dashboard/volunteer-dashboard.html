@@ -619,85 +619,168 @@
         @case ('polls') {
           <section class="poll-grid">
             @if (polls().length === 0) {
-              <article class="panel">
-                <div class="panel-header">
-                  <h2>Active Deployment Polls</h2>
-                  <p>No active polls at the moment. Check back soon.</p>
+              <article class="panel poll-empty-panel">
+                <div class="poll-empty-state">
+                  <div class="poll-empty-icon">
+                    <svg viewBox="0 0 24 24" fill="none"
+                      aria-hidden="true">
+                      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0
+                        002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0
+                        002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <h2>No Active Polls</h2>
+                  <p>There are no deployment polls available at the
+                    moment.<br>Please check back soon for new opportunities to
+                    serve.</p>
                 </div>
               </article>
             } @else {
-              <!-- Poll selector when more than one poll is active -->
               @if (polls().length > 1) {
-                <div class="poll-tabs">
-                  @for (poll of polls(); track poll.id) {
-                    <button
-                      type="button"
-                      class="poll-tab"
-                      [class.active]="activePoll()?.id === poll.id"
-                      (click)="setActivePoll(poll)"
-                    >
-                      {{ poll.title }}
-                    </button>
-                  }
+                <div class="poll-tabs-wrapper">
+                  <span class="poll-tabs-label">Select a poll:</span>
+                  <div class="poll-tabs">
+                    @for (poll of polls(); track poll.id) {
+                      <button
+                        type="button"
+                        class="poll-tab"
+                        [class.active]="activePoll()?.id === poll.id"
+                        (click)="setActivePoll(poll)"
+                      >
+                        {{ poll.title }}
+                      </button>
+                    }
+                  </div>
                 </div>
               }
 
               @if (activePoll(); as poll) {
-                <article class="panel">
-                  <div class="panel-header">
-                    <h2>{{ poll.title }} ({{ poll.date }})</h2>
-                    <p>
-                      Cut-off:&nbsp;<strong>{{ poll.cutOffDay }} {{ poll.cutOffTime }}</strong>
-                    </p>
+                <article class="panel poll-panel">
+                  <div class="poll-header">
+                    <div class="poll-title-section">
+                      <h2>{{ poll.title }}</h2>
+                      <span class="poll-date">{{ poll.date }}</span>
+                    </div>
+                    <div class="poll-deadline">
+                      <span class="deadline-label">Voting closes:</span>
+                      <span class="deadline-value">{{ poll.cutOffDay }} at
+                        {{ poll.cutOffTime }}</span>
+                    </div>
                   </div>
 
                   @if (poll.description) {
-                    <p class="section-text">{{ poll.description }}</p>
+                    <div class="poll-description">
+                      <p>{{ poll.description }}</p>
+                    </div>
                   }
 
-                  <h3 class="section-text">Select your preferred time slot</h3>
+                  <div class="poll-instruction">
+                    <svg class="instruction-icon" viewBox="0 0 24 24"
+                      fill="none" aria-hidden="true">
+                      <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9
+                        0 0118 0z" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Select your preferred time slot below</span>
+                  </div>
 
                   <div class="poll-options">
                     @for (option of poll.options; track option.id) {
                       <button
                         type="button"
-                        class="poll-option"
+                        class="poll-option-card"
                         [class.active]="selectedOptionId() === option.id"
-                        [class.disabled]="isOptionFull(option)"
+                        [class.full]="isOptionFull(option)"
                         [disabled]="hasSubmittedVote() || isOptionFull(option)"
                         (click)="selectOption(option.id)"
                       >
-                        <span class="option-label">{{ option.timeSlot }}</span>
-                        <span class="poll-meta">
-                          {{ getVotePercentage(option) }}%
-                          &nbsp;({{ option.votes }}&nbsp;/&nbsp;{{ option.capacity }})
-                        </span>
-                        @if (isOptionFull(option)) {
-                          <span class="full-badge">FULL</span>
-                        } @else {
-                          <span class="slots-remaining">{{ getRemainingSlots(option) }} slots left</span>
-                        }
+                        <div class="option-main">
+                          <div class="option-radio">
+                            @if (selectedOptionId() === option.id) {
+                              <span class="radio-dot selected"></span>
+                            } @else if (isOptionFull(option)) {
+                              <span class="radio-dot disabled"></span>
+                            } @else {
+                              <span class="radio-dot"></span>
+                            }
+                          </div>
+                          <div class="option-details">
+                            <span class="option-time">{{ option.timeSlot }}</span>
+                            <div class="option-progress">
+                              <div class="progress-bar">
+                                <div class="progress-fill"
+                                  [style.width.%]="getVotePercentage(option)">
+                                </div>
+                              </div>
+                              <span class="progress-text">{{ option.votes }}
+                                of {{ option.capacity }} volunteers</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="option-status">
+                          @if (isOptionFull(option)) {
+                            <span class="status-badge status-full">
+                              <svg viewBox="0 0 24 24" fill="none"
+                                aria-hidden="true">
+                                <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9
+                                  9 0 0118 0z" stroke="currentColor"
+                                  stroke-width="2" stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                              </svg>
+                              Full
+                            </span>
+                          } @else {
+                            <span class="status-badge status-available">
+                              <svg viewBox="0 0 24 24" fill="none"
+                                aria-hidden="true">
+                                <path d="M5 13l4 4L19 7"
+                                  stroke="currentColor" stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                              </svg>
+                              {{ getRemainingSlots(option) }} spots open
+                            </span>
+                          }
+                        </div>
                       </button>
                     }
                   </div>
 
                   @if (pollError()) {
-                    <p class="error-message">{{ pollError() }}</p>
+                    <div class="poll-error">
+                      <svg viewBox="0 0 24 24" fill="none"
+                        aria-hidden="true">
+                        <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0
+                          0118 0z" stroke="currentColor" stroke-width="2"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      <span>{{ pollError() }}</span>
+                    </div>
                   }
 
                   <div class="poll-actions">
                     <button
                       type="button"
-                      class="primary-btn"
-                      [disabled]="selectedOptionId() === null || hasSubmittedVote() || isLoading()"
+                      class="primary-btn poll-submit-btn"
+                      [disabled]="selectedOptionId() === null ||
+                        hasSubmittedVote() || isLoading()"
                       (click)="submitPollVote()"
                     >
                       @if (isLoading()) {
-                        Submitting…
+                        <span class="btn-spinner"></span>
+                        Submitting...
                       } @else if (hasSubmittedVote()) {
+                        <svg viewBox="0 0 24 24" fill="none"
+                          aria-hidden="true">
+                          <path d="M5 13l4 4L19 7" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round"/>
+                        </svg>
                         Vote Recorded
                       } @else {
-                        Submit Selection
+                        Submit My Vote
                       }
                     </button>
                   </div>
