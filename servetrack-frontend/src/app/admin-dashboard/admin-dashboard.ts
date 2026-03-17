@@ -817,7 +817,7 @@ export class AdminDashboard implements OnInit {
       if (shortDateMatch) {
         const [, month, day] = shortDateMatch;
         const year = new Date().getFullYear();
-        const months: { [key: string]: number } = {
+        const months: Record<string, number> = {
           'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
           'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
         };
@@ -832,7 +832,7 @@ export class AdminDashboard implements OnInit {
       const fullDateMatch = dateString.match(/^(\w{3})\s+(\d{1,2}),\s+(\d{4})$/);
       if (fullDateMatch) {
         const [, month, day, year] = fullDateMatch;
-        const months: { [key: string]: number } = {
+        const months: Record<string, number> = {
           'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
           'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
         };
@@ -860,7 +860,7 @@ export class AdminDashboard implements OnInit {
      
       const timeMatch = timeString.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
       if (timeMatch) {
-        let [, hours, minutes, ampm] = timeMatch;
+        const [, hours, minutes, ampm] = timeMatch;
         let hour = parseInt(hours);
         if (ampm.toUpperCase() === 'PM' && hour !== 12) hour += 12;
         if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
@@ -934,7 +934,7 @@ export class AdminDashboard implements OnInit {
       cutoff_day: formatDateForBackend(formValue.cutOffDay!),
       cutoff_time: formatTimeForBackend(formValue.cutOffTime!),
       description: formValue.description!,
-      options: (formValue.options as Array<{ timeSlot: string; capacity: number }>).map((opt) => ({
+      options: (formValue.options as { timeSlot: string; capacity: number }[]).map((opt) => ({
         // `text` is required by the backend (stored in the `option` lookup table).
         // Use the time slot as the option text since that is the human-readable label.
         text: opt.timeSlot,

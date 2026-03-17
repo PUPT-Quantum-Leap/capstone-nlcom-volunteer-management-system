@@ -18,7 +18,7 @@ export class UserService {
   private readonly baseUrl = `${environment.apiUrl}/users`;
 
   getUsers(search?: string, role?: string): Observable<ApiResponse<User[]>> {
-    let params: any = {};
+    const params: any = {};
     if (search) params.search = search;
     if (role) params.role = role;
 
