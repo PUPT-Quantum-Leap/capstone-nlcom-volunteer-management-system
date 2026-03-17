@@ -325,7 +325,6 @@ export class VolunteerDashboard implements OnInit {
           this.attendanceItems.set(response.data ?? []);
         }
       });
-    this.mobileSidebarOpen.update((v) => !v);
   }
 
   closeMobileSidebar(): void {
