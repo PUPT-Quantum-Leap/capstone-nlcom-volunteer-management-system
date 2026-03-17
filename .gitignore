@@ -32,3 +32,5 @@ gitleaks-report.json
 
 .gemini/
 gha-creds-*.json
+
+.qwen/
