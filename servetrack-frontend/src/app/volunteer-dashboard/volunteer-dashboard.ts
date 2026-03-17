@@ -47,6 +47,7 @@ export class VolunteerDashboard implements OnInit {
   currentView = signal<'overview' | 'profile' | 'schedule' | 'polls'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Volunteer');
   sidebarCollapsed = signal(false);
+  mobileSidebarOpen = signal(false);
   isLoading = signal(false);
 
   // ── Attendance (real data) ───────────────────────────────────────────────
@@ -56,7 +57,7 @@ export class VolunteerDashboard implements OnInit {
 
   attendanceTotalHours = signal(0);
   attendanceTotalEntries = signal(0);
-  attendanceGoalHours = signal(40); // configurable monthly goal
+  attendanceGoalHours = signal(40);
 
   attendanceRate = computed(() => {
     const goal = this.attendanceGoalHours();
@@ -73,17 +74,15 @@ export class VolunteerDashboard implements OnInit {
   locationAssigned = signal('—');
   taskAssigned = signal('—');
 
-  // ── Notifications ────────────────────────────────────────────────────────
   showNotifications = signal(false);
   showLogoutModal = signal(false);
   showOtherPreference = signal(false);
   searchQuery = signal('');
   notifications = signal<NotificationItem[]>([]);
   notificationCount = computed(
-    () => this.notifications().filter((notification) => !notification.read).length,
+    () => this.notifications().filter((n) => !n.read).length,
   );
 
-  // ── Polls ─────────────────────────────────────────────────────────────────
   polls = signal<Poll[]>([]);
   activePoll = signal<Poll | null>(null);
   selectedOptionId = signal<number | null>(null);
@@ -95,26 +94,18 @@ export class VolunteerDashboard implements OnInit {
     return poll ? poll.totalVotes : 0;
   });
 
-  // ── Profile ───────────────────────────────────────────────────────────────
   editingProfileId = signal<number | null>(null);
   profilePreviewUrl = signal(this.defaultPhoto);
   profiles = signal<VolunteerProfile[]>([]);
-  
-  // Store the raw profile data from the backend for accurate completion calculation
   savedProfileData = signal<VolunteerProfileResponse | null>(null);
 
-  // Success notification for profile updates
   showProfileSuccess = signal(false);
   profileSuccessMessage = signal('');
-
-  // Confirmation modal for profile save
   showSaveConfirmModal = signal(false);
 
-  // Error handling for profile updates
   showProfileError = signal(false);
   profileErrorMessage = signal('');
 
-  // Map position names to dropdown keys for volunteer preference
   private positionToKeyMap: Record<string, string> = {
     'Metro Sidewalk Sunday School (Teaching & Education)': 'sidewalk-sunday-school',
     'Mobile Kitchen Operations': 'mobile-kitchen',
@@ -165,14 +156,9 @@ export class VolunteerDashboard implements OnInit {
   );
 
   profileCompletion = computed(() => {
-    // Use savedProfileData from database for accurate completion calculation
     const savedData = this.savedProfileData();
-    
-    if (!savedData) {
-      return 0;
-    }
-    
-    // Required fields (10 total - each worth 9%)
+    if (!savedData) return 0;
+
     const requiredFields = [
       savedData.first_name,
       savedData.last_name,
@@ -185,34 +171,26 @@ export class VolunteerDashboard implements OnInit {
       savedData.educational_attainment,
       savedData.positions?.length ? true : false,
     ];
-    
-    // Optional fields (3 total - each worth ~3.33% bonus)
+
     const optionalFields = [
       savedData.training_experience,
       savedData.skills_hobbies,
       savedData.classes_training,
     ];
-    
-    // Count completed required fields
+
     let completedRequired = 0;
     for (const field of requiredFields) {
-      if (field && String(field).trim().length > 0) {
-        completedRequired++;
-      }
+      if (field && String(field).trim().length > 0) completedRequired++;
     }
-    
-    // Count completed optional fields for bonus
+
     let completedOptional = 0;
     for (const field of optionalFields) {
-      if (field && String(field).trim().length > 0) {
-        completedOptional++;
-      }
+      if (field && String(field).trim().length > 0) completedOptional++;
     }
-    
-    // Calculate percentage: required fields (90%) + optional bonus (10%)
+
     const requiredPercentage = (completedRequired / requiredFields.length) * 90;
     const optionalBonus = (completedOptional / optionalFields.length) * 10;
-    
+
     return Math.min(100, Math.round(requiredPercentage + optionalBonus));
   });
 
@@ -225,8 +203,6 @@ export class VolunteerDashboard implements OnInit {
     this.loadPolls();
   }
 
-  // ── Data loading ──────────────────────────────────────────────────────────
-
   private loadProfile(): void {
     this.volunteerService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
@@ -236,30 +212,23 @@ export class VolunteerDashboard implements OnInit {
   }
 
   private applyProfileResponse(data: VolunteerProfileResponse): void {
-    // Store the raw profile data for accurate completion calculation
     this.savedProfileData.set(data);
-    
     this.userName.set(`${data.first_name} ${data.last_name}`.trim());
 
-    // Map the first position as "task assigned" for the overview card
     if (data.positions?.length) {
       this.taskAssigned.set(data.positions.map((p) => p.name).join(', '));
     }
 
-    // Get the position key for dropdown selection
     const positionName = data.positions?.[0]?.name ?? '';
     const positionKey = this.getPositionKey(positionName);
 
-    // Get availability info
     const availabilityName = data.availabilities?.[0]?.name ?? '';
     const otherAvailability = data.availabilities?.[0]?.pivot?.custom_description ?? '';
     const availabilityKey = this.getAvailabilityKey(availabilityName);
 
-    // Get lifegroup info
     const isPartLifegroup = data.lifegroups?.length ? 'yes' : 'no';
     const isLeader = data.lifegroups?.[0]?.pivot?.is_leader ? 'yes' : 'no';
 
-    // Populate the profile form with real data
     this.profileForm.patchValue({
       firstName: data.first_name,
       lastName: data.last_name,
@@ -283,10 +252,8 @@ export class VolunteerDashboard implements OnInit {
       emergencyContactRelationship: data.emergency_contact?.relationship ?? '',
     });
 
-    // Show other preference field if position is 'other'
     this.showOtherPreference.set(positionKey === 'other');
 
-    // Mirror into the profiles roster signal so the template shows the volunteer
     const existing = this.profiles();
     const profile: VolunteerProfile = {
       id: data.volunteer_id,
@@ -322,7 +289,6 @@ export class VolunteerDashboard implements OnInit {
     this.pollService.getPolls().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       const active = response.data.filter((p) => p.status === 'active');
       this.polls.set(active);
-      // Auto-select the first active poll if none is selected
       if (active.length > 0 && !this.activePoll()) {
         this.setActivePoll(active[0]);
       }
@@ -359,6 +325,20 @@ export class VolunteerDashboard implements OnInit {
           this.attendanceItems.set(response.data ?? []);
         }
       });
+    this.mobileSidebarOpen.update((v) => !v);
+  }
+
+  closeMobileSidebar(): void {
+    this.mobileSidebarOpen.set(false);
+  }
+
+  setView(view: 'overview' | 'profile' | 'schedule' | 'polls'): void {
+    this.currentView.set(view);
+    this.closeMobileSidebar();
+  }
+
+  setSearchQuery(value: string): void {
+    this.searchQuery.set(value);
   }
 
   setAttendancePeriod(period: AttendancePeriod): void {
@@ -366,22 +346,9 @@ export class VolunteerDashboard implements OnInit {
     this.loadAttendance();
   }
 
-  searchAttendance(): void {
+  searchAttendance(query: string): void {
+    this.attendanceSearchQuery.set(query);
     this.loadAttendance();
-  }
-
-  // ── Sidebar / navigation ──────────────────────────────────────────────────
-
-  toggleSidebar(): void {
-    this.sidebarCollapsed.update((v) => !v);
-  }
-
-  setView(view: 'overview' | 'profile' | 'schedule' | 'polls'): void {
-    this.currentView.set(view);
-  }
-
-  setSearchQuery(value: string): void {
-    this.searchQuery.set(value);
   }
 
   runSearch(): void {
@@ -408,8 +375,6 @@ export class VolunteerDashboard implements OnInit {
     this.setView('overview');
   }
 
-  // ── Notifications ─────────────────────────────────────────────────────────
-
   toggleNotifications(): void {
     this.showNotifications.update((value) => !value);
   }
@@ -422,7 +387,13 @@ export class VolunteerDashboard implements OnInit {
     this.showNotifications.set(false);
   }
 
-  // ── Logout ────────────────────────────────────────────────────────────────
+  toggleSidebar(): void {
+    this.sidebarCollapsed.update((v) => !v);
+  }
+
+  toggleMobileSidebar(): void {
+    this.mobileSidebarOpen.update((v) => !v);
+  }
 
   openLogoutModal(): void {
     this.showLogoutModal.set(true);
@@ -446,8 +417,6 @@ export class VolunteerDashboard implements OnInit {
   async logout(): Promise<void> {
     this.openLogoutModal();
   }
-
-  // ── Form helpers ──────────────────────────────────────────────────────────
 
   getControl(controlName: string): AbstractControl | null {
     return this.profileForm.get(controlName);
@@ -499,13 +468,9 @@ export class VolunteerDashboard implements OnInit {
     return 'Invalid field';
   }
 
-  // ── Polls ─────────────────────────────────────────────────────────────────
-
   selectOption(optionId: number): void {
     const poll = this.activePoll();
-    if (!poll || this.hasSubmittedVote()) {
-      return;
-    }
+    if (!poll || this.hasSubmittedVote()) return;
     const option = poll.options.find((o) => o.id === optionId);
     if (option && option.votes < option.capacity) {
       this.selectedOptionId.set(optionId);
@@ -515,9 +480,7 @@ export class VolunteerDashboard implements OnInit {
   submitPollVote(): void {
     const poll = this.activePoll();
     const optionId = this.selectedOptionId();
-    if (!poll || optionId === null || this.hasSubmittedVote()) {
-      return;
-    }
+    if (!poll || optionId === null || this.hasSubmittedVote()) return;
 
     this.isLoading.set(true);
     this.pollError.set(null);
@@ -525,7 +488,6 @@ export class VolunteerDashboard implements OnInit {
       next: () => {
         this.hasSubmittedVote.set(true);
         this.isLoading.set(false);
-        // Refresh poll data to show updated vote counts
         this.loadPolls();
       },
       error: (err: { error?: { message?: string } }) => {

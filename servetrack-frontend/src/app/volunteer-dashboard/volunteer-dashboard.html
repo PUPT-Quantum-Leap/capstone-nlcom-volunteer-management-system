@@ -1,11 +1,21 @@
 <div class="dashboard-container">
-  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()"
+    [class.mobile-open]="mobileSidebarOpen()">
     <div class="sidebar-header">
-      <div class="logo-area">
-        <div class="logo-icon">ST</div>
+      <div class="logo-area" (click)="toggleSidebar()" 
+        (keydown.enter)="toggleSidebar()" role="button" tabindex="0"
+        aria-label="Toggle sidebar">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke="currentColor"
+              stroke-width="2" fill="none"/>
+            <path d="M7 12L10 15L17 8" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round"/>
+          </svg>
+        </div>
         <span class="logo-text">ServeTrack</span>
       </div>
-      <button type="button" class="sidebar-toggle" (click)="toggleSidebar()">Menu</button>
     </div>
 
     <nav class="sidebar-nav" aria-label="Main Navigation">
@@ -14,19 +24,18 @@
           <button
             type="button"
             [class.active]="currentView() === 'overview'"
-            (click)="setView('overview')"
+            (click)="setView('overview')" (keydown.enter)="setView('overview')"
             aria-label="View Overview Summary"
           >
             <span class="label nav-label">
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M4 19H20M7 16V10M12 16V6M17 16V12"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                />
+              <svg class="nav-icon overview" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2"
+                  stroke="currentColor" stroke-width="2" fill="none"/>
+                <path d="M9 11H15M9 15H15" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round"/>
+                <circle cx="7" cy="7" r="1" fill="currentColor"/>
               </svg>
-              Overview Summary
+              <span class="nav-text">Overview Summary</span>
             </span>
           </button>
         </li>
@@ -34,24 +43,17 @@
           <button
             type="button"
             [class.active]="currentView() === 'profile'"
-            (click)="setView('profile')"
+            (click)="setView('profile')" (keydown.enter)="setView('profile')"
             aria-label="View My Profile"
           >
             <span class="label nav-label">
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M12 12A4 4 0 1 0 12 4A4 4 0 0 0 12 12Z"
-                  stroke="currentColor"
-                  stroke-width="2"
-                />
-                <path
-                  d="M4 20C4 16.686 7.134 14 11 14H13C16.866 14 20 16.686 20 20"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                />
+              <svg class="nav-icon profile" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="8" r="4" stroke="currentColor"
+                  stroke-width="2"/>
+                <path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
-              My Profile
+              <span class="nav-text">My Profile</span>
             </span>
           </button>
         </li>
@@ -59,27 +61,19 @@
           <button
             type="button"
             [class.active]="currentView() === 'schedule'"
-            (click)="setView('schedule')"
+            (click)="setView('schedule')" (keydown.enter)="setView('schedule')"
             aria-label="View Attendance Log"
           >
             <span class="label nav-label">
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                  d="M8 3V6M16 3V6M4 9H20M6 6H18C19.105 6 20 6.895 20 8V19C20 20.105 19.105 21 18 21H6C4.895 21 4 20.105 4 19V8C4 6.895 4.895 6 6 6Z"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <path
-                  d="M9.5 14L11 15.5L14.5 12"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
+              <svg class="nav-icon attendance" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2"
+                  stroke="currentColor" stroke-width="2" fill="none"/>
+                <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round"/>
+                <path d="M8 14h8M8 18h6" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round"/>
               </svg>
-              Attendance Log
+              <span class="nav-text">Attendance Log</span>
             </span>
           </button>
         </li>
@@ -87,22 +81,20 @@
           <button
             type="button"
             [class.active]="currentView() === 'polls'"
-            (click)="setView('polls')"
+            (click)="setView('polls')" (keydown.enter)="setView('polls')"
             aria-label="View Volunteer Polls"
           >
             <span class="label nav-label">
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M4 7H20V20H4V7Z" stroke="currentColor" stroke-width="2" />
-                <path
-                  d="M8 11L12 15L16 11"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-                <path d="M9 4H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              <svg class="nav-icon polls" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="2" y="6" width="20" height="12" rx="2"
+                  stroke="currentColor" stroke-width="2" fill="none"/>
+                <path d="M8 2v4M16 2v4" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round"/>
+                <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                <path d="M2 12h20" stroke="currentColor" stroke-width="2"
+                  stroke-dasharray="2 2"/>
               </svg>
-              Volunteer Polls
+              <span class="nav-text">Volunteer Polls</span>
             </span>
           </button>
         </li>
@@ -120,24 +112,144 @@
     </div>
   </aside>
 
+  <!-- Mobile Sidebar -->
+  <aside class="mobile-sidebar" [class.mobile-open]="mobileSidebarOpen()">
+    <div class="mobile-sidebar-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke="currentColor"
+              stroke-width="2" fill="none"/>
+            <path d="M7 12L10 15L17 8" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="logo-text">ServeTrack</span>
+      </div>
+      <button type="button" class="mobile-logout-btn" 
+        (click)="openLogoutModal()" (keydown.enter)="openLogoutModal()"
+        aria-label="Logout">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M9 21H12M12 21L15 18M9 21L6 18" 
+            stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M16 17V14C16 12.58 14.58 9 10 9S4 12.58 4 17V20"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M12 14V17" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round"/>
+        </svg>
+        Logout
+      </button>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Mobile Navigation">
+      <ul>
+        <li>
+          <button
+            type="button"
+            [class.active]="currentView() === 'overview'"
+            (click)="setView('overview')" (keydown.enter)="setView('overview')"
+            aria-label="View Overview Summary"
+          >
+            <span class="label nav-label">
+              <svg class="nav-icon overview" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2"
+                  stroke="currentColor" stroke-width="2" fill="none"/>
+                <path d="M9 11H15M9 15H15" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round"/>
+                <circle cx="7" cy="7" r="1" fill="currentColor"/>
+              </svg>
+              <span class="nav-text">Overview Summary</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            [class.active]="currentView() === 'profile'"
+            (click)="setView('profile')" (keydown.enter)="setView('profile')"
+            aria-label="View My Profile"
+          >
+            <span class="label nav-label">
+              <svg class="nav-icon profile" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="8" r="4" stroke="currentColor"
+                  stroke-width="2"/>
+                <path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span class="nav-text">My Profile</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            [class.active]="currentView() === 'schedule'"
+            (click)="setView('schedule')" (keydown.enter)="setView('schedule')"
+            aria-label="View Attendance Log"
+          >
+            <span class="label nav-label">
+              <svg class="nav-icon attendance" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2"
+                  stroke="currentColor" stroke-width="2" fill="none"/>
+                <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round"/>
+                <path d="M8 14h8M8 18h6" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span class="nav-text">Attendance Log</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            [class.active]="currentView() === 'polls'"
+            (click)="setView('polls')" (keydown.enter)="setView('polls')"
+            aria-label="View Volunteer Polls"
+          >
+            <span class="label nav-label">
+              <svg class="nav-icon polls" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="2" y="6" width="20" height="12" rx="2"
+                  stroke="currentColor" stroke-width="2" fill="none"/>
+                <path d="M8 2v4M16 2v4" stroke="currentColor"
+                  stroke-width="2" stroke-linecap="round"/>
+                <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                <path d="M2 12h20" stroke="currentColor" stroke-width="2"
+                  stroke-dasharray="2 2"/>
+              </svg>
+              <span class="nav-text">Volunteer Polls</span>
+            </span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+
+  <div class="sidebar-overlay" [class.active]="mobileSidebarOpen()"
+    (click)="closeMobileSidebar()" (keydown.enter)="closeMobileSidebar()"
+    role="button" tabindex="0" aria-label="Close sidebar"></div>
+
   <div class="main-wrapper" [class.expanded]="sidebarCollapsed()">
     <header class="top-bar">
-      <h1 class="page-title">
-        @switch (currentView()) {
-          @case ('overview') {
-            Overview Summary
+      <div class="top-bar-left">
+        <button type="button" class="outline-btn mobile-menu-btn"
+          (click)="toggleMobileSidebar()" (keydown.enter)="toggleMobileSidebar()"
+          aria-label="Open menu">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <h1 class="page-title">
+          @switch (currentView()) {
+            @case ('overview') { Overview Summary }
+            @case ('profile') { Volunteer Profile }
+            @case ('schedule') { Attendance Log }
+            @case ('polls') { Community Polls }
           }
-          @case ('profile') {
-            Volunteer Profile
-          }
-          @case ('schedule') {
-            Attendance Log
-          }
-          @case ('polls') {
-            Community Polls
-          }
-        }
-      </h1>
+        </h1>
+      </div>
 
       <div class="top-bar-right">
         <div class="search-inline">
@@ -624,9 +736,10 @@
                   <div class="poll-empty-icon">
                     <svg viewBox="0 0 24 24" fill="none"
                       aria-hidden="true">
-                      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0
-                        002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0
-                        002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      <path
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0
+                          002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0
+                          002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                         stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
@@ -839,16 +952,19 @@
                   placeholder="Search by description..."
                   [value]="attendanceSearchQuery()"
                   (input)="attendanceSearchQuery.set(attendanceSearch.value)"
-                  (keydown.enter)="searchAttendance()"
+                  (keydown.enter)="searchAttendance(attendanceSearch.value)"
                 />
-                <button type="button" class="search-btn" (click)="searchAttendance()">
+                <button type="button" class="search-btn"
+                  (click)="searchAttendance(attendanceSearch.value)"
+                  (keydown.enter)="searchAttendance(attendanceSearch.value)">
                   Search
                 </button>
               </div>
             </div>
 
             <p class="meta">
-              Attendance entries are managed by admins. This log is read-only for volunteers.
+              Attendance entries are managed by admins.
+              This log is read-only for volunteers.
             </p>
 
             <div class="schedule-list">
@@ -862,9 +978,10 @@
                     <p>{{ item.description || 'No description' }}</p>
                   </div>
                   <div class="schedule-status">
-                    <span class="badge" [class]="getAttendanceStatusClass(item.status)">{{
-                      item.status
-                    }}</span>
+                    <span class="badge"
+                      [class]="getAttendanceStatusClass(item.status)">
+                      {{ item.status }}
+                    </span>
                   </div>
                 </article>
               } @empty {
@@ -879,50 +996,68 @@
 </div>
 
 @if (showLogoutModal()) {
-  <div class="modal-backdrop" (click)="closeLogoutModal()">
-    <section class="modal-card" (click)="$event.stopPropagation()">
+  <div class="modal-backdrop" (click)="closeLogoutModal()"
+    (keydown.enter)="closeLogoutModal()" role="button" tabindex="0"
+    aria-label="Close modal">
+    <section class="modal-card" (click)="$event.stopPropagation()" 
+      role="dialog" aria-modal="true" tabindex="-1">
       <h3>Confirm Logout</h3>
       <p>Are you sure you want to logout?</p>
       <div class="modal-actions">
-        <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
-        <button type="button" class="primary-btn" (click)="confirmLogout()">Yes, Logout</button>
+        <button type="button" class="outline-btn" 
+          (click)="closeLogoutModal()" (keydown.enter)="closeLogoutModal()">Cancel</button>
+        <button type="button" class="primary-btn" 
+          (click)="confirmLogout()" (keydown.enter)="confirmLogout()">Yes, Logout</button>
       </div>
     </section>
   </div>
 }
 
 @if (showSaveConfirmModal()) {
-  <div class="modal-backdrop" (click)="closeSaveConfirmModal()">
-    <section class="modal-card" (click)="$event.stopPropagation()">
+  <div class="modal-backdrop" (click)="closeSaveConfirmModal()"
+    (keydown.enter)="closeSaveConfirmModal()" role="button" tabindex="0"
+    aria-label="Close modal">
+    <section class="modal-card" (click)="$event.stopPropagation()" 
+      role="dialog" aria-modal="true" tabindex="-1">
       <h3>Confirm Profile Update</h3>
       <p>Are you sure you want to save your profile changes?</p>
       <div class="modal-actions">
-        <button type="button" class="outline-btn" (click)="closeSaveConfirmModal()">Cancel</button>
-        <button type="button" class="primary-btn" (click)="confirmSaveProfile()">Yes, Save</button>
+        <button type="button" class="outline-btn" 
+          (click)="closeSaveConfirmModal()" (keydown.enter)="closeSaveConfirmModal()">Cancel</button>
+        <button type="button" class="primary-btn" 
+          (click)="confirmSaveProfile()" (keydown.enter)="confirmSaveProfile()">Yes, Save</button>
       </div>
     </section>
   </div>
 }
 
 @if (showProfileSuccess()) {
-  <div class="modal-backdrop" (click)="closeProfileSuccess()">
-    <section class="modal-card" (click)="$event.stopPropagation()">
+  <div class="modal-backdrop" (click)="closeProfileSuccess()"
+    (keydown.enter)="closeProfileSuccess()" role="button" tabindex="0"
+    aria-label="Close modal">
+    <section class="modal-card" (click)="$event.stopPropagation()" 
+      role="dialog" aria-modal="true" tabindex="-1">
       <h3>Profile Updated</h3>
       <p>{{ profileSuccessMessage() || 'Your profile was updated successfully.' }}</p>
       <div class="modal-actions">
-        <button type="button" class="primary-btn" (click)="closeProfileSuccess()">OK</button>
+        <button type="button" class="primary-btn" 
+          (click)="closeProfileSuccess()" (keydown.enter)="closeProfileSuccess()">OK</button>
       </div>
     </section>
   </div>
 }
 
 @if (showProfileError()) {
-  <div class="modal-backdrop" (click)="closeProfileError()">
-    <section class="modal-card" (click)="$event.stopPropagation()">
+  <div class="modal-backdrop" (click)="closeProfileError()"
+    (keydown.enter)="closeProfileError()" role="button" tabindex="0"
+    aria-label="Close modal">
+    <section class="modal-card" (click)="$event.stopPropagation()" 
+      role="dialog" aria-modal="true" tabindex="-1">
       <h3>Update Failed</h3>
       <p>{{ profileErrorMessage() }}</p>
       <div class="modal-actions">
-        <button type="button" class="primary-btn" (click)="closeProfileError()">OK</button>
+        <button type="button" class="primary-btn" 
+          (click)="closeProfileError()" (keydown.enter)="closeProfileError()">OK</button>
       </div>
     </section>
   </div>
