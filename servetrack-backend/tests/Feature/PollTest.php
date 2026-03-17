@@ -14,11 +14,7 @@ use App\Models\Volunteer;
  */
 function createPollWithOptions(array $pollAttributes = []): array
 {
-    $defaults = [
-        'cutoff_day' => now()->addDay()->toDateString(),
-        'cutoff_time' => '23:59',
-    ];
-    $poll = Poll::factory()->create(array_merge($defaults, $pollAttributes));
+    $poll = Poll::factory()->create($pollAttributes);
 
     $options = [];
     foreach (['4:30am - 2:00pm', '1:00pm - 7:00pm'] as $slot) {
