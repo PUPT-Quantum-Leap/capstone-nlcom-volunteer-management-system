@@ -194,6 +194,10 @@ class PollController extends Controller
             return response()->json(['message' => 'This poll is not accepting votes.'], 422);
         }
 
+        if ($poll->isCutoffPassed()) {
+            return response()->json(['message' => 'This poll has closed and is no longer accepting votes.'], 422);
+        }
+
         $volunteer = $request->user()->volunteer;
 
         if (! $volunteer) {

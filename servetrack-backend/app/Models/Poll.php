@@ -49,4 +49,27 @@ class Poll extends Model
     {
         return $this->hasMany(PollVote::class, 'poll_id');
     }
+
+    /**
+     * Check if the poll's cutoff date/time has passed.
+     * Returns false if no cutoff is set (allows voting).
+     */
+    public function isCutoffPassed(): bool
+    {
+        $cutoffDay = $this->cutoff_day;
+        $cutoffTime = $this->cutoff_time;
+
+        if (empty($cutoffDay) || empty($cutoffTime)) {
+            return false;
+        }
+
+        $timeString = is_numeric($cutoffTime) ? $cutoffTime : strtotime($cutoffTime);
+        $cutoffDateTime = \Carbon\Carbon::parse($cutoffDay)->setTime(
+            date('H', $timeString),
+            date('i', $timeString),
+            0
+        );
+
+        return now()->greaterThan($cutoffDateTime);
+    }
 }
