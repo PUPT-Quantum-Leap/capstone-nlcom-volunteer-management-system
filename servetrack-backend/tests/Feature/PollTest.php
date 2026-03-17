@@ -446,18 +446,23 @@ describe('POST /api/polls/{id}/vote', function (): void {
     });
 
     it('rejects a vote when the cutoff time has passed on the same day', function (): void {
+        $fixedNow = now()->startOfDay()->addHours(12);
+        $this->travelTo($fixedNow);
+
         $user = User::factory()->volunteer()->create();
         Volunteer::factory()->create(['user_id' => $user->id]);
         ['poll' => $poll, 'options' => $options] = createPollWithOptions([
             'status' => 'active',
-            'cutoff_day' => now()->toDateString(),
-            'cutoff_time' => now()->subHour()->format('H:i'),
+            'cutoff_day' => $fixedNow->toDateString(),
+            'cutoff_time' => $fixedNow->copy()->subHour()->format('H:i'),
         ]);
 
         $this->actingAs($user)
             ->postJson("/api/polls/{$poll->poll_id}/vote", ['option_id' => $options[0]->option_id])
             ->assertUnprocessable()
             ->assertJsonPath('message', 'This poll has closed and is no longer accepting votes.');
+
+        $this->travelBack();
     });
 
     it('allows a vote when the cutoff is in the future', function (): void {
