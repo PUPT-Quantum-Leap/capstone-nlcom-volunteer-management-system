@@ -674,7 +674,11 @@
                 </span>
               </div>
               <div class="poll-item-actions">
-                <button type="button" class="poll-action-btn share-btn" (click)="openSharePollModal(poll)"
+                <button
+                  type="button"
+                  class="poll-action-btn share-btn"
+                  (click)="openSharePollModal(poll)"
+                  [attr.aria-label]="'Share poll ' + poll.title"
                   title="Share Poll">
                   <svg viewBox="0 0 24 24" fill="none">
                     <path d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 6.65685 16.3431 8 18 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
