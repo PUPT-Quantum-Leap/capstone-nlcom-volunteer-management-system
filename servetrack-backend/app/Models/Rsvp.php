@@ -36,7 +36,7 @@ class Rsvp extends Model
     public function shifts(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(TimeSlot::class, 'rsvp_shift', 'rsvp_id', 'time_slot_id')
-            ->withPivot('rsvp_shift_id', 'time_slot', 'capacity');
+            ->withPivot('time_slot', 'capacity');
     }
 
     public function responses(): \Illuminate\Database\Eloquent\Relations\HasMany

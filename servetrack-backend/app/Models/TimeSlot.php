@@ -22,7 +22,7 @@ class TimeSlot extends Model
     public function rsvps(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(Rsvp::class, 'rsvp_shift', 'time_slot_id', 'rsvp_id')
-            ->withPivot('rsvp_shift_id', 'time_slot', 'capacity');
+            ->withPivot('time_slot', 'capacity');
     }
 
     public function responses(): \Illuminate\Database\Eloquent\Relations\HasMany
