@@ -46,7 +46,6 @@
     "jsdom": "^28.1.0",
     "typescript": "~5.9.2",
     "typescript-eslint": "8.50.1",
-    "unplugin-angular": "^0.0.0-init",
     "vitest": "^4.0.18"
   },
   "overrides": {

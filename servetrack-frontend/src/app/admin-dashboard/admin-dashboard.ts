@@ -57,6 +57,8 @@ export class AdminDashboard implements OnInit {
   showLogoutModal = signal(false);
   showPollModal = signal(false);
   showDeletePollModal = signal(false);
+  showSharePollModal = signal(false);
+  sharingPoll = signal<Poll | null>(null);
   showVolunteerModal = signal(false);
   showDeleteVolunteerModal = signal(false);
   showUserModal = signal(false);
@@ -781,6 +783,37 @@ export class AdminDashboard implements OnInit {
 
   get pollOptions(): FormArray {
     return this.pollForm.get('options') as FormArray;
+  }
+
+  openSharePollModal(poll: Poll): void {
+    this.sharingPoll.set(poll);
+    this.showSharePollModal.set(true);
+  }
+
+  closeSharePollModal(): void {
+    this.sharingPoll.set(null);
+    this.showSharePollModal.set(false);
+  }
+
+  getShareLink(): string {
+    const poll = this.sharingPoll();
+    if (!poll) return '';
+    if (poll.shareUrl) return poll.shareUrl;
+    return `${window.location.origin}/voting-poll?id=${poll.id}`;
+  }
+
+  copyShareLink(): void {
+    const link = this.getShareLink();
+    if (!link) return;
+    navigator.clipboard.writeText(link).then(
+      () => {
+        this.showSnackbar('Link copied to clipboard', 'success');
+        this.closeSharePollModal();
+      },
+      () => {
+        this.showSnackbar('Failed to copy link', 'error');
+      }
+    );
   }
 
   openCreatePollModal(): void {
