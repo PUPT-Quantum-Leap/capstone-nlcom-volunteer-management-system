@@ -6,6 +6,7 @@ export interface Poll {
   cutOffTime: string;
   description: string;
   status: 'active' | 'closed' | 'draft';
+  shareUrl?: string;
   totalVotes: number;
   createdAt: string;
   options: PollOption[];

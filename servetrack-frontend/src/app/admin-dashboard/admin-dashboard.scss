@@ -2169,6 +2169,12 @@ a:focus-visible {
     height: 18px;
   }
 
+  &.share-btn:hover {
+    background: var(--green-100);
+    border-color: var(--green-600);
+    color: var(--green-700);
+  }
+
   &.edit-btn:hover {
     background: var(--blue-100);
     border-color: var(--blue-600);

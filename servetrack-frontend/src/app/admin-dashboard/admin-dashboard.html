@@ -674,6 +674,16 @@
                 </span>
               </div>
               <div class="poll-item-actions">
+                <button type="button" class="poll-action-btn share-btn" (click)="openSharePollModal(poll)"
+                  title="Share Poll">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 6.65685 16.3431 8 18 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M6 15C7.65685 15 9 13.6569 9 12C9 10.3431 7.65685 9 6 9C4.34315 9 3 10.3431 3 12C3 13.6569 4.34315 15 6 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M18 22C19.6569 22 21 20.6569 21 19C21 17.3431 19.6569 16 18 16C16.3431 16 15 17.3431 15 19C15 20.6569 16.3431 22 18 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8.59003 13.51L15.42 17.49" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M15.41 6.51001L8.59003 10.49" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
                 <button type="button" class="poll-action-btn edit-btn" (click)="openEditPollModal(poll)"
                   title="Edit Poll">
                   <svg viewBox="0 0 24 24" fill="none">
@@ -1382,6 +1392,30 @@
       </div>
     </form>
   </section>
+</div>
+}
+
+@if (showSharePollModal() && sharingPoll()) {
+<div class="modal-backdrop" (click)="closeSharePollModal()">
+  <div class="modal-content share-modal" (click)="$event.stopPropagation()" style="width: 100%; max-width: 500px; margin: auto; background: white; border-radius: 12px; padding: 24px;">
+    <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h3 style="margin: 0; font-size: 1.25rem;">Share Poll Link</h3>
+      <button type="button" class="modal-close-btn" (click)="closeSharePollModal()" style="background: none; border: none; cursor: pointer; color: #666; padding: 4px;">
+        <svg viewBox="0 0 24 24" fill="none" style="width: 24px; height: 24px;">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="color: #4b5563; margin-bottom: 16px; font-size: 0.95rem;">Share this link with volunteers to allow them to vote on the poll.</p>
+      <div class="share-link-group" style="display: flex; gap: 8px; margin-top: 16px;">
+        <input type="text" readonly [value]="getShareLink()" class="form-input share-link-input" style="flex: 1; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; background-color: #f9fafb;" />
+        <button type="button" class="copy-btn primary-btn" (click)="copyShareLink()" style="padding: 10px 16px; border-radius: 6px; font-weight: 500; cursor: pointer; color: white; background-color: #3b82f6; border: none;">
+          Copy Link
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 }
 
