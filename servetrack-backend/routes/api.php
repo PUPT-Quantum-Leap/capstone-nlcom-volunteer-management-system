@@ -15,6 +15,8 @@ Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(funct
     Route::post('/login', [LoginController::class, 'store']);
     Route::post('/admin/login', [LoginController::class, 'adminStore']);
     Route::post('/register', [RegisterController::class, 'store']);
+    Route::get('/auth/facebook', [LoginController::class, 'redirectToFacebook']);
+    Route::get('/auth/facebook/callback', [LoginController::class, 'handleFacebookCallback']);
 });
 
 // Volunteer registration - public signup with registration rate limit + email normalization
