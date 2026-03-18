@@ -1,4 +1,4 @@
-import {
+ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
@@ -816,6 +816,17 @@ export class AdminDashboard implements OnInit {
     );
   }
 
+   private pollOptionTimeRangeValidator(): ValidatorFn {
+    return (group: AbstractControl): ValidationErrors | null => {
+      const start = group.get('startTime')?.value as string | undefined;
+      const end = group.get('endTime')?.value as string | undefined;
+      if (!start || !end) {
+        return null;
+      }
+      return start < end ? null : { invalidTimeRange: true };
+    };
+  }
+
   openCreatePollModal(): void {
     this.editingPoll.set(null);
     this.pollForm.reset();
@@ -829,6 +840,26 @@ export class AdminDashboard implements OnInit {
     this.editingPoll.set(poll);
     this.pollOptions.clear();
     
+
+    const parseBackendTime = (timeString: string): string => {
+      if (!timeString) return '';
+      if (/^\d{2}:\d{2}$/.test(timeString)) {
+        return timeString;
+      }
+      if (/^\d{2}:\d{2}:\d{2}$/.test(timeString)) {
+        return timeString.substring(0, 5);
+      }
+      const timeMatch = timeString.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      if (!timeMatch) {
+        return '';
+      }
+      const [, hours, minutes, ampm] = timeMatch;
+      let hour = parseInt(hours, 10);
+      if (ampm.toUpperCase() === 'PM' && hour !== 12) hour += 12;
+      if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
+      return `${hour.toString().padStart(2, '0')}:${minutes}`;
+    };
+
     poll.options.forEach((option) => {
       let startTime = '';
       let endTime = '';
@@ -837,11 +868,11 @@ export class AdminDashboard implements OnInit {
       if (option.timeSlot) {
         const parts = option.timeSlot.split('-').map(p => p.trim());
         if (parts.length === 2) {
-          startTime = parts[0];
-          endTime = parts[1];
+          startTime = parseBackendTime(parts[0]);
+          endTime = parseBackendTime(parts[1]);
         } else {
           // Fallback if format is unexpected
-          startTime = option.timeSlot;
+          startTime = parseBackendTime(option.timeSlot);
         }
       }
 
@@ -850,7 +881,7 @@ export class AdminDashboard implements OnInit {
           startTime: [startTime, Validators.required],
           endTime: [endTime, Validators.required],
           capacity: [option.capacity, [Validators.required, Validators.min(1)]],
-        })
+        }, { validators: this.pollOptionTimeRangeValidator() })
       );
     });
 
@@ -899,25 +930,6 @@ export class AdminDashboard implements OnInit {
       return date.toISOString().split('T')[0]; 
     };
 
-    // Convert backend time strings to time input format (HH:MM)
-    const parseBackendTime = (timeString: string): string => {
-      if (!timeString) return '';
-      // Handle HH:MM:SS format from MySQL TIME column
-      if (timeString.match(/^\d{2}:\d{2}:\d{2}$/)) {
-        return timeString.substring(0, 5); 
-      }
-     
-      const timeMatch = timeString.match(/(\d{1,2}):(\d{2})(AM|PM)/i);
-      if (timeMatch) {
-        const [, hours, minutes, ampm] = timeMatch;
-        let hour = parseInt(hours);
-        if (ampm.toUpperCase() === 'PM' && hour !== 12) hour += 12;
-        if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
-        return `${hour.toString().padStart(2, '0')}:${minutes}`;
-      }
-      return '';
-    };
-
     this.pollForm.patchValue({
       title: poll.title,
       date: parseBackendDate(poll.date),
@@ -941,7 +953,7 @@ export class AdminDashboard implements OnInit {
         startTime: ['', Validators.required],
         endTime: ['', Validators.required],
         capacity: [10, [Validators.required, Validators.min(1)]],
-      })
+      }, { validators: this.pollOptionTimeRangeValidator() })
     );
   }
 
