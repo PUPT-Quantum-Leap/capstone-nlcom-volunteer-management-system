@@ -16,6 +16,18 @@ return new class extends Migration
 
         Schema::rename('poll_vote', 'rsvp_response');
 
+        Schema::table('time_slot', function (Blueprint $table) {
+            $table->renameColumn('option_id', 'time_slot_id');
+        });
+
+        Schema::table('rsvp', function (Blueprint $table) {
+            $table->renameColumn('poll_id', 'rsvp_id');
+        });
+
+        Schema::table('rsvp_shift', function (Blueprint $table) {
+            $table->renameColumn('poll_option_id', 'rsvp_shift_id');
+        });
+
         Schema::table('rsvp', function (Blueprint $table) {
             $table->string('event_location', 255)->nullable()->after('date');
         });
