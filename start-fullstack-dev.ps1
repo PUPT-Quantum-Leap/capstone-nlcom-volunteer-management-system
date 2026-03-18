@@ -1,5 +1,12 @@
 # ServeTrack Full Stack Local Development Startup Script (Windows PowerShell)
 # This script starts Laravel backend and Angular frontend in separate terminals
+# It detects if services are already running and skips them
+
+function Test-PortInUse {
+    param([int]$Port)
+    $connection = Test-NetConnection -ComputerName localhost -Port $Port -WarningAction SilentlyContinue -ErrorAction SilentlyContinue
+    return $connection.TcpTestSucceeded
+}
 
 # ASCII Art Banner
 Write-Host ""
@@ -19,53 +26,76 @@ Write-Host ""
 $backendPath  = Join-Path $PSScriptRoot "servetrack-backend"
 $frontendPath = Join-Path $PSScriptRoot "servetrack-frontend"
 
-# ── Step 1: Laravel Backend ──────────────────────────────────────────────────
-Write-Host "[STEP 1/2] Starting Laravel backend (server + queue + vite)..." -ForegroundColor Green
-Write-Host "  Runs: composer run dev" -ForegroundColor Gray
-Write-Host "  API URL:   http://localhost:8000" -ForegroundColor Gray
-Write-Host "  Vite HMR:  http://localhost:5173" -ForegroundColor Gray
-Write-Host ""
+# Detect running services
+$laravelRunning = Test-PortInUse -Port 8000
+$angularRunning = Test-PortInUse -Port 4200
 
-$backendCmd = "Write-Host '════════════════════════════════════════════════════════════' -ForegroundColor Cyan; " +
-    "Write-Host '  LARAVEL BACKEND (server + queue + vite)' -ForegroundColor Green; " +
-    "Write-Host '  API:  http://localhost:8000' -ForegroundColor Yellow; " +
-    "Write-Host '  Vite: http://localhost:5173' -ForegroundColor Yellow; " +
-    "Write-Host '════════════════════════════════════════════════════════════' -ForegroundColor Cyan; " +
-    "Write-Host ''; " +
-    "cd '$backendPath'; " +
-    "composer run dev"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd
+# ── Step 1: Laravel Backend ──────────────────────────────────────────────────────
+if ($laravelRunning) {
+    Write-Host "[SKIP] Laravel backend is already running on port 8000" -ForegroundColor Yellow
+} else {
+    Write-Host "[STEP 1/2] Starting Laravel backend (server + queue + vite)..." -ForegroundColor Green
+    Write-Host "  Runs: composer run dev" -ForegroundColor Gray
+    Write-Host "  API URL:   http://localhost:8000" -ForegroundColor Gray
+    Write-Host "  Vite HMR:  http://localhost:5173" -ForegroundColor Gray
+    Write-Host ""
 
-Write-Host "[INFO] Waiting 8 seconds for backend to initialize..." -ForegroundColor Yellow
-Start-Sleep -Seconds 8
+    $backendCmd = "Write-Host '════════════════════════════════════════════════════════════' -ForegroundColor Cyan; " +
+        "Write-Host '  LARAVEL BACKEND (server + queue + vite)' -ForegroundColor Green; " +
+        "Write-Host '  API:  http://localhost:8000' -ForegroundColor Yellow; " +
+        "Write-Host '  Vite: http://localhost:5173' -ForegroundColor Yellow; " +
+        "Write-Host '════════════════════════════════════════════════════════════' -ForegroundColor Cyan; " +
+        "Write-Host ''; " +
+        "cd '$backendPath'; " +
+        "composer run dev"
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd
 
-# ── Step 2: Angular Frontend ─────────────────────────────────────────────────
-Write-Host ""
-Write-Host "[STEP 2/2] Starting Angular frontend..." -ForegroundColor Green
-Write-Host "  Runs: npm start" -ForegroundColor Gray
-Write-Host "  Frontend URL: http://localhost:4200" -ForegroundColor Gray
-Write-Host ""
+    Write-Host "[INFO] Waiting 8 seconds for backend to initialize..." -ForegroundColor Yellow
+    Start-Sleep -Seconds 8
+}
 
-$frontendCmd = "Write-Host '════════════════════════════════════════════════════════════' -ForegroundColor Cyan; " +
-    "Write-Host '  ANGULAR FRONTEND' -ForegroundColor Green; " +
-    "Write-Host '  URL: http://localhost:4200' -ForegroundColor Yellow; " +
-    "Write-Host '════════════════════════════════════════════════════════════' -ForegroundColor Cyan; " +
-    "Write-Host ''; " +
-    "cd '$frontendPath'; " +
-    "npm start"
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $frontendCmd
+# ── Step 2: Angular Frontend ───────────────────────────────────────────────────
+if ($angularRunning) {
+    Write-Host "[SKIP] Angular frontend is already running on port 4200" -ForegroundColor Yellow
+} else {
+    Write-Host ""
+    Write-Host "[STEP 2/2] Starting Angular frontend..." -ForegroundColor Green
+    Write-Host "  Runs: npm start" -ForegroundColor Gray
+    Write-Host "  Frontend URL: http://localhost:4200" -ForegroundColor Gray
+    Write-Host ""
 
-# ── Summary ──────────────────────────────────────────────────────────────────
+    $frontendCmd = "Write-Host '════════════════════════════════════════════════════════════' -ForegroundColor Cyan; " +
+        "Write-Host '  ANGULAR FRONTEND' -ForegroundColor Green; " +
+        "Write-Host '  URL: http://localhost:4200' -ForegroundColor Yellow; " +
+        "Write-Host '════════════════════════════════════════════════════════════' -ForegroundColor Cyan; " +
+        "Write-Host ''; " +
+        "cd '$frontendPath'; " +
+        "npm start"
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", $frontendCmd
+}
+
+# ── Summary ──────────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "================================================================================" -ForegroundColor Cyan
 Write-Host "  Development Environment Started!" -ForegroundColor Green
 Write-Host "================================================================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "  Services Running:" -ForegroundColor White
-Write-Host "  +-- Backend API:  http://localhost:8000" -ForegroundColor Yellow
+Write-Host "  Services Status:" -ForegroundColor White
+
+if ($laravelRunning) {
+    Write-Host "  +-- Backend API:  http://localhost:8000 (already running)" -ForegroundColor Green
+} else {
+    Write-Host "  +-- Backend API:  http://localhost:8000" -ForegroundColor Yellow
+}
 Write-Host "  +-- Queue Worker: listening (via composer run dev)" -ForegroundColor Gray
 Write-Host "  +-- Vite HMR:    http://localhost:5173" -ForegroundColor Gray
-Write-Host "  +-- Frontend:    http://localhost:4200" -ForegroundColor Yellow
+
+if ($angularRunning) {
+    Write-Host "  +-- Frontend:    http://localhost:4200 (already running)" -ForegroundColor Green
+} else {
+    Write-Host "  +-- Frontend:    http://localhost:4200" -ForegroundColor Yellow
+}
+
 Write-Host ""
 Write-Host "  To stop all services, close each PowerShell window or press Ctrl+C" -ForegroundColor Gray
 Write-Host ""
