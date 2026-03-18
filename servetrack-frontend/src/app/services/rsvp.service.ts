@@ -87,4 +87,10 @@ export class RsvpService {
       switchMap(() => this.http.post<{ success: boolean; message: string; total: number; sent: number; failed: number }>(`${this.apiUrl}/${rsvpId}/notify-facebook`, {}, { withCredentials: true }))
     );
   }
+
+  notifySms(rsvpId: number): Observable<{ success: boolean; message: string; total: number; sent: number; failed: number }> {
+    return this.ensureCsrf().pipe(
+      switchMap(() => this.http.post<{ success: boolean; message: string; total: number; sent: number; failed: number }>(`${this.apiUrl}/${rsvpId}/notify-sms`, {}, { withCredentials: true }))
+    );
+  }
 }

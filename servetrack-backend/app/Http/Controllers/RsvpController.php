@@ -9,6 +9,7 @@ use App\Models\Rsvp;
 use App\Models\RsvpResponse;
 use App\Models\TimeSlot;
 use App\Services\FacebookService;
+use App\Services\SmsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -277,6 +278,31 @@ class RsvpController extends Controller
         return response()->json([
             'success' => true,
             'message' => "Facebook notifications sent: {$result['sent']}/{$result['total']}",
+            'total' => $result['total'],
+            'sent' => $result['sent'],
+            'failed' => $result['failed'],
+        ]);
+    }
+
+    public function notifySms(int $id): JsonResponse
+    {
+        $rsvp = Rsvp::query()->find($id);
+
+        if (! $rsvp) {
+            return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        $smsService = app(SmsService::class);
+
+        if (! $smsService->isConfigured()) {
+            return response()->json(['message' => 'SMS service is not configured.'], 500);
+        }
+
+        $result = $smsService->broadcastRsvpNotification($rsvp);
+
+        return response()->json([
+            'success' => true,
+            'message' => "SMS notifications sent: {$result['sent']}/{$result['total']}",
             'total' => $result['total'],
             'sent' => $result['sent'],
             'failed' => $result['failed'],
