@@ -830,9 +830,25 @@ export class AdminDashboard implements OnInit {
     this.pollOptions.clear();
     
     poll.options.forEach((option) => {
+      let startTime = '';
+      let endTime = '';
+
+      // Try to parse timeSlot (e.g. "04:30 - 14:00")
+      if (option.timeSlot) {
+        const parts = option.timeSlot.split('-').map(p => p.trim());
+        if (parts.length === 2) {
+          startTime = parts[0];
+          endTime = parts[1];
+        } else {
+          // Fallback if format is unexpected
+          startTime = option.timeSlot;
+        }
+      }
+
       this.pollOptions.push(
         this.fb.group({
-          timeSlot: [option.timeSlot, Validators.required],
+          startTime: [startTime, Validators.required],
+          endTime: [endTime, Validators.required],
           capacity: [option.capacity, [Validators.required, Validators.min(1)]],
         })
       );
@@ -922,7 +938,8 @@ export class AdminDashboard implements OnInit {
   addPollOption(): void {
     this.pollOptions.push(
       this.fb.group({
-        timeSlot: ['', Validators.required],
+        startTime: ['', Validators.required],
+        endTime: ['', Validators.required],
         capacity: [10, [Validators.required, Validators.min(1)]],
       })
     );
@@ -967,13 +984,16 @@ export class AdminDashboard implements OnInit {
       cutoff_day: formatDateForBackend(formValue.cutOffDay!),
       cutoff_time: formatTimeForBackend(formValue.cutOffTime!),
       description: formValue.description!,
-      options: (formValue.options as { timeSlot: string; capacity: number }[]).map((opt) => ({
-        // `text` is required by the backend (stored in the `option` lookup table).
-        // Use the time slot as the option text since that is the human-readable label.
-        text: opt.timeSlot,
-        time_slot: opt.timeSlot,
-        capacity: opt.capacity,
-      })),
+      options: (formValue.options as { startTime: string; endTime: string; capacity: number }[]).map((opt) => {
+        const timeSlotStr = `${opt.startTime} - ${opt.endTime}`;
+        return {
+          // `text` is required by the backend (stored in the `option` lookup table).
+          // Use the combined time slot as the option text since that is the human-readable label.
+          text: timeSlotStr,
+          time_slot: timeSlotStr,
+          capacity: opt.capacity,
+        };
+      }),
     };
 
     const editingPoll = this.editingPoll();
