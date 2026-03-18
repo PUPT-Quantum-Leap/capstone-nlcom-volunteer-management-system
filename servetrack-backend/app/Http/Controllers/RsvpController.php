@@ -8,6 +8,7 @@ use App\Http\Resources\RsvpResource;
 use App\Models\Rsvp;
 use App\Models\RsvpResponse;
 use App\Models\TimeSlot;
+use App\Services\FacebookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -259,6 +260,26 @@ class RsvpController extends Controller
             'checked_out' => $responses->where('attendance_status', 'checked_out')->count(),
             'no_show' => $responses->where('attendance_status', 'no_show')->count(),
             'registered' => $responses->where('attendance_status', 'registered')->count(),
+        ]);
+    }
+
+    public function notifyFacebook(int $id): JsonResponse
+    {
+        $rsvp = Rsvp::query()->find($id);
+
+        if (! $rsvp) {
+            return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        $facebook = app(FacebookService::class);
+        $result = $facebook->broadcastRsvpNotification($rsvp);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Facebook notifications sent: {$result['sent']}/{$result['total']}",
+            'total' => $result['total'],
+            'sent' => $result['sent'],
+            'failed' => $result['failed'],
         ]);
     }
 }

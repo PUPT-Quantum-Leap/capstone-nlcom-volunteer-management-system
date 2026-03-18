@@ -81,4 +81,10 @@ export class RsvpService {
   getAttendance(rsvpId: number): Observable<{ total: number; checked_in: number; checked_out: number; no_show: number; registered: number }> {
     return this.http.get<{ total: number; checked_in: number; checked_out: number; no_show: number; registered: number }>(`${this.apiUrl}/${rsvpId}/attendance`, { withCredentials: true });
   }
+
+  notifyFacebook(rsvpId: number): Observable<{ success: boolean; message: string; total: number; sent: number; failed: number }> {
+    return this.ensureCsrf().pipe(
+      switchMap(() => this.http.post<{ success: boolean; message: string; total: number; sent: number; failed: number }>(`${this.apiUrl}/${rsvpId}/notify-facebook`, {}, { withCredentials: true }))
+    );
+  }
 }
