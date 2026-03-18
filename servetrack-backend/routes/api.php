@@ -75,4 +75,5 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::post('/rsvp/{id}/check-in', [RsvpController::class, 'checkIn']);
     Route::post('/rsvp/{id}/check-out', [RsvpController::class, 'checkOut']);
     Route::get('/rsvp/{id}/attendance', [RsvpController::class, 'attendance']);
+    Route::post('/rsvp/{id}/notify-facebook', [RsvpController::class, 'notifyFacebook']);
 });
