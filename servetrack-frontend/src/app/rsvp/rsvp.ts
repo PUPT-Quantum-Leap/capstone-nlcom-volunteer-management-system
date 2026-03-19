@@ -11,7 +11,7 @@ import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { RsvpService } from '../services/rsvp.service';
-import { Rsvp, RsvpShift } from '../models/rsvp';
+import { Rsvp as RsvpModel, RsvpShift } from '../models/rsvp';
 
 @Component({
   selector: 'app-rsvp',
@@ -20,12 +20,12 @@ import { Rsvp, RsvpShift } from '../models/rsvp';
   templateUrl: './rsvp.html',
   styleUrl: './rsvp-styles.scss',
 })
-export class Rsvp implements OnInit {
+export class RsvpComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private rsvpService = inject(RsvpService);
   private destroyRef = inject(DestroyRef);
 
-  rsvp = signal<Rsvp | null>(null);
+  rsvp = signal<RsvpModel | null>(null);
   isLoading = signal(true);
   error = signal<string | null>(null);
   selectedShiftId = signal<number | null>(null);

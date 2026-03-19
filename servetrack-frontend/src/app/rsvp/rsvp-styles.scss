@@ -4,7 +4,6 @@ $primary-dark: #1e40af;
 $primary-light: #3b82f6;
 $primary-lighter: #dbeafe;
 $primary-lightest: #eff6ff;
-
 $text-dark: #1f2937;
 $text-muted: #6b7280;
 $border: #e5e7eb;
@@ -14,7 +13,7 @@ $white: #ffffff;
   max-width: 800px;
   margin: 2rem auto;
   padding: 0 1rem;
-  font-family: 'Inter', sans-serif;
+  font-family: Inter, sans-serif;
 }
 
 .rsvp-card {
@@ -30,7 +29,7 @@ $white: #ffffff;
   margin-bottom: 1.5rem;
 
   .rsvp-title {
-    font-family: 'Poppins', sans-serif;
+    font-family: Poppins, sans-serif;
     font-size: 1.75rem;
     font-weight: 700;
     color: $text-dark;

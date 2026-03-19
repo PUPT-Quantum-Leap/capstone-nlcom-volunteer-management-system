@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { LandingPage } from './landing-page/landing-page';
-import { Rsvp } from './rsvp/rsvp';
+import { RsvpComponent } from './rsvp/rsvp';
 import { Login } from './auth/login/login';
 import { Signup } from './auth/signup/signup';
 import { SignupForm } from './auth/signup-form/signup-form';
@@ -19,7 +19,7 @@ export const routes: Routes = [
   { path: 'admin-auth', component: AdminAuthPage },
   { path: 'admin-login', redirectTo: 'admin-auth', pathMatch: 'full' },
   { path: 'admin-signup', redirectTo: 'admin-auth?tab=signup', pathMatch: 'full' },
-  { path: 'rsvp', component: Rsvp },
+  { path: 'rsvp', component: RsvpComponent },
   { path: 'incident-command-system', component: IncidentCommandSystemComponent },
   { path: 'volunteer-dashboard', component: VolunteerDashboard, canActivate: [authGuard] },
   { path: 'admin-dashboard', component: AdminDashboard, canActivate: [authGuard] },

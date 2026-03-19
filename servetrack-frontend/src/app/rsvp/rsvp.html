@@ -40,12 +40,12 @@
       <!-- RSVP Shifts -->
       <div class="rsvp-shifts">
         @for (shift of rsvp.shifts; track shift.id) {
-          <div
-            class="rsvp-shift"
-            [class.selected]="selectedShiftId() === shift.id"
-            [class.disabled]="isFull(shift)"
-            (click)="selectShift(shift.id)"
-          >
+            <div
+              class="rsvp-shift"
+              [class.selected]="selectedShiftId() === shift.id"
+              [class.disabled]="isFull(shift) || hasSubmittedRsvp() || rsvp.status !== 'active'"
+              (click)="selectShift(shift.id)"
+            >
             <div class="shift-header">
               <div class="shift-info">
                 <input
@@ -54,6 +54,8 @@
                   [checked]="selectedShiftId() === shift.id"
                   [disabled]="isFull(shift) || hasSubmittedRsvp() || rsvp.status !== 'active'"
                   class="shift-radio"
+                  (change)="selectShift(shift.id)"
+                  name="shiftGroup"
                 />
                 <label [for]="'shift-' + shift.id" class="shift-label">
                   {{ shift.timeSlot }}
