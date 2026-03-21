@@ -1,4 +1,4 @@
-import {
+ import {
   ChangeDetectionStrategy,
   Component,
   OnInit,
@@ -7,15 +7,23 @@ import {
   signal,
   DestroyRef,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
+import { 
+  FormBuilder, 
+  ReactiveFormsModule, 
+  Validators, 
+  FormArray, 
+  AbstractControl, 
+  ValidationErrors, 
+  ValidatorFn 
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { DatePipe, CommonModule } from '@angular/common';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
-import { AdminDashboardService, DashboardVolunteerRow } from '../services/admin-dashboard.service';
+import { AdminDashboardService, DashboardVolunteerRow, VolunteerUser } from '../services/admin-dashboard.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Poll, CreatePollDto, PollOption } from '../models/poll';
+import { Poll, PollOption } from '../models/poll';
 import { PollService } from '../services/poll.service';
 import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
 
@@ -33,8 +41,10 @@ export class AdminDashboard implements OnInit {
   private adminDashboardService = inject(AdminDashboardService);
   private destroyRef = inject(DestroyRef);
   private pollService = inject(PollService);
+  private userService = inject(UserService);
 
   readonly defaultPhoto = '/assets/nlcom.png';
+  readonly Math = Math;
 
   currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Admin');
@@ -45,15 +55,48 @@ export class AdminDashboard implements OnInit {
   showLogoutModal = signal(false);
   showPollModal = signal(false);
   showDeletePollModal = signal(false);
+  showSharePollModal = signal(false);
+  sharingPoll = signal<Poll | null>(null);
   showVolunteerModal = signal(false);
   showDeleteVolunteerModal = signal(false);
+  showUserModal = signal(false);
+  showDeleteUserModal = signal(false);
+  showResetPasswordModal = signal(false);
+  showUserDetailsModal = signal(false);
+
   searchQuery = signal('');
+  userSearchQuery = signal('');
+  userRoleFilter = signal('');
+
   editingPoll = signal<Poll | null>(null);
   deletingPollId = signal<number | null>(null);
   editingVolunteer = signal<DashboardVolunteerRow | null>(null);
   deletingVolunteerId = signal<number | null>(null);
+  editingUser = signal<User | null>(null);
+  deletingUserId = signal<number | null>(null);
+  resettingPasswordUserId = signal<number | null>(null);
+  viewingUser = signal<User | null>(null);
+
   showAiModal = signal(false);
   currentPage = signal(1);
+  usersPerPage = signal(5);
+  usersTotalPages = computed(() => Math.ceil(this.filteredUsers().length / this.usersPerPage()));
+  
+  volunteersPage = signal(1);
+  volunteersPerPage = signal(5);
+  volunteersTotalPages = computed(() => Math.ceil(this.volunteerRows().length / this.volunteersPerPage()));
+  showArchivedVolunteers = signal(false);
+  archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
+
+  // Poll creation loading state
+  isCreatingPoll = signal(false);
+  isDeletingPoll = signal(false);
+
+  // Snackbar notifications
+  snackbarMessage = signal<string>('');
+  snackbarVisible = signal(false);
+  snackbarType = signal<'success' | 'error' | 'info'>('success');
+  snackbarSlideOut = signal(false);
 
   notifications = signal<NotificationItem[]>([]);
 
@@ -70,6 +113,8 @@ export class AdminDashboard implements OnInit {
   performanceMetrics = signal<PerformanceMetric[]>([]);
   polls = signal<Poll[]>([]);
   pollFilterStatus = signal<'all' | 'active' | 'closed' | 'draft'>('all');
+  users = signal<User[]>([]);
+  volunteers = signal<VolunteerUser[]>([]);
 
   sortField = signal<'name' | 'attendance' | 'hours' | 'tasks' | 'rating'>('attendance');
   sortDirection = signal<'asc' | 'desc'>('desc');
@@ -154,6 +199,80 @@ export class AdminDashboard implements OnInit {
     return this.polls().filter((poll) => poll.status === status);
   });
 
+  filteredUsers = computed(() => {
+    let filtered = this.volunteers().map((v: VolunteerUser) => ({
+      id: v.volunteer_id,
+      name: v.full_name,
+      email: v.email,
+      role: 'volunteer' as 'admin' | 'coordinator' | 'volunteer',
+      created_at: v.created_at,
+      updated_at: v.updated_at,
+      deleted_at: null
+    }));
+    
+    // Filter out soft-deleted users
+    filtered = filtered.filter(u => !u.deleted_at);
+    
+    const role = this.userRoleFilter();
+    const search = this.userSearchQuery().toLowerCase().trim();
+
+    if (role) {
+      filtered = filtered.filter(u => u.role === role);
+    }
+    if (search) {
+      filtered = filtered.filter(u => u.name.toLowerCase().includes(search) || u.email.toLowerCase().includes(search));
+    }
+    return filtered;
+  });
+
+  paginatedUsers = computed(() => {
+    const filtered = this.filteredUsers();
+    const page = this.currentPage();
+    const perPage = this.usersPerPage();
+    const start = (page - 1) * perPage;
+    const end = start + perPage;
+    return filtered.slice(start, end);
+  });
+
+  paginatedVolunteers = computed(() => {
+    const volunteers = this.showArchivedVolunteers() 
+      ? this.archivedVolunteerRows() 
+      : this.volunteerRows();
+    const page = this.volunteersPage();
+    const perPage = this.volunteersPerPage();
+    const start = (page - 1) * perPage;
+    const end = start + perPage;
+    return volunteers.slice(start, end);
+  });
+
+  // Custom validator to ensure cutoff date is not after event date
+  // and not before current date
+  private cutoffDateValidator(): ValidatorFn {
+    return (formGroup: AbstractControl): ValidationErrors | null => {
+      const eventDate = formGroup.get('date')?.value;
+      const cutoffDate = formGroup.get('cutOffDay')?.value;
+
+      if (!eventDate || !cutoffDate) {
+        return null;
+      }
+
+      const event = new Date(eventDate);
+      const cutoff = new Date(cutoffDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set to start of day
+
+      if (cutoff > event) {
+        return { cutoffAfterEvent: true };
+      }
+
+      if (cutoff < today) {
+        return { cutoffBeforeToday: true };
+      }
+
+      return null;
+    };
+  }
+
   pollForm = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
     date: ['', Validators.required],
@@ -161,7 +280,7 @@ export class AdminDashboard implements OnInit {
     cutOffTime: ['', Validators.required],
     description: ['', [Validators.required, Validators.minLength(10)]],
     options: this.fb.array([]),
-  });
+  }, { validators: this.cutoffDateValidator() });
 
   volunteerForm = this.fb.group({
     firstName: ['', [Validators.required, Validators.minLength(2)]],
@@ -188,9 +307,23 @@ export class AdminDashboard implements OnInit {
     emergencyContactRelationship: ['', Validators.required],
   });
 
+  userForm = this.fb.group({
+    name: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    role: ['', Validators.required],
+    password: [''],
+    confirmPassword: [''],
+  });
+
+  resetPasswordForm = this.fb.group({
+    password: ['', [Validators.required, Validators.minLength(8)]],
+    confirmPassword: ['', Validators.required],
+  });
+
   ngOnInit(): void {
     this.loadDashboardData();
     this.loadPolls();
+    this.loadUsers();
   }
 
   private loadDashboardData(): void {
@@ -315,6 +448,281 @@ export class AdminDashboard implements OnInit {
     this.showAiModal.set(false);
   }
 
+  loadUsers(): void {
+    this.userService.getUsers().subscribe((response) => {
+      if (response.success) {
+        this.users.set(response.data);
+      }
+    });
+  }
+
+  setUserSearchQuery(query: string): void {
+    this.userSearchQuery.set(query);
+    this.currentPage.set(1); // Reset to first page when searching
+  }
+
+  setUserRoleFilter(role: string): void {
+    this.userRoleFilter.set(role);
+    this.currentPage.set(1); // Reset to first page when filtering
+  }
+
+  goToPage(page: number): void {
+    const totalPages = this.usersTotalPages();
+    if (page >= 1 && page <= totalPages) {
+      this.currentPage.set(page);
+    }
+  }
+
+  nextPage(): void {
+    const totalPages = this.usersTotalPages();
+    if (this.currentPage() < totalPages) {
+      this.currentPage.update(page => page + 1);
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.update(page => page - 1);
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const total = this.usersTotalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (current <= 3) {
+        pages.push(1, 2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(1, -1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(1, -1, current - 1, current, current + 1, -1, total);
+      }
+    }
+    
+    return pages;
+  }
+
+  goToVolunteersPage(page: number): void {
+    const totalPages = this.volunteersTotalPages();
+    if (page >= 1 && page <= totalPages) {
+      this.volunteersPage.set(page);
+    }
+  }
+
+  nextVolunteersPage(): void {
+    const totalPages = this.volunteersTotalPages();
+    if (this.volunteersPage() < totalPages) {
+      this.volunteersPage.update(page => page + 1);
+    }
+  }
+
+  previousVolunteersPage(): void {
+    if (this.volunteersPage() > 1) {
+      this.volunteersPage.update(page => page - 1);
+    }
+  }
+
+  getVolunteersPageNumbers(): number[] {
+    const total = this.volunteersTotalPages();
+    const current = this.volunteersPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (current <= 3) {
+        pages.push(1, 2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(1, -1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(1, -1, current - 1, current, current + 1, -1, total);
+      }
+    }
+    
+    return pages;
+  }
+
+  openCreateUserModal(): void {
+    this.editingUser.set(null);
+    this.userForm.reset({
+      name: '',
+      email: '',
+      role: '',
+      password: '',
+      confirmPassword: ''
+    });
+    this.userForm.get('password')?.setValidators([Validators.required, Validators.minLength(8)]);
+    this.userForm.get('confirmPassword')?.setValidators(Validators.required);
+    this.userForm.get('password')?.updateValueAndValidity();
+    this.userForm.get('confirmPassword')?.updateValueAndValidity();
+    this.showUserModal.set(true);
+  }
+
+  openEditUserModal(user: User): void {
+    this.editingUser.set(user);
+    this.userForm.reset();
+    this.userForm.get('password')?.clearValidators();
+    this.userForm.get('confirmPassword')?.clearValidators();
+    this.userForm.get('password')?.updateValueAndValidity();
+    this.userForm.get('confirmPassword')?.updateValueAndValidity();
+    this.userForm.patchValue({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
+    this.showUserModal.set(true);
+  }
+
+  closeUserModal(): void {
+    this.showUserModal.set(false);
+    this.editingUser.set(null);
+  }
+
+  openUserDetailsModal(user: User): void {
+    this.viewingUser.set(user);
+    this.showUserDetailsModal.set(true);
+  }
+
+  closeUserDetailsModal(): void {
+    this.showUserDetailsModal.set(false);
+    this.viewingUser.set(null);
+  }
+
+  saveUser(): void {
+    if (this.userForm.invalid) {
+      this.userForm.markAllAsTouched();
+      return;
+    }
+
+    const val = this.userForm.value;
+    const editingUser = this.editingUser();
+
+    if (!editingUser) {
+      if (val.password !== val.confirmPassword) {
+        this.userForm.get('confirmPassword')?.setErrors({ mismatch: true });
+        return;
+      }
+      this.userService.createUser({
+        name: val.name!,
+        email: val.email!,
+        role: val.role as any,
+        password: val.password!
+      }).subscribe({
+        next: () => {
+          this.loadUsers();
+          this.closeUserModal();
+          this.showSnackbar('User created successfully', 'success');
+        },
+        error: (error) => {
+          console.error('Error creating user:', error);
+          this.showSnackbar('Failed to create user', 'error');
+        }
+      });
+    } else {
+      this.userService.updateUser(editingUser.id, {
+        name: val.name!,
+        email: val.email!,
+        role: val.role as any,
+      }).subscribe({
+        next: () => {
+          this.loadUsers();
+          this.closeUserModal();
+          this.showSnackbar('User updated successfully', 'success');
+        },
+        error: (error) => {
+          console.error('Error updating user:', error);
+          this.showSnackbar('Failed to update user', 'error');
+        }
+      });
+    }
+  }
+
+  confirmDeleteUser(userId: number): void {
+    this.deletingUserId.set(userId);
+    this.showDeleteUserModal.set(true);
+  }
+
+  closeDeleteUserModal(): void {
+    this.showDeleteUserModal.set(false);
+    this.deletingUserId.set(null);
+  }
+
+  deleteUser(): void {
+    const id = this.deletingUserId();
+    if (id !== null) {
+      this.userService.softDeleteUser(id).subscribe({
+        next: () => {
+          this.loadUsers();
+          this.closeDeleteUserModal();
+          this.showSnackbar('User archived successfully', 'success');
+        },
+        error: (error) => {
+          console.error('Error archiving user:', error);
+          this.showSnackbar('Failed to archive user', 'error');
+        }
+      });
+    }
+  }
+
+  restoreUser(userId: number): void {
+    this.userService.restoreUser(userId).subscribe({
+      next: () => {
+        this.loadUsers();
+        this.showSnackbar('User restored successfully', 'success');
+      },
+      error: (error) => {
+        console.error('Error restoring user:', error);
+        this.showSnackbar('Failed to restore user', 'error');
+      }
+    });
+  }
+
+  openResetPasswordModal(userId: number): void {
+    this.resettingPasswordUserId.set(userId);
+    this.resetPasswordForm.reset();
+    this.showResetPasswordModal.set(true);
+  }
+
+  closeResetPasswordModal(): void {
+    this.showResetPasswordModal.set(false);
+    this.resettingPasswordUserId.set(null);
+  }
+
+  resetPassword(): void {
+    if (this.resetPasswordForm.invalid) {
+      this.resetPasswordForm.markAllAsTouched();
+      return;
+    }
+
+    const val = this.resetPasswordForm.value;
+    if (val.password !== val.confirmPassword) {
+      this.resetPasswordForm.get('confirmPassword')?.setErrors({ mismatch: true });
+      return;
+    }
+
+    const id = this.resettingPasswordUserId();
+    if (id !== null) {
+      this.userService.resetPassword(id, val.password!).subscribe({
+        next: () => {
+          this.closeResetPasswordModal();
+          this.showSnackbar('Password reset successfully', 'success');
+        },
+        error: (error) => {
+          console.error('Error resetting password:', error);
+          this.showSnackbar('Failed to reset password', 'error');
+        }
+      });
+    }
+  }
+
   async confirmLogout(): Promise<void> {
     this.isLoading.set(true);
     this.showLogoutModal.set(false);
@@ -366,13 +774,55 @@ export class AdminDashboard implements OnInit {
   }
 
   private loadPolls(): void {
-    this.pollService.getPolls().subscribe((polls) => {
-      this.polls.set(polls);
+    this.pollService.getPolls().subscribe((response) => {
+      this.polls.set(response.data);
     });
   }
 
   get pollOptions(): FormArray {
     return this.pollForm.get('options') as FormArray;
+  }
+
+  openSharePollModal(poll: Poll): void {
+    this.sharingPoll.set(poll);
+    this.showSharePollModal.set(true);
+  }
+
+  closeSharePollModal(): void {
+    this.sharingPoll.set(null);
+    this.showSharePollModal.set(false);
+  }
+
+  getShareLink(): string {
+    const poll = this.sharingPoll();
+    if (!poll) return '';
+    if (poll.shareUrl) return poll.shareUrl;
+    return `${window.location.origin}/voting-poll?id=${poll.id}`;
+  }
+
+  copyShareLink(): void {
+    const link = this.getShareLink();
+    if (!link) return;
+    navigator.clipboard.writeText(link).then(
+      () => {
+        this.showSnackbar('Link copied to clipboard', 'success');
+        this.closeSharePollModal();
+      },
+      () => {
+        this.showSnackbar('Failed to copy link', 'error');
+      }
+    );
+  }
+
+   private pollOptionTimeRangeValidator(): ValidatorFn {
+    return (group: AbstractControl): ValidationErrors | null => {
+      const start = group.get('startTime')?.value as string | undefined;
+      const end = group.get('endTime')?.value as string | undefined;
+      if (!start || !end) {
+        return null;
+      }
+      return start < end ? null : { invalidTimeRange: true };
+    };
   }
 
   openCreatePollModal(): void {
@@ -388,20 +838,101 @@ export class AdminDashboard implements OnInit {
     this.editingPoll.set(poll);
     this.pollOptions.clear();
     
+
+    const parseBackendTime = (timeString: string): string => {
+      if (!timeString) return '';
+      if (/^\d{2}:\d{2}$/.test(timeString)) {
+        return timeString;
+      }
+      if (/^\d{2}:\d{2}:\d{2}$/.test(timeString)) {
+        return timeString.substring(0, 5);
+      }
+      const timeMatch = timeString.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      if (!timeMatch) {
+        return '';
+      }
+      const [, hours, minutes, ampm] = timeMatch;
+      let hour = parseInt(hours, 10);
+      if (ampm.toUpperCase() === 'PM' && hour !== 12) hour += 12;
+      if (ampm.toUpperCase() === 'AM' && hour === 12) hour = 0;
+      return `${hour.toString().padStart(2, '0')}:${minutes}`;
+    };
+
     poll.options.forEach((option) => {
+      let startTime = '';
+      let endTime = '';
+
+      // Try to parse timeSlot (e.g. "04:30 - 14:00")
+      if (option.timeSlot) {
+        const parts = option.timeSlot.split('-').map(p => p.trim());
+        if (parts.length === 2) {
+          startTime = parseBackendTime(parts[0]);
+          endTime = parseBackendTime(parts[1]);
+        } else {
+          // Fallback if format is unexpected
+          startTime = parseBackendTime(option.timeSlot);
+        }
+      }
+
       this.pollOptions.push(
         this.fb.group({
-          timeSlot: [option.timeSlot, Validators.required],
+          startTime: [startTime, Validators.required],
+          endTime: [endTime, Validators.required],
           capacity: [option.capacity, [Validators.required, Validators.min(1)]],
-        })
+        }, { validators: this.pollOptionTimeRangeValidator() })
       );
     });
 
+    // Convert backend date strings to date input format (YYYY-MM-DD)
+    const parseBackendDate = (dateString: string): string => {
+      if (!dateString) return '';
+      // If it's already in YYYY-MM-DD format, return as-is
+      if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return dateString;
+      }
+      
+      const shortDateMatch = dateString.match(/^(\w{3})\s+(\d{1,2})$/);
+      if (shortDateMatch) {
+        const [, month, day] = shortDateMatch;
+        const year = new Date().getFullYear();
+        const months: Record<string, number> = {
+          'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+          'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+        };
+        const monthNum = months[month];
+        const dayNum = parseInt(day);
+        const y = year.toString().padStart(4, '0');
+        const m = (monthNum + 1).toString().padStart(2, '0');
+        const d = dayNum.toString().padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+      
+      const fullDateMatch = dateString.match(/^(\w{3})\s+(\d{1,2}),\s+(\d{4})$/);
+      if (fullDateMatch) {
+        const [, month, day, year] = fullDateMatch;
+        const months: Record<string, number> = {
+          'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+          'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+        };
+        const monthNum = months[month];
+        const dayNum = parseInt(day);
+        const yearNum = parseInt(year);
+        const y = yearNum.toString().padStart(4, '0');
+        const m = (monthNum + 1).toString().padStart(2, '0');
+        const d = dayNum.toString().padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+     
+      // Fallback to original parsing
+      const date = new Date(dateString);
+      return date.toISOString().split('T')[0]; 
+    };
+
     this.pollForm.patchValue({
       title: poll.title,
-      date: poll.date,
-      cutOffDay: poll.cutOffDay,
-      cutOffTime: poll.cutOffTime,
+      date: parseBackendDate(poll.date),
+      cutOffDay: parseBackendDate(poll.cutOffDay),
+      cutOffTime: parseBackendTime(poll.cutOffTime),
       description: poll.description,
     });
 
@@ -417,9 +948,10 @@ export class AdminDashboard implements OnInit {
   addPollOption(): void {
     this.pollOptions.push(
       this.fb.group({
-        timeSlot: ['', Validators.required],
+        startTime: ['', Validators.required],
+        endTime: ['', Validators.required],
         capacity: [10, [Validators.required, Validators.min(1)]],
-      })
+      }, { validators: this.pollOptionTimeRangeValidator() })
     );
   }
 
@@ -435,29 +967,71 @@ export class AdminDashboard implements OnInit {
       return;
     }
 
+    // Set loading state
+    this.isCreatingPoll.set(true);
+
     const formValue = this.pollForm.value;
-    const dto: CreatePollDto = {
+
+    // Format dates for backend - date inputs return ISO strings
+    const formatDateForBackend = (dateString: string): string => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toISOString().split('T')[0];
+    };
+
+    // Format time for backend - time input returns HH:MM format
+    const formatTimeForBackend = (timeString: string): string => {
+      if (!timeString) return '';
+      // Return HH:MM:SS format for MySQL TIME column
+      return timeString + ':00';
+    };
+
+    // Build a snake_case payload that matches the Laravel backend expectations.
+    // The frontend form / DTO uses camelCase; the API requires snake_case field names.
+    const payload = {
       title: formValue.title!,
-      date: formValue.date!,
-      cutOffDay: formValue.cutOffDay!,
-      cutOffTime: formValue.cutOffTime!,
+      date: formatDateForBackend(formValue.date!),
+      cutoff_day: formatDateForBackend(formValue.cutOffDay!),
+      cutoff_time: formatTimeForBackend(formValue.cutOffTime!),
       description: formValue.description!,
-      options: (formValue.options as Array<{ timeSlot: string; capacity: number }>).map((opt) => ({
-        timeSlot: opt.timeSlot,
-        capacity: opt.capacity,
-      })),
+      options: (formValue.options as { startTime: string; endTime: string; capacity: number }[]).map((opt) => {
+        const timeSlotStr = `${opt.startTime} - ${opt.endTime}`;
+        return {
+          // `text` is required by the backend (stored in the `option` lookup table).
+          // Use the combined time slot as the option text since that is the human-readable label.
+          text: timeSlotStr,
+          time_slot: timeSlotStr,
+          capacity: opt.capacity,
+        };
+      }),
     };
 
     const editingPoll = this.editingPoll();
     if (editingPoll) {
-      this.pollService.updatePoll(editingPoll.id, dto).subscribe(() => {
-        this.loadPolls();
-        this.closePollModal();
+      this.pollService.updatePoll(editingPoll.id, payload).subscribe({
+        next: () => {
+          this.loadPolls();
+          this.closePollModal();
+          this.showSnackbar('Poll updated successfully', 'success');
+          this.isCreatingPoll.set(false);
+        },
+        error: () => {
+          this.showSnackbar('Poll update failed', 'error');
+          this.isCreatingPoll.set(false);
+        }
       });
     } else {
-      this.pollService.createPoll(dto).subscribe(() => {
-        this.loadPolls();
-        this.closePollModal();
+      this.pollService.createPoll(payload).subscribe({
+        next: () => {
+          this.loadPolls();
+          this.closePollModal();
+          this.showSnackbar('Poll created successfully', 'success');
+          this.isCreatingPoll.set(false);
+        },
+        error: () => {
+          this.showSnackbar('Poll creation failed', 'error');
+          this.isCreatingPoll.set(false);
+        }
       });
     }
   }
@@ -475,9 +1049,20 @@ export class AdminDashboard implements OnInit {
   deletePoll(): void {
     const pollId = this.deletingPollId();
     if (pollId !== null) {
-      this.pollService.deletePoll(pollId).subscribe(() => {
-        this.loadPolls();
-        this.closeDeletePollModal();
+      // Set loading state
+      this.isDeletingPoll.set(true);
+
+      this.pollService.deletePoll(pollId).subscribe({
+        next: () => {
+          this.loadPolls();
+          this.closeDeletePollModal();
+          this.showSnackbar('Poll deleted successfully', 'success');
+          this.isDeletingPoll.set(false);
+        },
+        error: () => {
+          this.showSnackbar('Poll deletion failed', 'error');
+          this.isDeletingPoll.set(false);
+        }
       });
     }
   }
@@ -544,10 +1129,121 @@ export class AdminDashboard implements OnInit {
   deleteVolunteer(): void {
     const volunteerId = this.deletingVolunteerId();
     if (volunteerId !== null) {
-      console.log('Delete volunteer:', volunteerId);
-      this.closeDeleteVolunteerModal();
-      this.loadDashboardData();
+      this.adminDashboardService.softDeleteVolunteer(volunteerId).subscribe({
+        next: (response) => {
+          if (response.success) {
+            console.log('Volunteer archived successfully');
+            
+            // Immediately remove from active volunteers list
+            const currentRows = this.volunteerRows();
+            const updatedRows = currentRows.filter(v => v.id !== volunteerId);
+            this.volunteerRows.set(updatedRows);
+            
+            // Reset to page 1 if current page becomes empty
+            if (updatedRows.length > 0 && this.volunteersPage() > Math.ceil(updatedRows.length / this.volunteersPerPage())) {
+              this.volunteersPage.set(1);
+            }
+
+            // Show success snackbar
+            this.showSnackbar('Volunteer archived successfully', 'success');
+          }
+          this.closeDeleteVolunteerModal();
+        },
+        error: (error) => {
+          console.error('Error archiving volunteer:', error);
+          this.showSnackbar('Failed to archive volunteer', 'error');
+          this.closeDeleteVolunteerModal();
+        }
+      });
     }
+  }
+
+  restoreVolunteer(volunteerId: number): void {
+    this.adminDashboardService.restoreVolunteer(volunteerId).subscribe({
+      next: (response) => {
+        if (response.success) {
+          console.log('Volunteer restored successfully');
+          
+          // Immediately remove from archived volunteers list
+          const currentArchived = this.archivedVolunteerRows();
+          const updatedArchived = currentArchived.filter(v => v.id !== volunteerId);
+          this.archivedVolunteerRows.set(updatedArchived);
+          
+          // Reset to page 1 if current page becomes empty
+          if (updatedArchived.length > 0 && this.volunteersPage() > Math.ceil(updatedArchived.length / this.volunteersPerPage())) {
+            this.volunteersPage.set(1);
+          }
+          
+          // Show success snackbar
+          this.showSnackbar('Volunteer restored successfully', 'success');
+          
+          // Reload active volunteers to include restored one
+          this.loadDashboardData();
+        }
+      },
+      error: (error) => {
+        console.error('Error restoring volunteer:', error);
+        this.showSnackbar('Failed to restore volunteer', 'error');
+      }
+    });
+  }
+
+  toggleArchivedVolunteers(): void {
+    this.showArchivedVolunteers.update(show => !show);
+  }
+
+  showSnackbar(message: string, type: 'success' | 'error' | 'info' = 'success'): void {
+    this.snackbarMessage.set(message);
+    this.snackbarType.set(type);
+    this.snackbarSlideOut.set(false);
+    this.snackbarVisible.set(true);
+
+    // Auto-hide after 3 seconds with slide-out animation
+    setTimeout(() => {
+      this.snackbarSlideOut.set(true);
+      
+      setTimeout(() => {
+        this.snackbarVisible.set(false);
+        this.snackbarSlideOut.set(false);
+      }, 300);
+    }, 3000);
+  }
+
+  loadArchivedVolunteers(): void {
+    this.adminDashboardService.getArchivedVolunteers().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Map archived volunteers to DashboardVolunteerRow format
+          const archivedRows: DashboardVolunteerRow[] = response.data.map(v => ({
+            id: v.volunteer_id,
+            name: v.full_name,
+            email: v.email,
+            phone: v.mobile_number || 'N/A',
+            department: 'Volunteer', // Default department
+            status: 'inactive' as 'active' | 'inactive',
+            joined_date: v.created_at
+          }));
+          this.archivedVolunteerRows.set(archivedRows);
+        } else {
+          this.archivedVolunteerRows.set([]);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading archived volunteers:', error);
+        this.archivedVolunteerRows.set([]);
+      }
+    });
+  }
+
+  switchToActiveVolunteers(): void {
+    this.showArchivedVolunteers.set(false);
+    this.volunteersPage.set(1);
+  }
+
+  switchToArchivedVolunteers(): void {
+    this.showArchivedVolunteers.set(true);
+    this.volunteersPage.set(1);
+    this.loadArchivedVolunteers();
   }
 
   getVotePercentage(poll: Poll, option: PollOption): number {

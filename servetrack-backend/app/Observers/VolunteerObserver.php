@@ -23,7 +23,7 @@ class VolunteerObserver
     {
         $dirty = $volunteer->getDirty();
         $original = $volunteer->getOriginal();
-        $userId = Auth::id();
+        $userId = Auth::id() ?? $volunteer->user_id; // Use volunteer's user_id if auth is null
         $ip = request()->ip();
 
         foreach ($dirty as $field => $newValue) {

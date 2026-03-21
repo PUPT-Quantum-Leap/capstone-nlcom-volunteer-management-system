@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
 @Injectable({
   providedIn: 'root'
 })
 export class InputSanitizerService {
-  constructor(private sanitizer: DomSanitizer) {}
+  private sanitizer = inject(DomSanitizer);
 
   /**
    * Sanitize text input to prevent XSS attacks
@@ -14,7 +14,7 @@ export class InputSanitizerService {
     if (!input) return '';
     
     // Remove potentially dangerous HTML/JS patterns
-    const sanitized = input
+    const sanitized = input.trim()
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
       .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
       .replace(/<img\b[^>]*onerror\s*=/gi, '')
@@ -71,8 +71,9 @@ export class InputSanitizerService {
    * Validate email format
    */
   validateEmail(email: string): boolean {
+    if (!email) return false;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    return emailRegex.test(email.trim());
   }
 
   /**

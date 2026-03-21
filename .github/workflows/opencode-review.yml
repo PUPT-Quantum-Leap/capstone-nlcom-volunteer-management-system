@@ -1,0 +1,59 @@
+name: opencode-review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      issues: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: anomalyco/opencode/github@latest
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: openrouter/arcee-ai/trinity-large-preview:free
+          use_github_token: true
+          prompt: |
+            Review this pull request for our Angular 21 + Laravel 12 monorepo:
+            
+            ## Project Context
+            - Frontend: servetrack-frontend/ (Angular 21 with signals, standalone components)
+            - Backend: servetrack-backend/ (Laravel 12 with PHP 8.2)
+            
+            ## Review Guidelines (from AGENTS.md)
+            
+            ### Frontend (Angular 21)
+            - Use signals (signal(), computed()) instead of BehaviorSubjects
+            - Use standalone components with OnPush change detection
+            - Use input() and output() functions, not @Input/@Output decorators
+            - Use native control flow: @if, @for, @switch (NOT *ngIf, *ngFor)
+            - Use class bindings instead of ngClass
+            - Prefer Reactive Forms over Template-driven forms
+            - Use NgOptimizedImage for static images
+            
+            ### Backend (Laravel 12)
+            - Use constructor property promotion
+            - Use explicit return type declarations
+            - Follow PSR-12 coding standards (use Pint)
+            - Use Eloquent relationships with return type hints
+            - Avoid DB::, prefer Model::query()
+            - Use named routes with route() function
+            - Use Laravel Sanctum for API authentication
+            
+            ## Your Task
+            - Check for code quality issues
+            - Look for potential bugs
+            - Verify adherence to above guidelines
+            - Suggest improvements
+            - Do NOT modify any code, just provide review comments

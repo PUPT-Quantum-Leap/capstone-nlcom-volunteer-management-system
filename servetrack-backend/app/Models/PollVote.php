@@ -9,19 +9,29 @@ class PollVote extends Model
 {
     use HasFactory;
 
+    public $timestamps = false;
+
+    protected $table = 'poll_vote';
+
     protected $primaryKey = 'poll_vote_id';
 
     protected $fillable = [
         'volunteer_id',
         'poll_id',
+        'option_id',
         'voted_at',
         'sms_sent',
+        'facebook_id',
+        'facebook_name',
     ];
 
-    protected $casts = [
-        'voted_at' => 'date',
-        'sms_sent' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'voted_at' => 'datetime',
+            'sms_sent' => 'boolean',
+        ];
+    }
 
     public function volunteer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
@@ -31,6 +41,11 @@ class PollVote extends Model
     public function poll(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Poll::class, 'poll_id');
+    }
+
+    public function option(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Option::class, 'option_id');
     }
 
     public function smsNotifications(): \Illuminate\Database\Eloquent\Relations\HasMany
