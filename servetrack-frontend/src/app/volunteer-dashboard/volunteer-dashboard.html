@@ -1,11 +1,12 @@
 <div class="dashboard-container">
+  <!-- Removed overlay backdrop per user request -->
+  
   <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
     <div class="sidebar-header">
       <div class="logo-area">
         <div class="logo-icon">ST</div>
         <span class="logo-text">ServeTrack</span>
       </div>
-      <button type="button" class="sidebar-toggle" (click)="toggleSidebar()">Menu</button>
     </div>
 
     <nav class="sidebar-nav" aria-label="Main Navigation">
@@ -121,6 +122,8 @@
   </aside>
 
   <div class="main-wrapper" [class.expanded]="sidebarCollapsed()">
+    <!-- Removed mobile hamburger per user request -->
+
     <header class="top-bar">
       <h1 class="page-title">
         @switch (currentView()) {
@@ -243,370 +246,398 @@
           </section>
         }
 
-        @case ('profile') {
-          <section class="profile-grid">
-            <article class="panel">
-              <div class="panel-header">
-                <h2>{{ editingProfileId() !== null ? 'Edit Profile' : 'New Profile' }}</h2>
-                <div class="profile-completion">
-                  <span class="completion-label">Profile Completion: {{ profileCompletion() }}%</span>
-                  <div class="completion-bar">
-                    <div class="completion-fill" [style.width.%]="profileCompletion()"></div>
-                  </div>
-                </div>
-              </div>
+@case ('profile') {
+  <section class="profile-section">
+    <article class="panel full-width">
+      <div class="panel-header">
+        <div class="header-left">
+          <h2>{{ isEditMode() ? 'Edit Profile' : 'View Profile' }}</h2>
+          <div class="profile-completion">
+            <span class="completion-label">Profile Completion: {{ profileCompletion() }}%</span>
+            <div class="completion-bar">
+              <div class="completion-fill" [style.width.%]="profileCompletion()"></div>
+            </div>
+          </div>
+        </div>
+        <div class="profile-actions">
+          @if (!isEditMode()) {
+            <button type="button" class="primary-btn" (click)="toggleEditMode()">
+              Edit Profile
+            </button>
+          } @else {
+            <button type="button" class="outline-btn" (click)="toggleEditMode()">
+              Cancel
+            </button>
+            <button 
+              type="button" 
+              class="primary-btn" 
+              (click)="saveProfile()"
+              [disabled]="profileForm.invalid"
+            >
+              Update Profile
+            </button>
+          }
+        </div>
+      </div>
 
-              <form class="form-grid" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
-                <div class="photo-row">
-                  <img [src]="profilePreviewUrl()" alt="Profile preview" class="profile-image" />
-                  <label class="outline-btn upload-btn">
-                    Choose Photo
-                    <input type="file" accept="image/*" (change)="onPhotoSelected($event)" />
-                  </label>
-                </div>
+<form class="form-grid" [formGroup]="profileForm" [class.view-mode]="!isEditMode()" (ngSubmit)="saveProfile()">
+        <div class="photo-row">
+          <img [src]="profilePreviewUrl()" alt="Profile preview" class="profile-image" />
+          @if (isEditMode()) {
+            <label class="outline-btn upload-btn">
+              Choose Photo
+              <input type="file" accept="image/*" (change)="onPhotoSelected($event)" />
+            </label>
+          }
+        </div>
 
-                <h3 class="section-title wide">Personal Information</h3>
+        <h3 class="section-title wide">Personal Information</h3>
 
-                <div class="form-group">
-                  <label for="firstName">First Name</label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    formControlName="firstName"
-                    placeholder="Enter first name"
-                  />
-                  @if (controlHasError('firstName')) {
-                    <span class="error-text">{{ getControlError('firstName') }}</span>
-                  }
-                </div>
+        <div class="form-group">
+          <label for="firstName">First Name</label>
+          <input
+            type="text"
+            id="firstName"
+            formControlName="firstName"
+            placeholder="Enter first name"
+            [readonly]="!isEditMode()"
+          />
+          @if (controlHasError('firstName')) {
+            <span class="error-text">{{ getControlError('firstName') }}</span>
+          }
+        </div>
 
-                <div class="form-group">
-                  <label for="lastName">Last Name</label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    formControlName="lastName"
-                    placeholder="Enter last name"
-                  />
-                  @if (controlHasError('lastName')) {
-                    <span class="error-text">{{ getControlError('lastName') }}</span>
-                  }
-                </div>
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input
+            type="text"
+            id="lastName"
+            formControlName="lastName"
+            placeholder="Enter last name"
+            [readonly]="!isEditMode()"
+          />
+          @if (controlHasError('lastName')) {
+            <span class="error-text">{{ getControlError('lastName') }}</span>
+          }
+        </div>
 
-                <div class="form-group">
-                  <label for="facebookName">
-                    Facebook Name <span class="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="facebookName"
-                    formControlName="facebookName"
-                    placeholder="Enter your Facebook name"
-                  />
-                  @if (controlHasError('facebookName')) {
-                    <span class="error-text">{{ getControlError('facebookName') }}</span>
-                  }
-                </div>
+        <div class="form-group">
+          <label for="facebookName">
+            Facebook Name <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="facebookName"
+            formControlName="facebookName"
+            placeholder="Enter your Facebook name"
+            [readonly]="!isEditMode()"
+          />
+          @if (controlHasError('facebookName')) {
+            <span class="error-text">{{ getControlError('facebookName') }}</span>
+          }
+        </div>
 
-                <div class="form-group">
-                  <label for="email">Work Email</label>
-                  <input
-                    type="email"
-                    id="email"
-                    formControlName="email"
-                    placeholder="email@servetrack.org"
-                  />
-                  @if (controlHasError('email')) {
-                    <span class="error-text">{{ getControlError('email') }}</span>
-                  }
-                </div>
+        <div class="form-group">
+          <label for="email">Work Email</label>
+          <input
+            type="email"
+            id="email"
+            formControlName="email"
+            placeholder="email@servetrack.org"
+            [readonly]="!isEditMode()"
+          />
+          @if (controlHasError('email')) {
+            <span class="error-text">{{ getControlError('email') }}</span>
+          }
+        </div>
 
-                <div class="form-group">
-                  <label for="mobileNumber">Mobile Number</label>
-                  <input
-                    type="text"
-                    id="mobileNumber"
-                    formControlName="mobileNumber"
-                    placeholder="09XXXXXXXXX"
-                  />
-                  @if (controlHasError('mobileNumber')) {
-                    <span class="error-text">{{ getControlError('mobileNumber') }}</span>
-                  }
-                </div>
+        <div class="form-group">
+          <label for="mobileNumber">Mobile Number</label>
+          <input
+            type="text"
+            id="mobileNumber"
+            formControlName="mobileNumber"
+            placeholder="09XXXXXXXXX"
+            [readonly]="!isEditMode()"
+          />
+          @if (controlHasError('mobileNumber')) {
+            <span class="error-text">{{ getControlError('mobileNumber') }}</span>
+          }
+        </div>
 
-                <div class="form-group">
-                  <label for="birthdate">Birthdate</label>
-                  <input type="date" id="birthdate" formControlName="birthdate" />
-                  @if (controlHasError('birthdate')) {
-                    <span class="error-text">{{ getControlError('birthdate') }}</span>
-                  }
-                </div>
+        <div class="form-group">
+          <label for="birthdate">Birthdate</label>
+          <input 
+            type="date" 
+            id="birthdate" 
+            formControlName="birthdate"
+            [readonly]="!isEditMode()"
+          />
+          @if (controlHasError('birthdate')) {
+            <span class="error-text">{{ getControlError('birthdate') }}</span>
+          }
+        </div>
 
-                <div class="form-group wide">
-                  <label for="lastMedicalExam">Date of Last Medical Examination</label>
-                  <input type="date" id="lastMedicalExam" formControlName="lastMedicalExam" />
-                  @if (controlHasError('lastMedicalExam')) {
-                    <span class="error-text">{{ getControlError('lastMedicalExam') }}</span>
-                  }
-                </div>
+        <div class="form-group wide">
+          <label for="lastMedicalExam">Date of Last Medical Examination</label>
+          <input 
+            type="date" 
+            id="lastMedicalExam" 
+            formControlName="lastMedicalExam"
+            [readonly]="!isEditMode()"
+          />
+          @if (controlHasError('lastMedicalExam')) {
+            <span class="error-text">{{ getControlError('lastMedicalExam') }}</span>
+          }
+        </div>
 
-                <div class="form-group wide">
-                  <label for="completeAddress">Complete Address</label>
-                  <textarea
-                    id="completeAddress"
-                    rows="2"
-                    formControlName="completeAddress"
-                    placeholder="Enter complete address"
-                  ></textarea>
-                  @if (controlHasError('completeAddress')) {
-                    <span class="error-text">{{ getControlError('completeAddress') }}</span>
-                  }
-                </div>
+        <div class="form-group wide">
+          <label for="completeAddress">Complete Address</label>
+          <textarea
+            id="completeAddress"
+            rows="2"
+            formControlName="completeAddress"
+            placeholder="Enter complete address"
+            [readonly]="!isEditMode()"
+          ></textarea>
+          @if (controlHasError('completeAddress')) {
+            <span class="error-text">{{ getControlError('completeAddress') }}</span>
+          }
+        </div>
 
-                <h3 class="section-title wide">Education and Experience</h3>
+        <h3 class="section-title wide">Education and Experience</h3>
 
-                <div class="form-group wide">
-                  <label for="educationalAttainment">Educational Attainment</label>
-                  <select id="educationalAttainment" formControlName="educationalAttainment">
-                    <option value="" disabled>Select educational attainment</option>
-                    <option value="elementary">Elementary</option>
-                    <option value="high-school">High School</option>
-                    <option value="senior-high">Senior High School</option>
-                    <option value="vocational">Vocational Course</option>
-                    <option value="college-undergraduate">College Undergraduate</option>
-                    <option value="college-graduate">College Graduate</option>
-                    <option value="masters">Master's Degree</option>
-                    <option value="doctorate">Doctorate Degree</option>
-                  </select>
-                  @if (controlHasError('educationalAttainment')) {
-                    <span class="error-text">{{ getControlError('educationalAttainment') }}</span>
-                  }
-                </div>
+        <div class="form-group wide">
+          <label for="educationalAttainment">Educational Attainment</label>
+          <select 
+            id="educationalAttainment" 
+            formControlName="educationalAttainment"
+            [disabled]="!isEditMode()"
+          >
+            <option value="" disabled>Select educational attainment</option>
+            <option value="elementary">Elementary</option>
+            <option value="high-school">High School</option>
+            <option value="senior-high">Senior High School</option>
+            <option value="vocational">Vocational Course</option>
+            <option value="college-undergraduate">College Undergraduate</option>
+            <option value="college-graduate">College Graduate</option>
+            <option value="masters">Master's Degree</option>
+            <option value="doctorate">Doctorate Degree</option>
+          </select>
+          @if (controlHasError('educationalAttainment')) {
+            <span class="error-text">{{ getControlError('educationalAttainment') }}</span>
+          }
+        </div>
 
-                <div class="form-group wide">
-                  <label for="trainingExperience">Training and Experience</label>
-                  <textarea
-                    id="trainingExperience"
-                    rows="2"
-                    formControlName="trainingExperience"
-                    placeholder="Optional"
-                  ></textarea>
-                </div>
+        <div class="form-group wide">
+          <label for="trainingExperience">Training and Experience</label>
+          <textarea
+            id="trainingExperience"
+            rows="2"
+            formControlName="trainingExperience"
+            placeholder="Optional"
+            [readonly]="!isEditMode()"
+          ></textarea>
+        </div>
 
-                <div class="form-group wide">
-                  <label for="skillsHobbies">Skills and Hobbies</label>
-                  <textarea
-                    id="skillsHobbies"
-                    rows="2"
-                    formControlName="skillsHobbies"
-                    placeholder="Optional"
-                  ></textarea>
-                </div>
+        <div class="form-group wide">
+          <label for="skillsHobbies">Skills and Hobbies</label>
+          <textarea
+            id="skillsHobbies"
+            rows="2"
+            formControlName="skillsHobbies"
+            placeholder="Optional"
+            [readonly]="!isEditMode()"
+          ></textarea>
+        </div>
 
-                <div class="form-group wide">
-                  <label for="classesTraining">Classes and Training Attended</label>
-                  <textarea
-                    id="classesTraining"
-                    rows="2"
-                    formControlName="classesTraining"
-                    placeholder="Optional"
-                  ></textarea>
-                </div>
+        <div class="form-group wide">
+          <label for="classesTraining">Classes and Training Attended</label>
+          <textarea
+            id="classesTraining"
+            rows="2"
+            formControlName="classesTraining"
+            placeholder="Optional"
+            [readonly]="!isEditMode()"
+          ></textarea>
+        </div>
 
-                <h3 class="section-title wide">Availability and Lifegroup</h3>
+        <h3 class="section-title wide">Availability and Lifegroup</h3>
 
-                <div class="form-group wide">
-                  <label for="availability">Availability</label>
-                  <select id="availability" formControlName="availability">
-                    <option value="" disabled>Select your availability</option>
-                    <option value="anytime">Anytime / On Call</option>
-                    <option value="weekends-only">Weekends Only</option>
-                    <option value="weekdays-only">Weekdays Only</option>
-                    <option value="weekdays-weekends">Weekdays & Weekends</option>
-                    <option value="friday-saturday">Friday & Saturday Only</option>
-                    <option value="scheduled">Scheduled (By Arrangement)</option>
-                    <option value="holidays">Holidays (If Available)</option>
-                    <option value="rest-days">Rest Days / With Filed Leave</option>
-                    <option value="limited-weekdays">Limited Weekdays (Not Whole Day)</option>
-                    <option value="day-off">Day Off Only</option>
-                    <option value="others">Others</option>
-                  </select>
-                  @if (controlHasError('availability')) {
-                    <span class="error-text">{{ getControlError('availability') }}</span>
-                  }
-                </div>
+        <div class="form-group wide">
+          <label for="availability">Availability</label>
+          <select 
+            id="availability" 
+            formControlName="availability"
+            [disabled]="!isEditMode()"
+          >
+            <option value="" disabled>Select your availability</option>
+            <option value="anytime">Anytime / On Call</option>
+            <option value="weekends-only">Weekends Only</option>
+            <option value="weekdays-only">Weekdays Only</option>
+            <option value="weekdays-weekends">Weekdays & Weekends</option>
+            <option value="friday-saturday">Friday & Saturday Only</option>
+            <option value="scheduled">Scheduled (By Arrangement)</option>
+            <option value="holidays">Holidays (If Available)</option>
+            <option value="rest-days">Rest Days / With Filed Leave</option>
+            <option value="limited-weekdays">Limited Weekdays (Not Whole Day)</option>
+            <option value="day-off">Day Off Only</option>
+            <option value="others">Others</option>
+          </select>
+          @if (controlHasError('availability')) {
+            <span class="error-text">{{ getControlError('availability') }}</span>
+          }
+        </div>
 
-                @if (profileForm.get('availability')?.value === 'others') {
-                  <div class="form-group wide">
-                    <label for="otherAvailability">Please specify your availability</label>
-                    <input
-                      type="text"
-                      id="otherAvailability"
-                      formControlName="otherAvailability"
-                      placeholder="Enter your availability"
-                    />
-                  </div>
-                }
-
-                <div class="form-group">
-                  <label for="partOfLifegroup">Are you part of a lifegroup?</label>
-                  <select id="partOfLifegroup" formControlName="partOfLifegroup">
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label for="leadingLifegroup">Are you leading a lifegroup?</label>
-                  <select id="leadingLifegroup" formControlName="leadingLifegroup">
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </div>
-
-                @if (profileForm.get('partOfLifegroup')?.value === 'yes') {
-                  <div class="form-group wide">
-                    <label for="lifegroupLeaderName">Name of your Lifegroup Leader</label>
-                    <input
-                      type="text"
-                      id="lifegroupLeaderName"
-                      formControlName="lifegroupLeaderName"
-                      placeholder="Enter your lifegroup leader's name"
-                    />
-                  </div>
-                }
-
-                <h3 class="section-title wide">Emergency Contact</h3>
-
-                <div class="form-group wide">
-                  <label for="emergencyContactName">Contact Name</label>
-                  <input
-                    type="text"
-                    id="emergencyContactName"
-                    formControlName="emergencyContactName"
-                    placeholder="Full name"
-                  />
-                  @if (controlHasError('emergencyContactName')) {
-                    <span class="error-text">{{ getControlError('emergencyContactName') }}</span>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="emergencyContactNumber">Contact Number</label>
-                  <input
-                    type="text"
-                    id="emergencyContactNumber"
-                    formControlName="emergencyContactNumber"
-                    placeholder="09XXXXXXXXX"
-                  />
-                  @if (controlHasError('emergencyContactNumber')) {
-                    <span class="error-text">{{ getControlError('emergencyContactNumber') }}</span>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="emergencyContactRelationship">Relationship</label>
-                  <input
-                    type="text"
-                    id="emergencyContactRelationship"
-                    formControlName="emergencyContactRelationship"
-                    placeholder="e.g. Spouse, Parent"
-                  />
-                  @if (controlHasError('emergencyContactRelationship')) {
-                    <span class="error-text">{{ getControlError('emergencyContactRelationship') }}</span>
-                  }
-                </div>
-
-                <h3 class="section-title wide">Volunteer Preferences and Account</h3>
-
-                <div class="form-group wide">
-                  <label for="volunteerPreference">Volunteer Preference</label>
-                  <select
-                    id="volunteerPreference"
-                    formControlName="volunteerPreference"
-                    (change)="onVolunteerPreferenceChange($event)"
-                  >
-                    <option value="" disabled>Select your preference</option>
-                    <option value="sidewalk-sunday-school">
-                      Metro Sidewalk Sunday School (Teaching & Education)
-                    </option>
-                    <option value="mobile-kitchen">Mobile Kitchen Operations</option>
-                    <option value="relief-operations">Relief Operations</option>
-                    <option value="safety-emergency">Safety and Emergency Response</option>
-                    <option value="medical-operations">Medical Operations</option>
-                    <option value="psychological-aid">Psychological First Aid</option>
-                    <option value="transportation-logistics">
-                      Transportation & Logistics Team
-                    </option>
-                    <option value="purchasing">Purchasing Team</option>
-                    <option value="partnerships">Individual & Corporate Partnerships</option>
-                    <option value="digital-marketing">Digital Marketing & Promotions</option>
-                    <option value="creatives">Creatives (Video / Photos)</option>
-                    <option value="healing">Healing</option>
-                    <option value="real-estate-sports">Real Estate & Sports</option>
-                    <option value="kitchen-related">Anything kitchen-related</option>
-                    <option value="wherever-needed">Wherever is needed</option>
-                    <option value="dont-know">Don't know yet</option>
-                    <option value="other">Other</option>
-                  </select>
-                  @if (controlHasError('volunteerPreference')) {
-                    <span class="error-text">{{ getControlError('volunteerPreference') }}</span>
-                  }
-                </div>
-
-                @if (showOtherPreference()) {
-                  <div class="form-group wide">
-                    <label for="otherPreference">Other Preference</label>
-                    <input
-                      type="text"
-                      id="otherPreference"
-                      formControlName="otherPreference"
-                      placeholder="Specify your preference"
-                    />
-                  </div>
-                }
-
-                <div class="form-actions wide">
-                  <button type="submit" class="primary-btn">Update Profile</button>
-                  @if (editingProfileId() !== null) {
-                    <button type="button" class="outline-btn" (click)="cancelEdit()">Cancel</button>
-                  }
-                </div>
-              </form>
-            </article>
-
-            <article class="panel">
-              <div class="panel-header">
-                <h2>Volunteer Roster</h2>
-                <p>{{ profiles().length }} active members</p>
-              </div>
-              <div class="profile-list">
-                @for (profile of profiles(); track profile.id) {
-                  <article class="profile-item">
-                    <div class="profile-head">
-                      <img
-                        [src]="profile.photoUrl"
-                        [alt]="getProfileDisplayName(profile)"
-                        class="list-avatar"
-                      />
-                      <div>
-                        <h3>{{ getProfileDisplayName(profile) }}</h3>
-                        <p>{{ profile.volunteerPreference }}</p>
-                      </div>
-                    </div>
-                    <div class="item-actions">
-                      <button type="button" class="outline-btn" (click)="editProfile(profile)">
-                        Edit
-                      </button>
-                    </div>
-                  </article>
-                } @empty {
-                  <p class="empty-state">No other mission records found.</p>
-                }
-              </div>
-            </article>
-          </section>
+        @if (profileForm.get('availability')?.value === 'others') {
+          <div class="form-group wide">
+            <label for="otherAvailability">Please specify your availability</label>
+            <input
+              type="text"
+              id="otherAvailability"
+              formControlName="otherAvailability"
+              placeholder="Enter your availability"
+              [readonly]="!isEditMode()"
+            />
+          </div>
         }
+
+        <div class="form-group">
+          <label for="partOfLifegroup">Are you part of a lifegroup?</label>
+          <select 
+            id="partOfLifegroup" 
+            formControlName="partOfLifegroup"
+            [disabled]="!isEditMode()"
+          >
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="leadingLifegroup">Are you leading a lifegroup?</label>
+          <select 
+            id="leadingLifegroup" 
+            formControlName="leadingLifegroup"
+            [disabled]="!isEditMode()"
+          >
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+
+        @if (profileForm.get('partOfLifegroup')?.value === 'yes') {
+          <div class="form-group wide">
+            <label for="lifegroupLeaderName">Name of your Lifegroup Leader</label>
+            <input
+              type="text"
+              id="lifegroupLeaderName"
+              formControlName="lifegroupLeaderName"
+              placeholder="Enter your lifegroup leader's name"
+              [readonly]="!isEditMode()"
+            />
+          </div>
+        }
+
+        <h3 class="section-title wide">Emergency Contact</h3>
+
+        <div class="form-group wide">
+          <label for="emergencyContactName">Contact Name</label>
+          <input
+            type="text"
+            id="emergencyContactName"
+            formControlName="emergencyContactName"
+            placeholder="Full name"
+            [readonly]="!isEditMode()"
+          />
+          @if (controlHasError('emergencyContactName')) {
+            <span class="error-text">{{ getControlError('emergencyContactName') }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="emergencyContactNumber">Contact Number</label>
+          <input
+            type="text"
+            id="emergencyContactNumber"
+            formControlName="emergencyContactNumber"
+            placeholder="09XXXXXXXXX"
+            [readonly]="!isEditMode()"
+          />
+          @if (controlHasError('emergencyContactNumber')) {
+            <span class="error-text">{{ getControlError('emergencyContactNumber') }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="emergencyContactRelationship">Relationship</label>
+          <input
+            type="text"
+            id="emergencyContactRelationship"
+            formControlName="emergencyContactRelationship"
+            placeholder="e.g. Spouse, Parent"
+            [readonly]="!isEditMode()"
+          />
+          @if (controlHasError('emergencyContactRelationship')) {
+            <span class="error-text">{{ getControlError('emergencyContactRelationship') }}</span>
+          }
+        </div>
+
+        <h3 class="section-title wide">Volunteer Preferences and Account</h3>
+
+        <div class="form-group wide">
+          <label for="volunteerPreference">Volunteer Preference</label>
+          <select
+            id="volunteerPreference"
+            formControlName="volunteerPreference"
+            (change)="onVolunteerPreferenceChange($event)"
+            [disabled]="!isEditMode()"
+          >
+            <option value="" disabled>Select your preference</option>
+            <option value="sidewalk-sunday-school">
+              Metro Sidewalk Sunday School (Teaching & Education)
+            </option>
+            <option value="mobile-kitchen">Mobile Kitchen Operations</option>
+            <option value="relief-operations">Relief Operations</option>
+            <option value="safety-emergency">Safety and Emergency Response</option>
+            <option value="medical-operations">Medical Operations</option>
+            <option value="psychological-aid">Psychological First Aid</option>
+            <option value="transportation-logistics">
+              Transportation & Logistics Team
+            </option>
+            <option value="purchasing">Purchasing Team</option>
+            <option value="partnerships">Individual & Corporate Partnerships</option>
+            <option value="digital-marketing">Digital Marketing & Promotions</option>
+            <option value="creatives">Creatives (Video / Photos)</option>
+            <option value="healing">Healing</option>
+            <option value="real-estate-sports">Real Estate & Sports</option>
+            <option value="kitchen-related">Anything kitchen-related</option>
+            <option value="wherever-needed">Wherever is needed</option>
+            <option value="dont-know">Don't know yet</option>
+            <option value="other">Other</option>
+          </select>
+          @if (controlHasError('volunteerPreference')) {
+            <span class="error-text">{{ getControlError('volunteerPreference') }}</span>
+          }
+        </div>
+
+        @if (showOtherPreference()) {
+          <div class="form-group wide">
+            <label for="otherPreference">Other Preference</label>
+            <input
+              type="text"
+              id="otherPreference"
+              formControlName="otherPreference"
+              placeholder="Specify your preference"
+              [readonly]="!isEditMode()"
+            />
+          </div>
+        }
+      </form>
+    </article>
+  </section>
+        }
+
 
         @case ('polls') {
           <section class="poll-grid">

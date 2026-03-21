@@ -39,9 +39,13 @@ export class VolunteerDashboard implements OnInit {
 
   readonly defaultPhoto = '/assets/volunteer1.png';
 
+  // ── Navigation State (Fixed menu close issue) ────────────────────────────
   currentView = signal<'overview' | 'profile' | 'schedule' | 'polls'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Volunteer');
   sidebarCollapsed = signal(false);
+  mobileSidebarOpen = signal(false);
+  isMobile = signal(false);
+
   isLoading = signal(false);
 
   // ── Attendance (real data) ───────────────────────────────────────────────
@@ -92,8 +96,9 @@ export class VolunteerDashboard implements OnInit {
     return choice?.label ?? 'No vote submitted yet';
   });
 
-  // ── Profile ───────────────────────────────────────────────────────────────
+// ── Profile ───────────────────────────────────────────────────────────────
   editingProfileId = signal<number | null>(null);
+  isEditMode = signal(false);
   profilePreviewUrl = signal(this.defaultPhoto);
   profiles = signal<VolunteerProfile[]>([]);
   
@@ -216,9 +221,24 @@ export class VolunteerDashboard implements OnInit {
   // ─────────────────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
+    this.updateIsMobile();
     this.loadProfile();
     this.loadAttendanceStats();
     this.loadAttendance();
+  }
+
+  // ── Screen Detection for Mobile/Desktop Behavior ─────────────────────────
+  private updateIsMobile(): void {
+    const checkMobile = () => {
+      this.isMobile.set(window.innerWidth <= 860);
+    };
+    checkMobile();
+    // Listen for resize (debounced)
+    let timeout: any;
+    window.addEventListener('resize', () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(checkMobile, 100);
+    });
   }
 
   // ── Data loading ──────────────────────────────────────────────────────────
@@ -227,6 +247,10 @@ export class VolunteerDashboard implements OnInit {
     this.volunteerService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
         this.applyProfileResponse(response.data);
+        // Default to view mode after load
+        if (!this.isEditMode()) {
+          this.profileForm.markAsPristine();
+        }
       }
     });
   }
@@ -346,14 +370,23 @@ export class VolunteerDashboard implements OnInit {
     this.loadAttendance();
   }
 
-  // ── Sidebar / navigation ──────────────────────────────────────────────────
+  // ── Sidebar / navigation (Fixed close-on-select + mobile overlay) ───────
 
   toggleSidebar(): void {
-    this.sidebarCollapsed.update((v) => !v);
+    if (this.isMobile()) {
+      this.mobileSidebarOpen.update((v) => !v);
+    } else {
+      this.sidebarCollapsed.update((v) => !v);
+    }
   }
 
   setView(view: 'overview' | 'profile' | 'schedule' | 'polls'): void {
     this.currentView.set(view);
+    // Removed auto-closing per user request - sidebar stays open
+  }
+
+  onOverlayClick(): void {
+    this.mobileSidebarOpen.set(false);
   }
 
   setSearchQuery(value: string): void {
@@ -625,6 +658,10 @@ export class VolunteerDashboard implements OnInit {
 
   // Keep saveProfile for backward compatibility
   async saveProfile(): Promise<void> {
+    if (!this.isEditMode()) {
+      this.enterEditMode();
+      return;
+    }
     this.openSaveConfirmModal();
   }
 
@@ -650,10 +687,61 @@ export class VolunteerDashboard implements OnInit {
     this.showOtherPreference.set(profile.volunteerPreference === 'other');
   }
 
+  enterEditMode(): void {
+    this.isEditMode.set(true);
+    this.profileForm.markAllAsTouched();
+  }
+
+  exitEditMode(cancel: boolean = false): void {
+    this.isEditMode.set(false);
+    if (cancel) {
+      // Reset form to saved profile data
+      const savedData = this.savedProfileData();
+      if (savedData) {
+        const positionKey = this.getPositionKey(savedData.positions?.[0]?.name || '');
+        const availabilityKey = this.getAvailabilityKey(savedData.availabilities?.[0]?.name || '');
+        this.profileForm.patchValue({
+          firstName: savedData.first_name,
+          lastName: savedData.last_name,
+          facebookName: savedData.facebook_name ?? '',
+          email: savedData.email,
+          mobileNumber: savedData.mobile_number,
+          birthdate: savedData.birthdate,
+          lastMedicalExam: savedData.last_medical_examination,
+          completeAddress: savedData.address,
+          educationalAttainment: savedData.educational_attainment,
+          trainingExperience: savedData.training_experience ?? '',
+          skillsHobbies: savedData.skills_hobbies ?? '',
+          classesTraining: savedData.classes_training ?? '',
+          volunteerPreference: positionKey,
+          availability: availabilityKey,
+          otherAvailability: savedData.availabilities?.[0]?.pivot?.custom_description ?? '',
+          partOfLifegroup: savedData.lifegroups?.length ? 'yes' : 'no',
+          leadingLifegroup: savedData.lifegroups?.[0]?.pivot?.is_leader ? 'yes' : 'no',
+
+          lifegroupLeaderName: '',
+          emergencyContactName: savedData.emergency_contact?.name ?? '',
+
+          emergencyContactNumber: savedData.emergency_contact?.phone_number ?? '',
+          emergencyContactRelationship: savedData.emergency_contact?.relationship ?? '',
+        });
+        this.profilePreviewUrl.set(this.defaultPhoto);
+      }
+      this.profileForm.markAsPristine();
+    }
+  }
+
+  toggleEditMode(): void {
+    if (this.isEditMode()) {
+      this.exitEditMode(true); // Cancel changes
+    } else {
+      this.enterEditMode();
+    }
+  }
+
   cancelEdit(): void {
+    this.exitEditMode(true);
     this.editingProfileId.set(null);
-    this.profileForm.reset();
-    this.profilePreviewUrl.set(this.defaultPhoto);
     this.showOtherPreference.set(false);
   }
 

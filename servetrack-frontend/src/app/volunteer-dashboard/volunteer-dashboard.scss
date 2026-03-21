@@ -48,6 +48,7 @@
 }
 
 .sidebar.collapsed .logo-text,
+.sidebar.collapsed .toggle-text,
 .sidebar.collapsed .label,
 .sidebar.collapsed .user-info {
   display: none;
@@ -87,14 +88,68 @@
 }
 
 .sidebar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   border: 1px solid var(--slate-300);
   background: var(--white);
   color: var(--slate-700);
-  border-radius: 0.5rem;
-  padding: 0.35rem 0.58rem;
-  font-size: 0.78rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
   font-weight: 600;
+  min-height: 44px;
   cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  .toggle-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    position: relative;
+
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: currentColor;
+      border-radius: 2px;
+      left: 0;
+      transition: all 0.2s ease;
+    }
+
+    &::before { top: 6px; }
+    &::after { bottom: 6px; }
+
+    span {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: currentColor;
+      border-radius: 2px;
+      left: 0;
+      top: 9px;
+      transition: all 0.2s ease;
+    }
+  }
+
+  .toggle-text {
+    transition: opacity 0.2s ease;
+  }
+
+  &:hover {
+    background: var(--blue-50);
+    border-color: var(--blue-300);
+    color: var(--blue-800);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--blue-700);
+    outline-offset: 2px;
+  }
 }
 
 .sidebar-nav {
@@ -477,8 +532,8 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.72rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
 }
 
 .form-group {
@@ -588,6 +643,83 @@ textarea:focus {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
+.profile-section {
+  .panel.full-width {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .profile-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+  }
+}
+
+/* Readonly styles */
+input[readonly],
+textarea[readonly],
+select[disabled],
+.view-mode input,
+.view-mode textarea,
+.view-mode select {
+  background-color: #f8fafc;
+  color: #475569;
+  cursor: default;
+  border-color: #e2e8f0;
+  pointer-events: none;
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+}
+
+input[readonly]:focus,
+textarea[readonly]:focus,
+select[disabled]:focus {
+  border-color: #e2e8f0;
+  box-shadow: none;
+}
+
+/* Profile specific */
+.profile-section .form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .profile-actions {
+    flex-direction: column;
+    width: 100%;
+
+    button {
+      flex: 1;
+    }
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+}
+
 
 .section-text {
   margin: 0 0 0.7rem;
@@ -770,8 +902,12 @@ a:focus-visible {
 
 @media (max-width: 860px) {
   .sidebar {
-    width: 0;
-    overflow: hidden;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
   }
 
   .main-wrapper,
@@ -779,16 +915,69 @@ a:focus-visible {
     margin-left: 0;
   }
 
+  // Mobile hamburger toggle
+  .mobile-menu-toggle {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 30;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--slate-300);
+    background: var(--white);
+    border-radius: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+
+    span {
+      width: 24px;
+      height: 2px;
+      background: var(--slate-700);
+      border-radius: 1px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    &:hover {
+      background: var(--blue-50);
+      border-color: var(--blue-300);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--blue-700);
+      outline-offset: 2px;
+    }
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 15;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &.mobile-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
   .top-bar {
-    padding: 0 0.85rem;
+    padding: 1rem 1.25rem;
   }
 
   .search-input {
-    width: 150px;
+    width: 160px;
   }
 
   .dashboard-content {
-    padding: 0.85rem;
+    padding: 1rem;
   }
 
   .notification-item {
@@ -797,8 +986,8 @@ a:focus-visible {
   }
 
   .notification-panel {
-    right: 0.7rem;
-    width: min(520px, calc(100vw - 1.4rem));
+    right: 0.75rem;
+    width: min(520px, calc(100vw - 1.5rem));
   }
 
   .form-grid {
@@ -812,7 +1001,9 @@ a:focus-visible {
   }
 
   .schedule-controls {
+    flex-direction: column;
     align-items: stretch;
+    gap: 0.75rem;
   }
 
   .schedule-search {
@@ -824,18 +1015,65 @@ a:focus-visible {
     width: 100%;
   }
 
-  .schedule-search .search-btn {
-    white-space: nowrap;
-  }
-
   .schedule-card {
+    flex-direction: column;
     align-items: flex-start;
-    gap: 0.7rem;
+    gap: 0.75rem;
   }
 
   .schedule-status {
     margin-left: 0;
   }
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  z-index: 9999;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--blue-100);
+  border-top-color: var(--blue-700);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Modern button hover improvements (existing colors only)
+.stat-card,
+.action-card,
+.poll-option {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+  }
+}
+
+// Subtle focus rings for all interactive elements
+*:focus-visible {
+  outline: 2px solid var(--blue-600);
+  outline-offset: 2px;
+}
+
+// Refined spacing system
+.panel,
+.stat-card {
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
 }
 
 .loading-overlay {
