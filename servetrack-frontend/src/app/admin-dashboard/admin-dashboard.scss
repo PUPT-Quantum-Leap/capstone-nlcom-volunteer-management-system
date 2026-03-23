@@ -256,8 +256,8 @@
 }
 
 .nav_link.active {
-  color: var(--grey-color);
-  background: transparent;
+  color: var(--blue-700);
+  background: var(--blue-100);
   box-shadow: none;
 }
 
@@ -292,8 +292,8 @@
 
 .nav_link:hover .nav-icon,
 .nav_link.active .nav-icon {
-  color: var(--white);
-  background: rgba(255, 255, 255, 0.2);
+  color: var(--blue-700);
+  background: rgba(255, 255, 255, 0.8);
   opacity: 1;
 }
 
