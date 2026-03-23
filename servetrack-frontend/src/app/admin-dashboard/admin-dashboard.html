@@ -802,13 +802,13 @@
       }
 
       @case ('users') {
-      <section class="users-layout">
-        <div class="users-header">
+      <section class="volunteers-layout">
+        <div class="volunteers-header">
           <div class="header-content">
             <h2>User Management</h2>
             <p>Manage system users, roles, and permissions</p>
           </div>
-          <button type="button" class="add-user-btn" (click)="openCreateUserModal()">
+          <button type="button" class="add-volunteer-btn" (click)="openCreateUserModal()">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                 stroke-linejoin="round" />
@@ -817,7 +817,7 @@
           </button>
         </div>
 
-        <div class="users-filters">
+        <div class="volunteers-filters">
           <div class="search-filter">
             <svg class="search-icon" viewBox="0 0 24 24" fill="none">
               <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" />
@@ -833,13 +833,34 @@
             <option value="coordinator">Coordinator</option>
             <option value="volunteer">Volunteer</option>
           </select>
+          <div class="status-tabs">
+            <button type="button" 
+                    class="status-tab" 
+                    [class.active]="!showArchivedUsers()"
+                    (click)="switchToActiveUsers()">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21M4 7H20M4 15H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Active
+            </button>
+            <button type="button" 
+                    class="status-tab" 
+                    [class.active]="showArchivedUsers()"
+                    (click)="switchToArchivedUsers()">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M3 3H21V18L12 21L3 18V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 3L12 6L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Archived
+            </button>
+          </div>
         </div>
 
-        <div class="users-table-container">
-          <table class="users-table">
+        @if (!showArchivedUsers()) {
+        <div class="volunteers-table-container">
+          <table class="volunteers-table">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
@@ -850,8 +871,13 @@
             <tbody>
               @for (user of paginatedUsers(); track user.id) {
               <tr>
-                <td>#{{ user.id }}</td>
-                <td class="user-name">{{ user.name }}</td>
+                <td>
+                  <div class="volunteer-info">
+                    <div class="volunteer-details">
+                      <span class="volunteer-name">{{ user.name }}</span>
+                    </div>
+                  </div>
+                </td>
                 <td>{{ user.email }}</td>
                 <td>
                   <span class="role-badge" [class]="'role-' + user.role">
@@ -886,7 +912,7 @@
                       </svg>
                     </button>
                     <button type="button" class="action-btn delete-btn" (click)="confirmDeleteUser(user.id)"
-                      title="Delete">
+                      title="Archive">
                       <svg viewBox="0 0 24 24" fill="none">
                         <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                           stroke-linejoin="round" />
@@ -900,7 +926,7 @@
               </tr>
               } @empty {
               <tr>
-                <td colspan="6">
+                <td colspan="5">
                   <p class="empty-state">No user records found.</p>
                 </td>
               </tr>
@@ -951,6 +977,100 @@
           </div>
           }
         </div>
+        } @else {
+        <div class="volunteers-table-container">
+          <table class="volunteers-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Archived Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of paginatedArchivedUsers(); track user.id) {
+              <tr>
+                <td>
+                  <div class="volunteer-info">
+                    <div class="volunteer-details">
+                      <span class="volunteer-name">{{ user.name }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ user.email }}</td>
+                <td>
+                  <span class="role-badge" [class]="'role-' + user.role">
+                    {{ user.role }}
+                  </span>
+                </td>
+                <td>{{ user.deleted_at | date: 'MMM d, yyyy' }}</td>
+                <td>
+                  <div class="action-buttons">
+                    <button type="button" class="action-btn restore-btn" (click)="restoreUser(user.id)"
+                      title="Restore User">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M3 12C3 16.9706 7.02944 21 12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C9.17157 3 6.68629 4.34315 5.12132 6.5M5.12132 6.5L2 6.5M5.12132 6.5L5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              } @empty {
+              <tr>
+                <td colspan="5">
+                  <p class="empty-state">No archived users found.</p>
+                </td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination-container">
+          <div class="pagination-info">
+            Showing <strong>{{ (archivedUsersPage() - 1) * archivedUsersPerPage() + 1 }}</strong> 
+            to <strong>{{ Math.min(archivedUsersPage() * archivedUsersPerPage(), archivedUsers().length) }}</strong> 
+            of <strong>{{ archivedUsers().length }}</strong> archived user(s)
+          </div>
+          
+          @if (archivedUsersTotalPages() > 1) {
+          <div class="pagination-controls">
+            <button type="button" class="pagination-btn" 
+                    [disabled]="archivedUsersPage() === 1" 
+                    (click)="previousArchivedUsersPage()"
+                    title="Previous page">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            
+            @for (page of getArchivedUsersPageNumbers(); track page) {
+              @if (page === -1) {
+                <span class="pagination-ellipsis">...</span>
+              } @else {
+                <button type="button" 
+                        class="pagination-btn" 
+                        [class.active]="archivedUsersPage() === page"
+                        (click)="goToArchivedUsersPage(page)">
+                  {{ page }}
+                </button>
+              }
+            }
+            
+            <button type="button" class="pagination-btn" 
+                    [disabled]="archivedUsersPage() === archivedUsersTotalPages()" 
+                    (click)="nextArchivedUsersPage()"
+                    title="Next page">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+          }
+        </div>
+        }
       </section>
       }
 
