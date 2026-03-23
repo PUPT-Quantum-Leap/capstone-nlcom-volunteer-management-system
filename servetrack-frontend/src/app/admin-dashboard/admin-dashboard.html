@@ -1030,9 +1030,13 @@
 
         <div class="pagination-container">
           <div class="pagination-info">
+            @if (archivedUsers().length > 0) {
             Showing <strong>{{ (archivedUsersPage() - 1) * archivedUsersPerPage() + 1 }}</strong> 
             to <strong>{{ Math.min(archivedUsersPage() * archivedUsersPerPage(), archivedUsers().length) }}</strong> 
             of <strong>{{ archivedUsers().length }}</strong> archived user(s)
+            } @else {
+            No archived users found
+            }
           </div>
           
           @if (archivedUsersTotalPages() > 1) {
