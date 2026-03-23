@@ -1,11 +1,33 @@
 <div class="dashboard-container">
-  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
+  <aside class="sidebar" 
+         [class.collapsed]="sidebarCollapsed()"
+         [class.mobile-open]="mobileSidebarOpen()">
     <div class="sidebar-header">
-      <div class="logo-area">
-        <div class="logo-icon">ST</div>
+      <div class="logo-area" 
+           (click)="toggleSidebar()"
+           (keydown.enter)="toggleSidebar()" 
+           role="button" 
+           tabindex="0"
+           aria-label="Toggle sidebar">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" 
+               fill="none" 
+               aria-hidden="true">
+            <circle cx="12" 
+                    cy="12" 
+                    r="10" 
+                    stroke="currentColor"
+                    stroke-width="2" 
+                    fill="none"/>
+            <path d="M7 12L10 15L17 8" 
+                  stroke="currentColor"
+                  stroke-width="2.5" 
+                  stroke-linecap="round"
+                  stroke-linejoin="round"/>
+          </svg>
+        </div>
         <span class="logo-text">ServeTrack</span>
       </div>
-      <button type="button" class="sidebar-toggle" (click)="toggleSidebar()">Menu</button>
     </div>
 
     <nav class="sidebar-nav" aria-label="Admin Navigation">
@@ -18,7 +40,7 @@
                 <path d="M4 19H20M7 16V10M12 16V6M17 16V12" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" />
               </svg>
-              Dashboard Overview
+              <span class="nav-text">Dashboard Overview</span>
             </span>
           </button>
         </li>
@@ -31,7 +53,7 @@
                   d="M17 20C17 18.3431 14.7614 17 12 17C9.23858 17 7 18.3431 7 20M21 17C21 15.3431 19.2091 14 17 14M3 17C3 15.3431 4.79086 14 7 14M12 14C9.79086 14 8 12.2091 8 10C8 7.79086 9.79086 6 12 6C14.2091 6 16 7.79086 16 10C16 12.2091 14.2091 14 12 14ZM19 10C19 8.34315 17.6569 7 16 7M5 10C5 8.34315 6.34315 7 8 7"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" />
               </svg>
-              Volunteers
+              <span class="nav-text">Volunteers</span>
             </span>
           </button>
         </li>
@@ -44,7 +66,7 @@
                   d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
-              Attendance
+              <span class="nav-text">Volunteer Attendance Tracking</span>
             </span>
           </button>
         </li>
@@ -56,7 +78,7 @@
                 <path d="M9 19V6M15 19V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                 <path d="M4 19H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
               </svg>
-              Performance
+              <span class="nav-text">Performance</span>
             </span>
           </button>
         </li>
@@ -70,7 +92,7 @@
                   stroke-linejoin="round" />
                 <path d="M9 4H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
               </svg>
-              Polls
+              <span class="nav-text">Polls</span>
             </span>
           </button>
         </li>
@@ -86,7 +108,7 @@
                 <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                   stroke-linejoin="round" />
               </svg>
-              Incident Command System
+              <span class="nav-text">Incident Command System</span>
             </span>
           </button>
         </li>
@@ -99,7 +121,7 @@
                   d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.3503 17.623 3.8507 18.1676 4.55231C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
-              User Management
+              <span class="nav-text">User Management</span>
             </span>
           </button>
         </li>
@@ -111,7 +133,7 @@
                 <path d="M3 3V21H21M7 16L12 11L16 15L21 10M21 10V14M21 10H17" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round" />
               </svg>
-              Analytics
+              <span class="nav-text">Analytics</span>
             </span>
           </button>
         </li>
@@ -127,7 +149,7 @@
                   d="M15.695 13.7H15.704M15.695 16.7H15.704M11.995 13.7H12.005M11.995 16.7H12.005M8.295 13.7H8.305M8.295 16.7H8.305"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
-              Events
+              <span class="nav-text">Events</span>
             </span>
           </button>
         </li>
@@ -140,7 +162,7 @@
                   d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
-              SMS
+              <span class="nav-text">SMS</span>
             </span>
           </button>
         </li>
@@ -153,7 +175,7 @@
                   d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15"
                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
-              Backup and Restore
+              <span class="nav-text">Backup and Restore</span>
             </span>
           </button>
         </li>
@@ -171,8 +193,205 @@
     </div>
   </aside>
 
+  <!-- Mobile Sidebar -->
+  <aside class="mobile-sidebar" [class.mobile-open]="mobileSidebarOpen()">
+    <div class="mobile-sidebar-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke="currentColor"
+              stroke-width="2" fill="none"/>
+            <path d="M7 12L10 15L17 8" stroke="currentColor"
+              stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="logo-text">ServeTrack</span>
+      </div>
+      <button type="button" class="mobile-logout-btn"
+        (click)="logout()" (keydown.enter)="logout()"
+        aria-label="Logout">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M9 21H12M12 21L15 18M9 21L6 18" 
+            stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M16 17V14C16 12.58 14.58 9 10 9S4 12.58 4 17V20"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M12 14V17" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round"/>
+        </svg>
+        Logout
+      </button>
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Mobile Admin Navigation">
+      <ul>
+        <li>
+          <button type="button" [class.active]="currentView() === 'overview'" (click)="setView('overview')"
+            aria-label="View Dashboard Overview">
+            <span class="label nav-label">
+              <svg class="nav-icon overview" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 19H20M7 16V10M12 16V6M17 16V12" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" />
+              </svg>
+              <span class="nav-text">Dashboard Overview</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'volunteers'" (click)="setView('volunteers')"
+            aria-label="Manage Volunteers">
+            <span class="label nav-label">
+              <svg class="nav-icon volunteers" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M17 20C17 18.3431 14.7614 17 12 17C9.23858 17 7 18.3431 7 20M21 17C21 15.3431 19.2091 14 17 14M3 17C3 15.3431 4.79086 14 7 14M12 14C9.79086 14 8 12.2091 8 10C8 7.79086 9.79086 6 12 6C14.2091 6 16 7.79086 16 10C16 12.2091 14.2091 14 12 14ZM19 10C19 8.34315 17.6569 7 16 7M5 10C5 8.34315 6.34315 7 8 7"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <span class="nav-text">Volunteers</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'attendance'" (click)="setView('attendance')"
+            aria-label="Manage Attendance">
+            <span class="label nav-label">
+              <svg class="nav-icon attendance" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="nav-text">Volunteer Attendance Tracking</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'performance'" (click)="setView('performance')"
+            aria-label="View Performance">
+            <span class="label nav-label">
+              <svg class="nav-icon performance" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 19V6M15 19V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                <path d="M4 19H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <span class="nav-text">Performance</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'polls'" (click)="setView('polls')"
+            aria-label="Manage Polls">
+            <span class="label nav-label">
+              <svg class="nav-icon polls" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 7H20V20H4V7Z" stroke="currentColor" stroke-width="2" />
+                <path d="M8 11L12 15L16 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M9 4H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <span class="nav-text">Polls</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'ics'" (click)="setView('ics')"
+            aria-label="Incident Command System">
+            <span class="label nav-label">
+              <svg class="nav-icon ics" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+              <span class="nav-text">Incident Command System</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'users'" (click)="setView('users')"
+            aria-label="User Management">
+            <span class="label nav-label">
+              <svg class="nav-icon users" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.3503 17.623 3.8507 18.1676 4.55231C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="nav-text">User Management</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'analytics'" (click)="setView('analytics')"
+            aria-label="Analytics">
+            <span class="label nav-label">
+              <svg class="nav-icon analytics" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 3V21H21M7 16L12 11L16 15L21 10M21 10V14M21 10H17" stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="nav-text">Analytics</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'events'" (click)="setView('events')"
+            aria-label="Events Management">
+            <span class="label nav-label">
+              <svg class="nav-icon events" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                  d="M15.695 13.7H15.704M15.695 16.7H15.704M11.995 13.7H12.005M11.995 16.7H12.005M8.295 13.7H8.305M8.295 16.7H8.305"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="nav-text">Events</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'sms'" (click)="setView('sms')"
+            aria-label="SMS Notifications">
+            <span class="label nav-label">
+              <svg class="nav-icon sms" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="nav-text">SMS</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'backup'" (click)="setView('backup')"
+            aria-label="Backup and Restore">
+            <span class="label nav-label">
+              <svg class="nav-icon backup" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15"
+                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="nav-text">Backup and Restore</span>
+            </span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+
+  <div class="sidebar-overlay" [class.active]="mobileSidebarOpen()"
+    (click)="closeMobileSidebar()" (keydown.enter)="closeMobileSidebar()"
+    role="button" tabindex="0" aria-label="Close sidebar"></div>
+
   <div class="main-wrapper" [class.expanded]="sidebarCollapsed()">
     <header class="top-bar">
+      <div class="top-bar-left">
+        <button type="button" class="outline-btn mobile-menu-btn"
+          (click)="toggleMobileSidebar()" (keydown.enter)="toggleMobileSidebar()"
+          aria-label="Open menu">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 12H21M3 6H21M3 18H21" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
       <h1 class="page-title">
         @switch (currentView()) {
         @case ('overview') { Dashboard Overview }
@@ -191,9 +410,9 @@
 
       <div class="top-bar-right">
         <div class="search-inline">
-          <input #dashboardSearch type="text" class="search-input" [value]="searchQuery()"
-            (input)="setSearchQuery(dashboardSearch.value)" (keydown.enter)="runSearch()"
-            placeholder="Search dashboard...">
+          <input #dashboardSearch type="text" class="search-input"
+            [value]="searchQuery()" (input)="setSearchQuery(dashboardSearch.value)"
+            (keydown.enter)="runSearch()" placeholder="Search dashboard...">
           <button type="button" class="search-btn" (click)="runSearch()">Search</button>
         </div>
         <button type="button" class="outline-btn" (click)="toggleNotifications()">
