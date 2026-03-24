@@ -418,9 +418,13 @@
 
         <div class="pagination-container">
           <div class="pagination-info">
+            @if (filteredVolunteers().length > 0) {
             Showing <strong>{{ (volunteersPage() - 1) * volunteersPerPage() + 1 }}</strong> 
             to <strong>{{ Math.min(volunteersPage() * volunteersPerPage(), filteredVolunteers().length) }}</strong> 
             of <strong>{{ filteredVolunteers().length }}</strong> volunteer(s)
+            } @else {
+            No volunteers found
+            }
           </div>
           
           @if (volunteersTotalPages() > 1) {
