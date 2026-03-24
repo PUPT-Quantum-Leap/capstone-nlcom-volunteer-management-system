@@ -886,121 +886,16 @@
     </header>
 
     @if (showNotifications()) {
-    <section class="notification-panel panel">
-      <div class="panel-header">
-        <h2>Notifications</h2>
-        <div class="panel-actions">
-          <button type="button" class="outline-btn" (click)="markNotificationsRead()">Mark all as read</button>
-          <button type="button" class="outline-btn" (click)="closeNotifications()">Close</button>
-        </div>
-      </div>
-      <div class="notification-list">
-        @for (item of notifications(); track item.id) {
-        <article class="notification-item" [class.unread]="!item.read">
-          <div>
-            <h3>{{ item.title }}</h3>
-            <p>{{ item.description }}</p>
-          </div>
-          <span class="notification-time">{{ item.time }}</span>
-        </article>
-        }
-      </div>
-    </section>
-    }
-
-    <main class="dashboard-content">
-      @switch (currentView()) {
-      @case ('overview') {
-      <section class="overview-layout">
-        <section class="stats-grid">
-          <article class="stat-card">
-            <p class="label">Total Volunteers</p>
-            <p class="value">{{ totalVolunteers() }}</p>
-            <p class="meta">Registered members</p>
-          </article>
-
-          <article class="stat-card">
-            <p class="label">Active Volunteers</p>
-            <p class="value">{{ activeVolunteers() }}</p>
-            <p class="meta">Currently engaged</p>
-          </article>
-
-          <article class="stat-card">
-            <p class="label">Upcoming Events</p>
-            <p class="value">{{ upcomingEvents() }}</p>
-            <p class="meta">Scheduled activities</p>
-          </article>
-
-          <article class="stat-card">
-            <p class="label">Completed Missions</p>
-            <p class="value">{{ completedMissions() }}</p>
-            <p class="meta">Total achievements</p>
-          </article>
-        </section>
-
-        <section class="quick-actions">
-          <button type="button" class="action-card" (click)="setView('volunteers')">
-            <h3>Manage Volunteers</h3>
-            <p>View and manage volunteer profiles and assignments.</p>
-          </button>
-          <button type="button" class="action-card" (click)="setView('attendance')">
-            <h3>Track Attendance</h3>
-            <p>Monitor volunteer attendance for activities.</p>
-          </button>
-          <button type="button" class="action-card" (click)="setView('performance')">
-            <h3>View Performance</h3>
-            <p>Review volunteer performance metrics and ratings.</p>
-          </button>
-        </section>
-      </section>
-      }
-
-      @case ('volunteers') {
-      <section class="volunteers-layout">
-        <div class="volunteers-header">
-          <div class="header-content">
-            <h2>Volunteer Management</h2>
-            <p>Manage volunteer profiles, assignments, and information</p>
-          </div>
-          <button type="button" class="add-volunteer-btn" (click)="openCreateVolunteerModal()">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-            Add New Volunteer
-          </button>
-        </div>
-
-        <div class="volunteers-filters">
-          <div class="search-filter">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none">
-              <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" />
-              <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-            </svg>
-            <input type="text" placeholder="Search volunteers..." class="filter-input" 
-              [value]="volunteerSearchQuery()"
-              (input)="setVolunteerSearchQuery($any($event.target).value)">
-          </div>
-          <select class="filter-select">
-            <option>All Status</option>
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
-          <select class="filter-select">
-            <option>All Departments</option>
-            <option>Medical</option>
-            <option>Logistics</option>
-            <option>Communications</option>
-          </select>
-          <div class="status-tabs">
-            <button type="button" 
-                    class="status-tab" 
-                    [class.active]="!showArchivedVolunteers()"
-                    (click)="switchToActiveVolunteers()">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21M4 7H20M4 15H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              Active
+      <section class="notification-panel panel">
+        <div class="panel-header">
+          <h2>Notifications</h2>
+          <div class="panel-actions">
+            <button
+              type="button"
+              class="outline-btn"
+              (click)="markNotificationsRead()"
+            >
+              Mark all as read
             </button>
             <button
               type="button"
@@ -1011,131 +906,15 @@
             </button>
           </div>
         </div>
-
-        <div class="volunteers-table-container">
-          <table class="volunteers-table">
-            <thead>
-              <tr>
-                <th>Volunteer</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Department</th>
-                <th>Status</th>
-                <th>Joined Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (volunteer of paginatedVolunteers(); track volunteer.id) {
-              <tr>
-                <td>
-                  <div class="volunteer-info">
-                    <div class="volunteer-details">
-                      <span class="volunteer-name">{{ volunteer.name }}</span>
-                    </div>
-                  </div>
-                </td>
-                <td>{{ volunteer.email }}</td>
-                <td>{{ volunteer.phone }}</td>
-                <td><span class="dept-badge">{{ volunteer.department }}</span></td>
-                <td>
-                  <span class="status-badge" [class.status-active]="volunteer.status === 'active'"
-                    [class.status-inactive]="volunteer.status === 'inactive'">
-                    {{ volunteer.status === 'active' ? 'Active' : 'Inactive' }}
-                  </span>
-                </td>
-                <td>{{ volunteer.joined_date | date: 'MMM d, yyyy' }}</td>
-                <td>
-                  <div class="action-buttons">
-                    @if (!showArchivedVolunteers()) {
-                      <button type="button" class="action-btn edit-btn" (click)="openEditVolunteerModal(volunteer)"
-                        title="Edit">
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path
-                            d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                          <path
-                            d="M18.5 2.50001C18.8978 2.10219 19.4374 1.87869 20 1.87869C20.5626 1.87869 21.1022 2.10219 21.5 2.50001C21.8978 2.89784 22.1213 3.4374 22.1213 4.00001C22.1213 4.56262 21.8978 5.10219 21.5 5.50001L12 15L8 16L9 12L18.5 2.50001Z"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                      </button>
-                      <button type="button" class="action-btn delete-btn" (click)="confirmDeleteVolunteer(volunteer.id)"
-                        title="Archive">
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" />
-                          <path
-                            d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                      </button>
-                    } @else {
-                      <button type="button" class="action-btn restore-btn" (click)="restoreVolunteer(volunteer.id)"
-                        title="Restore">
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path d="M3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C9.5 21 7.25 19.8 5.75 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          <path d="M3 12L6 9M3 12L6 15M3 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                      </button>
-                    }
-                  </div>
-                </td>
-              </tr>
-              } @empty {
-              <tr>
-                <td colspan="7">
-                  <p class="empty-state">No volunteer records found.</p>
-                </td>
-              </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-
-        <div class="pagination-container">
-          <div class="pagination-info">
-            @if (filteredVolunteers().length > 0) {
-            Showing <strong>{{ (volunteersPage() - 1) * volunteersPerPage() + 1 }}</strong> 
-            to <strong>{{ Math.min(volunteersPage() * volunteersPerPage(), filteredVolunteers().length) }}</strong> 
-            of <strong>{{ filteredVolunteers().length }}</strong> volunteer(s)
-            } @else {
-            No volunteers found
-            }
-          </div>
-          
-          @if (volunteersTotalPages() > 1) {
-          <div class="pagination-controls">
-            <button type="button" class="pagination-btn" 
-                    [disabled]="volunteersPage() === 1" 
-                    (click)="previousVolunteersPage()"
-                    title="Previous page">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M15 19L8 12L15 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-            
-            @for (page of getVolunteersPageNumbers(); track page) {
-              @if (page === -1) {
-                <span class="pagination-ellipsis">...</span>
-              } @else {
-                <button type="button" 
-                        class="pagination-btn" 
-                        [class.active]="volunteersPage() === page"
-                        (click)="goToVolunteersPage(page)">
-                  {{ page }}
-                </button>
-              }
-            }
-            
-            <button type="button" class="pagination-btn" 
-                    [disabled]="volunteersPage() === volunteersTotalPages()" 
-                    (click)="nextVolunteersPage()"
-                    title="Next page">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M9 5L16 12L9 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-          </div>
+        <div class="notification-list">
+          @for (item of notifications(); track item.id) {
+            <article class="notification-item" [class.unread]="!item.read">
+              <div>
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.description }}</p>
+              </div>
+              <span class="notification-time">{{ item.time }}</span>
+            </article>
           }
         </div>
       </section>
@@ -1246,6 +1025,8 @@
                   type="text"
                   placeholder="Search volunteers..."
                   class="filter-input"
+                  [value]="volunteerSearchQuery()"
+                  (input)="setVolunteerSearchQuery($any($event.target).value)"
                 />
               </div>
               <select class="filter-select">
@@ -1445,6 +1226,7 @@
 
             <div class="pagination-container">
               <div class="pagination-info">
+                @if (filteredVolunteers().length > 0) {
                 Showing
                 <strong>{{
                   (volunteersPage() - 1) * volunteersPerPage() + 1
@@ -1453,10 +1235,13 @@
                 <strong>{{
                   Math.min(
                     volunteersPage() * volunteersPerPage(),
-                    volunteerRows().length
+                    filteredVolunteers().length
                   )
                 }}</strong>
-                of <strong>{{ volunteerRows().length }}</strong> volunteer(s)
+                of <strong>{{ filteredVolunteers().length }}</strong> volunteer(s)
+                } @else {
+                No volunteers found
+                }
               </div>
 
               @if (volunteersTotalPages() > 1) {
