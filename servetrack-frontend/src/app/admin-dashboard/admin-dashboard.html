@@ -298,7 +298,9 @@
               <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" />
               <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             </svg>
-            <input type="text" placeholder="Search volunteers..." class="filter-input">
+            <input type="text" placeholder="Search volunteers..." class="filter-input" 
+              [value]="volunteerSearchQuery()"
+              (input)="setVolunteerSearchQuery($any($event.target).value)">
           </div>
           <select class="filter-select">
             <option>All Status</option>
@@ -417,8 +419,8 @@
         <div class="pagination-container">
           <div class="pagination-info">
             Showing <strong>{{ (volunteersPage() - 1) * volunteersPerPage() + 1 }}</strong> 
-            to <strong>{{ Math.min(volunteersPage() * volunteersPerPage(), volunteerRows().length) }}</strong> 
-            of <strong>{{ volunteerRows().length }}</strong> volunteer(s)
+            to <strong>{{ Math.min(volunteersPage() * volunteersPerPage(), filteredVolunteers().length) }}</strong> 
+            of <strong>{{ filteredVolunteers().length }}</strong> volunteer(s)
           </div>
           
           @if (volunteersTotalPages() > 1) {
