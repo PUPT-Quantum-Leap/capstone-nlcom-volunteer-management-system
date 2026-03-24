@@ -68,6 +68,7 @@ export class AdminDashboard implements OnInit {
 
   searchQuery = signal('');
   userSearchQuery = signal('');
+  volunteerSearchQuery = signal('');
   userRoleFilter = signal('');
 
   editingPoll = signal<Poll | null>(null);
@@ -96,7 +97,7 @@ export class AdminDashboard implements OnInit {
   
   volunteersPage = signal(1);
   volunteersPerPage = signal(5);
-  volunteersTotalPages = computed(() => Math.ceil(this.volunteerRows().length / this.volunteersPerPage()));
+  volunteersTotalPages = computed(() => Math.ceil(this.filteredVolunteers().length / this.volunteersPerPage()));
   showArchivedVolunteers = signal(false);
   archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
 
@@ -236,14 +237,27 @@ export class AdminDashboard implements OnInit {
   });
 
   paginatedVolunteers = computed(() => {
-    const volunteers = this.showArchivedVolunteers() 
-      ? this.archivedVolunteerRows() 
-      : this.volunteerRows();
+    const volunteers = this.filteredVolunteers();
     const page = this.volunteersPage();
     const perPage = this.volunteersPerPage();
     const start = (page - 1) * perPage;
     const end = start + perPage;
     return volunteers.slice(start, end);
+  });
+
+  filteredVolunteers = computed(() => {
+    const volunteers = this.showArchivedVolunteers() 
+      ? this.archivedVolunteerRows() 
+      : this.volunteerRows();
+    const search = this.volunteerSearchQuery().toLowerCase().trim();
+    if (!search) {
+      return volunteers;
+    }
+    return volunteers.filter(v => 
+      v.name.toLowerCase().includes(search) || 
+      v.email.toLowerCase().includes(search) ||
+      v.department?.toLowerCase().includes(search)
+    );
   });
 
   // Custom validator to ensure cutoff date is not after event date
@@ -364,6 +378,11 @@ export class AdminDashboard implements OnInit {
 
   setSearchQuery(value: string): void {
     this.searchQuery.set(value);
+  }
+
+  setVolunteerSearchQuery(value: string): void {
+    this.volunteerSearchQuery.set(value);
+    this.volunteersPage.set(1);
   }
 
   runSearch(): void {
