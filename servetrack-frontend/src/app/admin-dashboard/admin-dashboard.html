@@ -1025,6 +1025,8 @@
                   type="text"
                   placeholder="Search volunteers..."
                   class="filter-input"
+                  [value]="volunteerSearchQuery()"
+                  (input)="setVolunteerSearchQuery($any($event.target).value)"
                 />
               </div>
               <select class="filter-select">
@@ -1224,6 +1226,7 @@
 
             <div class="pagination-container">
               <div class="pagination-info">
+                @if (filteredVolunteers().length > 0) {
                 Showing
                 <strong>{{
                   (volunteersPage() - 1) * volunteersPerPage() + 1
@@ -1232,10 +1235,13 @@
                 <strong>{{
                   Math.min(
                     volunteersPage() * volunteersPerPage(),
-                    volunteerRows().length
+                    filteredVolunteers().length
                   )
                 }}</strong>
-                of <strong>{{ volunteerRows().length }}</strong> volunteer(s)
+                of <strong>{{ filteredVolunteers().length }}</strong> volunteer(s)
+                } @else {
+                No volunteers found
+                }
               </div>
 
               @if (volunteersTotalPages() > 1) {
