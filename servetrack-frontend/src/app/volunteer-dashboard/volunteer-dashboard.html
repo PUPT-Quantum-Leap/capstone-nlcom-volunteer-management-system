@@ -80,12 +80,12 @@
         <li>
           <button
             type="button"
-            [class.active]="currentView() === 'polls'"
-            (click)="setView('polls')" (keydown.enter)="setView('polls')"
-            aria-label="View Volunteer Polls"
+            [class.active]="currentView() === 'rsvps'"
+            (click)="setView('rsvps')" (keydown.enter)="setView('rsvps')"
+            aria-label="View RSVPs"
           >
             <span class="label nav-label">
-              <svg class="nav-icon polls" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <svg class="nav-icon rsvps" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <rect x="2" y="6" width="20" height="12" rx="2"
                   stroke="currentColor" stroke-width="2" fill="none"/>
                 <path d="M8 2v4M16 2v4" stroke="currentColor"
@@ -94,7 +94,7 @@
                 <path d="M2 12h20" stroke="currentColor" stroke-width="2"
                   stroke-dasharray="2 2"/>
               </svg>
-              <span class="nav-text">Volunteer Polls</span>
+              <span class="nav-text">RSVPs</span>
             </span>
           </button>
         </li>
@@ -204,12 +204,12 @@
         <li>
           <button
             type="button"
-            [class.active]="currentView() === 'polls'"
-            (click)="setView('polls')" (keydown.enter)="setView('polls')"
-            aria-label="View Volunteer Polls"
+            [class.active]="currentView() === 'rsvps'"
+            (click)="setView('rsvps')" (keydown.enter)="setView('rsvps')"
+            aria-label="View RSVPs"
           >
             <span class="label nav-label">
-              <svg class="nav-icon polls" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <svg class="nav-icon rsvps" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <rect x="2" y="6" width="20" height="12" rx="2"
                   stroke="currentColor" stroke-width="2" fill="none"/>
                 <path d="M8 2v4M16 2v4" stroke="currentColor"
@@ -218,7 +218,7 @@
                 <path d="M2 12h20" stroke="currentColor" stroke-width="2"
                   stroke-dasharray="2 2"/>
               </svg>
-              <span class="nav-text">Volunteer Polls</span>
+              <span class="nav-text">RSVPs</span>
             </span>
           </button>
         </li>
@@ -246,7 +246,7 @@
             @case ('overview') { Overview Summary }
             @case ('profile') { Volunteer Profile }
             @case ('schedule') { Attendance Log }
-            @case ('polls') { Community Polls }
+            @case ('rsvps') { RSVPs }
           }
         </h1>
       </div>
@@ -326,19 +326,19 @@
               </article>
 
               <article class="stat-card">
-                <p class="label">Last Vote</p>
+                <p class="label">Last RSVP</p>
                 <p class="value value-text">
-                  @if (hasSubmittedVote()) {
-                    Voted
-                  } @else if (activePoll()) {
+                  @if (hasSubmittedResponse()) {
+                    Responded
+                  } @else if (activeRsvp()) {
                     Pending
                   } @else {
                     —
                   }
                 </p>
                 <p class="meta">
-                  @if (hasSubmittedVote()) {
-                    Vote Recorded
+                  @if (hasSubmittedResponse()) {
+                    Response Recorded
                   } @else {
                     Action Required
                   }
@@ -351,9 +351,9 @@
                 <h3>Update Profile</h3>
                 <p>Keep your volunteer details and preferences current.</p>
               </button>
-              <button type="button" class="action-card" (click)="setView('polls')">
-                <h3>Vote in Polls</h3>
-                <p>Cast your vote for schedules and assignments.</p>
+              <button type="button" class="action-card" (click)="setView('rsvps')">
+                <h3>RSVP for Shifts</h3>
+                <p>Select your preferred shifts and assignments.</p>
               </button>
               <button type="button" class="action-card" (click)="setView('schedule')">
                 <h3>Review Schedule</h3>
@@ -728,12 +728,12 @@
           </section>
         }
 
-        @case ('polls') {
-          <section class="poll-grid">
-            @if (polls().length === 0) {
-              <article class="panel poll-empty-panel">
-                <div class="poll-empty-state">
-                  <div class="poll-empty-icon">
+        @case ('rsvps') {
+          <section class="rsvp-grid">
+            @if (rsvps().length === 0) {
+              <article class="panel rsvp-empty-panel">
+                <div class="rsvp-empty-state">
+                  <div class="rsvp-empty-icon">
                     <svg viewBox="0 0 24 24" fill="none"
                       aria-hidden="true">
                       <path
@@ -744,52 +744,52 @@
                         stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                   </div>
-                  <h2>No Active Polls</h2>
-                  <p>There are no deployment polls available at the
+                  <h2>No Active RSVPs</h2>
+                  <p>There are no RSVPs available at the
                     moment.<br>Please check back soon for new opportunities to
                     serve.</p>
                 </div>
               </article>
             } @else {
-              @if (polls().length > 1) {
-                <div class="poll-tabs-wrapper">
-                  <span class="poll-tabs-label">Select a poll:</span>
-                  <div class="poll-tabs">
-                    @for (poll of polls(); track poll.id) {
+              @if (rsvps().length > 1) {
+                <div class="rsvp-tabs-wrapper">
+                  <span class="rsvp-tabs-label">Select an RSVP:</span>
+                  <div class="rsvp-tabs">
+                    @for (rsvp of rsvps(); track rsvp.id) {
                       <button
                         type="button"
-                        class="poll-tab"
-                        [class.active]="activePoll()?.id === poll.id"
-                        (click)="setActivePoll(poll)"
+                        class="rsvp-tab"
+                        [class.active]="activeRsvp()?.id === rsvp.id"
+                        (click)="setActiveRsvp(rsvp)"
                       >
-                        {{ poll.title }}
+                        {{ rsvp.title }}
                       </button>
                     }
                   </div>
                 </div>
               }
 
-              @if (activePoll(); as poll) {
-                <article class="panel poll-panel">
-                  <div class="poll-header">
-                    <div class="poll-title-section">
-                      <h2>{{ poll.title }}</h2>
-                      <span class="poll-date">{{ poll.date }}</span>
+              @if (activeRsvp(); as rsvp) {
+                <article class="panel rsvp-panel">
+                  <div class="rsvp-header">
+                    <div class="rsvp-title-section">
+                      <h2>{{ rsvp.title }}</h2>
+                      <span class="rsvp-date">{{ rsvp.date }}</span>
                     </div>
-                    <div class="poll-deadline">
-                      <span class="deadline-label">Voting closes:</span>
-                      <span class="deadline-value">{{ poll.cutOffDay }} at
-                        {{ poll.cutOffTime }}</span>
+                    <div class="rsvp-deadline">
+                      <span class="deadline-label">RSVP closes:</span>
+                      <span class="deadline-value">{{ rsvp.cutOffDay }} at
+                        {{ rsvp.cutOffTime }}</span>
                     </div>
                   </div>
 
-                  @if (poll.description) {
-                    <div class="poll-description">
-                      <p>{{ poll.description }}</p>
+                  @if (rsvp.description) {
+                    <div class="rsvp-description">
+                      <p>{{ rsvp.description }}</p>
                     </div>
                   }
 
-                  <div class="poll-instruction">
+                  <div class="rsvp-instruction">
                     <svg class="instruction-icon" viewBox="0 0 24 24"
                       fill="none" aria-hidden="true">
                       <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9
@@ -799,41 +799,41 @@
                     <span>Select your preferred time slot below</span>
                   </div>
 
-                  <div class="poll-options">
-                    @for (option of poll.options; track option.id) {
+                  <div class="rsvp-shifts">
+                    @for (shift of rsvp.shifts; track shift.id) {
                       <button
                         type="button"
-                        class="poll-option-card"
-                        [class.active]="selectedOptionId() === option.id"
-                        [class.full]="isOptionFull(option)"
-                        [disabled]="hasSubmittedVote() || isOptionFull(option)"
-                        (click)="selectOption(option.id)"
+                        class="rsvp-shift-card"
+                        [class.active]="selectedShiftId() === shift.id"
+                        [class.full]="isShiftFull(shift)"
+                        [disabled]="hasSubmittedResponse() || isShiftFull(shift)"
+                        (click)="selectShift(shift.id)"
                       >
                         <div class="option-main">
                           <div class="option-radio">
-                            @if (selectedOptionId() === option.id) {
+                            @if (selectedShiftId() === shift.id) {
                               <span class="radio-dot selected"></span>
-                            } @else if (isOptionFull(option)) {
+                            } @else if (isShiftFull(shift)) {
                               <span class="radio-dot disabled"></span>
                             } @else {
                               <span class="radio-dot"></span>
                             }
                           </div>
-                          <div class="option-details">
-                            <span class="option-time">{{ option.timeSlot }}</span>
-                            <div class="option-progress">
+                          <div class="shift-details">
+                            <span class="shift-time">{{ shift.timeSlot }}</span>
+                            <div class="shift-progress">
                               <div class="progress-bar">
                                 <div class="progress-fill"
-                                  [style.width.%]="getVotePercentage(option)">
+                                  [style.width.%]="getResponsePercentage(shift)">
                                 </div>
                               </div>
-                              <span class="progress-text">{{ option.votes }}
-                                of {{ option.capacity }} volunteers</span>
+                              <span class="progress-text">{{ shift.responses }}
+                                of {{ shift.capacity }} volunteers</span>
                             </div>
                           </div>
                         </div>
-                        <div class="option-status">
-                          @if (isOptionFull(option)) {
+                        <div class="shift-status">
+                          @if (isShiftFull(shift)) {
                             <span class="status-badge status-full">
                               <svg viewBox="0 0 24 24" fill="none"
                                 aria-hidden="true">
@@ -853,7 +853,7 @@
                                   stroke-linecap="round"
                                   stroke-linejoin="round"/>
                               </svg>
-                              {{ getRemainingSlots(option) }} spots open
+                              {{ getRemainingSlots(shift) }} spots open
                             </span>
                           }
                         </div>
@@ -861,39 +861,39 @@
                     }
                   </div>
 
-                  @if (pollError()) {
-                    <div class="poll-error">
+                  @if (rsvpError()) {
+                    <div class="rsvp-error">
                       <svg viewBox="0 0 24 24" fill="none"
                         aria-hidden="true">
                         <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0
                           0118 0z" stroke="currentColor" stroke-width="2"
                           stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
-                      <span>{{ pollError() }}</span>
+                      <span>{{ rsvpError() }}</span>
                     </div>
                   }
 
-                  <div class="poll-actions">
+                  <div class="rsvp-actions">
                     <button
                       type="button"
-                      class="primary-btn poll-submit-btn"
-                      [disabled]="selectedOptionId() === null ||
-                        hasSubmittedVote() || isLoading()"
-                      (click)="submitPollVote()"
+                      class="primary-btn rsvp-submit-btn"
+                      [disabled]="selectedShiftId() === null ||
+                        hasSubmittedResponse() || isLoading()"
+                      (click)="submitRsvpResponse()"
                     >
                       @if (isLoading()) {
                         <span class="btn-spinner"></span>
                         Submitting...
-                      } @else if (hasSubmittedVote()) {
+                      } @else if (hasSubmittedResponse()) {
                         <svg viewBox="0 0 24 24" fill="none"
                           aria-hidden="true">
                           <path d="M5 13l4 4L19 7" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round"
                             stroke-linejoin="round"/>
                         </svg>
-                        Vote Recorded
+                        Response Recorded
                       } @else {
-                        Submit My Vote
+                        Submit My Response
                       }
                     </button>
                   </div>

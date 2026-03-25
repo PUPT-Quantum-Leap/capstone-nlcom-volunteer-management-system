@@ -61,8 +61,8 @@
           </button>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'polls'" (click)="setView('polls')"
-            aria-label="Manage Polls">
+          <button type="button" [class.active]="currentView() === 'rsvps'" (click)="setView('rsvps')"
+            aria-label="Manage RSVPs">
             <span class="label nav-label">
               <svg class="nav-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M4 7H20V20H4V7Z" stroke="currentColor" stroke-width="2" />
@@ -70,7 +70,7 @@
                   stroke-linejoin="round" />
                 <path d="M9 4H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
               </svg>
-              Polls
+              RSVPs
             </span>
           </button>
         </li>
@@ -179,7 +179,7 @@
         @case ('volunteers') { Volunteer Management }
         @case ('attendance') { Attendance Management }
         @case ('performance') { Performance Metrics }
-        @case ('polls') { Polls Management }
+        @case ('rsvps') { RSVPs Management }
         @case ('ics') { Incident Command System }
         @case ('users') { User Management }
         @case ('analytics') { Analytics }
@@ -625,61 +625,61 @@
       </section>
       }
 
-      @case ('polls') {
-      <section class="polls-layout">
-        <div class="polls-header">
+      @case ('rsvps') {
+      <section class="rsvps-layout">
+        <div class="rsvps-header">
           <div class="header-content">
-            <h2>Polls Management</h2>
-            <p>Create, manage, and monitor volunteer polls and surveys</p>
+            <h2>RSVPs Management</h2>
+            <p>Create, manage, and monitor volunteer RSVPs and event signups</p>
           </div>
-          <button type="button" class="add-poll-btn" (click)="openCreatePollModal()">
+          <button type="button" class="add-rsvp-btn" (click)="openCreateRsvpModal()">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                 stroke-linejoin="round" />
             </svg>
-            Create New Poll
+            Create New RSVP
           </button>
         </div>
 
-        <div class="polls-filters">
+        <div class="rsvps-filters">
           <div class="filter-tabs">
-            <button type="button" class="filter-tab" [class.active]="pollFilterStatus() === 'all'"
-              (click)="setPollFilterStatus('all')">
-              All Polls
+            <button type="button" class="filter-tab" [class.active]="rsvpFilterStatus() === 'all'"
+              (click)="setRsvpFilterStatus('all')">
+              All RSVPs
             </button>
-            <button type="button" class="filter-tab" [class.active]="pollFilterStatus() === 'active'"
-              (click)="setPollFilterStatus('active')">
+            <button type="button" class="filter-tab" [class.active]="rsvpFilterStatus() === 'active'"
+              (click)="setRsvpFilterStatus('active')">
               Active
             </button>
-            <button type="button" class="filter-tab" [class.active]="pollFilterStatus() === 'draft'"
-              (click)="setPollFilterStatus('draft')">
+            <button type="button" class="filter-tab" [class.active]="rsvpFilterStatus() === 'draft'"
+              (click)="setRsvpFilterStatus('draft')">
               Draft
             </button>
-            <button type="button" class="filter-tab" [class.active]="pollFilterStatus() === 'closed'"
-              (click)="setPollFilterStatus('closed')">
+            <button type="button" class="filter-tab" [class.active]="rsvpFilterStatus() === 'closed'"
+              (click)="setRsvpFilterStatus('closed')">
               Closed
             </button>
           </div>
         </div>
 
-        <div class="polls-grid">
-          @for (poll of filteredPolls(); track poll.id) {
-          <article class="poll-item-card">
-            <div class="poll-item-header">
-              <div class="poll-item-title-section">
-                <h3 class="poll-item-title">{{ poll.title }}</h3>
-                <span class="poll-status-badge" [class.status-active]="poll.status === 'active'"
-                  [class.status-draft]="poll.status === 'draft'" [class.status-closed]="poll.status === 'closed'">
-                  {{ poll.status === 'active' ? 'Active' : poll.status === 'draft' ? 'Draft' : 'Closed' }}
+        <div class="rsvps-grid">
+          @for (rsvp of filteredRsvps(); track rsvp.id) {
+          <article class="rsvp-item-card">
+            <div class="rsvp-item-header">
+              <div class="rsvp-item-title-section">
+                <h3 class="rsvp-item-title">{{ rsvp.title }}</h3>
+                <span class="rsvp-status-badge" [class.status-active]="rsvp.status === 'active'"
+                  [class.status-draft]="rsvp.status === 'draft'" [class.status-closed]="rsvp.status === 'closed'">
+                  {{ rsvp.status === 'active' ? 'Active' : rsvp.status === 'draft' ? 'Draft' : 'Closed' }}
                 </span>
               </div>
-              <div class="poll-item-actions">
+              <div class="rsvp-item-actions">
                 <button
                   type="button"
-                  class="poll-action-btn share-btn"
-                  (click)="openSharePollModal(poll)"
-                  [attr.aria-label]="'Share poll ' + poll.title"
-                  title="Share Poll">
+                  class="rsvp-action-btn share-btn"
+                  (click)="openShareRsvpModal(rsvp)"
+                  [attr.aria-label]="'Share RSVP ' + rsvp.title"
+                  title="Share RSVP">
                   <svg viewBox="0 0 24 24" fill="none">
                     <path d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 6.65685 16.3431 8 18 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M6 15C7.65685 15 9 13.6569 9 12C9 10.3431 7.65685 9 6 9C4.34315 9 3 10.3431 3 12C3 13.6569 4.34315 15 6 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -688,16 +688,16 @@
                     <path d="M15.41 6.51001L8.59003 10.49" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </button>
-                <button type="button" class="poll-action-btn edit-btn" (click)="openEditPollModal(poll)"
-                  title="Edit Poll">
+                <button type="button" class="rsvp-action-btn edit-btn" (click)="openEditRsvpModal(rsvp)"
+                  title="Edit RSVP">
                   <svg viewBox="0 0 24 24" fill="none">
                     <path
                       d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13M18.5 2.5C18.8978 2.1022 19.4374 1.87868 20 1.87868C20.5626 1.87868 21.1022 2.1022 21.5 2.5C21.8978 2.8978 22.1213 3.43739 22.1213 4C22.1213 4.56261 21.8978 5.1022 21.5 5.5L12 15L8 16L9 12L18.5 2.5Z"
                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </button>
-                <button type="button" class="poll-action-btn delete-btn" (click)="confirmDeletePoll(poll.id)"
-                  title="Delete Poll">
+                <button type="button" class="rsvp-action-btn delete-btn" (click)="confirmDeleteRsvp(rsvp.id)"
+                  title="Delete RSVP">
                   <svg viewBox="0 0 24 24" fill="none">
                     <path
                       d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6"
@@ -707,71 +707,71 @@
               </div>
             </div>
 
-            <div class="poll-item-meta">
-              <div class="poll-meta-item">
+            <div class="rsvp-item-meta">
+              <div class="rsvp-meta-item">
                 <svg class="meta-icon" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
-                <span>{{ poll.date }}</span>
+                <span>{{ rsvp.date }}</span>
               </div>
-              <div class="poll-meta-item">
+              <div class="rsvp-meta-item">
                 <svg class="meta-icon" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
                   <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                 </svg>
-                <span>Cut-off: {{ poll.cutOffDay }} {{ poll.cutOffTime }}</span>
+                <span>Cut-off: {{ rsvp.cutOffDay }} {{ rsvp.cutOffTime }}</span>
               </div>
             </div>
 
-            <p class="poll-item-description">{{ poll.description }}</p>
+            <p class="rsvp-item-description">{{ rsvp.description }}</p>
 
-            <div class="poll-options-preview">
-              @for (option of poll.options; track option.id) {
-              <div class="poll-option-preview">
-                <div class="option-preview-header">
-                  <span class="option-timeslot">{{ option.timeSlot }}</span>
-                  <span class="option-votes">{{ option.votes }}/{{ option.capacity }}</span>
+            <div class="rsvp-shifts-preview">
+              @for (shift of rsvp.shifts; track shift.id) {
+              <div class="rsvp-shift-preview">
+                <div class="shift-preview-header">
+                  <span class="shift-timeslot">{{ shift.timeSlot }}</span>
+                  <span class="shift-responses">{{ shift.responses }}/{{ shift.capacity }}</span>
                 </div>
-                <div class="option-preview-progress">
-                  <div class="option-preview-fill" [class.full]="isFull(option)"
-                    [style.width.%]="(option.votes / option.capacity) * 100"></div>
+                <div class="shift-preview-progress">
+                  <div class="shift-preview-fill" [class.full]="isFull(shift)"
+                    [style.width.%]="(shift.responses / shift.capacity) * 100"></div>
                 </div>
-                <div class="option-preview-meta">
-                  <span class="option-percentage">{{ getVotePercentage(poll, option) | number: '1.0-1' }}% of
-                    votes</span>
-                  <span class="option-slots" [class.slots-full]="isFull(option)"
-                    [class.slots-available]="!isFull(option)">
-                    {{ isFull(option) ? 'FULL' : getRemainingSlots(option) + ' slots left' }}
+                <div class="shift-preview-meta">
+                  <span class="shift-percentage">{{ getResponsePercentage(rsvp, shift) | number: '1.0-1' }}% of
+                    responses</span>
+                  <span class="shift-slots" [class.slots-full]="isFull(shift)"
+                    [class.slots-available]="!isFull(shift)">
+                    {{ isFull(shift) ? 'FULL' : getRemainingSlots(shift) + ' slots left' }}
                   </span>
                 </div>
               </div>
               }
             </div>
 
-            <div class="poll-item-footer">
-              <div class="poll-total-votes">
+            <div class="rsvp-item-footer">
+              <div class="rsvp-total-responses">
                 <svg viewBox="0 0 24 24" fill="none">
                   <path
                     d="M17 20C17 18.3431 14.7614 17 12 17C9.23858 17 7 18.3431 7 20M21 17C21 15.3431 19.2091 14 17 14M3 17C3 15.3431 4.79086 14 7 14M12 14C9.79086 14 8 12.2091 8 10C8 7.79086 9.79086 6 12 6C14.2091 6 16 7.79086 16 10C16 12.2091 14.2091 14 12 14ZM19 10C19 8.34315 17.6569 7 16 7M5 10C5 8.34315 6.34315 7 8 7"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                 </svg>
-                <span>{{ poll.totalVotes }} total votes</span>
+                <span>{{ rsvp.totalResponses }} total responses</span>
               </div>
-              <div class="poll-status-actions">
-                @if (poll.status === 'draft') {
+              <div class="rsvp-status-actions">
+                @if (rsvp.status === 'draft') {
                 <button type="button" class="status-action-btn activate-btn"
-                  (click)="updatePollStatus(poll.id, 'active')">
+                  (click)="updateRsvpStatus(rsvp.id, 'active')">
                   Activate
                 </button>
-                } @else if (poll.status === 'active') {
-                <button type="button" class="status-action-btn close-btn" (click)="updatePollStatus(poll.id, 'closed')">
-                  Close Poll
+                } @else if (rsvp.status === 'active') {
+                <button type="button" class="status-action-btn close-btn" (click)="updateRsvpStatus(rsvp.id, 'closed')">
+                  Close RSVP
                 </button>
                 } @else {
                 <button type="button" class="status-action-btn reopen-btn"
-                  (click)="updatePollStatus(poll.id, 'active')">
+                  (click)="updateRsvpStatus(rsvp.id, 'active')">
                   Reopen
                 </button>
                 }
@@ -786,10 +786,10 @@
                 stroke-linejoin="round" />
               <path d="M9 4H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             </svg>
-            <h3>No polls found</h3>
-            <p>Create your first poll to get started with volunteer surveys.</p>
-            <button type="button" class="create-first-btn" (click)="openCreatePollModal()">
-              Create Poll
+            <h3>No RSVPs found</h3>
+            <p>Create your first RSVP to get started with volunteer event signups.</p>
+            <button type="button" class="create-first-btn" (click)="openCreateRsvpModal()">
+              Create RSVP
             </button>
           </div>
           }
@@ -1272,12 +1272,12 @@
 </div>
 }
 
-@if (showPollModal()) {
+@if (showRsvpModal()) {
 <div class="modal-backdrop">
-  <section class="modal-card poll-modal">
+  <section class="modal-card rsvp-modal">
     <div class="modal-header">
-      <h3>{{ editingPoll() ? 'Edit Poll' : 'Create New Poll' }}</h3>
-      <button type="button" class="modal-close-btn" (click)="closePollModal()">
+      <h3>{{ editingRsvp() ? 'Edit RSVP' : 'Create New RSVP' }}</h3>
+      <button type="button" class="modal-close-btn" (click)="closeRsvpModal()">
         <svg viewBox="0 0 24 24" fill="none">
           <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round" />
@@ -1285,92 +1285,92 @@
       </button>
     </div>
 
-    <form [formGroup]="pollForm" (ngSubmit)="savePoll()">
+    <form [formGroup]="rsvpForm" (ngSubmit)="saveRsvp()">
       <div class="form-grid">
         <div class="form-group">
-          <label for="poll-title">Poll Title *</label>
-          <input id="poll-title" type="text" formControlName="title" placeholder="e.g., Mobile Kitchen Operations"
+          <label for="rsvp-title">RSVP Title *</label>
+          <input id="rsvp-title" type="text" formControlName="title" placeholder="e.g., Mobile Kitchen Operations"
             class="form-input" />
-          @if (pollForm.get('title')?.invalid && pollForm.get('title')?.touched) {
+          @if (rsvpForm.get('title')?.invalid && rsvpForm.get('title')?.touched) {
           <span class="form-error">Title is required (min 3 characters)</span>
           }
         </div>
 
         <div class="form-group">
-          <label for="poll-date">Event Date *</label>
-          <input id="poll-date" type="date" formControlName="date" class="form-input" />
-          @if (pollForm.get('date')?.invalid && pollForm.get('date')?.touched) {
+          <label for="rsvp-date">Event Date *</label>
+          <input id="rsvp-date" type="date" formControlName="date" class="form-input" />
+          @if (rsvpForm.get('date')?.invalid && rsvpForm.get('date')?.touched) {
           <span class="form-error">Date is required</span>
           }
         </div>
 
         <div class="form-group">
-          <label for="poll-cutoff-day">Cut-off Date *</label>
-          <input id="poll-cutoff-day" type="date" formControlName="cutOffDay" class="form-input" />
-          @if (pollForm.get('cutOffDay')?.invalid && pollForm.get('cutOffDay')?.touched) {
+          <label for="rsvp-cutoff-day">Cut-off Date *</label>
+          <input id="rsvp-cutoff-day" type="date" formControlName="cutOffDay" class="form-input" />
+          @if (rsvpForm.get('cutOffDay')?.invalid && rsvpForm.get('cutOffDay')?.touched) {
           <span class="form-error">Cut-off date is required</span>
           }
-          @if (pollForm.errors?.['cutoffAfterEvent']) {
+          @if (rsvpForm.errors?.['cutoffAfterEvent']) {
           <span class="form-error">Cut-off date must not be after the event date</span>
           }
-          @if (pollForm.errors?.['cutoffBeforeToday']) {
+          @if (rsvpForm.errors?.['cutoffBeforeToday']) {
           <span class="form-error">Cut-off date must not be before today</span>
           }
         </div>
 
         <div class="form-group">
-          <label for="poll-cutoff-time">Cut-off Time *</label>
-          <input id="poll-cutoff-time" type="time" formControlName="cutOffTime" class="form-input" />
-          @if (pollForm.get('cutOffTime')?.invalid && pollForm.get('cutOffTime')?.touched) {
+          <label for="rsvp-cutoff-time">Cut-off Time *</label>
+          <input id="rsvp-cutoff-time" type="time" formControlName="cutOffTime" class="form-input" />
+          @if (rsvpForm.get('cutOffTime')?.invalid && rsvpForm.get('cutOffTime')?.touched) {
           <span class="form-error">Cut-off time is required</span>
           }
         </div>
       </div>
 
       <div class="form-group full-width">
-        <label for="poll-description">Description *</label>
-        <textarea id="poll-description" formControlName="description" placeholder="Describe the purpose of this poll..."
+        <label for="rsvp-description">Description *</label>
+        <textarea id="rsvp-description" formControlName="description" placeholder="Describe the purpose of this RSVP..."
           class="form-textarea" rows="3"></textarea>
-        @if (pollForm.get('description')?.invalid && pollForm.get('description')?.touched) {
+        @if (rsvpForm.get('description')?.invalid && rsvpForm.get('description')?.touched) {
         <span class="form-error">Description is required (min 10 characters)</span>
         }
       </div>
 
       <div class="form-group full-width">
         <div class="options-header">
-          <label>Poll Options *</label>
-          <button type="button" class="add-option-btn" (click)="addPollOption()">
+          <label>Shifts *</label>
+          <button type="button" class="add-option-btn" (click)="addRsvpShift()">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                 stroke-linejoin="round" />
             </svg>
-            Add Option
+            Add Shift
           </button>
         </div>
 
-        <div formArrayName="options" class="poll-options-form">
-          @for (option of pollOptions.controls; track $index; let i = $index) {
-          <div [formGroupName]="i" class="poll-option-form-item">
-            <div class="option-number">{{ i + 1 }}</div>
-            <div class="option-fields">
+        <div formArrayName="options" class="rsvp-shifts-form">
+          @for (shift of rsvpShifts.controls; track $index; let i = $index) {
+          <div [formGroupName]="i" class="rsvp-shift-form-item">
+            <div class="shift-number">{{ i + 1 }}</div>
+            <div class="shift-fields">
               <div class="form-group time-group">
-                <label [for]="'poll-option-start-time-' + i">Start Time</label>
-                <input [id]="'poll-option-start-time-' + i" type="time" formControlName="startTime"
+                <label [for]="'rsvp-shift-start-time-' + i">Start Time</label>
+                <input [id]="'rsvp-shift-start-time-' + i" type="time" formControlName="startTime"
                   class="form-input" />
               </div>
               <div class="form-group time-group">
-                <label [for]="'poll-option-end-time-' + i">End Time</label>
-                <input [id]="'poll-option-end-time-' + i" type="time" formControlName="endTime"
+                <label [for]="'rsvp-shift-end-time-' + i">End Time</label>
+                <input [id]="'rsvp-shift-end-time-' + i" type="time" formControlName="endTime"
                   class="form-input" />
               </div>
               <div class="form-group capacity-group">
-                <label [for]="'poll-option-capacity-' + i">Capacity</label>
-                <input [id]="'poll-option-capacity-' + i" type="number" formControlName="capacity"
+                <label [for]="'rsvp-shift-capacity-' + i">Capacity</label>
+                <input [id]="'rsvp-shift-capacity-' + i" type="number" formControlName="capacity"
                   placeholder="Capacity" min="1" class="form-input" />
               </div>
             </div>
-            @if (pollOptions.length > 1) {
-            <button type="button" class="remove-option-btn" (click)="removePollOption(i)" title="Remove option">
+            @if (rsvpShifts.length > 1) {
+            <button type="button" class="remove-option-btn" (click)="removeRsvpShift(i)" title="Remove shift">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                   stroke-linejoin="round" />
@@ -1386,16 +1386,16 @@
         <button 
           type="button" 
           class="outline-btn" 
-          (click)="closePollModal()" 
-          [disabled]="isCreatingPoll()">
+          (click)="closeRsvpModal()" 
+          [disabled]="isCreatingRsvp()">
           Cancel
         </button>
-        <button type="submit" class="primary-btn" [disabled]="isCreatingPoll()">
-          @if (isCreatingPoll()) {
+        <button type="submit" class="primary-btn" [disabled]="isCreatingRsvp()">
+          @if (isCreatingRsvp()) {
             <span class="loading-spinner"></span>
-            {{ editingPoll() ? 'Updating...' : 'Creating...' }}
+            {{ editingRsvp() ? 'Updating...' : 'Creating...' }}
           } @else {
-            {{ editingPoll() ? 'Update Poll' : 'Create Poll' }}
+            {{ editingRsvp() ? 'Update RSVP' : 'Create RSVP' }}
           }
         </button>
       </div>
@@ -1404,19 +1404,19 @@
 </div>
 }
 
-@if (showSharePollModal() && sharingPoll()) {
-<div class="modal-backdrop" (click)="closeSharePollModal()">
+@if (showShareRsvpModal() && sharingRsvp()) {
+<div class="modal-backdrop" (click)="closeShareRsvpModal()">
   <div class="modal-content share-modal" (click)="$event.stopPropagation()" style="width: 100%; max-width: 500px; margin: auto; background: white; border-radius: 12px; padding: 24px;">
     <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-      <h3 style="margin: 0; font-size: 1.25rem;">Share Poll Link</h3>
-      <button type="button" class="modal-close-btn" (click)="closeSharePollModal()" style="background: none; border: none; cursor: pointer; color: #666; padding: 4px;">
+      <h3 style="margin: 0; font-size: 1.25rem;">Share RSVP Link</h3>
+      <button type="button" class="modal-close-btn" (click)="closeShareRsvpModal()" style="background: none; border: none; cursor: pointer; color: #666; padding: 4px;">
         <svg viewBox="0 0 24 24" fill="none" style="width: 24px; height: 24px;">
           <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </button>
     </div>
     <div class="modal-body">
-      <p style="color: #4b5563; margin-bottom: 16px; font-size: 0.95rem;">Share this link with volunteers to allow them to vote on the poll.</p>
+      <p style="color: #4b5563; margin-bottom: 16px; font-size: 0.95rem;">Share this link with volunteers to allow them to RSVP for the event.</p>
       <div class="share-link-group" style="display: flex; gap: 8px; margin-top: 16px;">
         <input type="text" readonly [value]="getShareLink()" class="form-input share-link-input" style="flex: 1; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; background-color: #f9fafb;" />
         <button type="button" class="copy-btn primary-btn" (click)="copyShareLink()" style="padding: 10px 16px; border-radius: 6px; font-weight: 500; cursor: pointer; color: white; background-color: #3b82f6; border: none;">
@@ -1428,8 +1428,8 @@
 </div>
 }
 
-@if (showDeletePollModal()) {
-<div class="modal-backdrop" (click)="closeDeletePollModal()">
+@if (showDeleteRsvpModal()) {
+<div class="modal-backdrop" (click)="closeDeleteRsvpModal()">
   <section class="modal-card delete-modal" (click)="$event.stopPropagation()">
     <div class="delete-modal-icon">
       <svg viewBox="0 0 24 24" fill="none">
@@ -1438,26 +1438,26 @@
           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </div>
-    <h3>Delete Poll</h3>
-    <p>Are you sure you want to delete this poll? This action cannot be undone and all vote data will be lost.</p>
+    <h3>Delete RSVP</h3>
+    <p>Are you sure you want to delete this RSVP? This action cannot be undone and all response data will be lost.</p>
     <div class="modal-actions">
       <button 
         type="button" 
         class="outline-btn" 
-        (click)="closeDeletePollModal()" 
-        [disabled]="isDeletingPoll()">
+        (click)="closeDeleteRsvpModal()" 
+        [disabled]="isDeletingRsvp()">
         Cancel
       </button>
       <button 
         type="button" 
         class="danger-btn" 
-        (click)="deletePoll()" 
-        [disabled]="isDeletingPoll()">
-        @if (isDeletingPoll()) {
+        (click)="deleteRsvp()" 
+        [disabled]="isDeletingRsvp()">
+        @if (isDeletingRsvp()) {
           <span class="loading-spinner"></span>
           Deleting...
         } @else {
-          Delete Poll
+          Delete RSVP
         }
       </button>
     </div>

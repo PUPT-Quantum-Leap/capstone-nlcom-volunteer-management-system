@@ -2001,14 +2001,14 @@ a:focus-visible {
   }
 }
 
-// Polls Management Styles
-.polls-layout {
+// RSVPs Management Styles
+.rsvps-layout {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.polls-header {
+.rsvps-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -2016,7 +2016,7 @@ a:focus-visible {
   margin-bottom: 1rem;
 }
 
-.add-poll-btn {
+.add-rsvp-btn {
   background: var(--blue-700);
   color: var(--white);
   border: none;
@@ -2041,7 +2041,7 @@ a:focus-visible {
   }
 }
 
-.polls-filters {
+.rsvps-filters {
   background: var(--white);
   border-radius: 0.75rem;
   padding: 1rem;
@@ -2076,13 +2076,13 @@ a:focus-visible {
   }
 }
 
-.polls-grid {
+.rsvps-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 1.5rem;
 }
 
-.poll-item-card {
+.rsvp-item-card {
   background: var(--white);
   border-radius: 1rem;
   padding: 1.5rem;
@@ -2100,28 +2100,28 @@ a:focus-visible {
   }
 }
 
-.poll-item-header {
+.rsvp-item-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
 }
 
-.poll-item-title-section {
+.rsvp-item-title-section {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   flex: 1;
 }
 
-.poll-item-title {
+.rsvp-item-title {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--slate-900);
   margin: 0;
 }
 
-.poll-status-badge {
+.rsvp-status-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
   border-radius: 0.375rem;
@@ -2147,12 +2147,12 @@ a:focus-visible {
   }
 }
 
-.poll-item-actions {
+.rsvp-item-actions {
   display: flex;
   gap: 0.5rem;
 }
 
-.poll-action-btn {
+.rsvp-action-btn {
   background: transparent;
   border: 1px solid var(--slate-300);
   color: var(--slate-600);
@@ -2188,13 +2188,13 @@ a:focus-visible {
   }
 }
 
-.poll-item-meta {
+.rsvp-item-meta {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
 }
 
-.poll-meta-item {
+.rsvp-meta-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -2207,13 +2207,13 @@ a:focus-visible {
   }
 }
 
-.poll-item-description {
+.rsvp-item-description {
   color: var(--slate-600);
   line-height: 1.6;
   margin: 0;
 }
 
-.poll-options-preview {
+.rsvp-shifts-preview {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -2222,29 +2222,29 @@ a:focus-visible {
   border-radius: 0.5rem;
 }
 
-.poll-option-preview {
+.rsvp-shift-preview {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.option-preview-header {
+.shift-preview-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.option-timeslot {
+.shift-timeslot {
   font-weight: 600;
   color: var(--slate-900);
 }
 
-.option-votes {
+.shift-responses {
   font-weight: 700;
   color: var(--blue-700);
 }
 
-.option-preview-progress {
+.shift-preview-progress {
   width: 100%;
   height: 6px;
   background: var(--slate-200);
@@ -2252,7 +2252,7 @@ a:focus-visible {
   overflow: hidden;
 }
 
-.option-preview-fill {
+.shift-preview-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--blue-600), var(--blue-700));
   border-radius: 3px;
@@ -2263,18 +2263,18 @@ a:focus-visible {
   }
 }
 
-.option-preview-meta {
+.shift-preview-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 0.75rem;
 }
 
-.option-percentage {
+.shift-percentage {
   color: var(--slate-500);
 }
 
-.option-slots {
+.shift-slots {
   font-weight: 600;
 
   &.slots-available {
@@ -2286,7 +2286,7 @@ a:focus-visible {
   }
 }
 
-.poll-item-footer {
+.rsvp-item-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -2294,7 +2294,7 @@ a:focus-visible {
   border-top: 1px solid var(--slate-200);
 }
 
-.poll-total-votes {
+.rsvp-total-responses {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -2308,7 +2308,7 @@ a:focus-visible {
   }
 }
 
-.poll-status-actions {
+.rsvp-status-actions {
   display: flex;
   gap: 0.5rem;
 }
@@ -2392,7 +2392,7 @@ a:focus-visible {
   }
 }
 
-.poll-modal {
+.rsvp-modal {
   max-width: 900px;
   width: 90vw;
   max-height: 90vh;
@@ -2532,13 +2532,13 @@ a:focus-visible {
   }
 }
 
-.poll-options-form {
+.rsvp-shifts-form {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.poll-option-form-item {
+.rsvp-shift-form-item {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
@@ -2548,7 +2548,7 @@ a:focus-visible {
   border: 1px solid var(--slate-200);
 }
 
-.option-number {
+.shift-number {
   width: 32px;
   height: 32px;
   background: var(--blue-700);
@@ -2562,7 +2562,7 @@ a:focus-visible {
   margin-top: 0.5rem;
 }
 
-.option-fields {
+.shift-fields {
   flex: 1;
   display: flex;
   gap: 0.75rem;
@@ -2728,16 +2728,16 @@ a:focus-visible {
 }
 
 @media (max-width: 768px) {
-  .polls-grid {
+  .rsvps-grid {
     grid-template-columns: 1fr;
   }
 
-  .polls-header {
+  .rsvps-header {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .add-poll-btn {
+  .add-rsvp-btn {
     width: 100%;
     justify-content: center;
   }
@@ -2746,7 +2746,30 @@ a:focus-visible {
     grid-template-columns: 1fr;
   }
 
-  .poll-modal {
+  .rsvp-modal {
+    max-width: 95vw;
+    padding: 1rem;
+  }
+
+  .shift-fields {
+    flex-direction: column;
+  }
+
+.rsvps-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+.add-rsvp-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rsvp-modal {
     max-width: 95vw;
     padding: 1rem;
   }
