@@ -1339,6 +1339,7 @@ export class AdminDashboard implements OnInit {
             name: v.full_name,
             email: v.email,
             phone: v.mobile_number || 'N/A',
+            facebookName: v.facebook_name,
             department: 'Volunteer', // Default department
             status: 'inactive' as 'active' | 'inactive',
             joined_date: v.created_at
