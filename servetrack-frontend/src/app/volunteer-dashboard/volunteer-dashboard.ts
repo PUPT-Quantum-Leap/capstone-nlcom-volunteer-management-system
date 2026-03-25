@@ -93,15 +93,6 @@ export class VolunteerDashboard implements OnInit {
   hasSubmittedVote = signal(false);
   pollError = signal<string | null>(null);
 
-  totalVotes = computed(() => {
-    const poll = this.activePoll();
-    return poll ? poll.totalVotes : 0;
-  });
-
-  hasSubmittedVote = computed(() => this.volunteerPolls().some((poll) => poll.hasVoted));
-
-  hasSubmittedVote = computed(() => this.volunteerPolls().some((poll) => poll.hasVoted));
-
 // ── Profile ───────────────────────────────────────────────────────────────
   editingProfileId = signal<number | null>(null);
   isEditMode = signal(false);
@@ -212,7 +203,6 @@ export class VolunteerDashboard implements OnInit {
     this.loadAttendanceStats();
     this.loadAttendance();
     this.loadPolls();
-    this.loadPolls();
   }
 
   // ── Screen Detection for Mobile/Desktop Behavior ─────────────────────────
@@ -286,6 +276,9 @@ export class VolunteerDashboard implements OnInit {
 
     this.showOtherPreference.set(positionKey === 'other');
 
+    // Disable form controls since we're in view mode by default
+    this.profileForm.disable();
+
     const existing = this.profiles();
     const profile: VolunteerProfile = {
       id: data.volunteer_id,
@@ -317,23 +310,6 @@ export class VolunteerDashboard implements OnInit {
     this.editingProfileId.set(data.volunteer_id);
   }
 
-  private loadPolls(): void {
-    this.pollService.getPolls().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
-      const active = response.data.filter((p) => p.status === 'active');
-      this.polls.set(active);
-      if (active.length > 0 && !this.activePoll()) {
-        this.setActivePoll(active[0]);
-      }
-    });
-  }
-
-  setActivePoll(poll: Poll): void {
-    this.activePoll.set(poll);
-    this.selectedOptionId.set(null);
-    this.hasSubmittedVote.set(false);
-    this.pollError.set(null);
-  }
-
   private loadAttendanceStats(): void {
     this.volunteerService.getAttendanceStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
@@ -361,20 +337,20 @@ export class VolunteerDashboard implements OnInit {
   }
 
   private loadPolls(): void {
-    this.volunteerService.getPolls().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
-      if (response.success) {
-        const polls = response.data ?? [];
-        this.volunteerPolls.set(polls);
-
-        const preferredPoll =
-          polls.find((poll) => poll.status === 'active' && !poll.hasVoted) ??
-          polls.find((poll) => poll.hasVoted) ??
-          polls[0] ??
-          null;
-
-        this.selectedPollId.set(preferredPoll?.id ?? null);
+    this.pollService.getPolls().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
+      const active = response.data.filter((p) => p.status === 'active');
+      this.polls.set(active);
+      if (active.length > 0 && !this.activePoll()) {
+        this.setActivePoll(active[0]);
       }
     });
+  }
+
+  setActivePoll(poll: Poll): void {
+    this.activePoll.set(poll);
+    this.selectedOptionId.set(null);
+    this.hasSubmittedVote.set(false);
+    this.pollError.set(null);
   }
 
   setAttendancePeriod(period: AttendancePeriod): void {
@@ -382,7 +358,8 @@ export class VolunteerDashboard implements OnInit {
     this.loadAttendance();
   }
 
-  searchAttendance(): void {
+  searchAttendance(query: string): void {
+    this.attendanceSearchQuery.set(query);
     this.loadAttendance();
   }
 
@@ -415,16 +392,6 @@ export class VolunteerDashboard implements OnInit {
 
   setSearchQuery(value: string): void {
     this.searchQuery.set(value);
-  }
-
-  setAttendancePeriod(period: AttendancePeriod): void {
-    this.attendancePeriod.set(period);
-    this.loadAttendance();
-  }
-
-  searchAttendance(query: string): void {
-    this.attendanceSearchQuery.set(query);
-    this.loadAttendance();
   }
 
   runSearch(): void {
@@ -461,14 +428,6 @@ export class VolunteerDashboard implements OnInit {
 
   closeNotifications(): void {
     this.showNotifications.set(false);
-  }
-
-  toggleSidebar(): void {
-    this.sidebarCollapsed.update((v) => !v);
-  }
-
-  toggleMobileSidebar(): void {
-    this.mobileSidebarOpen.update((v) => !v);
   }
 
   openLogoutModal(): void {
@@ -728,11 +687,13 @@ export class VolunteerDashboard implements OnInit {
 
   enterEditMode(): void {
     this.isEditMode.set(true);
+    this.profileForm.enable();
     this.profileForm.markAllAsTouched();
   }
 
   exitEditMode(cancel: boolean = false): void {
     this.isEditMode.set(false);
+    this.profileForm.disable();
     if (cancel) {
       // Reset form to saved profile data
       const savedData = this.savedProfileData();

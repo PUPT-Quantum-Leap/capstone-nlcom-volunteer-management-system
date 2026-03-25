@@ -532,7 +532,6 @@
           <select 
             id="educationalAttainment" 
             formControlName="educationalAttainment"
-            [disabled]="!isEditMode()"
           >
             <option value="" disabled>Select educational attainment</option>
             <option value="elementary">Elementary</option>
@@ -589,7 +588,6 @@
           <select 
             id="availability" 
             formControlName="availability"
-            [disabled]="!isEditMode()"
           >
             <option value="" disabled>Select your availability</option>
             <option value="anytime">Anytime / On Call</option>
@@ -627,7 +625,6 @@
           <select 
             id="partOfLifegroup" 
             formControlName="partOfLifegroup"
-            [disabled]="!isEditMode()"
           >
             <option value="yes">Yes</option>
             <option value="no">No</option>
@@ -639,7 +636,6 @@
           <select 
             id="leadingLifegroup" 
             formControlName="leadingLifegroup"
-            [disabled]="!isEditMode()"
           >
             <option value="yes">Yes</option>
             <option value="no">No</option>
@@ -711,7 +707,6 @@
             id="volunteerPreference"
             formControlName="volunteerPreference"
             (change)="onVolunteerPreferenceChange($event)"
-            [disabled]="!isEditMode()"
           >
             <option value="" disabled>Select your preference</option>
             <option value="sidewalk-sunday-school">
