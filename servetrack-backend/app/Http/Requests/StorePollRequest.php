@@ -22,11 +22,11 @@ class StorePollRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['required', 'string', 'max:100', 'min:3'],
+            'title' => ['required', 'string', 'max:255', 'min:3'],
             'description' => ['required', 'string', 'min:10'],
             'date' => ['required', 'date', 'after_or_equal:today'],
             'cutoff_day' => ['required', 'date', 'before_or_equal:date'],
-            'cutoff_time' => ['required', 'regex:/^([01]?[0-9]|1[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/', 'max:20'],
+            'cutoff_time' => ['nullable', 'regex:/^([01]?[0-9]|1[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/', 'max:20'],
             'status' => ['sometimes', 'in:draft,active,closed'],
             'share_url' => ['nullable', 'string', 'max:500'],
             'options' => ['required', 'array', 'min:1'],
@@ -43,12 +43,11 @@ class StorePollRequest extends FormRequest
     {
         return [
             'title.required' => 'Poll title is required.',
-            'title.max' => 'Poll title may not exceed 100 characters.',
+            'title.max' => 'Poll title may not exceed 255 characters.',
             'date.required' => 'Poll date is required.',
             'date.date' => 'Poll date must be a valid date.',
             'cutoff_day.required' => 'Cut-off day is required.',
             'cutoff_day.before_or_equal' => 'Cut-off day must not be after the event date.',
-            'cutoff_time.required' => 'Cut-off time is required.',
             'status.in' => 'Status must be draft, active, or closed.',
             'options.required' => 'At least one option is required.',
             'options.min' => 'At least one option is required.',

@@ -22,11 +22,11 @@ class UpdatePollRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => ['sometimes', 'string', 'max:100'],
+            'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'date' => ['sometimes', 'date'],
             'cutoff_day' => ['sometimes', 'date', 'before_or_equal:date'],
-            'cutoff_time' => ['sometimes', 'regex:/^([01]?[0-9]|1[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/', 'max:20'],
+            'cutoff_time' => ['nullable', 'regex:/^([01]?[0-9]|1[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/', 'max:20'],
             'status' => ['sometimes', 'in:draft,active,closed'],
             'share_url' => ['nullable', 'string', 'max:500'],
             'options' => ['sometimes', 'array', 'min:1'],
@@ -42,7 +42,7 @@ class UpdatePollRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'title.max' => 'Poll title may not exceed 100 characters.',
+            'title.max' => 'Poll title may not exceed 255 characters.',
             'date.date' => 'Poll date must be a valid date.',
             'cutoff_day.before_or_equal' => 'Cut-off day must not be after the event date.',
             'status.in' => 'Status must be draft, active, or closed.',
