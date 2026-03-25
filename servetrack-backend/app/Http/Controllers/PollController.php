@@ -8,6 +8,7 @@ use App\Http\Resources\PollResource;
 use App\Models\Option;
 use App\Models\Poll;
 use App\Models\PollVote;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Log;
 
 class PollController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * List all polls.
      *
@@ -55,10 +58,7 @@ class PollController extends Controller
      */
     public function store(StorePollRequest $request): JsonResponse
     {
-        // Check if user is admin
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
-        }
+        $this->authorize('create', Poll::class);
 
         $poll = DB::transaction(function () use ($request): Poll {
             $poll = Poll::query()->create([
@@ -95,16 +95,13 @@ class PollController extends Controller
      */
     public function update(UpdatePollRequest $request, int $id): PollResource|JsonResponse
     {
-        // Check if user is admin
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
-        }
-
         $poll = Poll::query()->with('options')->find($id);
 
         if (! $poll) {
             return response()->json(['message' => 'Poll not found.'], 404);
         }
+
+        $this->authorize('update', $poll);
 
         DB::transaction(function () use ($request, $poll): void {
             $poll->update(array_filter([
@@ -126,17 +123,18 @@ class PollController extends Controller
                 });
 
                 foreach ($optionsToRemove as $option) {
+                    // Delete votes for this option first
                     $votesDeleted = PollVote::query()
                         ->where('poll_id', $poll->poll_id)
                         ->where('option_id', $option->option_id)
                         ->delete();
 
+                    // Log the vote deletion for debugging
                     if ($votesDeleted > 0) {
                         Log::info("Deleted {$votesDeleted} votes for removed option '{$option->text}' from poll {$poll->id}");
                     }
 
                     $poll->options()->detach($option->option_id);
-                    $option->delete();
 
                     Log::info("Removed option '{$option->text}' from poll {$poll->id}");
                 }
@@ -163,16 +161,13 @@ class PollController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
-        // Check if user is admin
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
-        }
-
         $poll = Poll::query()->find($id);
 
         if (! $poll) {
             return response()->json(['message' => 'Poll not found.'], 404);
         }
+
+        $this->authorize('delete', $poll);
 
         $poll->delete();
 
@@ -185,11 +180,6 @@ class PollController extends Controller
      */
     public function updateStatus(Request $request, int $id): JsonResponse
     {
-        // Check if user is admin
-        if ($request->user()->role !== 'admin') {
-            return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
-        }
-
         $request->validate([
             'status' => ['required', 'in:draft,active,closed'],
         ]);
@@ -198,6 +188,8 @@ class PollController extends Controller
         if (! $poll) {
             return response()->json(['message' => 'Poll not found.'], 404);
         }
+
+        $this->authorize('updateStatus', $poll);
 
         $poll->update(['status' => $request->input('status')]);
         $poll->refresh();
