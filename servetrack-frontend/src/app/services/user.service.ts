@@ -28,6 +28,13 @@ export class UserService {
     });
   }
 
+  getArchivedUsers(): Observable<ApiResponse<User[]>> {
+    return this.http.get<ApiResponse<User[]>>(this.baseUrl, {
+      withCredentials: true,
+      params: { archived: 'true' },
+    });
+  }
+
   getUser(id: number): Observable<ApiResponse<User>> {
     return this.http.get<ApiResponse<User>>(`${this.baseUrl}/${id}`, {
       withCredentials: true,
