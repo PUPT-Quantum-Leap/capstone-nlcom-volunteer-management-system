@@ -923,58 +923,142 @@
     <main class="dashboard-content">
       @switch (currentView()) {
         @case ('overview') {
+          <div class="admin-header">
+            <div class="welcome-section">
+              <h1 class="welcome-message">
+                Welcome Back, {{ currentUser()?.name || 'Admin' }}
+              </h1>
+              <p class="welcome-subtitle">
+                Here's what's happening today
+              </p>
+            </div>
+            <div class="clock-section">
+              <div class="clock-time">{{ currentTime() }}</div>
+              <div class="clock-date">{{ currentDate() }}</div>
+              <div class="clock-day">{{ currentDay() }}</div>
+            </div>
+          </div>
+          
           <section class="overview-layout">
+            <section class="overview-header">
+              <h2 class="overview-title">System Overview</h2>
+              <p class="overview-subtitle">
+                Real-time insights into your volunteer management system
+              </p>
+            </section>
+            
             <section class="stats-grid">
               <article class="stat-card">
-                <p class="label">Total Volunteers</p>
-                <p class="value">{{ totalVolunteers() }}</p>
-                <p class="meta">Registered members</p>
+                <div class="stat-icon volunteers-icon">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M17 20C17 18.3431 14.7614 17 12 17C9.23858 17 7 18.3431 7 20M21 17C21 15.3431 19.2091 14 17 14M3 17C3 15.3431 4.79086 14 7 14M12 14C9.79086 14 8 12.2091 8 10C8 7.79086 9.79086 6 12 6C14.2091 6 16 7.79086 16 10C16 12.2091 14.2091 14 12 14ZM19 10C19 8.34315 17.6569 7 16 7M5 10C5 8.34315 6.34315 7 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <p class="label">Total Volunteers</p>
+                  <p class="value">{{ totalVolunteers() }}</p>
+                  <p class="meta">Registered members</p>
+                </div>
               </article>
 
               <article class="stat-card">
-                <p class="label">Active Volunteers</p>
-                <p class="value">{{ activeVolunteers() }}</p>
-                <p class="meta">Currently engaged</p>
+                <div class="stat-icon active-icon">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <p class="label">Active Volunteers</p>
+                  <p class="value">{{ activeVolunteers() }}</p>
+                  <p class="meta">Currently engaged</p>
+                </div>
               </article>
 
               <article class="stat-card">
-                <p class="label">Upcoming Events</p>
-                <p class="value">{{ upcomingEvents() }}</p>
-                <p class="meta">Scheduled activities</p>
+                <div class="stat-icon events-icon">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="12" cy="15" r="1" fill="currentColor" />
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <p class="label">Upcoming Events</p>
+                  <p class="value">{{ upcomingEvents() }}</p>
+                  <p class="meta">Scheduled activities</p>
+                </div>
               </article>
 
               <article class="stat-card">
-                <p class="label">Completed Missions</p>
-                <p class="value">{{ completedMissions() }}</p>
-                <p class="meta">Total achievements</p>
+                <div class="stat-icon completed-icon">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.8333 20.9435 14.7213 21.4778C12.6092 22.0122 10.3751 21.8151 8.38909 20.9216C6.40312 20.028 4.78471 18.4873 3.79118 16.5511C2.79764 14.6149 2.48443 12.3931 2.90479 10.2518C3.32515 8.11059 4.45053 6.18295 6.08779 4.77218C7.72505 3.36141 9.77125 2.55379 11.902 2.4802" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M22 4L12 14.01L9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+                <div class="stat-content">
+                  <p class="label">Completed Missions</p>
+                  <p class="value">{{ completedMissions() }}</p>
+                  <p class="meta">Total achievements</p>
+                </div>
               </article>
             </section>
 
             <section class="quick-actions">
-              <button
-                type="button"
-                class="action-card"
-                (click)="setView('volunteers'); closeMobileSidebar()"
-              >
-                <h3>Manage Volunteers</h3>
-                <p>View and manage volunteer profiles and assignments.</p>
-              </button>
-              <button
-                type="button"
-                class="action-card"
-                (click)="setView('attendance'); closeMobileSidebar()"
-              >
-                <h3>Track Attendance</h3>
-                <p>Monitor volunteer attendance for activities.</p>
-              </button>
-              <button
-                type="button"
-                class="action-card"
-                (click)="setView('performance'); closeMobileSidebar()"
-              >
-                <h3>View Performance</h3>
-                <p>Review volunteer performance metrics and ratings.</p>
-              </button>
+              <div class="actions-header">
+                <h3 class="actions-title">Quick Actions</h3>
+                <p class="actions-subtitle">Common tasks and shortcuts</p>
+              </div>
+              
+              <div class="actions-grid">
+                <button
+                  type="button"
+                  class="action-card"
+                  (click)="setView('volunteers'); closeMobileSidebar()"
+                >
+                  <div class="action-icon volunteers-action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.3503 17.623 3.8507 18.1676 4.55231C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </div>
+                  <div class="action-content">
+                    <h3>Manage Volunteers</h3>
+                    <p>View profiles, assignments, and volunteer information</p>
+                  </div>
+                </button>
+                
+                <button
+                  type="button"
+                  class="action-card"
+                  (click)="setView('attendance'); closeMobileSidebar()"
+                >
+                  <div class="action-icon attendance-action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </div>
+                  <div class="action-content">
+                    <h3>Track Attendance</h3>
+                    <p>Monitor volunteer participation and check-in status</p>
+                  </div>
+                </button>
+                
+                <button
+                  type="button"
+                  class="action-card"
+                  (click)="setView('performance'); closeMobileSidebar()"
+                >
+                  <div class="action-icon performance-action-icon">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M9 19V6M15 19V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                      <path d="M4 19H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                  </div>
+                  <div class="action-content">
+                    <h3>View Performance</h3>
+                    <p>Review metrics, ratings, and achievements</p>
+                  </div>
+                </button>
+              </div>
             </section>
           </section>
         }
