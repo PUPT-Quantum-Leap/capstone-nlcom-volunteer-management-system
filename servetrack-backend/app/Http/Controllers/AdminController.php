@@ -75,6 +75,7 @@ class AdminController extends Controller
                 'name' => trim($volunteer->first_name.' '.$volunteer->last_name),
                 'email' => $volunteer->email,
                 'phone' => $volunteer->mobile_number,
+                'facebookName' => $volunteer->facebook_name,
                 'department' => $volunteer->positions->first()->name ?? 'Unassigned',
                 'status' => $hasRecentApproved ? 'active' : 'inactive',
                 'joined_date' => optional($volunteer->created_at)->toDateString(),
