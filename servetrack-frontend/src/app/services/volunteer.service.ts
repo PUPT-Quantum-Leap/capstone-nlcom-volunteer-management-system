@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Attendance, AttendanceStats } from '../models/attendance';
+import { VolunteerPoll } from '../models/volunteer-poll';
 import { VolunteerProfileResponse } from '../models/volunteer-profile';
 import { AuthService } from './auth.service';
 
@@ -87,8 +88,41 @@ export class VolunteerService {
       .pipe(
         catchError((error) => {
           console.error('[VolunteerService] getAttendanceStats failed:', error);
+        throw error;
+      }),
+    );
+  }
+
+  /** Fetch volunteer polls from the backend. */
+  getPolls(): Observable<ApiResponse<VolunteerPoll[]>> {
+    return this.http
+      .get<ApiResponse<VolunteerPoll[]>>(`${this.baseUrl}/polls`, {
+        withCredentials: true,
+      })
+      .pipe(
+        catchError((error) => {
+          console.error('[VolunteerService] getPolls failed:', error);
           throw error;
         }),
       );
+  }
+
+  /** Submit a vote for a specific poll. */
+  submitPollVote(pollId: number): Observable<ApiResponse<VolunteerPoll>> {
+    return this.authService.ensureCsrf$().pipe(
+      switchMap(() =>
+        this.http.post<ApiResponse<VolunteerPoll>>(
+          `${this.baseUrl}/polls/${pollId}/vote`,
+          {},
+          {
+            withCredentials: true,
+          },
+        ),
+      ),
+      catchError((error) => {
+        console.error('[VolunteerService] submitPollVote failed:', error);
+        throw error;
+      }),
+    );
   }
 }

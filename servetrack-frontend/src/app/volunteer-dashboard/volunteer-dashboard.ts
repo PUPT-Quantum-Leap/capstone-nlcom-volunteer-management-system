@@ -18,9 +18,9 @@ import { VolunteerService } from '../services/volunteer.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { VolunteerProfile, VolunteerProfileResponse } from '../models/volunteer-profile';
-import { PollChoice } from '../models/poll-choice';
 import { NotificationItem } from '../models/notification-item';
 import { Attendance, AttendancePeriod } from '../models/attendance';
+import { VolunteerPoll } from '../models/volunteer-poll';
 
 import { DatePipe } from '@angular/common';
 
@@ -83,18 +83,27 @@ export class VolunteerDashboard implements OnInit {
   );
 
   // ── Polls ─────────────────────────────────────────────────────────────────
-  selectedPollChoiceId = signal<number | null>(null);
-  hasSubmittedVote = signal(false);
+  selectedPollId = signal<number | null>(null);
+  volunteerPolls = signal<VolunteerPoll[]>([]);
 
-  pollChoices = signal<PollChoice[]>([]);
+  activeVolunteerPolls = computed(() =>
+    this.volunteerPolls().filter((poll) => poll.status !== 'closed'),
+  );
 
-  totalVotes = computed(() => this.pollChoices().reduce((sum, choice) => sum + choice.votes, 0));
+  selectedPoll = computed(() =>
+    this.volunteerPolls().find((poll) => poll.id === this.selectedPollId()) ?? null,
+  );
 
   selectedPollLabel = computed(() => {
-    const selectedId = this.selectedPollChoiceId();
-    const choice = this.pollChoices().find((item) => item.id === selectedId);
-    return choice?.label ?? 'No vote submitted yet';
+    const votedPoll = this.volunteerPolls().find((poll) => poll.hasVoted);
+    if (votedPoll) {
+      return votedPoll.title;
+    }
+
+    return this.selectedPoll()?.title ?? 'No vote submitted yet';
   });
+
+  hasSubmittedVote = computed(() => this.volunteerPolls().some((poll) => poll.hasVoted));
 
 // ── Profile ───────────────────────────────────────────────────────────────
   editingProfileId = signal<number | null>(null);
@@ -225,6 +234,7 @@ export class VolunteerDashboard implements OnInit {
     this.loadProfile();
     this.loadAttendanceStats();
     this.loadAttendance();
+    this.loadPolls();
   }
 
   // ── Screen Detection for Mobile/Desktop Behavior ─────────────────────────
@@ -361,6 +371,23 @@ export class VolunteerDashboard implements OnInit {
       });
   }
 
+  private loadPolls(): void {
+    this.volunteerService.getPolls().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
+      if (response.success) {
+        const polls = response.data ?? [];
+        this.volunteerPolls.set(polls);
+
+        const preferredPoll =
+          polls.find((poll) => poll.status === 'active' && !poll.hasVoted) ??
+          polls.find((poll) => poll.hasVoted) ??
+          polls[0] ??
+          null;
+
+        this.selectedPollId.set(preferredPoll?.id ?? null);
+      }
+    });
+  }
+
   setAttendancePeriod(period: AttendancePeriod): void {
     this.attendancePeriod.set(period);
     this.loadAttendance();
@@ -386,6 +413,14 @@ export class VolunteerDashboard implements OnInit {
   }
 
   onOverlayClick(): void {
+    this.mobileSidebarOpen.set(false);
+  }
+
+  toggleMobileSidebar(): void {
+    this.mobileSidebarOpen.update((value) => !value);
+  }
+
+  closeMobileSidebar(): void {
     this.mobileSidebarOpen.set(false);
   }
 
@@ -510,44 +545,47 @@ export class VolunteerDashboard implements OnInit {
 
   // ── Polls ─────────────────────────────────────────────────────────────────
 
-  selectPollChoice(choiceId: number): void {
-    if (this.hasSubmittedVote()) {
+  selectPoll(pollId: number): void {
+    const poll = this.volunteerPolls().find((item) => item.id === pollId);
+    if (!poll || poll.status === 'closed') {
       return;
     }
 
-    this.selectedPollChoiceId.set(choiceId);
+    this.selectedPollId.set(pollId);
   }
 
   async submitPollVote(): Promise<void> {
-    const selectedId = this.selectedPollChoiceId();
-    if (selectedId === null || this.hasSubmittedVote()) {
+    const selectedId = this.selectedPollId();
+    const selectedPoll = this.selectedPoll();
+    if (selectedId === null || !selectedPoll || selectedPoll.hasVoted || selectedPoll.status !== 'active') {
       return;
     }
 
     this.isLoading.set(true);
-    await new Promise((res) => setTimeout(res, 400));
     try {
-      this.pollChoices.update((choices) =>
-        choices.map((choice) => {
-          if (choice.id === selectedId) {
-            return { ...choice, votes: choice.votes + 1 };
-          }
-          return choice;
-        }),
-      );
-      this.hasSubmittedVote.set(true);
+      await new Promise<void>((resolve, reject) => {
+        this.volunteerService
+          .submitPollVote(selectedId)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (response) => {
+              if (response.success) {
+                const updatedPoll = response.data;
+                this.volunteerPolls.update((polls) =>
+                  polls.map((poll) => (poll.id === updatedPoll.id ? updatedPoll : poll)),
+                );
+                resolve();
+                return;
+              }
+
+              reject(new Error(response.message || 'Failed to submit vote.'));
+            },
+            error: (error: unknown) => reject(error),
+          });
+      });
     } finally {
       this.isLoading.set(false);
     }
-  }
-
-  getVotePercentage(votes: number): number {
-    const total = this.totalVotes();
-    if (total === 0) {
-      return 0;
-    }
-
-    return Math.round((votes / total) * 100);
   }
 
   // ── Photo ─────────────────────────────────────────────────────────────────
