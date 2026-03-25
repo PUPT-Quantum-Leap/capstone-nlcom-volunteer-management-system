@@ -28,11 +28,18 @@ import { PollService } from '../services/poll.service';
 import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
 import { User } from '../models/user';
 import { UserService } from '../services/user.service';
+import { AdminHeaderComponent } from '../components/admin-header/admin-header.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, CommonModule, IncidentCommandSystemComponent],
+  imports: [
+    ReactiveFormsModule, 
+    DatePipe, 
+    CommonModule, 
+    IncidentCommandSystemComponent,
+    AdminHeaderComponent
+  ],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
@@ -116,11 +123,6 @@ export class AdminDashboard implements OnInit {
   snackbarSlideOut = signal(false);
 
   notifications = signal<NotificationItem[]>([]);
-
-  // Clock signals
-  currentTime = signal('');
-  currentDate = signal('');
-  currentDay = signal('');
 
   notificationCount = computed(
     () => this.notifications().filter((notification) => !notification.read).length,
@@ -348,7 +350,6 @@ export class AdminDashboard implements OnInit {
     this.loadDashboardData();
     this.loadPolls();
     this.loadUsers();
-    this.initializeClock();
   }
 
   private loadDashboardData(): void {
@@ -1413,42 +1414,5 @@ export class AdminDashboard implements OnInit {
     }
     
     return this.formatTimeTo12Hour(timeSlot);
-  }
-
-  // Clock methods
-  private initializeClock(): void {
-    this.updateClock();
-    setInterval(() => this.updateClock(), 1000);
-  }
-
-  private updateClock(): void {
-    const now = new Date();
-    
-    // Format time as HH:MM:SS AM/PM
-    const hours = now.getHours();
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours === 0 ? 12 : (hours > 12 ? hours - 12 : hours);
-    
-    this.currentTime.set(`${displayHours}:${minutes}:${seconds} ${period}`);
-    
-    // Format date as Month Day, Year
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    const month = months[now.getMonth()];
-    const day = now.getDate();
-    const year = now.getFullYear();
-    
-    this.currentDate.set(`${month} ${day}, ${year}`);
-    
-    // Format day of week
-    const daysOfWeek = [
-      'Sunday', 'Monday', 'Tuesday', 'Wednesday',
-      'Thursday', 'Friday', 'Saturday'
-    ];
-    this.currentDay.set(daysOfWeek[now.getDay()]);
   }
 }

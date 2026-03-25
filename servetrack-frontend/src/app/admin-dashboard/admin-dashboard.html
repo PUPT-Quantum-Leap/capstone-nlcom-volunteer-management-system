@@ -923,21 +923,7 @@
     <main class="dashboard-content">
       @switch (currentView()) {
         @case ('overview') {
-          <div class="admin-header">
-            <div class="welcome-section">
-              <h1 class="welcome-message">
-                Welcome Back, {{ currentUser()?.name || 'Admin' }}
-              </h1>
-              <p class="welcome-subtitle">
-                Here's what's happening today
-              </p>
-            </div>
-            <div class="clock-section">
-              <div class="clock-time">{{ currentTime() }}</div>
-              <div class="clock-date">{{ currentDate() }}</div>
-              <div class="clock-day">{{ currentDay() }}</div>
-            </div>
-          </div>
+          <app-admin-header />
           
           <section class="overview-layout">
             <section class="overview-header">
