@@ -55,6 +55,11 @@ class PollController extends Controller
      */
     public function store(StorePollRequest $request): JsonResponse
     {
+        // Check if user is admin
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
+        }
+
         $poll = DB::transaction(function () use ($request): Poll {
             $poll = Poll::query()->create([
                 'title' => $request->input('title'),
@@ -90,6 +95,11 @@ class PollController extends Controller
      */
     public function update(UpdatePollRequest $request, int $id): PollResource|JsonResponse
     {
+        // Check if user is admin
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
+        }
+
         $poll = Poll::query()->with('options')->find($id);
 
         if (! $poll) {
@@ -151,8 +161,13 @@ class PollController extends Controller
      * Delete a poll (cascades to poll_option and poll_vote).
      * Admin only.
      */
-    public function destroy(int $id): JsonResponse
+    public function destroy(Request $request, int $id): JsonResponse
     {
+        // Check if user is admin
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
+        }
+
         $poll = Poll::query()->find($id);
 
         if (! $poll) {
@@ -170,6 +185,11 @@ class PollController extends Controller
      */
     public function updateStatus(Request $request, int $id): JsonResponse
     {
+        // Check if user is admin
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
+        }
+
         $request->validate([
             'status' => ['required', 'in:draft,active,closed'],
         ]);
