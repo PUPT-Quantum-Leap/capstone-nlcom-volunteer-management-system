@@ -56,8 +56,8 @@ export class AdminDashboard implements OnInit {
   readonly Math = Math;
 
   currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
-  userName = signal(this.authService.currentUser()?.name || 'Admin');
-  
+  userName = computed(() => this.authService.currentUser()?.name || 'Admin');
+
   currentUser = computed(() => this.authService.currentUser());
   
   sidebarCollapsed = signal(false);
