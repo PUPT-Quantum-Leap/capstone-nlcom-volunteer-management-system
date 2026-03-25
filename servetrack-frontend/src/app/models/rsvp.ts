@@ -3,6 +3,7 @@ export interface Rsvp {
   title: string;
   date: string;
   eventLocation?: string;
+  shareUrl?: string;
   cutOffDay: string;
   cutOffTime: string;
   description: string;
