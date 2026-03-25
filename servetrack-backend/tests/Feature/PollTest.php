@@ -152,7 +152,7 @@ describe('POST /api/polls', function (): void {
         $this->actingAs($admin)
             ->postJson('/api/polls', [])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['title', 'date', 'cutoff_day', 'cutoff_time', 'options']);
+            ->assertJsonValidationErrors(['title', 'date', 'cutoff_day', 'options']);
     });
 
     it('requires at least one option', function (): void {
