@@ -1367,4 +1367,39 @@ export class AdminDashboard implements OnInit {
   isFull(option: PollOption): boolean {
     return option.votes >= option.capacity;
   }
+
+  // Helper function to format time from 24-hour to 12-hour format with AM/PM
+  formatTimeTo12Hour(time24: string): string {
+    if (!time24) return '';
+    
+    let hours: number, minutes: string;
+    
+    if (time24.includes(':')) {
+      const parts = time24.split(':');
+      hours = parseInt(parts[0], 10);
+      minutes = parts[1];
+    } else {
+      return time24;
+    }
+    
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours === 0 ? 12 : (hours > 12 ? hours - 12 : hours);
+    
+    return `${displayHours}:${minutes} ${period}`;
+  }
+
+  // Helper function to format time slot for display
+  formatTimeSlot(timeSlot: string): string {
+    if (!timeSlot) return '';
+    
+    // Handle format like "13:00 - 14:00"
+    if (timeSlot.includes(' - ')) {
+      const parts = timeSlot.split(' - ');
+      const startTime = this.formatTimeTo12Hour(parts[0].trim());
+      const endTime = this.formatTimeTo12Hour(parts[1].trim());
+      return `${startTime} - ${endTime}`;
+    }
+    
+    return this.formatTimeTo12Hour(timeSlot);
+  }
 }
