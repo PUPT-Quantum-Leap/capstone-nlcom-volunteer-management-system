@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PollController extends Controller
 {
@@ -107,28 +108,38 @@ class PollController extends Controller
             ], fn ($value) => $value !== null));
 
             if ($request->has('options')) {
-                // Detach and delete old options that no longer have any votes
-                foreach ($poll->options as $option) {
-                    $hasVotes = PollVote::query()
+                // Get the incoming option texts from the request
+                $incomingOptionTexts = collect($request->input('options'))->pluck('text')->toArray();
+
+                $optionsToRemove = $poll->options->filter(function ($option) use ($incomingOptionTexts) {
+                    return ! in_array($option->text, $incomingOptionTexts);
+                });
+
+                foreach ($optionsToRemove as $option) {
+                    $votesDeleted = PollVote::query()
                         ->where('poll_id', $poll->poll_id)
                         ->where('option_id', $option->option_id)
-                        ->exists();
+                        ->delete();
 
-                    if (! $hasVotes) {
-                        $poll->options()->detach($option->option_id);
-                        $option->delete();
+                    if ($votesDeleted > 0) {
+                        Log::info("Deleted {$votesDeleted} votes for removed option '{$option->text}' from poll {$poll->id}");
                     }
+
+                    $poll->options()->detach($option->option_id);
+                    $option->delete();
+
+                    Log::info("Removed option '{$option->text}' from poll {$poll->id}");
                 }
 
                 // Create and attach new options
                 foreach ($request->input('options') as $optionData) {
-                    // Find existing option or create new one
+
                     $option = Option::query()->firstOrCreate(['text' => $optionData['text']]);
 
-                    $poll->options()->attach($option->option_id, [
+                    $poll->options()->syncWithoutDetaching([$option->option_id => [
                         'time_slot' => $optionData['time_slot'],
                         'capacity' => $optionData['capacity'],
-                    ]);
+                    ]]);
                 }
             }
         });
