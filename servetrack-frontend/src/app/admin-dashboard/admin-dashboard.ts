@@ -29,6 +29,7 @@ import { IncidentCommandSystemComponent } from '../incident-command-system/incid
 import { User } from '../models/user';
 import { UserService } from '../services/user.service';
 import { AdminHeaderComponent } from '../components/admin-header/admin-header.component';
+import { AnalyticsService, ReportData } from '../services/analytics.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -51,6 +52,7 @@ export class AdminDashboard implements OnInit {
   private destroyRef = inject(DestroyRef);
   private pollService = inject(PollService);
   private userService = inject(UserService);
+  private analyticsService = inject(AnalyticsService);
 
   readonly defaultPhoto = '/assets/nlcom.png';
   readonly Math = Math;
@@ -111,6 +113,12 @@ export class AdminDashboard implements OnInit {
   volunteersTotalPages = computed(() => Math.ceil(this.filteredVolunteers().length / this.volunteersPerPage()));
   showArchivedVolunteers = signal(false);
   archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
+
+  // Analytics signals
+  reportData = signal<ReportData | null>(null);
+  analyticsLoading = signal(false);
+  selectedReportType = signal<'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'>('volunteers');
+  dateRangeFilter = signal<'all' | 'month' | 'quarter' | 'year'>('all');
 
   // Poll creation loading state
   isCreatingPoll = signal(false);
@@ -1415,5 +1423,78 @@ export class AdminDashboard implements OnInit {
     }
     
     return this.formatTimeTo12Hour(timeSlot);
+  }
+
+  // Analytics methods
+  loadAnalyticsData(): void {
+    this.analyticsLoading.set(true);
+    this.analyticsService.getReportData().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.reportData.set(response.data);
+        }
+        this.analyticsLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading analytics data:', error);
+        this.analyticsLoading.set(false);
+      }
+    });
+  }
+
+  setReportType(type: 'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'): void {
+    this.selectedReportType.set(type);
+  }
+
+  setDateRange(range: 'all' | 'month' | 'quarter' | 'year'): void {
+    this.dateRangeFilter.set(range);
+  }
+
+  exportReport(format: 'pdf' | 'excel'): void {
+    this.analyticsLoading.set(true);
+    this.analyticsService.exportReport(format).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `servetrack-analytics-report-${timestamp}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+        this.analyticsService.downloadFile(blob, filename);
+        this.showSnackbar(`${format.toUpperCase()} report downloaded successfully`, 'success');
+        this.analyticsLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Error exporting report:', error);
+        this.showSnackbar('Failed to export report', 'error');
+        this.analyticsLoading.set(false);
+      }
+    });
+  }
+
+  getActivityIcon(type: string): string {
+    switch (type) {
+      case 'registration':
+        return '👤';
+      case 'attendance':
+        return '✓';
+      case 'task':
+        return '📋';
+      case 'event':
+        return '📅';
+      default:
+        return '📌';
+    }
+  }
+
+  getActivityTypeClass(type: string): string {
+    switch (type) {
+      case 'registration':
+        return 'activity-registration';
+      case 'attendance':
+        return 'activity-attendance';
+      case 'task':
+        return 'activity-task';
+      case 'event':
+        return 'activity-event';
+      default:
+        return '';
+    }
   }
 }

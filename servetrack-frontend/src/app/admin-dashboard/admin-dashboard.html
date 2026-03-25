@@ -2412,12 +2412,349 @@
         }
 
         @case ('analytics') {
-          <section class="panel">
-            <div class="panel-header">
-              <h2>Analytics</h2>
-              <p>View detailed analytics and insights</p>
+          <section class="analytics-layout">
+            <!-- Header with Export Buttons -->
+            <div class="analytics-header">
+              <div class="header-content">
+                <h2>Analytics & Reports</h2>
+                <p>Comprehensive insights into volunteer performance and system metrics</p>
+              </div>
+              <div class="export-actions">
+                <button
+                  type="button"
+                  class="export-btn pdf-btn"
+                  (click)="exportReport('pdf')"
+                  [disabled]="analyticsLoading()"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 18V12M12 12L9 15M12 12L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Export PDF
+                </button>
+                <button
+                  type="button"
+                  class="export-btn excel-btn"
+                  (click)="exportReport('excel')"
+                  [disabled]="analyticsLoading()"
+                >
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M8 13H16M8 17H16M10 9H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Export Excel
+                </button>
+              </div>
             </div>
-            <p class="empty-state">Analytics features coming soon.</p>
+
+            <!-- Filters -->
+            <div class="analytics-filters">
+              <div class="filter-group">
+                <label class="filter-label">Report Type</label>
+                <select
+                  class="filter-select"
+                  [value]="selectedReportType()"
+                  (change)="setReportType($any($event.target).value)"
+                >
+                  <option value="volunteers">Volunteer Overview</option>
+                  <option value="attendance">Attendance Analysis</option>
+                  <option value="performance">Performance Metrics</option>
+                  <option value="department">Department Breakdown</option>
+                  <option value="trends">Monthly Trends</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label class="filter-label">Date Range</label>
+                <select
+                  class="filter-select"
+                  [value]="dateRangeFilter()"
+                  (change)="setDateRange($any($event.target).value)"
+                >
+                  <option value="all">All Time</option>
+                  <option value="month">This Month</option>
+                  <option value="quarter">This Quarter</option>
+                  <option value="year">This Year</option>
+                </select>
+              </div>
+              <button
+                type="button"
+                class="refresh-btn"
+                (click)="loadAnalyticsData()"
+                [disabled]="analyticsLoading()"
+              >
+                <svg viewBox="0 0 24 24" fill="none" [class.spinning]="analyticsLoading()">
+                  <path d="M23 4V10H17M1 20V14H7M3.51 9C4.48765 6.6386 6.14526 4.62912 8.28383 3.23883C10.4224 1.84854 12.9156 1.13525 15.45 1.19503C17.9844 1.25481 20.4381 2.08516 22.5 3.57" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Refresh
+              </button>
+            </div>
+
+            <!-- Summary Stats Grid -->
+            <div class="analytics-stats-grid">
+              <article class="analytics-stat-card">
+                <div class="analytics-stat-icon total-icon">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M17 20C17 18.3431 14.7614 17 12 17C9.23858 17 7 18.3431 7 20M21 17C21 15.3431 19.2091 14 17 14M3 17C3 15.3431 4.79086 14 7 14M12 14C9.79086 14 8 12.2091 8 10C8 7.79086 9.79086 6 12 6C14.2091 6 16 7.79086 16 10C16 12.2091 14.2091 14 12 14ZM19 10C19 8.34315 17.6569 7 16 7M5 10C5 8.34315 6.34315 7 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="analytics-stat-content">
+                  <p class="analytics-label">Total Volunteers</p>
+                  <p class="analytics-value">{{ reportData()?.totalVolunteers ?? 0 }}</p>
+                  <p class="analytics-meta">Registered members</p>
+                </div>
+              </article>
+
+              <article class="analytics-stat-card">
+                <div class="analytics-stat-icon active-icon">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="analytics-stat-content">
+                  <p class="analytics-label">Active Volunteers</p>
+                  <p class="analytics-value">{{ reportData()?.activeVolunteers ?? 0 }}</p>
+                  <p class="analytics-meta">Currently engaged</p>
+                </div>
+              </article>
+
+              <article class="analytics-stat-card">
+                <div class="analytics-stat-icon hours-icon">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="analytics-stat-content">
+                  <p class="analytics-label">Total Hours</p>
+                  <p class="analytics-value">{{ reportData()?.totalHoursServed ?? 0 }}</p>
+                  <p class="analytics-meta">Hours served</p>
+                </div>
+              </article>
+
+              <article class="analytics-stat-card">
+                <div class="analytics-stat-icon attendance-icon">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.8333 20.9435 14.7213 21.4778C12.6092 22.0122 10.3751 21.8151 8.38909 20.9216C6.40312 20.028 4.78471 18.4873 3.79118 16.5511C2.79764 14.6149 2.48443 12.3931 2.90479 10.2518C3.32515 8.11059 4.45053 6.18295 6.08779 4.77218C7.72505 3.36141 9.77125 2.55379 11.902 2.4802" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M22 4L12 14.01L9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="analytics-stat-content">
+                  <p class="analytics-label">Avg Attendance</p>
+                  <p class="analytics-value">{{ reportData()?.averageAttendanceRate ?? 0 }}%</p>
+                  <div class="analytics-progress-bar">
+                    <div class="analytics-progress-fill" [style.width.%]="reportData()?.averageAttendanceRate ?? 0"></div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="analytics-stat-card">
+                <div class="analytics-stat-icon tasks-icon">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 8 21H16C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 16 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="analytics-stat-content">
+                  <p class="analytics-label">Tasks Completed</p>
+                  <p class="analytics-value">{{ reportData()?.totalTasksCompleted ?? 0 }}</p>
+                  <p class="analytics-meta">Total tasks</p>
+                </div>
+              </article>
+
+              <article class="analytics-stat-card">
+                <div class="analytics-stat-icon rating-icon">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div class="analytics-stat-content">
+                  <p class="analytics-label">Avg Rating</p>
+                  <p class="analytics-value">{{ reportData()?.averageRating ?? 0 }}</p>
+                  <p class="analytics-meta">Out of 5.0</p>
+                </div>
+              </article>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="analytics-charts-grid">
+              <article class="analytics-chart-card">
+                <div class="chart-header">
+                  <h3>Monthly Trends</h3>
+                  <p>Volunteer activity over time</p>
+                </div>
+                <div class="chart-placeholder">
+                  <svg viewBox="0 0 400 200" class="chart-svg">
+                    <!-- Simple line chart visualization -->
+                    <rect x="0" y="0" width="400" height="200" fill="#f8fafc" rx="8"/>
+                    <line x1="40" y1="160" x2="360" y2="160" stroke="#cbd5e1" stroke-width="2"/>
+                    <line x1="40" y1="160" x2="40" y2="20" stroke="#cbd5e1" stroke-width="2"/>
+                    <!-- Data points -->
+                    <circle cx="70" cy="130" r="4" fill="#2563eb"/>
+                    <circle cx="120" cy="110" r="4" fill="#2563eb"/>
+                    <circle cx="170" cy="90" r="4" fill="#2563eb"/>
+                    <circle cx="220" cy="70" r="4" fill="#2563eb"/>
+                    <circle cx="270" cy="80" r="4" fill="#2563eb"/>
+                    <circle cx="320" cy="50" r="4" fill="#2563eb"/>
+                    <!-- Connecting line -->
+                    <polyline points="70,130 120,110 170,90 220,70 270,80 320,50" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Labels -->
+                    <text x="70" y="180" font-size="10" fill="#64748b" text-anchor="middle">Jan</text>
+                    <text x="120" y="180" font-size="10" fill="#64748b" text-anchor="middle">Feb</text>
+                    <text x="170" y="180" font-size="10" fill="#64748b" text-anchor="middle">Mar</text>
+                    <text x="220" y="180" font-size="10" fill="#64748b" text-anchor="middle">Apr</text>
+                    <text x="270" y="180" font-size="10" fill="#64748b" text-anchor="middle">May</text>
+                    <text x="320" y="180" font-size="10" fill="#64748b" text-anchor="middle">Jun</text>
+                  </svg>
+                </div>
+              </article>
+
+              <article class="analytics-chart-card">
+                <div class="chart-header">
+                  <h3>Department Breakdown</h3>
+                  <p>Volunteer distribution by department</p>
+                </div>
+                <div class="department-list">
+                  @for (dept of reportData()?.departmentBreakdown ?? []; track dept.name) {
+                    <div class="department-item">
+                      <div class="department-info">
+                        <span class="department-name">{{ dept.name }}</span>
+                        <span class="department-count">{{ dept.count }} volunteers</span>
+                      </div>
+                      <div class="department-bar">
+                        <div class="department-fill" [style.width.%]="dept.percentage"></div>
+                      </div>
+                      <span class="department-percentage">{{ dept.percentage }}%</span>
+                    </div>
+                  } @empty {
+                    <div class="empty-chart-state">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M21 16V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H19C20.1046 18 21 17.1046 21 16Z" stroke="currentColor" stroke-width="2"/>
+                        <path d="M7 12H7.01M12 12H12.01M17 12H17.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                      <p>No department data available</p>
+                    </div>
+                  }
+                </div>
+              </article>
+            </div>
+
+            <!-- Tables Section -->
+            <div class="analytics-tables-grid">
+              <article class="analytics-table-card">
+                <div class="table-header">
+                  <h3>Top Performers</h3>
+                  <p>Highest performing volunteers this period</p>
+                </div>
+                <div class="analytics-table-wrapper">
+                  <table class="analytics-table">
+                    <thead>
+                      <tr>
+                        <th>Volunteer</th>
+                        <th>Department</th>
+                        <th>Hours</th>
+                        <th>Attendance</th>
+                        <th>Rating</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (performer of reportData()?.topPerformers ?? []; track performer.id) {
+                        <tr>
+                          <td>
+                            <div class="performer-info">
+                              <div class="performer-avatar">{{ performer.name.charAt(0) }}</div>
+                              <span class="performer-name">{{ performer.name }}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span class="dept-badge">{{ performer.department }}</span>
+                          </td>
+                          <td>{{ performer.hoursServed }} hrs</td>
+                          <td>
+                            <div class="attendance-cell">
+                              <span class="attendance-value">{{ performer.attendanceRate }}%</span>
+                              <div class="mini-progress">
+                                <div class="mini-progress-fill" [style.width.%]="performer.attendanceRate"></div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="rating-cell">
+                              <span class="rating-stars">{{ getRatingStars(performer.rating) }}</span>
+                              <span class="rating-value">{{ performer.rating }}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="5" class="empty-table-cell">
+                            <div class="empty-table-state">
+                              <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M16 3.13C16.8604 3.3503 17.623 3.8507 18.1676 4.55231C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                              </svg>
+                              <p>No performers data available</p>
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+
+              <article class="analytics-table-card">
+                <div class="table-header">
+                  <h3>Recent Activity</h3>
+                  <p>Latest volunteer activities and events</p>
+                </div>
+                <div class="activity-list">
+                  @for (activity of reportData()?.recentActivity ?? []; track activity.id) {
+                    <div class="activity-item">
+                      <div class="activity-icon" [class]="'activity-' + activity.type">
+                        @switch (activity.type) {
+                          @case ('registration') {
+                            <svg viewBox="0 0 24 24" fill="none">
+                              <path d="M16 21V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          }
+                          @case ('attendance') {
+                            <svg viewBox="0 0 24 24" fill="none">
+                              <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          }
+                          @case ('task') {
+                            <svg viewBox="0 0 24 24" fill="none">
+                              <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 8 21H16C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 16 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          }
+                          @case ('event') {
+                            <svg viewBox="0 0 24 24" fill="none">
+                              <path d="M8 2V5M16 2V5M3.5 9.09H20.5M21 8.5V17C21 20 19.5 22 16 22H8C4.5 22 3 20 3 17V8.5C3 5.5 4.5 3.5 8 3.5H16C19.5 3.5 21 5.5 21 8.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          }
+                        }
+                      </div>
+                      <div class="activity-content">
+                        <p class="activity-description">{{ activity.description }}</p>
+                        <p class="activity-volunteer">by {{ activity.volunteerName }}</p>
+                      </div>
+                      <span class="activity-time">{{ activity.timestamp | date: 'MMM d, h:mm a' }}</span>
+                    </div>
+                  } @empty {
+                    <div class="empty-activity-state">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 6V12L16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                      </svg>
+                      <p>No recent activities</p>
+                    </div>
+                  }
+                </div>
+              </article>
+            </div>
           </section>
         }
 
