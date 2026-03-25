@@ -9,6 +9,7 @@ import {
 } from '@angular/forms';
 import { firstValueFrom, Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { InputSanitizerService } from '../../services/input-sanitizer.service';
 
 @Component({
   selector: 'app-login',
@@ -22,6 +23,7 @@ export class Login implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
+  private sanitizer = inject(InputSanitizerService);
 
   // State signals
   isLoading = signal(false);
@@ -141,10 +143,10 @@ export class Login implements OnInit, OnDestroy {
     this.errorMessage.set(null);
 
     try {
-      // Trim whitespace from inputs
+      // Trim whitespace and sanitize inputs
       const formValue = this.loginForm.value;
       const credentials = {
-        email: formValue.email.trim(),
+        email: this.sanitizer.sanitizeInput(formValue.email ?? '', 'text'),
         password: formValue.password,
       };
 

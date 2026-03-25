@@ -69,7 +69,7 @@ export function emailValidator(sanitizer: InputSanitizerService): ValidatorFn {
   };
 }
 
-export function dateValidator(sanitizer: InputSanitizerService, fieldName: string = 'Date'): ValidatorFn {
+export function dateValidator(sanitizer: InputSanitizerService, fieldName = 'Date'): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = control.value;
     

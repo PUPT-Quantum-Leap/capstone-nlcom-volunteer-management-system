@@ -75,6 +75,7 @@ class AdminController extends Controller
                 'name' => trim($volunteer->first_name.' '.$volunteer->last_name),
                 'email' => $volunteer->email,
                 'phone' => $volunteer->mobile_number,
+                'facebookName' => $volunteer->facebook_name,
                 'department' => $volunteer->positions->first()->name ?? 'Unassigned',
                 'status' => $hasRecentApproved ? 'active' : 'inactive',
                 'joined_date' => optional($volunteer->created_at)->toDateString(),
@@ -149,6 +150,29 @@ class AdminController extends Controller
     public function register(Request $request): JsonResponse
     {
         // Email normalization is now handled by NormalizeEmail middleware
+
+        // Security gate: verify invite code and email domain before any other processing.
+        $genericError = 'Registration failed. Please contact your administrator.';
+
+        $inviteCode = config('services.admin.invite_code');
+        if (empty($inviteCode) || $request->input('inviteCode') !== $inviteCode) {
+            return response()->json(['success' => false, 'message' => $genericError], 422);
+        }
+
+        $allowedDomainsRaw = config('services.admin.allowed_domains');
+        if (empty($allowedDomainsRaw)) {
+            return response()->json(['success' => false, 'message' => $genericError], 422);
+        }
+
+        $allowedDomains = array_map(
+            fn (string $d) => strtolower(trim($d)),
+            explode(',', $allowedDomainsRaw),
+        );
+
+        $emailDomain = strtolower(substr(strrchr((string) $request->input('email', ''), '@'), 1));
+        if (! in_array($emailDomain, $allowedDomains, true)) {
+            return response()->json(['success' => false, 'message' => $genericError], 422);
+        }
 
         // Validate incoming data
         $validator = Validator::make($request->all(), [

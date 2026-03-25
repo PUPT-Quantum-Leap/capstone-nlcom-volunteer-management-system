@@ -13,10 +13,14 @@ return new class extends Migration
     {
         Schema::create('poll', function (Blueprint $table) {
             $table->id('poll_id');
-            $table->string('title', 100);
-            $table->integer('vote_count');
-            $table->date('start_date');
-            $table->date('end_date');
+            $table->string('title', 255);
+            $table->text('description')->nullable();
+            $table->date('date');
+            $table->date('cutoff_day');
+            $table->time('cutoff_time')->nullable();
+            $table->enum('status', ['draft', 'active', 'closed'])->default('draft');
+            $table->string('share_url', 500)->nullable();
+            $table->timestamps();
         });
     }
 

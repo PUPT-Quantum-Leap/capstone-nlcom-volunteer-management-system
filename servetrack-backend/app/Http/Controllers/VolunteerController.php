@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
@@ -169,7 +170,7 @@ class VolunteerController extends Controller
             DB::rollBack();
 
             // Log detailed error internally
-            \Log::error('Volunteer registration failed', [
+            Log::error('Volunteer registration failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -319,10 +320,14 @@ class VolunteerController extends Controller
             } catch (\Exception $e) {
                 DB::rollBack();
 
+                Log::error('Profile creation failed', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to create profile. Please try again.',
-                    'errors' => ['server' => $e->getMessage()],
+                    'message' => 'Failed to create profile. Please try again or contact support.',
                 ], 500);
             }
         }
@@ -417,10 +422,14 @@ class VolunteerController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
+            Log::error('Profile update failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update profile. Please try again.',
-                'errors' => ['server' => $e->getMessage()],
+                'message' => 'Failed to update profile. Please try again or contact support.',
             ], 500);
         }
     }
@@ -572,7 +581,20 @@ class VolunteerController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Volunteer::with([
+        // Check if we want archived volunteers
+        $showArchived = $request->query('archived') === 'true';
+
+        // Build query with proper soft delete handling
+        if ($showArchived) {
+            // Show only archived (soft-deleted) volunteers
+            $query = Volunteer::onlyTrashed();
+        } else {
+            // Show only active volunteers (default)
+            $query = Volunteer::query();
+        }
+
+        // Add eager loading
+        $query->with([
             'experiences',
             'skills',
             'trainings',
@@ -606,7 +628,7 @@ class VolunteerController extends Controller
         $sortOrder = $request->query('order') === 'asc' ? 'asc' : 'desc';
 
         // Log sorting for security audit
-        \Log::debug('Sorting volunteers', ['sortBy' => $sortBy, 'sortOrder' => $sortOrder]);
+        Log::debug('Sorting volunteers', ['sortBy' => $sortBy, 'sortOrder' => $sortOrder, 'showArchived' => $showArchived]);
 
         $query->orderBy($sortBy, $sortOrder);
 
@@ -871,5 +893,53 @@ class VolunteerController extends Controller
                 ['is_leader' => $leadingLifegroup === 'yes' ? 1 : 0]
             );
         }
+    }
+
+    /**
+     * Soft delete a volunteer (archive)
+     */
+    public function softDelete(Request $request, int $id): JsonResponse
+    {
+        $volunteer = Volunteer::withTrashed()->find($id);
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Volunteer not found.',
+            ], 404);
+        }
+
+        // Use Laravel's soft delete method
+        if (! $volunteer->trashed()) {
+            $volunteer->delete(); // This sets deleted_at automatically
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Volunteer archived successfully.',
+        ]);
+    }
+
+    /**
+     * Restore a soft-deleted volunteer
+     */
+    public function restore(Request $request, int $id): JsonResponse
+    {
+        $volunteer = Volunteer::onlyTrashed()->find($id);
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Archived volunteer not found.',
+            ], 404);
+        }
+
+        // Use Laravel's restore method
+        $volunteer->restore(); // This clears deleted_at automatically
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Volunteer restored successfully.',
+        ]);
     }
 }
