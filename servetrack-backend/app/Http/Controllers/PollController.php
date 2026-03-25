@@ -131,12 +131,12 @@ class PollController extends Controller
 
                     // Log the vote deletion for debugging
                     if ($votesDeleted > 0) {
-                        Log::info("Deleted {$votesDeleted} votes for removed option '{$option->text}' from poll {$poll->id}");
+                        Log::info("Deleted {$votesDeleted} votes for removed option '{$option->text}' from poll {$poll->poll_id}");
                     }
 
                     $poll->options()->detach($option->option_id);
 
-                    Log::info("Removed option '{$option->text}' from poll {$poll->id}");
+                    Log::info("Removed option '{$option->text}' from poll {$poll->poll_id}");
                 }
 
                 // Create and attach new options
