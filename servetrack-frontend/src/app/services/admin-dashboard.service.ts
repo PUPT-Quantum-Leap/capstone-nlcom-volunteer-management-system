@@ -10,6 +10,7 @@ export interface DashboardVolunteerRow {
   name: string;
   email: string;
   phone: string;
+  facebookName: string | null;
   department: string;
   status: 'active' | 'inactive';
   joined_date: string | null;

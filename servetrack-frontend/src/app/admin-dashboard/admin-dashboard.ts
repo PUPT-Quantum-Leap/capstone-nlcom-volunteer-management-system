@@ -28,11 +28,18 @@ import { RsvpService } from '../services/rsvp.service';
 import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
 import { User } from '../models/user';
 import { UserService } from '../services/user.service';
+import { AdminHeaderComponent } from '../components/admin-header/admin-header.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, CommonModule, IncidentCommandSystemComponent],
+  imports: [
+    ReactiveFormsModule, 
+    DatePipe, 
+    CommonModule, 
+    IncidentCommandSystemComponent,
+    AdminHeaderComponent
+  ],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
@@ -49,8 +56,12 @@ export class AdminDashboard implements OnInit {
   readonly Math = Math;
 
   currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
-  userName = signal(this.authService.currentUser()?.name || 'Admin');
+  userName = computed(() => this.authService.currentUser()?.name || 'Admin');
+
+  currentUser = computed(() => this.authService.currentUser());
+  
   sidebarCollapsed = signal(false);
+  mobileSidebarOpen = signal(false);
   isLoading = signal(false);
 
   showNotifications = signal(false);
@@ -68,6 +79,7 @@ export class AdminDashboard implements OnInit {
 
   searchQuery = signal('');
   userSearchQuery = signal('');
+  volunteerSearchQuery = signal('');
   userRoleFilter = signal('');
 
   editingRsvp = signal<Rsvp | null>(null);
@@ -83,10 +95,20 @@ export class AdminDashboard implements OnInit {
   currentPage = signal(1);
   usersPerPage = signal(5);
   usersTotalPages = computed(() => Math.ceil(this.filteredUsers().length / this.usersPerPage()));
+  showArchivedUsers = signal(false);
+  archivedUsers = signal<User[]>([]);
+  archivedUsersPage = signal(1);
+  archivedUsersPerPage = signal(5);
+  archivedUsersTotalPages = computed(() => Math.ceil(this.archivedUsers().length / this.archivedUsersPerPage()));
+  paginatedArchivedUsers = computed(() => {
+    const start = (this.archivedUsersPage() - 1) * this.archivedUsersPerPage();
+    const end = start + this.archivedUsersPerPage();
+    return this.archivedUsers().slice(start, end);
+  });
   
   volunteersPage = signal(1);
   volunteersPerPage = signal(5);
-  volunteersTotalPages = computed(() => Math.ceil(this.volunteerRows().length / this.volunteersPerPage()));
+  volunteersTotalPages = computed(() => Math.ceil(this.filteredVolunteers().length / this.volunteersPerPage()));
   showArchivedVolunteers = signal(false);
   archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
 
@@ -202,18 +224,7 @@ export class AdminDashboard implements OnInit {
   });
 
   filteredUsers = computed(() => {
-    let filtered = this.volunteers().map((v: VolunteerUser) => ({
-      id: v.volunteer_id,
-      name: v.full_name,
-      email: v.email,
-      role: 'volunteer' as 'admin' | 'coordinator' | 'volunteer',
-      created_at: v.created_at,
-      updated_at: v.updated_at,
-      deleted_at: null
-    }));
-    
-    // Filter out soft-deleted users
-    filtered = filtered.filter(u => !u.deleted_at);
+    let filtered = this.users().filter(u => !u.deleted_at);
     
     const role = this.userRoleFilter();
     const search = this.userSearchQuery().toLowerCase().trim();
@@ -237,14 +248,27 @@ export class AdminDashboard implements OnInit {
   });
 
   paginatedVolunteers = computed(() => {
-    const volunteers = this.showArchivedVolunteers() 
-      ? this.archivedVolunteerRows() 
-      : this.volunteerRows();
+    const volunteers = this.filteredVolunteers();
     const page = this.volunteersPage();
     const perPage = this.volunteersPerPage();
     const start = (page - 1) * perPage;
     const end = start + perPage;
     return volunteers.slice(start, end);
+  });
+
+  filteredVolunteers = computed(() => {
+    const volunteers = this.showArchivedVolunteers() 
+      ? this.archivedVolunteerRows() 
+      : this.volunteerRows();
+    const search = this.volunteerSearchQuery().toLowerCase().trim();
+    if (!search) {
+      return volunteers;
+    }
+    return volunteers.filter(v => 
+      v.name.toLowerCase().includes(search) || 
+      v.email.toLowerCase().includes(search) ||
+      v.department?.toLowerCase().includes(search)
+    );
   });
 
   // Custom validator to ensure cutoff date is not after event date
@@ -354,13 +378,30 @@ export class AdminDashboard implements OnInit {
     this.sidebarCollapsed.update((v) => !v);
   }
 
+  toggleMobileSidebar(): void {
+    this.mobileSidebarOpen.update((v) => !v);
+  }
+
+  closeMobileSidebar(): void {
+    this.mobileSidebarOpen.set(false);
+  }
+
   setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'): void {
     this.currentView.set(view);
     this.currentPage.set(1);
+    
+    if (view === 'users') {
+      this.loadUsers();
+    }
   }
 
   setSearchQuery(value: string): void {
     this.searchQuery.set(value);
+  }
+
+  setVolunteerSearchQuery(value: string): void {
+    this.volunteerSearchQuery.set(value);
+    this.volunteersPage.set(1);
   }
 
   runSearch(): void {
@@ -451,11 +492,46 @@ export class AdminDashboard implements OnInit {
   }
 
   loadUsers(): void {
-    this.userService.getUsers().subscribe((response) => {
-      if (response.success) {
-        this.users.set(response.data);
+    this.isLoading.set(true);
+    this.userService.getUsers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.users.set(response.data);
+        }
+        this.isLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading users:', error);
+        this.isLoading.set(false);
       }
     });
+  }
+
+  loadArchivedUsers(): void {
+    this.isLoading.set(true);
+    this.userService.getArchivedUsers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.archivedUsers.set(response.data);
+        }
+        this.isLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading archived users:', error);
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  switchToActiveUsers(): void {
+    this.showArchivedUsers.set(false);
+    this.currentPage.set(1);
+  }
+
+  switchToArchivedUsers(): void {
+    this.showArchivedUsers.set(true);
+    this.archivedUsersPage.set(1);
+    this.loadArchivedUsers();
   }
 
   setUserSearchQuery(query: string): void {
@@ -508,6 +584,48 @@ export class AdminDashboard implements OnInit {
     }
     
     return pages;
+  }
+
+  getArchivedUsersPageNumbers(): number[] {
+    const total = this.archivedUsersTotalPages();
+    const current = this.archivedUsersPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (current <= 3) {
+        pages.push(1, 2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(1, -1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(1, -1, current - 1, current, current + 1, -1, total);
+      }
+    }
+    
+    return pages;
+  }
+
+  goToArchivedUsersPage(page: number): void {
+    const totalPages = this.archivedUsersTotalPages();
+    if (page >= 1 && page <= totalPages) {
+      this.archivedUsersPage.set(page);
+    }
+  }
+
+  nextArchivedUsersPage(): void {
+    const totalPages = this.archivedUsersTotalPages();
+    if (this.archivedUsersPage() < totalPages) {
+      this.archivedUsersPage.update(page => page + 1);
+    }
+  }
+
+  previousArchivedUsersPage(): void {
+    if (this.archivedUsersPage() > 1) {
+      this.archivedUsersPage.update(page => page - 1);
+    }
   }
 
   goToVolunteersPage(page: number): void {
@@ -1221,6 +1339,7 @@ export class AdminDashboard implements OnInit {
             name: v.full_name,
             email: v.email,
             phone: v.mobile_number || 'N/A',
+            facebookName: v.facebook_name,
             department: 'Volunteer', // Default department
             status: 'inactive' as 'active' | 'inactive',
             joined_date: v.created_at
@@ -1258,5 +1377,43 @@ export class AdminDashboard implements OnInit {
 
   isFull(shift: RsvpShift): boolean {
     return shift.responses >= shift.capacity;
+  }
+
+  // Helper function to format time from 24-hour to 12-hour format with AM/PM
+  formatTimeTo12Hour(time24: string): string {
+    if (!time24) return '';
+    
+    let hours: number, minutes: string;
+    
+    // Handle various time formats
+    if (time24.includes(':')) {
+      const parts = time24.split(':');
+      hours = parseInt(parts[0], 10);
+      minutes = parts[1];
+    } else if (time24.includes('AM') || time24.includes('PM')) {
+      return time24.trim();
+    } else {
+      return time24;
+    }
+    
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours === 0 ? 12 : (hours > 12 ? hours - 12 : hours);
+    
+    return `${displayHours}:${minutes} ${period}`;
+  }
+
+  // Helper function to format time slot for display
+  formatTimeSlot(timeSlot: string): string {
+    if (!timeSlot) return '';
+    
+    // Handle format like "13:00 - 14:00" or "9:00 AM - 12:00 PM"
+    if (timeSlot.includes(' - ')) {
+      const parts = timeSlot.split(' - ');
+      const startTime = this.formatTimeTo12Hour(parts[0].trim());
+      const endTime = this.formatTimeTo12Hour(parts[1].trim());
+      return `${startTime} - ${endTime}`;
+    }
+    
+    return this.formatTimeTo12Hour(timeSlot);
   }
 }

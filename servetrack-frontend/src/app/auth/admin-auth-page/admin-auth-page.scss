@@ -262,6 +262,11 @@ $success:     #059669;
 
   // checkbox row
   .form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
     margin-bottom: 1.5rem;
 
     .checkbox-container {
@@ -345,6 +350,7 @@ $success:     #059669;
   font-size: 0.875rem;
   font-weight: 500;
   transition: color 0.2s;
+  white-space: nowrap;
 
   &:hover {
     color: $primary;
