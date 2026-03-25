@@ -1374,10 +1374,13 @@ export class AdminDashboard implements OnInit {
     
     let hours: number, minutes: string;
     
+    // Handle various time formats
     if (time24.includes(':')) {
       const parts = time24.split(':');
       hours = parseInt(parts[0], 10);
       minutes = parts[1];
+    } else if (time24.includes('AM') || time24.includes('PM')) {
+      return time24.trim();
     } else {
       return time24;
     }
@@ -1392,7 +1395,7 @@ export class AdminDashboard implements OnInit {
   formatTimeSlot(timeSlot: string): string {
     if (!timeSlot) return '';
     
-    // Handle format like "13:00 - 14:00"
+    // Handle format like "13:00 - 14:00" or "9:00 AM - 12:00 PM"
     if (timeSlot.includes(' - ')) {
       const parts = timeSlot.split(' - ');
       const startTime = this.formatTimeTo12Hour(parts[0].trim());
