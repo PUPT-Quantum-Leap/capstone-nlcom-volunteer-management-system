@@ -62,6 +62,10 @@ export class RsvpService {
     );
   }
 
+  respond(rsvpId: number, timeSlotId: number): Observable<{ message: string }> {
+    return this.vote(rsvpId, timeSlotId);
+  }
+
   checkIn(rsvpId: number, volunteerId: number): Observable<{ success: boolean }> {
     return this.ensureCsrf().pipe(
       switchMap(() => this.http.post<{ success: boolean }>(`${this.apiUrl}/${rsvpId}/check-in`, {
