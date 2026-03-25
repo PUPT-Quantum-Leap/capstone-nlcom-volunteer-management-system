@@ -1,35 +1,39 @@
-export interface Poll {
+export interface Rsvp {
   id: number;
   title: string;
   date: string;
+  eventLocation?: string;
+  shareUrl?: string;
   cutOffDay: string;
   cutOffTime: string;
   description: string;
   status: 'active' | 'closed' | 'draft';
-  shareUrl?: string;
-  totalVotes: number;
+  totalResponses: number;
   createdAt: string;
-  options: PollOption[];
+  shifts: RsvpShift[];
 }
 
-export interface PollOption {
+export interface RsvpShift {
   id: number;
+  text?: string;
   timeSlot: string;
-  votes: number;
+  responses: number;
   capacity: number;
   selected?: boolean;
 }
 
-export interface CreatePollDto {
+export interface CreateRsvpDto {
   title: string;
   date: string;
+  eventLocation?: string;
   cutOffDay: string;
   cutOffTime: string;
   description: string;
-  options: CreatePollOptionDto[];
+  shifts: CreateRsvpShiftDto[];
 }
 
-export interface CreatePollOptionDto {
+export interface CreateRsvpShiftDto {
+  text?: string;
   timeSlot: string;
   capacity: number;
 }

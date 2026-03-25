@@ -205,4 +205,28 @@ export class Login implements OnInit, OnDestroy {
       this.errorMessage.set('Navigation error. Please try again.');
     }
   }
+
+  /**
+   * Login with Facebook
+   */
+  async loginWithFacebook(): Promise<void> {
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+
+    try {
+      const response = await firstValueFrom(
+        this.authService.getFacebookAuthUrl$(),
+      );
+
+      if (response.redirect_url) {
+        window.location.href = response.redirect_url;
+      } else {
+        this.errorMessage.set('Failed to initialize Facebook login.');
+      }
+    } catch (error) {
+      this.errorMessage.set('An error occurred. Please try again.');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
 }

@@ -40,4 +40,18 @@ return [
         'allowed_domains' => env('ADMIN_ALLOWED_DOMAINS'),
     ],
 
+    'facebook' => [
+        'app_id' => env('FACEBOOK_APP_ID'),
+        'app_secret' => env('FACEBOOK_APP_SECRET'),
+        'page_id' => env('FACEBOOK_PAGE_ID'),
+        'page_access_token' => env('FACEBOOK_PAGE_ACCESS_TOKEN'),
+        'redirect_uri' => env('FACEBOOK_REDIRECT_URI'),
+    ],
+
+    'twilio' => [
+        'sid' => env('TWILIO_SID'),
+        'token' => env('TWILIO_TOKEN'),
+        'phone_number' => env('TWILIO_PHONE_NUMBER'),
+    ],
+
 ];

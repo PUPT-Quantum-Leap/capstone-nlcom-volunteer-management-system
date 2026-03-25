@@ -5,37 +5,34 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class PollResource extends JsonResource
+class RsvpResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array matching the frontend Poll interface.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->poll_id,
+            'id' => $this->rsvp_id,
             'title' => $this->title,
             'description' => $this->description,
             'date' => $this->date?->format('M d'),
+            'eventLocation' => $this->event_location,
             'cutOffDay' => $this->cutoff_day?->format('M d, Y'),
             'cutOffTime' => $this->cutoff_time ? date('g:i A', strtotime($this->cutoff_time)) : null,
             'status' => $this->status,
             'shareUrl' => $this->share_url,
-            'totalVotes' => $this->votes()->count(),
+            'totalResponses' => $this->responses()->count(),
             'createdAt' => $this->created_at?->toDateString(),
-            'options' => $this->whenLoaded('options', function () {
-                return $this->options->map(function ($option) {
-                    $voteCount = $this->votes()
-                        ->where('option_id', $option->option_id)
+            'shifts' => $this->whenLoaded('shifts', function () {
+                return $this->shifts->map(function ($shift) {
+                    $responseCount = $this->responses()
+                        ->where('time_slot_id', $shift->time_slot_id)
                         ->count();
 
                     return [
-                        'id' => $option->option_id,
-                        'timeSlot' => $option->pivot->time_slot,
-                        'capacity' => $option->pivot->capacity,
-                        'votes' => $voteCount,
+                        'id' => $shift->time_slot_id,
+                        'text' => $shift->text,
+                        'timeSlot' => $shift->pivot->time_slot,
+                        'capacity' => $shift->pivot->capacity,
+                        'responses' => $responseCount,
                     ];
                 });
             }),
