@@ -11,7 +11,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
@@ -135,7 +138,9 @@ class LoginController extends Controller
         }
 
         $permissions = 'email,public_profile';
-        $oauthUrl = "https://www.facebook.com/v18.0/dialog/oauth?client_id={$facebookAppId}&redirect_uri={$redirectUri}&scope={$permissions}&response_type=code&state=".csrf_token();
+        $state = Str::random(40);
+        session()->put('facebook_oauth_state', $state);
+        $oauthUrl = "https://www.facebook.com/v18.0/dialog/oauth?client_id={$facebookAppId}&redirect_uri={$redirectUri}&scope={$permissions}&response_type=code&state={$state}";
 
         return response()->json(['redirect_url' => $oauthUrl]);
     }
@@ -146,10 +151,16 @@ class LoginController extends Controller
     public function handleFacebookCallback(Request $request): JsonResponse
     {
         $code = $request->query('code');
+        $state = $request->query('state');
         $redirectUri = config('services.facebook.redirect_uri');
 
         if (! $code) {
             return response()->json(['message' => 'Authorization code not provided.'], 400);
+        }
+
+        $storedState = session('facebook_oauth_state');
+        if (! $state || ! $storedState || $state !== $storedState) {
+            return response()->json(['message' => 'Invalid OAuth state parameter.'], 400);
         }
 
         $facebookAppId = config('services.facebook.app_id');
@@ -189,29 +200,39 @@ class LoginController extends Controller
 
                 if ($user) {
                     $volunteer = Volunteer::where('user_id', $user->id)->first();
+                    if ($volunteer) {
+                        $volunteer->update([
+                            'facebook_id' => $fbUser['id'],
+                            'facebook_name' => $fbUser['name'],
+                        ]);
+                    }
                 }
 
                 if (! $volunteer && isset($fbUser['email'])) {
-                    $user = User::create([
-                        'name' => $fbUser['first_name'].' '.$fbUser['last_name'],
-                        'email' => $fbUser['email'],
-                        'password' => bcrypt('fb_'.$fbUser['id'].'_'.time()),
-                        'role' => 'volunteer',
-                    ]);
+                    DB::transaction(function () use ($fbUser) {
+                        $user = User::create([
+                            'name' => $fbUser['first_name'].' '.$fbUser['last_name'],
+                            'email' => $fbUser['email'],
+                            'password' => bcrypt('fb_'.$fbUser['id'].'_'.time()),
+                            'role' => 'volunteer',
+                        ]);
 
-                    $volunteer = Volunteer::create([
-                        'user_id' => $user->id,
-                        'first_name' => $fbUser['first_name'],
-                        'last_name' => $fbUser['last_name'],
-                        'facebook_id' => $fbUser['id'],
-                        'facebook_name' => $fbUser['name'],
-                    ]);
-                } else {
+                        return Volunteer::create([
+                            'user_id' => $user->id,
+                            'first_name' => $fbUser['first_name'],
+                            'last_name' => $fbUser['last_name'],
+                            'facebook_id' => $fbUser['id'],
+                            'facebook_name' => $fbUser['name'],
+                        ]);
+                    });
+                } elseif (! $volunteer) {
                     return response()->json([
                         'message' => 'No account found. Please register first.',
                     ], 404);
                 }
             }
+
+            session()->forget('facebook_oauth_state');
 
             $user = $volunteer->user;
 
@@ -221,9 +242,14 @@ class LoginController extends Controller
 
             return $this->buildAuthenticatedResponse($userData, $user, TokenAbilities::VOLUNTEER);
         } catch (\Exception $e) {
+            Log::error('Facebook authentication failed: '.$e->getMessage(), [
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
             return response()->json([
                 'message' => 'Facebook authentication failed.',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }

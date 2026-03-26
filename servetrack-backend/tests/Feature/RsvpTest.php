@@ -482,3 +482,188 @@ describe('POST /api/rsvp/{id}/vote', function (): void {
         ]);
     });
 });
+
+describe('POST /api/rsvp/{id}/check-in', function (): void {
+    it('allows admins to check in a volunteer', function (): void {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        ['rsvp' => $rsvp, 'shifts' => $shifts] = createRsvpWithShifts(['status' => 'active']);
+
+        $response = \App\Models\RsvpResponse::query()->create([
+            'volunteer_id' => $volunteer->volunteer_id,
+            'rsvp_id' => $rsvp->rsvp_id,
+            'time_slot_id' => $shifts[0]->time_slot_id,
+            'voted_at' => now(),
+            'sms_sent' => false,
+            'attendance_status' => 'registered',
+        ]);
+
+        $this->actingAs($admin)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/check-in", ['volunteer_id' => $volunteer->volunteer_id])
+            ->assertSuccessful()
+            ->assertJsonPath('success', true);
+
+        $this->assertDatabaseHas('rsvp_response', [
+            'rsvp_response_id' => $response->rsvp_response_id,
+            'attendance_status' => 'checked_in',
+        ]);
+    });
+
+    it('returns 422 when volunteer_id is invalid', function (): void {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->postJson('/api/rsvp/99999/check-in', ['volunteer_id' => 99999])
+            ->assertStatus(422);
+    });
+
+    it('returns 404 when response not found', function (): void {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        ['rsvp' => $rsvp] = createRsvpWithShifts(['status' => 'active']);
+
+        $this->actingAs($admin)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/check-in", ['volunteer_id' => $volunteer->volunteer_id])
+            ->assertNotFound();
+    });
+
+    it('requires authentication', function (): void {
+        ['rsvp' => $rsvp] = createRsvpWithShifts(['status' => 'active']);
+
+        $this->postJson("/api/rsvp/{$rsvp->rsvp_id}/check-in", ['volunteer_id' => 1])
+            ->assertUnauthorized();
+    });
+});
+
+describe('POST /api/rsvp/{id}/check-out', function (): void {
+    it('allows admins to check out a volunteer', function (): void {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        ['rsvp' => $rsvp, 'shifts' => $shifts] = createRsvpWithShifts(['status' => 'active']);
+
+        $response = \App\Models\RsvpResponse::query()->create([
+            'volunteer_id' => $volunteer->volunteer_id,
+            'rsvp_id' => $rsvp->rsvp_id,
+            'time_slot_id' => $shifts[0]->time_slot_id,
+            'voted_at' => now(),
+            'sms_sent' => false,
+            'attendance_status' => 'checked_in',
+            'checked_in_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/check-out", ['volunteer_id' => $volunteer->volunteer_id])
+            ->assertSuccessful()
+            ->assertJsonPath('success', true);
+
+        $this->assertDatabaseHas('rsvp_response', [
+            'rsvp_response_id' => $response->rsvp_response_id,
+            'attendance_status' => 'checked_out',
+        ]);
+    });
+
+    it('returns 422 when volunteer_id is invalid', function (): void {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->postJson('/api/rsvp/99999/check-out', ['volunteer_id' => 99999])
+            ->assertStatus(422);
+    });
+});
+
+describe('GET /api/rsvp/{id}/attendance', function (): void {
+    it('returns attendance counts for an rsvp', function (): void {
+        $admin = User::factory()->admin()->create();
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        ['rsvp' => $rsvp, 'shifts' => $shifts] = createRsvpWithShifts(['status' => 'active']);
+
+        \App\Models\RsvpResponse::query()->create([
+            'volunteer_id' => $volunteer->volunteer_id,
+            'rsvp_id' => $rsvp->rsvp_id,
+            'time_slot_id' => $shifts[0]->time_slot_id,
+            'voted_at' => now(),
+            'sms_sent' => false,
+            'attendance_status' => 'checked_in',
+            'checked_in_at' => now(),
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson("/api/rsvp/{$rsvp->rsvp_id}/attendance")
+            ->assertSuccessful()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('checked_in', 1)
+            ->assertJsonPath('checked_out', 0)
+            ->assertJsonPath('no_show', 0)
+            ->assertJsonPath('registered', 0);
+    });
+
+    it('returns 404 when rsvp not found', function (): void {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->getJson('/api/rsvp/99999/attendance')
+            ->assertNotFound();
+    });
+});
+
+describe('POST /api/rsvp/{id}/notify-facebook', function (): void {
+    it('returns 500 when Facebook is not configured', function (): void {
+        $admin = User::factory()->admin()->create();
+        ['rsvp' => $rsvp] = createRsvpWithShifts(['status' => 'active']);
+
+        $this->actingAs($admin)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/notify-facebook")
+            ->assertStatus(500)
+            ->assertJsonPath('message', 'Facebook service is not configured.');
+    });
+
+    it('returns 404 when rsvp not found', function (): void {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->postJson('/api/rsvp/99999/notify-facebook')
+            ->assertNotFound();
+    });
+
+    it('forbids volunteers from sending notifications', function (): void {
+        $volunteer = User::factory()->volunteer()->create();
+        ['rsvp' => $rsvp] = createRsvpWithShifts(['status' => 'active']);
+
+        $this->actingAs($volunteer)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/notify-facebook")
+            ->assertForbidden();
+    });
+});
+
+describe('POST /api/rsvp/{id}/notify-sms', function (): void {
+    it('returns 500 when SMS is not configured', function (): void {
+        $admin = User::factory()->admin()->create();
+        ['rsvp' => $rsvp] = createRsvpWithShifts(['status' => 'active']);
+
+        $this->actingAs($admin)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/notify-sms")
+            ->assertStatus(500)
+            ->assertJsonPath('message', 'SMS service is not configured.');
+    });
+
+    it('returns 404 when rsvp not found', function (): void {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->postJson('/api/rsvp/99999/notify-sms')
+            ->assertNotFound();
+    });
+
+    it('forbids volunteers from sending notifications', function (): void {
+        $volunteer = User::factory()->volunteer()->create();
+        ['rsvp' => $rsvp] = createRsvpWithShifts(['status' => 'active']);
+
+        $this->actingAs($volunteer)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/notify-sms")
+            ->assertForbidden();
+    });
+});

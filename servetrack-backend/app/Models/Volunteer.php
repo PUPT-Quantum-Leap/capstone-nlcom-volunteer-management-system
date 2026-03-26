@@ -25,6 +25,7 @@ class Volunteer extends Model
         'last_name',
         'facebook_name',
         'facebook_id',
+        'messenger_psid',
         'email',
         'birthdate',
         'address',

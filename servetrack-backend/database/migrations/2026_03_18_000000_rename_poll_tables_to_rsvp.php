@@ -73,14 +73,18 @@ return new class extends Migration
             $table->dropIndex('idx_rr_volunteer_id');
             $table->dropIndex('idx_rr_rsvp_id');
             $table->dropIndex('idx_rr_time_slot_id');
-            $table->index('volunteer_id', 'idx_pv_volunteer_id');
+            $table->renameColumn('rsvp_id', 'poll_id');
+            $table->renameColumn('time_slot_id', 'option_id');
             $table->index('poll_id', 'idx_pv_poll_id');
             $table->index('option_id', 'idx_pv_option_id');
+            $table->index('volunteer_id', 'idx_pv_volunteer_id');
         });
 
         Schema::table('rsvp_shift', function (Blueprint $table) {
             $table->dropIndex('idx_rs_rsvp_id');
             $table->dropIndex('idx_rs_time_slot_id');
+            $table->renameColumn('rsvp_id', 'poll_id');
+            $table->renameColumn('time_slot_id', 'option_id');
             $table->index('poll_id', 'idx_po_poll_id');
             $table->index('option_id', 'idx_po_option_id');
         });
@@ -88,13 +92,6 @@ return new class extends Migration
         Schema::table('rsvp_response', function (Blueprint $table) {
             $table->dropUnique('uq_rsvp_volunteer_rsvp');
             $table->unique(['volunteer_id', 'poll_id'], 'uq_pv_volunteer_poll');
-            $table->renameColumn('rsvp_id', 'poll_id');
-            $table->renameColumn('time_slot_id', 'option_id');
-        });
-
-        Schema::table('rsvp_shift', function (Blueprint $table) {
-            $table->renameColumn('rsvp_id', 'poll_id');
-            $table->renameColumn('time_slot_id', 'option_id');
         });
 
         Schema::table('rsvp_response', function (Blueprint $table) {

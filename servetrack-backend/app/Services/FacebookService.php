@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendRsvpNotification;
 use App\Models\Rsvp;
 use App\Models\Volunteer;
 use Illuminate\Support\Facades\Http;
@@ -15,8 +16,13 @@ class FacebookService
 
     public function __construct()
     {
-        $this->pageId = config('services.facebook.page_id', '');
-        $this->accessToken = config('services.facebook.page_access_token', '');
+        $this->pageId = config('services.facebook.page_id') ?? '';
+        $this->accessToken = config('services.facebook.page_access_token') ?? '';
+    }
+
+    public function isConfigured(): bool
+    {
+        return $this->pageId !== '' && $this->accessToken !== '';
     }
 
     public function sendDirectMessage(string $recipientId, string $message): array
@@ -39,14 +45,15 @@ class FacebookService
 
     public function sendRsvpNotification(Volunteer $volunteer, Rsvp $rsvp): bool
     {
-        if (! $volunteer->facebook_id) {
+        $recipientId = $volunteer->messenger_psid ?? $volunteer->facebook_id;
+        if (! $recipientId) {
             return false;
         }
 
         $message = $this->formatRsvpMessage($rsvp);
 
         try {
-            $this->sendDirectMessage($volunteer->facebook_id, $message);
+            $this->sendDirectMessage($recipientId, $message);
 
             return true;
         } catch (\Exception $e) {
@@ -58,23 +65,16 @@ class FacebookService
 
     public function broadcastRsvpNotification(Rsvp $rsvp): array
     {
-        $volunteers = Volunteer::whereNotNull('facebook_id')->get();
-
-        $sent = 0;
-        $failed = 0;
+        $volunteers = Volunteer::whereNotNull('messenger_psid')->orWhereNotNull('facebook_id')->get();
 
         foreach ($volunteers as $volunteer) {
-            if ($this->sendRsvpNotification($volunteer, $rsvp)) {
-                $sent++;
-            } else {
-                $failed++;
-            }
+            SendRsvpNotification::dispatch($volunteer, $rsvp);
         }
 
         return [
             'total' => $volunteers->count(),
-            'sent' => $sent,
-            'failed' => $failed,
+            'sent' => 0,
+            'failed' => 0,
         ];
     }
 

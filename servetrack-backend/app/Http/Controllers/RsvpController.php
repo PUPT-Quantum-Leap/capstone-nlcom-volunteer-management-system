@@ -93,26 +93,15 @@ class RsvpController extends Controller
             ], fn ($value) => $value !== null));
 
             if ($request->has('shifts')) {
-                foreach ($rsvp->shifts as $shift) {
-                    $hasResponses = RsvpResponse::query()
-                        ->where('rsvp_id', $rsvp->rsvp_id)
-                        ->where('time_slot_id', $shift->time_slot_id)
-                        ->exists();
-
-                    if (! $hasResponses) {
-                        $rsvp->shifts()->detach($shift->time_slot_id);
-                        $shift->delete();
-                    }
-                }
-
+                $syncPayload = [];
                 foreach ($request->input('shifts') as $shiftData) {
                     $timeSlot = TimeSlot::query()->firstOrCreate(['text' => $shiftData['text']]);
-
-                    $rsvp->shifts()->attach($timeSlot->time_slot_id, [
+                    $syncPayload[$timeSlot->time_slot_id] = [
                         'time_slot' => $shiftData['time_slot'],
                         'capacity' => $shiftData['capacity'],
-                    ]);
+                    ];
                 }
+                $rsvp->shifts()->sync($syncPayload);
             }
         });
 
@@ -190,31 +179,47 @@ class RsvpController extends Controller
             return response()->json(['message' => 'Invalid shift for this RSVP.'], 422);
         }
 
-        $currentResponses = RsvpResponse::query()
-            ->where('rsvp_id', $rsvp->rsvp_id)
-            ->where('time_slot_id', $shift->time_slot_id)
-            ->count();
+        try {
+            return DB::transaction(function () use ($rsvp, $shift, $volunteer) {
+                $pivot = DB::table('rsvp_shift')
+                    ->where('rsvp_id', $rsvp->rsvp_id)
+                    ->where('time_slot_id', $shift->time_slot_id)
+                    ->lockForUpdate()
+                    ->first();
 
-        if ($currentResponses >= $shift->pivot->capacity) {
-            return response()->json(['message' => 'This time slot is already at full capacity.'], 422);
+                if (! $pivot) {
+                    return response()->json(['message' => 'Invalid shift for this RSVP.'], 422);
+                }
+
+                $currentResponses = RsvpResponse::query()
+                    ->where('rsvp_id', $rsvp->rsvp_id)
+                    ->where('time_slot_id', $shift->time_slot_id)
+                    ->count();
+
+                if ($currentResponses >= $pivot->capacity) {
+                    return response()->json(['message' => 'This time slot is already at full capacity.'], 422);
+                }
+
+                RsvpResponse::query()->create([
+                    'volunteer_id' => $volunteer->volunteer_id,
+                    'rsvp_id' => $rsvp->rsvp_id,
+                    'time_slot_id' => $shift->time_slot_id,
+                    'voted_at' => now(),
+                    'sms_sent' => false,
+                    'attendance_status' => 'registered',
+                ]);
+
+                return response()->json(['message' => 'RSVP recorded successfully.']);
+            });
+        } catch (\Exception $e) {
+            throw $e;
         }
-
-        RsvpResponse::query()->create([
-            'volunteer_id' => $volunteer->volunteer_id,
-            'rsvp_id' => $rsvp->rsvp_id,
-            'time_slot_id' => $shift->time_slot_id,
-            'voted_at' => now(),
-            'sms_sent' => false,
-            'attendance_status' => 'registered',
-        ]);
-
-        return response()->json(['message' => 'RSVP recorded successfully.']);
     }
 
     public function checkIn(Request $request, int $id): JsonResponse
     {
         $request->validate([
-            'volunteer_id' => ['required', 'exists:volunteers,volunteer_id'],
+            'volunteer_id' => ['required', 'exists:volunteer,volunteer_id'],
         ]);
 
         $response = RsvpResponse::where('rsvp_id', $id)
@@ -226,6 +231,7 @@ class RsvpController extends Controller
         }
 
         $response->checkIn();
+        $response->refresh();
 
         return response()->json(['success' => true, 'response' => $response]);
     }
@@ -233,7 +239,7 @@ class RsvpController extends Controller
     public function checkOut(Request $request, int $id): JsonResponse
     {
         $request->validate([
-            'volunteer_id' => ['required', 'exists:volunteers,volunteer_id'],
+            'volunteer_id' => ['required', 'exists:volunteer,volunteer_id'],
         ]);
 
         $response = RsvpResponse::where('rsvp_id', $id)
@@ -245,13 +251,18 @@ class RsvpController extends Controller
         }
 
         $response->checkOut();
+        $response->refresh();
 
         return response()->json(['success' => true, 'response' => $response]);
     }
 
     public function attendance(int $id): JsonResponse
     {
-        $rsvp = Rsvp::query()->with('shifts.volunteers')->findOrFail($id);
+        $rsvp = Rsvp::query()->find($id);
+
+        if (! $rsvp) {
+            return response()->json(['message' => 'RSVP not found.'], 404);
+        }
 
         $responses = RsvpResponse::where('rsvp_id', $id)->get();
 
@@ -273,6 +284,11 @@ class RsvpController extends Controller
         }
 
         $facebook = app(FacebookService::class);
+
+        if (! $facebook->isConfigured()) {
+            return response()->json(['message' => 'Facebook service is not configured.'], 500);
+        }
+
         $result = $facebook->broadcastRsvpNotification($rsvp);
 
         return response()->json([
