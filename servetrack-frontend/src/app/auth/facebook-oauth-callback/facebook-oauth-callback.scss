@@ -1,0 +1,48 @@
+.callback-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
+}
+
+.card {
+  width: min(100%, 28rem);
+  background: #ffffff;
+  border: 1px solid #dbe5f0;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 8px 24px rgb(21 47 75 / 10%);
+
+  h1 {
+    margin: 0 0 0.75rem;
+    font-size: 1.25rem;
+    color: #17324d;
+  }
+
+  p {
+    margin: 0;
+    color: #38536f;
+    line-height: 1.5;
+  }
+
+  a {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #14559b;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+}
+
+.error {
+  border-color: #f0d4d8;
+
+  h1 {
+    color: #8c2230;
+  }
+}
