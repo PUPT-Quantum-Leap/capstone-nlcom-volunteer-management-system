@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendRsvpFacebookNotificationJob;
 use App\Models\Rsvp;
 use App\Models\Volunteer;
 use Illuminate\Support\Facades\Http;
@@ -9,18 +10,29 @@ use Illuminate\Support\Facades\Log;
 
 class FacebookService
 {
-    protected string $pageId;
+    protected ?string $pageId;
 
-    protected string $accessToken;
+    protected ?string $accessToken;
 
     public function __construct()
     {
-        $this->pageId = config('services.facebook.page_id', '');
-        $this->accessToken = config('services.facebook.page_access_token', '');
+        $configuredPageId = config('services.facebook.page_id');
+        $configuredToken = config('services.facebook.page_access_token');
+
+        $this->pageId = is_string($configuredPageId) && $configuredPageId !== ''
+            ? $configuredPageId
+            : null;
+        $this->accessToken = is_string($configuredToken) && $configuredToken !== ''
+            ? $configuredToken
+            : null;
     }
 
     public function sendDirectMessage(string $recipientId, string $message): array
     {
+        if (! $this->pageId || ! $this->accessToken) {
+            throw new \RuntimeException('Facebook messaging is not configured.');
+        }
+
         $url = "https://graph.facebook.com/v18.0/{$this->pageId}/messages";
 
         $response = Http::post($url, [
@@ -39,14 +51,14 @@ class FacebookService
 
     public function sendRsvpNotification(Volunteer $volunteer, Rsvp $rsvp): bool
     {
-        if (! $volunteer->facebook_id) {
+        if (! $volunteer->messenger_psid) {
             return false;
         }
 
         $message = $this->formatRsvpMessage($rsvp);
 
         try {
-            $this->sendDirectMessage($volunteer->facebook_id, $message);
+            $this->sendDirectMessage($volunteer->messenger_psid, $message);
 
             return true;
         } catch (\Exception $e) {
@@ -58,30 +70,59 @@ class FacebookService
 
     public function broadcastRsvpNotification(Rsvp $rsvp): array
     {
-        $volunteers = Volunteer::whereNotNull('facebook_id')->get();
-
-        $sent = 0;
-        $failed = 0;
+        $volunteers = Volunteer::whereNotNull('messenger_psid')->get();
 
         foreach ($volunteers as $volunteer) {
-            if ($this->sendRsvpNotification($volunteer, $rsvp)) {
-                $sent++;
-            } else {
-                $failed++;
-            }
+            SendRsvpFacebookNotificationJob::dispatch($volunteer->volunteer_id, $rsvp->rsvp_id);
         }
 
         return [
             'total' => $volunteers->count(),
-            'sent' => $sent,
-            'failed' => $failed,
+            'sent' => 0,
+            'failed' => 0,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    public function syncMessengerPsidFromWebhook(array $payload): bool
+    {
+        $psid = data_get($payload, 'entry.0.messaging.0.sender.id');
+        $postbackPayload = data_get($payload, 'entry.0.messaging.0.postback.payload');
+
+        if (! is_string($psid) || $psid === '') {
+            return false;
+        }
+
+        if (! is_string($postbackPayload) || $postbackPayload === '') {
+            return false;
+        }
+
+        preg_match('/VOLUNTEER:(\d+)/', $postbackPayload, $matches);
+        $volunteerId = isset($matches[1]) ? (int) $matches[1] : null;
+
+        if (! $volunteerId) {
+            return false;
+        }
+
+        $volunteer = Volunteer::query()->find($volunteerId);
+
+        if (! $volunteer) {
+            return false;
+        }
+
+        $volunteer->messenger_psid = $psid;
+        $volunteer->save();
+
+        return true;
     }
 
     protected function formatRsvpMessage(Rsvp $rsvp): string
     {
         $deadline = $rsvp->cutoff_day.' '.$rsvp->cutoff_time;
-        $link = config('app.frontend_url', 'http://localhost:4200').'/rsvp?id='.$rsvp->rsvp_id;
+        $frontend = rtrim((string) config('app.frontend_url', 'http://localhost:4200'), '/');
+        $link = $frontend.'/rsvp?id='.$rsvp->rsvp_id;
 
         $message = "📢 *New RSVP Event!*\n\n";
         $message .= "*{$rsvp->title}*\n";
@@ -92,7 +133,7 @@ class FacebookService
         }
 
         $message .= "⏰ Deadline: {$deadline}\n\n";
-        $message .= "👉 [Click here to RSVP]({$link})";
+        $message .= "👉 Click here to RSVP: {$link}";
 
         return $message;
     }

@@ -19,6 +19,7 @@ import {
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { DatePipe, CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
 import { AdminDashboardService, DashboardVolunteerRow, VolunteerUser } from '../services/admin-dashboard.service';
@@ -277,11 +278,12 @@ export class AdminDashboard implements OnInit {
 
   rsvpForm = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
+    eventLocation: ['', [Validators.required, Validators.maxLength(255)]],
     date: ['', Validators.required],
     cutOffDay: ['', Validators.required],
     cutOffTime: ['', Validators.required],
     description: ['', [Validators.required, Validators.minLength(10)]],
-    options: this.fb.array([]),
+    shifts: this.fb.array([]),
   }, { validators: this.cutoffDateValidator() });
 
   volunteerForm = this.fb.group({
@@ -782,7 +784,7 @@ export class AdminDashboard implements OnInit {
   }
 
   get rsvpShifts(): FormArray {
-    return this.rsvpForm.get('options') as FormArray;
+    return this.rsvpForm.get('shifts') as FormArray;
   }
 
   openShareRsvpModal(rsvp: Rsvp): void {
@@ -932,6 +934,7 @@ export class AdminDashboard implements OnInit {
 
     this.rsvpForm.patchValue({
       title: rsvp.title,
+      eventLocation: rsvp.eventLocation ?? '',
       date: parseBackendDate(rsvp.date),
       cutOffDay: parseBackendDate(rsvp.cutOffDay),
       cutOffTime: parseBackendTime(rsvp.cutOffTime),
@@ -992,11 +995,12 @@ export class AdminDashboard implements OnInit {
     // The frontend form / DTO uses camelCase; the API requires snake_case field names.
     const payload = {
       title: formValue.title!,
+      event_location: formValue.eventLocation!,
       date: formatDateForBackend(formValue.date!),
       cutoff_day: formatDateForBackend(formValue.cutOffDay!),
       cutoff_time: formatTimeForBackend(formValue.cutOffTime!),
       description: formValue.description!,
-      options: (formValue.options as { startTime: string; endTime: string; capacity: number }[]).map((opt) => {
+      shifts: (formValue.shifts as { startTime: string; endTime: string; capacity: number }[]).map((opt) => {
         const timeSlotStr = `${opt.startTime} - ${opt.endTime}`;
         return {
           // `text` is required by the backend (stored in the `option` lookup table).
@@ -1072,6 +1076,23 @@ export class AdminDashboard implements OnInit {
   updateRsvpStatus(rsvpId: number, status: 'active' | 'closed' | 'draft'): void {
     this.rsvpService.updateRsvpStatus(rsvpId, status).subscribe(() => {
       this.loadRsvps();
+    });
+  }
+
+  notifyRsvp(rsvp: Rsvp): void {
+    forkJoin([
+      this.rsvpService.notifyFacebook(rsvp.id),
+      this.rsvpService.notifySms(rsvp.id),
+    ]).subscribe({
+      next: ([facebookResult, smsResult]) => {
+        this.showSnackbar(
+          `Notifications sent. Facebook: ${facebookResult.sent}/${facebookResult.total}, SMS: ${smsResult.sent}/${smsResult.total}`,
+          'success',
+        );
+      },
+      error: () => {
+        this.showSnackbar('Failed to send RSVP notifications', 'error');
+      },
     });
   }
 

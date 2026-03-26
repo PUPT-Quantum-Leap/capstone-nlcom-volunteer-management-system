@@ -219,12 +219,12 @@ export class Login implements OnInit, OnDestroy {
       );
 
       if (response.redirect_url) {
-        window.location.href = response.redirect_url;
+        window.location.assign(response.redirect_url);
       } else {
         this.errorMessage.set('Failed to initialize Facebook login.');
       }
     } catch (error) {
-      this.errorMessage.set('An error occurred. Please try again.');
+      this.errorMessage.set(this.authService.error() || 'An error occurred. Please try again.');
     } finally {
       this.isLoading.set(false);
     }

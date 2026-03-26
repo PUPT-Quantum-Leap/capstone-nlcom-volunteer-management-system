@@ -2175,6 +2175,12 @@ a:focus-visible {
     color: var(--green-700);
   }
 
+  &.notify-btn:hover {
+    background: #ede9fe;
+    border-color: #6d28d9;
+    color: #6d28d9;
+  }
+
   &.edit-btn:hover {
     background: var(--blue-100);
     border-color: var(--blue-600);
@@ -2753,25 +2759,6 @@ a:focus-visible {
 
   .shift-fields {
     flex-direction: column;
-  }
-
-.rsvps-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-.add-rsvp-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .rsvp-modal {
-    max-width: 95vw;
-    padding: 1rem;
   }
 
   .option-fields {

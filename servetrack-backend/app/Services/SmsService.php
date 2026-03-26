@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendRsvpSmsJob;
 use App\Models\Rsvp;
 use App\Models\Volunteer;
 use Illuminate\Support\Facades\Log;
@@ -11,13 +12,16 @@ class SmsService
 {
     protected ?Client $twilio = null;
 
-    protected string $fromNumber;
+    protected ?string $fromNumber = null;
 
     public function __construct()
     {
         $sid = config('services.twilio.sid');
         $token = config('services.twilio.token');
-        $this->fromNumber = config('services.twilio.phone_number');
+        $configuredFromNumber = config('services.twilio.phone_number');
+        $this->fromNumber = is_string($configuredFromNumber) && $configuredFromNumber !== ''
+            ? $configuredFromNumber
+            : null;
 
         if ($sid && $token) {
             $this->twilio = new Client($sid, $token);
@@ -26,7 +30,7 @@ class SmsService
 
     public function isConfigured(): bool
     {
-        return $this->twilio !== null;
+        return $this->twilio !== null && $this->fromNumber !== null;
     }
 
     public function sendSms(string $toNumber, string $message): array
@@ -75,21 +79,14 @@ class SmsService
     {
         $volunteers = Volunteer::whereNotNull('mobile_number')->get();
 
-        $sent = 0;
-        $failed = 0;
-
         foreach ($volunteers as $volunteer) {
-            if ($this->sendRsvpNotification($volunteer, $rsvp)) {
-                $sent++;
-            } else {
-                $failed++;
-            }
+            SendRsvpSmsJob::dispatch($volunteer->volunteer_id, $rsvp->rsvp_id);
         }
 
         return [
             'total' => $volunteers->count(),
-            'sent' => $sent,
-            'failed' => $failed,
+            'sent' => 0,
+            'failed' => 0,
         ];
     }
 

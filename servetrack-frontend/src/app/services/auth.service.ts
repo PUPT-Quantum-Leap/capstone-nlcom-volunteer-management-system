@@ -1,7 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, tap, of, map, switchMap } from 'rxjs';
+import { Observable, catchError, tap, of, map, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface LoginCredentials {
@@ -140,7 +140,61 @@ export class AuthService {
    * Get Facebook OAuth redirect URL.
    */
   getFacebookAuthUrl$(): Observable<{ redirect_url: string }> {
-    return this.http.get<{ redirect_url: string }>(`${environment.apiUrl}/auth/facebook`, { withCredentials: true });
+    this.error.set(null);
+
+    return this.http
+      .get<{ redirect_url: string }>(`${environment.apiUrl}/auth/facebook`, { withCredentials: true })
+      .pipe(
+        catchError((err: HttpErrorResponse) => {
+          const message =
+            typeof err.error?.message === 'string'
+              ? err.error.message
+              : 'Failed to initialize Facebook login.';
+          this.error.set(message);
+          return throwError(() => err);
+        }),
+      );
+  }
+
+  exchangeFacebookCode$(code: string, state: string): Observable<AuthResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.http
+      .get<{ user?: AuthResponse['user']; message?: string }>(
+        `${environment.apiUrl}/auth/facebook/callback`,
+        {
+          params: { code, state },
+          withCredentials: true,
+        },
+      )
+      .pipe(
+        map((response) => {
+          if (response.user) {
+            return { success: true, user: response.user } as AuthResponse;
+          }
+
+          return {
+            success: false,
+            message: response.message || 'Facebook authentication failed.',
+          } as AuthResponse;
+        }),
+        tap((response) => {
+          if (response.user) {
+            this.isAuthenticated.set(true);
+            this.currentUser.set(response.user);
+          }
+        }),
+        catchError((err: HttpErrorResponse) => {
+          const message =
+            typeof err.error?.message === 'string'
+              ? err.error.message
+              : 'Facebook authentication failed.';
+          this.error.set(message);
+          return of({ success: false, message } as AuthResponse);
+        }),
+        tap(() => this.isLoading.set(false)),
+      );
   }
 
   private loginWithEndpoint$(

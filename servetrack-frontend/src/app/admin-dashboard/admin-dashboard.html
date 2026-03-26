@@ -676,6 +676,17 @@
               <div class="rsvp-item-actions">
                 <button
                   type="button"
+                  class="rsvp-action-btn notify-btn"
+                  (click)="notifyRsvp(rsvp)"
+                  [attr.aria-label]="'Notify RSVP ' + rsvp.title"
+                  title="Notify RSVP">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M18 8A6 6 0 0 0 6 8C6 15 3 17 3 17H21C21 17 18 15 18 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M13.73 21A2 2 0 0 1 10.27 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <button
+                  type="button"
                   class="rsvp-action-btn share-btn"
                   (click)="openShareRsvpModal(rsvp)"
                   [attr.aria-label]="'Share RSVP ' + rsvp.title"
@@ -1305,6 +1316,15 @@
         </div>
 
         <div class="form-group">
+          <label for="rsvp-location">Event Location *</label>
+          <input id="rsvp-location" type="text" formControlName="eventLocation" placeholder="e.g., Barangay Hall"
+            class="form-input" />
+          @if (rsvpForm.get('eventLocation')?.invalid && rsvpForm.get('eventLocation')?.touched) {
+          <span class="form-error">Location is required</span>
+          }
+        </div>
+
+        <div class="form-group">
           <label for="rsvp-cutoff-day">Cut-off Date *</label>
           <input id="rsvp-cutoff-day" type="date" formControlName="cutOffDay" class="form-input" />
           @if (rsvpForm.get('cutOffDay')?.invalid && rsvpForm.get('cutOffDay')?.touched) {
@@ -1348,7 +1368,7 @@
           </button>
         </div>
 
-        <div formArrayName="options" class="rsvp-shifts-form">
+        <div formArrayName="shifts" class="rsvp-shifts-form">
           @for (shift of rsvpShifts.controls; track $index; let i = $index) {
           <div [formGroupName]="i" class="rsvp-shift-form-item">
             <div class="shift-number">{{ i + 1 }}</div>

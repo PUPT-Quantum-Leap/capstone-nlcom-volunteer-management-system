@@ -289,8 +289,22 @@ export class VolunteerDashboard implements OnInit {
     this.rsvpService.getRsvps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       const active = response.data.filter((r) => r.status === 'active');
       this.rsvps.set(active);
-      if (active.length > 0 && !this.activeRsvp()) {
+      const currentActiveRsvp = this.activeRsvp();
+
+      if (currentActiveRsvp) {
+        const refreshedActiveRsvp = active.find((rsvp) => rsvp.id === currentActiveRsvp.id);
+
+        if (refreshedActiveRsvp) {
+          this.activeRsvp.set(refreshedActiveRsvp);
+
+          return;
+        }
+      }
+
+      if (active.length > 0) {
         this.setActiveRsvp(active[0]);
+      } else {
+        this.activeRsvp.set(null);
       }
     });
   }
