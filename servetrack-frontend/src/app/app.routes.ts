@@ -5,6 +5,7 @@ import { Login } from './auth/login/login';
 import { Signup } from './auth/signup/signup';
 import { SignupForm } from './auth/signup-form/signup-form';
 import { AdminAuthPage } from './auth/admin-auth-page/admin-auth-page';
+import { FacebookCallbackComponent } from './auth/facebook-callback/facebook-callback.component';
 import { VolunteerDashboard } from './volunteer-dashboard/volunteer-dashboard';
 import { AdminDashboard } from './admin-dashboard/admin-dashboard';
 import { NotFound } from './not-found/not-found';
@@ -19,6 +20,7 @@ export const routes: Routes = [
   { path: 'admin-auth', component: AdminAuthPage },
   { path: 'admin-login', redirectTo: 'admin-auth', pathMatch: 'full' },
   { path: 'admin-signup', redirectTo: 'admin-auth?tab=signup', pathMatch: 'full' },
+  { path: 'auth/facebook/callback', component: FacebookCallbackComponent },
   { path: 'rsvp', component: RsvpComponent },
   { path: 'incident-command-system', component: IncidentCommandSystemComponent },
   { path: 'volunteer-dashboard', component: VolunteerDashboard, canActivate: [authGuard] },

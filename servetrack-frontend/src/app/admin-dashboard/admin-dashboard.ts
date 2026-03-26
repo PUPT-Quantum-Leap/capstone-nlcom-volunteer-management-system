@@ -278,6 +278,7 @@ export class AdminDashboard implements OnInit {
   rsvpForm = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
     date: ['', Validators.required],
+    eventLocation: [''],
     cutOffDay: ['', Validators.required],
     cutOffTime: ['', Validators.required],
     description: ['', [Validators.required, Validators.minLength(10)]],
@@ -933,6 +934,7 @@ export class AdminDashboard implements OnInit {
     this.rsvpForm.patchValue({
       title: rsvp.title,
       date: parseBackendDate(rsvp.date),
+      eventLocation: rsvp.eventLocation || '',
       cutOffDay: parseBackendDate(rsvp.cutOffDay),
       cutOffTime: parseBackendTime(rsvp.cutOffTime),
       description: rsvp.description,
@@ -993,14 +995,13 @@ export class AdminDashboard implements OnInit {
     const payload = {
       title: formValue.title!,
       date: formatDateForBackend(formValue.date!),
+      event_location: formValue.eventLocation || null,
       cutoff_day: formatDateForBackend(formValue.cutOffDay!),
       cutoff_time: formatTimeForBackend(formValue.cutOffTime!),
       description: formValue.description!,
-      options: (formValue.options as { startTime: string; endTime: string; capacity: number }[]).map((opt) => {
+      shifts: (formValue.options as { startTime: string; endTime: string; capacity: number }[]).map((opt) => {
         const timeSlotStr = `${opt.startTime} - ${opt.endTime}`;
         return {
-          // `text` is required by the backend (stored in the `option` lookup table).
-          // Use the combined time slot as the option text since that is the human-readable label.
           text: timeSlotStr,
           time_slot: timeSlotStr,
           capacity: opt.capacity,
@@ -1041,6 +1042,38 @@ export class AdminDashboard implements OnInit {
   confirmDeleteRsvp(rsvpId: number): void {
     this.deletingRsvpId.set(rsvpId);
     this.showDeleteRsvpModal.set(true);
+  }
+
+  notifyRsvp(rsvp: { id: number; title: string }): void {
+    if (!confirm(`Send notification for "${rsvp.title}"?`)) {
+      return;
+    }
+
+    this.rsvpService.notifyFacebook(rsvp.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.showSnackbar(`Facebook notification sent: ${response.sent}/${response.total}`, 'success');
+        } else {
+          this.showSnackbar('Failed to send Facebook notification', 'error');
+        }
+      },
+      error: () => {
+        this.showSnackbar('Failed to send Facebook notification', 'error');
+      }
+    });
+
+    this.rsvpService.notifySms(rsvp.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.showSnackbar(`SMS notification sent: ${response.sent}/${response.total}`, 'success');
+        } else {
+          this.showSnackbar('Failed to send SMS notification', 'error');
+        }
+      },
+      error: () => {
+        this.showSnackbar('Failed to send SMS notification', 'error');
+      }
+    });
   }
 
   closeDeleteRsvpModal(): void {
