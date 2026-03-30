@@ -93,6 +93,9 @@ export class AdminDashboard implements OnInit {
   resettingPasswordUserId = signal<number | null>(null);
   viewingUser = signal<User | null>(null);
 
+  // RSVP signals
+  deletingRsvpId = signal<number | null>(null);
+
   showAiModal = signal(false);
   currentPage = signal(1);
   usersPerPage = signal(5);
@@ -123,6 +126,10 @@ export class AdminDashboard implements OnInit {
   // Poll creation loading state
   isCreatingPoll = signal(false);
   isDeletingPoll = signal(false);
+
+  // RSVP creation loading state
+  isCreatingRsvp = signal(false);
+  isDeletingRsvp = signal(false);
 
   // Snackbar notifications
   snackbarMessage = signal<string>('');

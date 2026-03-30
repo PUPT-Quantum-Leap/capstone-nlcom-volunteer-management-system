@@ -45,7 +45,7 @@ export class VolunteerDashboard implements OnInit {
   readonly defaultPhoto = '/assets/volunteer1.png';
 
   // ── Navigation State (Fixed menu close issue) ────────────────────────────
-  currentView = signal<'overview' | 'profile' | 'schedule' | 'polls'>('overview');
+  currentView = signal<'overview' | 'profile' | 'schedule' | 'polls' | 'rsvps'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Volunteer');
   sidebarCollapsed = signal(false);
   mobileSidebarOpen = signal(false);
@@ -390,6 +390,11 @@ export class VolunteerDashboard implements OnInit {
     });
   }
 
+  private loadRsvps(): void {
+    // Placeholder for RSVP loading functionality
+    // This would load RSVP data from a service
+  }
+
   setActivePoll(poll: Poll): void {
     this.activePoll.set(poll);
     this.selectedOptionId.set(null);
@@ -422,7 +427,7 @@ export class VolunteerDashboard implements OnInit {
     }
   }
 
-  setView(view: 'overview' | 'profile' | 'schedule' | 'polls'): void {
+  setView(view: 'overview' | 'profile' | 'schedule' | 'polls' | 'rsvps'): void {
     this.currentView.set(view);
     // Removed auto-closing per user request - sidebar stays open
   }
