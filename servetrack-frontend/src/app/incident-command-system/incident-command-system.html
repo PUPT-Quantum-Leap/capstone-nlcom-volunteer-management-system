@@ -5,7 +5,7 @@
       Generate New ICS
     </button>
     <button class="btn btn-edit" (click)="toggleEditMode()">
-      {{ isEditMode() ? 'Save Changes' : 'Edit ICS' }}
+      {{ isEditMode ? 'Save Changes' : 'Edit ICS' }}
     </button>
   </div>
 
@@ -19,177 +19,204 @@
       </div>
     </div>
 
-    @if (!isEditMode()) {
-      <div class="operation-info">
-        <div class="info-column">
-          <p><strong>Objective:</strong> <span class="info-value">{{ objective() }}</span></p>
-          <p><strong>Menu:</strong> <span class="info-value">{{ menu() }}</span></p>
-        </div>
-        <div class="info-column">
-          <p><strong>Date:</strong> <span class="info-value">{{ date() }}</span></p>
-          <p><strong>Volunteers:</strong> <span class="info-value">{{ volunteers() }}</span></p>
-        </div>
+    <div class="operation-info" *ngIf="!isEditMode">
+      <div class="info-column">
+        <p><strong>Objective:</strong> <span class="info-value">{{ objective }}</span></p>
+        <p><strong>Menu:</strong> <span class="info-value">{{ menu }}</span></p>
       </div>
-    }
+      <div class="info-column">
+        <p><strong>Date:</strong> <span class="info-value">{{ date }}</span></p>
+        <p><strong>Volunteers:</strong> <span class="info-value">{{ volunteers }}</span></p>
+      </div>
+    </div>
 
     <!-- Edit Mode: Header Information -->
-    @if (isEditMode()) {
-      <div class="operation-info edit-mode">
-        <div class="info-column">
-          <p>
-            <strong>Objective:</strong>
-            <input type="number" [ngModel]="newObjective()" (ngModelChange)="newObjective.set($event)" class="edit-input" placeholder="Enter objective">
-          </p>
-          <p>
-            <strong>Menu:</strong>
-            <input type="text" [ngModel]="newMenu()" (ngModelChange)="newMenu.set($event)" class="edit-input" placeholder="Enter menu">
-          </p>
-        </div>
-        <div class="info-column">
-          <p>
-            <strong>Date:</strong>
-            <input type="text" [ngModel]="newDate()" (ngModelChange)="newDate.set($event)" class="edit-input" placeholder="Enter date">
-          </p>
-          <p><strong>Volunteers:</strong> <span class="info-value">{{ volunteers() }}</span></p>
-        </div>
+    <div class="operation-info edit-mode" *ngIf="isEditMode">
+      <div class="info-column">
+        <p>
+          <strong>Objective:</strong>
+          <input type="number" [(ngModel)]="newObjective" class="edit-input" placeholder="Enter objective">
+        </p>
+        <p>
+          <strong>Menu:</strong>
+          <input type="text" [(ngModel)]="newMenu" class="edit-input" placeholder="Enter menu">
+        </p>
       </div>
-    }
+      <div class="info-column">
+        <p>
+          <strong>Date:</strong>
+          <input type="text" [(ngModel)]="newDate" class="edit-input" placeholder="Enter date">
+        </p>
+        <p><strong>Volunteers:</strong> <span class="info-value">{{ volunteers }}</span></p>
+      </div>
+    </div>
   </header>
 
   <!-- 2. Command Hierarchy -->
   <section class="command-structure">
     <div class="command-level level-1">
-      <div class="command-box high-level" [class.edit-mode]="isEditMode()">
+      <div class="command-box high-level" [class.edit-mode]="isEditMode">
         <span class="role">Responsible Official</span>
-        @if (!isEditMode()) {
-          <span class="name">{{ responsibleOfficial().name }}</span>
-        }
-        @if (isEditMode()) {
-          <input type="text" [ngModel]="responsibleOfficial().name" (ngModelChange)="updateCommandRole('responsibleOfficial', $event)" class="edit-input" placeholder="Enter name">
-        }
+        <span class="name" *ngIf="!isEditMode">{{ responsibleOfficial.name }}</span>
+        <input type="text" [(ngModel)]="responsibleOfficial.name" class="edit-input" *ngIf="isEditMode" placeholder="Enter name">
       </div>
     </div>
 
     <div class="connector-down"></div>
 
     <div class="command-level level-2">
-      <div class="command-box mid-level" [class.edit-mode]="isEditMode()">
+      <div class="command-box mid-level" [class.edit-mode]="isEditMode">
         <span class="role">Incident Commander</span>
-        @if (!isEditMode()) {
-          <span class="name">{{ incidentCommander().name }}</span>
-        }
-        @if (isEditMode()) {
-          <input type="text" [ngModel]="incidentCommander().name" (ngModelChange)="updateCommandRole('incidentCommander', $event)" class="edit-input" placeholder="Enter name">
-        }
+        <span class="name" *ngIf="!isEditMode">{{ incidentCommander.name }}</span>
+        <input type="text" [(ngModel)]="incidentCommander.name" class="edit-input" *ngIf="isEditMode" placeholder="Enter name">
       </div>
     </div>
 
     <div class="connector-down"></div>
 
     <div class="support-grid">
-      <div class="command-box support-level" [class.edit-mode]="isEditMode()">
+      <div class="command-box support-level" [class.edit-mode]="isEditMode">
         <span class="role">Planning</span>
-        @if (!isEditMode()) {
-          <span class="name">{{ planning().name }}</span>
-        }
-        @if (isEditMode()) {
-          <input type="text" [ngModel]="planning().name" (ngModelChange)="updateCommandRole('planning', $event)" class="edit-input" placeholder="Enter name">
-        }
+        <span class="name" *ngIf="!isEditMode">{{ planning.name }}</span>
+        <input type="text" [(ngModel)]="planning.name" class="edit-input" *ngIf="isEditMode" placeholder="Enter name">
       </div>
-      <div class="command-box support-level" [class.edit-mode]="isEditMode()">
+      <div class="command-box support-level" [class.edit-mode]="isEditMode">
         <span class="role">Purchasing</span>
-        @if (!isEditMode()) {
-          <span class="name">{{ purchasing().name }}</span>
-        }
-        @if (isEditMode()) {
-          <input type="text" [ngModel]="purchasing().name" (ngModelChange)="updateCommandRole('purchasing', $event)" class="edit-input" placeholder="Enter name">
-        }
+        <span class="name" *ngIf="!isEditMode">{{ purchasing.name }}</span>
+        <input type="text" [(ngModel)]="purchasing.name" class="edit-input" *ngIf="isEditMode" placeholder="Enter name">
       </div>
-      <div class="command-box support-level" [class.edit-mode]="isEditMode()">
+      <div class="command-box support-level" [class.edit-mode]="isEditMode">
         <span class="role">MWC Coordinator</span>
-        @if (!isEditMode()) {
-          <span class="name">{{ mwcCoordinator().name }}</span>
-        }
-        @if (isEditMode()) {
-          <input type="text" [ngModel]="mwcCoordinator().name" (ngModelChange)="updateCommandRole('mwcCoordinator', $event)" class="edit-input" placeholder="Enter name">
-        }
+        <span class="name" *ngIf="!isEditMode">{{ mwcCoordinator.name }}</span>
+        <input type="text" [(ngModel)]="mwcCoordinator.name" class="edit-input" *ngIf="isEditMode" placeholder="Enter name">
       </div>
-      <div class="command-box support-level" [class.edit-mode]="isEditMode()">
+      <div class="command-box support-level" [class.edit-mode]="isEditMode">
         <span class="role">Safety & Emergency</span>
-        @if (!isEditMode()) {
-          <span class="name">{{ safetyEmergency().name }}</span>
-        }
-        @if (isEditMode()) {
-          <input type="text" [ngModel]="safetyEmergency().name" (ngModelChange)="updateCommandRole('safetyEmergency', $event)" class="edit-input" placeholder="Enter name">
-        }
+        <span class="name" *ngIf="!isEditMode">{{ safetyEmergency.name }}</span>
+        <input type="text" [(ngModel)]="safetyEmergency.name" class="edit-input" *ngIf="isEditMode" placeholder="Enter name">
       </div>
     </div>
   </section>
 
   <!-- 3. Main Operational Columns -->
   <main class="operational-grid">
-    @for (col of operationalColumns(); track col.key) {
-      <div class="op-column">
-        <div class="column-header" [class.edit-mode]="isEditMode()">
-          @if (!isEditMode()) {
-            <h3>{{ col.data.title }}</h3>
-            <span class="leader">Leader: {{ col.data.leader }}</span>
-          }
-          @if (isEditMode()) {
-            <input type="text" [ngModel]="col.data.title" (ngModelChange)="updateColumnTitle(col.key, $event)" class="edit-input" placeholder="Column title">
-            <input type="text" [ngModel]="col.data.leader" (ngModelChange)="updateColumnLeader(col.key, $event)" class="edit-input" placeholder="Leader name">
-          }
-        </div>
-
-        <div class="team-cards">
-          @for (team of col.data.teams; track team.name; let teamIdx = $index) {
-            <div class="team-card">
-              <div class="team-header">
-                @if (!isEditMode()) {
-                  <h4>{{ team.name }}</h4>
-                }
-                @if (isEditMode()) {
-                  <input type="text" [ngModel]="team.name" (ngModelChange)="updateTeamName(col.key, teamIdx, $event)" class="edit-input" placeholder="Team name">
-                  <button class="btn-remove" (click)="removeTeam(col.key, teamIdx)">×</button>
-                }
-              </div>
-              <ul>
-                @for (volunteer of team.volunteers; track volunteer.name; let volIdx = $index) {
-                  <li class="volunteer-item">
-                    <span class="volunteer-name">
-                      {{ volunteer.name }}
-                      @if (getVolunteerSymbols(volunteer)) {
-                        <span class="symbols">{{ getVolunteerSymbols(volunteer) }}</span>
-                      }
-                    </span>
-                    @if (isEditMode()) {
-                      <div class="volunteer-actions">
-                        <button (click)="toggleNewVolunteer(col.key, teamIdx, volIdx)" [class.active]="volunteer.isNew" title="New Volunteer">*</button>
-                        <button (click)="toggleDriver(col.key, teamIdx, volIdx)" [class.active]="volunteer.isDriver" title="Driver">~</button>
-                        <button (click)="toggleLeader(col.key, teamIdx, volIdx)" [class.active]="volunteer.isLeader" title="Team Leader">^/^</button>
-                        <button (click)="removeVolunteer(col.key, teamIdx, volIdx)" class="remove" title="Remove">×</button>
-                      </div>
-                    }
-                  </li>
-                }
-                @if (team.volunteers.length === 0 && !isEditMode()) {
-                  <li class="empty-team">No members listed</li>
-                }
-              </ul>
-              @if (isEditMode()) {
-                <div class="add-volunteer">
-                  <input type="text" [ngModel]="newVolunteerName()" (ngModelChange)="newVolunteerName.set($event)" placeholder="Add volunteer" (keyup.enter)="addVolunteer(col.key, teamIdx)">
-                  <button (click)="addVolunteer(col.key, teamIdx)">+</button>
-                </div>
-              }
-            </div>
-          }
-          @if (isEditMode()) {
-            <button class="btn-add-team" (click)="addTeam(col.key)">+ Add Team</button>
-          }
-        </div>
+    <!-- Mobile Kitchen -->
+    <div class="op-column">
+      <div class="column-header" [class.edit-mode]="isEditMode">
+        <h3 *ngIf="!isEditMode">{{ mobileKitchen.title }}</h3>
+        <input type="text" [(ngModel)]="mobileKitchen.title" class="edit-input" *ngIf="isEditMode" placeholder="Column title">
+        <span class="leader" *ngIf="!isEditMode">Leader: {{ mobileKitchen.leader }}</span>
+        <input type="text" [(ngModel)]="mobileKitchen.leader" class="edit-input" *ngIf="isEditMode" placeholder="Leader name">
       </div>
-    }
+
+      <div class="team-cards">
+        <div class="team-card" *ngFor="let team of mobileKitchen.teams; let teamIdx = index">
+          <div class="team-header">
+            <h4 *ngIf="!isEditMode">{{ team.name }}</h4>
+            <input type="text" [(ngModel)]="team.name" class="edit-input" *ngIf="isEditMode" placeholder="Team name">
+            <button class="btn-remove" *ngIf="isEditMode" (click)="removeTeam('mobileKitchen', teamIdx)">×</button>
+          </div>
+          <ul>
+            <li *ngFor="let volunteer of team.volunteers; let volIdx = index" class="volunteer-item">
+              <span class="volunteer-name">
+                {{ volunteer.name }}
+                <span class="symbols" *ngIf="getVolunteerSymbols(volunteer)">{{ getVolunteerSymbols(volunteer) }}</span>
+              </span>
+              <div class="volunteer-actions" *ngIf="isEditMode">
+                <button (click)="toggleNewVolunteer('mobileKitchen', teamIdx, volIdx)" [class.active]="volunteer.isNew" title="New Volunteer">*</button>
+                <button (click)="toggleDriver('mobileKitchen', teamIdx, volIdx)" [class.active]="volunteer.isDriver" title="Driver">~</button>
+                <button (click)="toggleLeader('mobileKitchen', teamIdx, volIdx)" [class.active]="volunteer.isLeader" title="Team Leader">^/^</button>
+                <button (click)="removeVolunteer('mobileKitchen', teamIdx, volIdx)" class="remove" title="Remove">×</button>
+              </div>
+            </li>
+          </ul>
+          <div class="add-volunteer" *ngIf="isEditMode">
+            <input type="text" [(ngModel)]="newVolunteerName" placeholder="Add volunteer" (keyup.enter)="addVolunteer('mobileKitchen', teamIdx)">
+            <button (click)="addVolunteer('mobileKitchen', teamIdx)">+</button>
+          </div>
+        </div>
+        <button class="btn-add-team" *ngIf="isEditMode" (click)="addTeam('mobileKitchen')">+ Add Team</button>
+      </div>
+    </div>
+
+    <!-- AM Distribution -->
+    <div class="op-column">
+      <div class="column-header" [class.edit-mode]="isEditMode">
+        <h3 *ngIf="!isEditMode">{{ amDistribution.title }}</h3>
+        <input type="text" [(ngModel)]="amDistribution.title" class="edit-input" *ngIf="isEditMode" placeholder="Column title">
+        <span class="leader" *ngIf="!isEditMode">Leader: {{ amDistribution.leader }}</span>
+        <input type="text" [(ngModel)]="amDistribution.leader" class="edit-input" *ngIf="isEditMode" placeholder="Leader name">
+      </div>
+
+      <div class="team-cards">
+        <div class="team-card" *ngFor="let team of amDistribution.teams; let teamIdx = index">
+          <div class="team-header">
+            <h4 *ngIf="!isEditMode">{{ team.name }}</h4>
+            <input type="text" [(ngModel)]="team.name" class="edit-input" *ngIf="isEditMode" placeholder="Team name">
+            <button class="btn-remove" *ngIf="isEditMode" (click)="removeTeam('amDistribution', teamIdx)">×</button>
+          </div>
+          <ul>
+            <li *ngFor="let volunteer of team.volunteers; let volIdx = index" class="volunteer-item">
+              <span class="volunteer-name">
+                {{ volunteer.name }}
+                <span class="symbols" *ngIf="getVolunteerSymbols(volunteer)">{{ getVolunteerSymbols(volunteer) }}</span>
+              </span>
+              <div class="volunteer-actions" *ngIf="isEditMode">
+                <button (click)="toggleNewVolunteer('amDistribution', teamIdx, volIdx)" [class.active]="volunteer.isNew" title="New Volunteer">*</button>
+                <button (click)="toggleDriver('amDistribution', teamIdx, volIdx)" [class.active]="volunteer.isDriver" title="Driver">~</button>
+                <button (click)="toggleLeader('amDistribution', teamIdx, volIdx)" [class.active]="volunteer.isLeader" title="Team Leader">^/^</button>
+                <button (click)="removeVolunteer('amDistribution', teamIdx, volIdx)" class="remove" title="Remove">×</button>
+              </div>
+            </li>
+          </ul>
+          <div class="add-volunteer" *ngIf="isEditMode">
+            <input type="text" [(ngModel)]="newVolunteerName" placeholder="Add volunteer" (keyup.enter)="addVolunteer('amDistribution', teamIdx)">
+            <button (click)="addVolunteer('amDistribution', teamIdx)">+</button>
+          </div>
+        </div>
+        <button class="btn-add-team" *ngIf="isEditMode" (click)="addTeam('amDistribution')">+ Add Team</button>
+      </div>
+    </div>
+
+    <!-- PM Distribution -->
+    <div class="op-column">
+      <div class="column-header" [class.edit-mode]="isEditMode">
+        <h3 *ngIf="!isEditMode">{{ pmDistribution.title }}</h3>
+        <input type="text" [(ngModel)]="pmDistribution.title" class="edit-input" *ngIf="isEditMode" placeholder="Column title">
+        <span class="leader" *ngIf="!isEditMode">Leader: {{ pmDistribution.leader }}</span>
+        <input type="text" [(ngModel)]="pmDistribution.leader" class="edit-input" *ngIf="isEditMode" placeholder="Leader name">
+      </div>
+
+      <div class="team-cards">
+        <div class="team-card" *ngFor="let team of pmDistribution.teams; let teamIdx = index">
+          <div class="team-header">
+            <h4 *ngIf="!isEditMode">{{ team.name }}</h4>
+            <input type="text" [(ngModel)]="team.name" class="edit-input" *ngIf="isEditMode" placeholder="Team name">
+            <button class="btn-remove" *ngIf="isEditMode" (click)="removeTeam('pmDistribution', teamIdx)">×</button>
+          </div>
+          <ul>
+            <li *ngFor="let volunteer of team.volunteers; let volIdx = index" class="volunteer-item">
+              <span class="volunteer-name">
+                {{ volunteer.name }}
+                <span class="symbols" *ngIf="getVolunteerSymbols(volunteer)">{{ getVolunteerSymbols(volunteer) }}</span>
+              </span>
+              <div class="volunteer-actions" *ngIf="isEditMode">
+                <button (click)="toggleNewVolunteer('pmDistribution', teamIdx, volIdx)" [class.active]="volunteer.isNew" title="New Volunteer">*</button>
+                <button (click)="toggleDriver('pmDistribution', teamIdx, volIdx)" [class.active]="volunteer.isDriver" title="Driver">~</button>
+                <button (click)="toggleLeader('pmDistribution', teamIdx, volIdx)" [class.active]="volunteer.isLeader" title="Team Leader">^/^</button>
+                <button (click)="removeVolunteer('pmDistribution', teamIdx, volIdx)" class="remove" title="Remove">×</button>
+              </div>
+            </li>
+            <li *ngIf="team.volunteers.length === 0 && !isEditMode" class="empty-team">No members listed</li>
+          </ul>
+          <div class="add-volunteer" *ngIf="isEditMode">
+            <input type="text" [(ngModel)]="newVolunteerName" placeholder="Add volunteer" (keyup.enter)="addVolunteer('pmDistribution', teamIdx)">
+            <button (click)="addVolunteer('pmDistribution', teamIdx)">+</button>
+          </div>
+        </div>
+        <button class="btn-add-team" *ngIf="isEditMode" (click)="addTeam('pmDistribution')">+ Add Team</button>
+      </div>
+    </div>
   </main>
 
   <!-- Bottom Information Section -->
@@ -204,45 +231,32 @@
         </ul>
       </div>
 
-      <div class="footer-box" [class.edit-mode]="isEditMode()">
+      <div class="footer-box" [class.edit-mode]="isEditMode">
         <h4>Meal Breakdown</h4>
-        @if (!isEditMode()) {
-          <div class="meal-stats">
-            <p>Breakfast - <span class="count">{{ mealBreakdown().breakfast }}</span></p>
-            <p>Lunch - <span class="count">{{ mealBreakdown().lunch }}</span></p>
-            <p>Snacks - <span class="count">{{ mealBreakdown().snacks }}</span></p>
-          </div>
-        }
-        @if (isEditMode()) {
-          <div class="meal-edit">
-            <p>Breakfast - <input type="number" [ngModel]="mealBreakdown().breakfast" (ngModelChange)="updateMealBreakfast($event)" class="edit-input-small"></p>
-            <p>Lunch - <input type="number" [ngModel]="mealBreakdown().lunch" (ngModelChange)="updateMealLunch($event)" class="edit-input-small"></p>
-            <p>Snacks - <input type="number" [ngModel]="mealBreakdown().snacks" (ngModelChange)="updateMealSnacks($event)" class="edit-input-small"></p>
-          </div>
-        }
+        <div class="meal-stats" *ngIf="!isEditMode">
+          <p>Breakfast - <span class="count">{{ mealBreakdown.breakfast }}</span></p>
+          <p>Lunch - <span class="count">{{ mealBreakdown.lunch }}</span></p>
+          <p>Snacks - <span class="count">{{ mealBreakdown.snacks }}</span></p>
+        </div>
+        <div class="meal-edit" *ngIf="isEditMode">
+          <p>Breakfast - <input type="number" [(ngModel)]="mealBreakdown.breakfast" class="edit-input-small"></p>
+          <p>Lunch - <input type="number" [(ngModel)]="mealBreakdown.lunch" class="edit-input-small"></p>
+          <p>Snacks - <input type="number" [(ngModel)]="mealBreakdown.snacks" class="edit-input-small"></p>
+        </div>
       </div>
 
       <div class="footer-box">
         <h4>Vehicle Assignment</h4>
         <div class="vehicle-list">
-          @for (v of vehicleAssignments(); track v.code; let i = $index) {
-            <div class="vehicle-item">
-              @if (!isEditMode()) {
-                <span>{{ v.code }}</span>
-                -
-                <span>{{ v.vehicle }}</span>
-              }
-              @if (isEditMode()) {
-                <input type="text" [ngModel]="v.code" (ngModelChange)="updateVehicleCode(i, $event)" class="edit-input-small" placeholder="Code">
-                -
-                <input type="text" [ngModel]="v.vehicle" (ngModelChange)="updateVehicleName(i, $event)" class="edit-input-small" placeholder="Vehicle">
-                <button class="btn-remove" (click)="removeVehicle(i)">×</button>
-              }
-            </div>
-          }
-          @if (isEditMode()) {
-            <button class="btn-add-vehicle" (click)="addVehicle()">+ Add Vehicle</button>
-          }
+          <div class="vehicle-item" *ngFor="let v of vehicleAssignments; let i = index">
+            <span *ngIf="!isEditMode">{{ v.code }}</span>
+            <input type="text" [(ngModel)]="v.code" class="edit-input-small" *ngIf="isEditMode" placeholder="Code">
+            -
+            <span *ngIf="!isEditMode">{{ v.vehicle }}</span>
+            <input type="text" [(ngModel)]="v.vehicle" class="edit-input-small" *ngIf="isEditMode" placeholder="Vehicle">
+            <button class="btn-remove" *ngIf="isEditMode" (click)="removeVehicle(i)">×</button>
+          </div>
+          <button class="btn-add-vehicle" *ngIf="isEditMode" (click)="addVehicle()">+ Add Vehicle</button>
         </div>
       </div>
     </div>
@@ -258,3 +272,4 @@
     </button>
   </div>
 </div>
+

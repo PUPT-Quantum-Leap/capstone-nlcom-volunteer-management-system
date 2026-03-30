@@ -1,101 +1,56 @@
 <div class="dashboard-container">
-  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()"
-    [class.mobile-open]="mobileSidebarOpen()">
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
     <div class="sidebar-header">
-      <div class="logo-area" (click)="toggleSidebar()" 
-        (keydown.enter)="toggleSidebar()" role="button" tabindex="0"
-        aria-label="Toggle sidebar">
+      <div class="logo-area" (click)="toggleSidebar()" role="button" tabindex="0">
         <div class="logo-icon">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke="currentColor"
-              stroke-width="2" fill="none"/>
-            <path d="M7 12L10 15L17 8" stroke="currentColor"
-              stroke-width="2.5" stroke-linecap="round"
-              stroke-linejoin="round"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
         </div>
         <span class="logo-text">ServeTrack</span>
       </div>
     </div>
 
-    <nav class="sidebar-nav" aria-label="Main Navigation">
+    <nav class="sidebar-nav">
       <ul>
         <li>
-          <button
-            type="button"
-            [class.active]="currentView() === 'overview'"
-            (click)="setView('overview')" (keydown.enter)="setView('overview')"
-            aria-label="View Overview Summary"
-          >
-            <span class="label nav-label">
-              <svg class="nav-icon overview" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="3" y="3" width="18" height="18" rx="2"
-                  stroke="currentColor" stroke-width="2" fill="none"/>
-                <path d="M9 11H15M9 15H15" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round"/>
-                <circle cx="7" cy="7" r="1" fill="currentColor"/>
-              </svg>
-              <span class="nav-text">Overview Summary</span>
-            </span>
+          <button type="button" [class.active]="currentView() === 'overview'" (click)="setView('overview')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            <span class="nav-text">Dashboard</span>
           </button>
         </li>
         <li>
-          <button
-            type="button"
-            [class.active]="currentView() === 'profile'"
-            (click)="setView('profile')" (keydown.enter)="setView('profile')"
-            aria-label="View My Profile"
-          >
-            <span class="label nav-label">
-              <svg class="nav-icon profile" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="8" r="4" stroke="currentColor"
-                  stroke-width="2"/>
-                <path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              <span class="nav-text">My Profile</span>
-            </span>
+          <button type="button" [class.active]="currentView() === 'profile'" (click)="setView('profile')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span class="nav-text">My Profile</span>
           </button>
         </li>
         <li>
-          <button
-            type="button"
-            [class.active]="currentView() === 'schedule'"
-            (click)="setView('schedule')" (keydown.enter)="setView('schedule')"
-            aria-label="View Attendance Log"
-          >
-            <span class="label nav-label">
-              <svg class="nav-icon attendance" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="18" rx="2"
-                  stroke="currentColor" stroke-width="2" fill="none"/>
-                <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round"/>
-                <path d="M8 14h8M8 18h6" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              <span class="nav-text">Attendance Log</span>
-            </span>
+          <button type="button" [class.active]="currentView() === 'schedule'" (click)="setView('schedule')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span class="nav-text">Attendance Log</span>
           </button>
         </li>
         <li>
-          <button
-            type="button"
-            [class.active]="currentView() === 'rsvps'"
-            (click)="setView('rsvps')" (keydown.enter)="setView('rsvps')"
-            aria-label="View RSVPs"
-          >
-            <span class="label nav-label">
-              <svg class="nav-icon rsvps" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="2" y="6" width="20" height="12" rx="2"
-                  stroke="currentColor" stroke-width="2" fill="none"/>
-                <path d="M8 2v4M16 2v4" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round"/>
-                <circle cx="12" cy="12" r="2" fill="currentColor"/>
-                <path d="M2 12h20" stroke="currentColor" stroke-width="2"
-                  stroke-dasharray="2 2"/>
-              </svg>
-              <span class="nav-text">RSVPs</span>
-            </span>
+          <button type="button" [class.active]="currentView() === 'polls'" (click)="setView('polls')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="nav-text">Community Polls</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'rsvps'" (click)="setView('rsvps')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4m-4 0V9a2 2 0 1 1 4 0v2m-4 0a2 2 0 1 0 4 0"/>
+            </svg>
+            <span class="nav-text">Event RSVPs</span>
           </button>
         </li>
       </ul>
@@ -106,7 +61,7 @@
         <img [src]="profilePreviewUrl()" alt="User" class="avatar-sm" />
         <div class="user-info">
           <p class="name">{{ userName() }}</p>
-          <p class="role">Active Volunteer</p>
+          <p class="role">Volunteer</p>
         </div>
       </div>
     </div>
@@ -114,138 +69,85 @@
 
   <!-- Mobile Sidebar -->
   <aside class="mobile-sidebar" [class.mobile-open]="mobileSidebarOpen()">
-    <div class="mobile-sidebar-header">
+    <div class="sidebar-header">
       <div class="logo-area">
         <div class="logo-icon">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" stroke="currentColor"
-              stroke-width="2" fill="none"/>
-            <path d="M7 12L10 15L17 8" stroke="currentColor"
-              stroke-width="2.5" stroke-linecap="round"
-              stroke-linejoin="round"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
         </div>
         <span class="logo-text">ServeTrack</span>
       </div>
-      <button type="button" class="mobile-logout-btn" 
-        (click)="openLogoutModal()" (keydown.enter)="openLogoutModal()"
-        aria-label="Logout">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M9 21H12M12 21L15 18M9 21L6 18" 
-            stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path d="M16 17V14C16 12.58 14.58 9 10 9S4 12.58 4 17V20"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path d="M12 14V17" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round"/>
+      <button type="button" class="mobile-logout-btn" (click)="logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
         </svg>
         Logout
       </button>
     </div>
 
-    <nav class="sidebar-nav" aria-label="Mobile Navigation">
+    <nav class="sidebar-nav">
       <ul>
         <li>
-          <button
-            type="button"
-            [class.active]="currentView() === 'overview'"
-            (click)="setView('overview')" (keydown.enter)="setView('overview')"
-            aria-label="View Overview Summary"
-          >
-            <span class="label nav-label">
-              <svg class="nav-icon overview" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="3" y="3" width="18" height="18" rx="2"
-                  stroke="currentColor" stroke-width="2" fill="none"/>
-                <path d="M9 11H15M9 15H15" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round"/>
-                <circle cx="7" cy="7" r="1" fill="currentColor"/>
-              </svg>
-              <span class="nav-text">Overview Summary</span>
-            </span>
+          <button type="button" [class.active]="currentView() === 'overview'" (click)="setView('overview'); closeMobileSidebar()">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            <span class="nav-text">Dashboard</span>
           </button>
         </li>
         <li>
-          <button
-            type="button"
-            [class.active]="currentView() === 'profile'"
-            (click)="setView('profile')" (keydown.enter)="setView('profile')"
-            aria-label="View My Profile"
-          >
-            <span class="label nav-label">
-              <svg class="nav-icon profile" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="8" r="4" stroke="currentColor"
-                  stroke-width="2"/>
-                <path d="M6 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              <span class="nav-text">My Profile</span>
-            </span>
+          <button type="button" [class.active]="currentView() === 'profile'" (click)="setView('profile'); closeMobileSidebar()">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span class="nav-text">My Profile</span>
           </button>
         </li>
         <li>
-          <button
-            type="button"
-            [class.active]="currentView() === 'schedule'"
-            (click)="setView('schedule')" (keydown.enter)="setView('schedule')"
-            aria-label="View Attendance Log"
-          >
-            <span class="label nav-label">
-              <svg class="nav-icon attendance" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="18" rx="2"
-                  stroke="currentColor" stroke-width="2" fill="none"/>
-                <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round"/>
-                <path d="M8 14h8M8 18h6" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              <span class="nav-text">Attendance Log</span>
-            </span>
+          <button type="button" [class.active]="currentView() === 'schedule'" (click)="setView('schedule'); closeMobileSidebar()">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span class="nav-text">Attendance Log</span>
           </button>
         </li>
         <li>
-          <button
-            type="button"
-            [class.active]="currentView() === 'rsvps'"
-            (click)="setView('rsvps')" (keydown.enter)="setView('rsvps')"
-            aria-label="View RSVPs"
-          >
-            <span class="label nav-label">
-              <svg class="nav-icon rsvps" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="2" y="6" width="20" height="12" rx="2"
-                  stroke="currentColor" stroke-width="2" fill="none"/>
-                <path d="M8 2v4M16 2v4" stroke="currentColor"
-                  stroke-width="2" stroke-linecap="round"/>
-                <circle cx="12" cy="12" r="2" fill="currentColor"/>
-                <path d="M2 12h20" stroke="currentColor" stroke-width="2"
-                  stroke-dasharray="2 2"/>
-              </svg>
-              <span class="nav-text">RSVPs</span>
-            </span>
+          <button type="button" [class.active]="currentView() === 'polls'" (click)="setView('polls'); closeMobileSidebar()">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="nav-text">Community Polls</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="currentView() === 'rsvps'" (click)="setView('rsvps'); closeMobileSidebar()">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4m-4 0V9a2 2 0 1 1 4 0v2m-4 0a2 2 0 1 0 4 0"/>
+            </svg>
+            <span class="nav-text">Event RSVPs</span>
           </button>
         </li>
       </ul>
     </nav>
   </aside>
 
-  <div class="sidebar-overlay" [class.active]="mobileSidebarOpen()"
-    (click)="closeMobileSidebar()" (keydown.enter)="closeMobileSidebar()"
-    role="button" tabindex="0" aria-label="Close sidebar"></div>
+  <div class="sidebar-overlay" [class.active]="mobileSidebarOpen()" (click)="closeMobileSidebar()"></div>
 
   <div class="main-wrapper" [class.expanded]="sidebarCollapsed()">
     <header class="top-bar">
       <div class="top-bar-left">
-        <button type="button" class="outline-btn mobile-menu-btn"
-          (click)="toggleMobileSidebar()" (keydown.enter)="toggleMobileSidebar()"
-          aria-label="Open menu">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round"/>
+        <button type="button" class="mobile-menu-btn" (click)="toggleMobileSidebar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
           </svg>
         </button>
         <h1 class="page-title">
           @switch (currentView()) {
-            @case ('overview') { Overview Summary }
-            @case ('profile') { Volunteer Profile }
+            @case ('overview') { Dashboard }
+            @case ('profile') { My Profile }
             @case ('schedule') { Attendance Log }
+            @case ('polls') { Community Polls }
             @case ('rsvps') { RSVPs }
           }
         </h1>
@@ -253,19 +155,15 @@
 
       <div class="top-bar-right">
         <div class="search-inline">
-          <input
-            #dashboardSearch
-            type="text"
-            class="search-input"
-            [value]="searchQuery()"
-            (input)="setSearchQuery(dashboardSearch.value)"
-            (keydown.enter)="runSearch()"
-            placeholder="Search dashboard..."
-          />
-          <button type="button" class="search-btn" (click)="runSearch()">Search</button>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 0.5rem; color: var(--slate-400);">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input #dashboardSearch type="text" class="search-input" [value]="searchQuery()" (input)="setSearchQuery(dashboardSearch.value)" (keydown.enter)="runSearch()" placeholder="Search..."/>
         </div>
         <button type="button" class="outline-btn" (click)="toggleNotifications()">
-          Notifications
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
           @if (notificationCount() > 0) {
             <span class="badge">{{ notificationCount() }}</span>
           }
@@ -279,21 +177,21 @@
         <div class="panel-header">
           <h2>Notifications</h2>
           <div class="panel-actions">
-            <button type="button" class="outline-btn" (click)="markNotificationsRead()">
-              Mark all as read
-            </button>
+            <button type="button" class="outline-btn" (click)="markNotificationsRead()">Mark Read</button>
             <button type="button" class="outline-btn" (click)="closeNotifications()">Close</button>
           </div>
         </div>
         <div class="notification-list">
           @for (item of notifications(); track item.id) {
             <article class="notification-item" [class.unread]="!item.read">
-              <div>
-                <h3>{{ item.title }}</h3>
-                <p>{{ item.description }}</p>
-              </div>
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.description }}</p>
               <span class="notification-time">{{ item.time }}</span>
             </article>
+          } @empty {
+            <div class="empty-state">
+              <p>No notifications at the moment.</p>
+            </div>
           }
         </div>
       </section>
@@ -303,691 +201,358 @@
       @switch (currentView()) {
         @case ('overview') {
           <section class="overview-layout">
-            <section class="stats-grid">
+            <article class="dashboard-clock-card">
+              <div class="clock-display">
+                <div class="clock-time-large">{{ currentTimeFormatted() }}</div>
+                <div class="clock-date-large">{{ currentDateFormatted() }}</div>
+              </div>
+            </article>
+
+            <div class="stats-grid">
               <article class="stat-card">
-                <p class="label">Attendance</p>
-                <p class="value">{{ attendanceTotalHours() }} / {{ attendanceGoalHours() }} hrs</p>
+                <div class="label">Attendance Goal</div>
+                <div class="value">{{ attendanceTotalHours() }} / {{ attendanceGoalHours() }} hrs</div>
                 <div class="meter">
                   <div class="fill" [style.width.%]="attendanceRate()"></div>
                 </div>
-                <p class="meta">{{ attendanceRate() }}% completion rate</p>
+                <div class="meta">{{ attendanceRate() }}% of monthly goal reached</div>
               </article>
 
               <article class="stat-card">
-                <p class="label">Location Assigned</p>
-                <p class="value value-text">{{ locationAssigned() }}</p>
-                <p class="meta">Current Deployment</p>
+                <div class="label">Current Location</div>
+                <div class="value">{{ locationAssigned() }}</div>
+                <div class="meta">Your active deployment area</div>
               </article>
 
               <article class="stat-card">
-                <p class="label">Task Assigned</p>
-                <p class="value value-text">{{ taskAssigned() }}</p>
-                <p class="meta">Service Responsibility</p>
+                <div class="label">Assigned Task</div>
+                <div class="value">{{ taskAssigned() }}</div>
+                <div class="meta">Your primary responsibility</div>
               </article>
 
               <article class="stat-card">
-                <p class="label">Last RSVP</p>
-                <p class="value value-text">
-                  @if (hasSubmittedResponse()) {
-                    Responded
-                  } @else if (activeRsvp()) {
-                    Pending
-                  } @else {
-                    —
-                  }
-                </p>
-                <p class="meta">
-                  @if (hasSubmittedResponse()) {
-                    Response Recorded
-                  } @else {
-                    Action Required
-                  }
-                </p>
+                <div class="label">Poll Status</div>
+                <div class="value">
+                  @if (hasSubmittedVote()) { Voted } 
+                  @else if (activePoll()) { Action Required } 
+                  @else { No Active Polls }
+                </div>
+                <div class="meta">Community engagement</div>
               </article>
-            </section>
+            </div>
 
-            <section class="quick-actions">
+            <div class="quick-actions">
               <button type="button" class="action-card" (click)="setView('profile')">
                 <h3>Update Profile</h3>
-                <p>Keep your volunteer details and preferences current.</p>
+                <p>Keep your contact information and preferences up to date.</p>
               </button>
-              <button type="button" class="action-card" (click)="setView('rsvps')">
-                <h3>RSVP for Shifts</h3>
-                <p>Select your preferred shifts and assignments.</p>
+              <button type="button" class="action-card" (click)="setView('polls')">
+                <h3>Take Part in Polls</h3>
+                <p>Your voice matters! Help us make better community decisions.</p>
               </button>
               <button type="button" class="action-card" (click)="setView('schedule')">
-                <h3>Review Schedule</h3>
-                <p>Check your latest service deployment updates.</p>
+                <h3>View Schedule</h3>
+                <p>Check your upcoming shifts and service assignments.</p>
               </button>
-            </section>
+            </div>
           </section>
         }
 
         @case ('profile') {
-          <section class="profile-grid">
-            <article class="panel">
-              <div class="panel-header">
-                <h2>{{ editingProfileId() !== null ? 'Edit Profile' : 'New Profile' }}</h2>
-                <div class="profile-completion">
-                  <span class="completion-label">Profile Completion: {{ profileCompletion() }}%</span>
-                  <div class="completion-bar">
-                    <div class="completion-fill" [style.width.%]="profileCompletion()"></div>
-                  </div>
+          <section class="profile-section">
+            <!-- Profile Header Card -->
+            <article class="profile-header-card">
+              <div class="profile-avatar-section">
+                <img [src]="profilePreviewUrl()" alt="Profile" class="profile-avatar" />
+                <div class="profile-meta">
+                  <h3>{{ profileForm.get('firstName')?.value || 'Your Name' }} {{ profileForm.get('lastName')?.value || '' }}</h3>
+                  <p>Volunteer Member</p>
                 </div>
               </div>
-
-              <form class="form-grid" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
-                <div class="photo-row">
-                  <img [src]="profilePreviewUrl()" alt="Profile preview" class="profile-image" />
-                  <label class="outline-btn upload-btn">
-                    Choose Photo
-                    <input type="file" accept="image/*" (change)="onPhotoSelected($event)" />
-                  </label>
+              <div class="profile-stats">
+                <div class="stat">
+                  <span class="stat-value">{{ profileCompletion() }}%</span>
+                  <span class="stat-label">Complete</span>
                 </div>
-
-                <h3 class="section-title wide">Personal Information</h3>
-
-                <div class="form-group">
-                  <label for="firstName">First Name</label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    formControlName="firstName"
-                    placeholder="Enter first name"
-                  />
-                  @if (controlHasError('firstName')) {
-                    <span class="error-text">{{ getControlError('firstName') }}</span>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="lastName">Last Name</label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    formControlName="lastName"
-                    placeholder="Enter last name"
-                  />
-                  @if (controlHasError('lastName')) {
-                    <span class="error-text">{{ getControlError('lastName') }}</span>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="facebookName">
-                    Facebook Name <span class="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="facebookName"
-                    formControlName="facebookName"
-                    placeholder="Enter your Facebook name"
-                  />
-                  @if (controlHasError('facebookName')) {
-                    <span class="error-text">{{ getControlError('facebookName') }}</span>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="email">Work Email</label>
-                  <input
-                    type="email"
-                    id="email"
-                    formControlName="email"
-                    placeholder="email@servetrack.org"
-                  />
-                  @if (controlHasError('email')) {
-                    <span class="error-text">{{ getControlError('email') }}</span>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="mobileNumber">Mobile Number</label>
-                  <input
-                    type="text"
-                    id="mobileNumber"
-                    formControlName="mobileNumber"
-                    placeholder="09XXXXXXXXX"
-                  />
-                  @if (controlHasError('mobileNumber')) {
-                    <span class="error-text">{{ getControlError('mobileNumber') }}</span>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="birthdate">Birthdate</label>
-                  <input type="date" id="birthdate" formControlName="birthdate" />
-                  @if (controlHasError('birthdate')) {
-                    <span class="error-text">{{ getControlError('birthdate') }}</span>
-                  }
-                </div>
-
-                <div class="form-group wide">
-                  <label for="lastMedicalExam">Date of Last Medical Examination</label>
-                  <input type="date" id="lastMedicalExam" formControlName="lastMedicalExam" />
-                  @if (controlHasError('lastMedicalExam')) {
-                    <span class="error-text">{{ getControlError('lastMedicalExam') }}</span>
-                  }
-                </div>
-
-                <div class="form-group wide">
-                  <label for="completeAddress">Complete Address</label>
-                  <textarea
-                    id="completeAddress"
-                    rows="2"
-                    formControlName="completeAddress"
-                    placeholder="Enter complete address"
-                  ></textarea>
-                  @if (controlHasError('completeAddress')) {
-                    <span class="error-text">{{ getControlError('completeAddress') }}</span>
-                  }
-                </div>
-
-                <h3 class="section-title wide">Education and Experience</h3>
-
-                <div class="form-group wide">
-                  <label for="educationalAttainment">Educational Attainment</label>
-                  <select id="educationalAttainment" formControlName="educationalAttainment">
-                    <option value="" disabled>Select educational attainment</option>
-                    <option value="elementary">Elementary</option>
-                    <option value="high-school">High School</option>
-                    <option value="senior-high">Senior High School</option>
-                    <option value="vocational">Vocational Course</option>
-                    <option value="college-undergraduate">College Undergraduate</option>
-                    <option value="college-graduate">College Graduate</option>
-                    <option value="masters">Master's Degree</option>
-                    <option value="doctorate">Doctorate Degree</option>
-                  </select>
-                  @if (controlHasError('educationalAttainment')) {
-                    <span class="error-text">{{ getControlError('educationalAttainment') }}</span>
-                  }
-                </div>
-
-                <div class="form-group wide">
-                  <label for="trainingExperience">Training and Experience</label>
-                  <textarea
-                    id="trainingExperience"
-                    rows="2"
-                    formControlName="trainingExperience"
-                    placeholder="Optional"
-                  ></textarea>
-                </div>
-
-                <div class="form-group wide">
-                  <label for="skillsHobbies">Skills and Hobbies</label>
-                  <textarea
-                    id="skillsHobbies"
-                    rows="2"
-                    formControlName="skillsHobbies"
-                    placeholder="Optional"
-                  ></textarea>
-                </div>
-
-                <div class="form-group wide">
-                  <label for="classesTraining">Classes and Training Attended</label>
-                  <textarea
-                    id="classesTraining"
-                    rows="2"
-                    formControlName="classesTraining"
-                    placeholder="Optional"
-                  ></textarea>
-                </div>
-
-                <h3 class="section-title wide">Availability and Lifegroup</h3>
-
-                <div class="form-group wide">
-                  <label for="availability">Availability</label>
-                  <select id="availability" formControlName="availability">
-                    <option value="" disabled>Select your availability</option>
-                    <option value="anytime">Anytime / On Call</option>
-                    <option value="weekends-only">Weekends Only</option>
-                    <option value="weekdays-only">Weekdays Only</option>
-                    <option value="weekdays-weekends">Weekdays & Weekends</option>
-                    <option value="friday-saturday">Friday & Saturday Only</option>
-                    <option value="scheduled">Scheduled (By Arrangement)</option>
-                    <option value="holidays">Holidays (If Available)</option>
-                    <option value="rest-days">Rest Days / With Filed Leave</option>
-                    <option value="limited-weekdays">Limited Weekdays (Not Whole Day)</option>
-                    <option value="day-off">Day Off Only</option>
-                    <option value="others">Others</option>
-                  </select>
-                  @if (controlHasError('availability')) {
-                    <span class="error-text">{{ getControlError('availability') }}</span>
-                  }
-                </div>
-
-                @if (profileForm.get('availability')?.value === 'others') {
-                  <div class="form-group wide">
-                    <label for="otherAvailability">Please specify your availability</label>
-                    <input
-                      type="text"
-                      id="otherAvailability"
-                      formControlName="otherAvailability"
-                      placeholder="Enter your availability"
-                    />
-                  </div>
-                }
-
-                <div class="form-group">
-                  <label for="partOfLifegroup">Are you part of a lifegroup?</label>
-                  <select id="partOfLifegroup" formControlName="partOfLifegroup">
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <label for="leadingLifegroup">Are you leading a lifegroup?</label>
-                  <select id="leadingLifegroup" formControlName="leadingLifegroup">
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </div>
-
-                @if (profileForm.get('partOfLifegroup')?.value === 'yes') {
-                  <div class="form-group wide">
-                    <label for="lifegroupLeaderName">Name of your Lifegroup Leader</label>
-                    <input
-                      type="text"
-                      id="lifegroupLeaderName"
-                      formControlName="lifegroupLeaderName"
-                      placeholder="Enter your lifegroup leader's name"
-                    />
-                  </div>
-                }
-
-                <h3 class="section-title wide">Emergency Contact</h3>
-
-                <div class="form-group wide">
-                  <label for="emergencyContactName">Contact Name</label>
-                  <input
-                    type="text"
-                    id="emergencyContactName"
-                    formControlName="emergencyContactName"
-                    placeholder="Full name"
-                  />
-                  @if (controlHasError('emergencyContactName')) {
-                    <span class="error-text">{{ getControlError('emergencyContactName') }}</span>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="emergencyContactNumber">Contact Number</label>
-                  <input
-                    type="text"
-                    id="emergencyContactNumber"
-                    formControlName="emergencyContactNumber"
-                    placeholder="09XXXXXXXXX"
-                  />
-                  @if (controlHasError('emergencyContactNumber')) {
-                    <span class="error-text">{{ getControlError('emergencyContactNumber') }}</span>
-                  }
-                </div>
-
-                <div class="form-group">
-                  <label for="emergencyContactRelationship">Relationship</label>
-                  <input
-                    type="text"
-                    id="emergencyContactRelationship"
-                    formControlName="emergencyContactRelationship"
-                    placeholder="e.g. Spouse, Parent"
-                  />
-                  @if (controlHasError('emergencyContactRelationship')) {
-                    <span class="error-text">{{ getControlError('emergencyContactRelationship') }}</span>
-                  }
-                </div>
-
-                <h3 class="section-title wide">Volunteer Preferences and Account</h3>
-
-                <div class="form-group wide">
-                  <label for="volunteerPreference">Volunteer Preference</label>
-                  <select
-                    id="volunteerPreference"
-                    formControlName="volunteerPreference"
-                    (change)="onVolunteerPreferenceChange($event)"
-                  >
-                    <option value="" disabled>Select your preference</option>
-                    <option value="sidewalk-sunday-school">
-                      Metro Sidewalk Sunday School (Teaching & Education)
-                    </option>
-                    <option value="mobile-kitchen">Mobile Kitchen Operations</option>
-                    <option value="relief-operations">Relief Operations</option>
-                    <option value="safety-emergency">Safety and Emergency Response</option>
-                    <option value="medical-operations">Medical Operations</option>
-                    <option value="psychological-aid">Psychological First Aid</option>
-                    <option value="transportation-logistics">
-                      Transportation & Logistics Team
-                    </option>
-                    <option value="purchasing">Purchasing Team</option>
-                    <option value="partnerships">Individual & Corporate Partnerships</option>
-                    <option value="digital-marketing">Digital Marketing & Promotions</option>
-                    <option value="creatives">Creatives (Video / Photos)</option>
-                    <option value="healing">Healing</option>
-                    <option value="real-estate-sports">Real Estate & Sports</option>
-                    <option value="kitchen-related">Anything kitchen-related</option>
-                    <option value="wherever-needed">Wherever is needed</option>
-                    <option value="dont-know">Don't know yet</option>
-                    <option value="other">Other</option>
-                  </select>
-                  @if (controlHasError('volunteerPreference')) {
-                    <span class="error-text">{{ getControlError('volunteerPreference') }}</span>
-                  }
-                </div>
-
-                @if (showOtherPreference()) {
-                  <div class="form-group wide">
-                    <label for="otherPreference">Other Preference</label>
-                    <input
-                      type="text"
-                      id="otherPreference"
-                      formControlName="otherPreference"
-                      placeholder="Specify your preference"
-                    />
-                  </div>
-                }
-
-                <div class="form-actions wide">
-                  <button type="submit" class="primary-btn">Update Profile</button>
-                  @if (editingProfileId() !== null) {
-                    <button type="button" class="outline-btn" (click)="cancelEdit()">Cancel</button>
-                  }
-                </div>
-              </form>
+              </div>
             </article>
 
-            <article class="panel">
-              <div class="panel-header">
-                <h2>Volunteer Roster</h2>
-                <p>{{ profiles().length }} active members</p>
-              </div>
-              <div class="profile-list">
-                @for (profile of profiles(); track profile.id) {
-                  <article class="profile-item">
-                    <div class="profile-head">
-                      <img
-                        [src]="profile.photoUrl"
-                        [alt]="getProfileDisplayName(profile)"
-                        class="list-avatar"
-                      />
-                      <div>
-                        <h3>{{ getProfileDisplayName(profile) }}</h3>
-                        <p>{{ profile.volunteerPreference }}</p>
+            <form [formGroup]="profileForm" class="profile-accordion">
+              <!-- Personal Details Accordion -->
+              <div class="accordion-item">
+                <button type="button" class="accordion-trigger" (click)="toggleSection('personal')">
+                  <div class="accordion-header">
+                    <svg class="accordion-icon" [class.expanded]="expandedSection() === 'personal'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M19 12H5M12 19V5"/>
+                    </svg>
+                    <span>Personal Details</span>
+                  </div>
+                  @if (expandedSection() === 'personal') {
+                    <span class="badge-count">6 fields</span>
+                  }
+                </button>
+                
+                @if (expandedSection() === 'personal') {
+                  <div class="accordion-content">
+                    <div class="form-columns">
+                      <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" formControlName="firstName" placeholder="First Name" />
+                      </div>
+                      <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" formControlName="lastName" placeholder="Last Name" />
+                      </div>
+                      <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" formControlName="email" placeholder="email@example.com" />
+                      </div>
+                      <div class="form-group">
+                        <label>Mobile Number</label>
+                        <input type="text" formControlName="mobileNumber" placeholder="09xxxxxxxxx" />
+                      </div>
+                      <div class="form-group">
+                        <label>Birthdate</label>
+                        <input type="date" formControlName="birthdate" />
+                      </div>
+                      <div class="form-group">
+                        <label>Facebook Name</label>
+                        <input type="text" formControlName="facebookName" placeholder="FB Profile Name" />
                       </div>
                     </div>
-                    <div class="item-actions">
-                      <button type="button" class="outline-btn" (click)="editProfile(profile)">
-                        Edit
-                      </button>
-                    </div>
-                  </article>
-                } @empty {
-                  <p class="empty-state">No other mission records found.</p>
+                    @if (isEditMode()) {
+                      <div class="upload-section">
+                        <label class="primary-btn compact" for="photo-upload">Upload Photo</label>
+                        <input id="photo-upload" type="file" (change)="onPhotoSelected($event)" accept="image/*" style="display: none;" />
+                      </div>
+                    }
+                  </div>
                 }
               </div>
-            </article>
-          </section>
-        }
 
-        @case ('rsvps') {
-          <section class="rsvp-grid">
-            @if (rsvps().length === 0) {
-              <article class="panel rsvp-empty-panel">
-                <div class="rsvp-empty-state">
-                  <div class="rsvp-empty-icon">
-                    <svg viewBox="0 0 24 24" fill="none"
-                      aria-hidden="true">
-                      <path
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0
-                          002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0
-                          002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                        stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round"/>
+              <!-- Service & Skills Accordion -->
+              <div class="accordion-item">
+                <button type="button" class="accordion-trigger" (click)="toggleSection('service')">
+                  <div class="accordion-header">
+                    <svg class="accordion-icon" [class.expanded]="expandedSection() === 'service'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M19 12H5M12 19V5"/>
                     </svg>
+                    <span>Service & Skills</span>
                   </div>
-                  <h2>No Active RSVPs</h2>
-                  <p>There are no RSVPs available at the
-                    moment.<br>Please check back soon for new opportunities to
-                    serve.</p>
-                </div>
-              </article>
-            } @else {
-              @if (rsvps().length > 1) {
-                <div class="rsvp-tabs-wrapper">
-                  <span class="rsvp-tabs-label">Select an RSVP:</span>
-                  <div class="rsvp-tabs">
-                    @for (rsvp of rsvps(); track rsvp.id) {
-                      <button
-                        type="button"
-                        class="rsvp-tab"
-                        [class.active]="activeRsvp()?.id === rsvp.id"
-                        (click)="setActiveRsvp(rsvp)"
-                      >
-                        {{ rsvp.title }}
-                      </button>
-                    }
-                  </div>
-                </div>
-              }
-
-              @if (activeRsvp(); as rsvp) {
-                <article class="panel rsvp-panel">
-                  <div class="rsvp-header">
-                    <div class="rsvp-title-section">
-                      <h2>{{ rsvp.title }}</h2>
-                      <span class="rsvp-date">{{ rsvp.date }}</span>
-                    </div>
-                    <div class="rsvp-deadline">
-                      <span class="deadline-label">RSVP closes:</span>
-                      <span class="deadline-value">{{ rsvp.cutOffDay }} at
-                        {{ rsvp.cutOffTime }}</span>
-                    </div>
-                  </div>
-
-                  @if (rsvp.description) {
-                    <div class="rsvp-description">
-                      <p>{{ rsvp.description }}</p>
-                    </div>
+                  @if (expandedSection() === 'service') {
+                    <span class="badge-count">5 fields</span>
                   }
-
-                  <div class="rsvp-instruction">
-                    <svg class="instruction-icon" viewBox="0 0 24 24"
-                      fill="none" aria-hidden="true">
-                      <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9
-                        0 0118 0z" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    <span>Select your preferred time slot below</span>
-                  </div>
-
-                  <div class="rsvp-shifts">
-                    @for (shift of rsvp.shifts; track shift.id) {
-                      <button
-                        type="button"
-                        class="rsvp-shift-card"
-                        [class.active]="selectedShiftId() === shift.id"
-                        [class.full]="isShiftFull(shift)"
-                        [disabled]="hasSubmittedResponse() || isShiftFull(shift)"
-                        (click)="selectShift(shift.id)"
-                      >
-                        <div class="option-main">
-                          <div class="option-radio">
-                            @if (selectedShiftId() === shift.id) {
-                              <span class="radio-dot selected"></span>
-                            } @else if (isShiftFull(shift)) {
-                              <span class="radio-dot disabled"></span>
-                            } @else {
-                              <span class="radio-dot"></span>
-                            }
-                          </div>
-                          <div class="shift-details">
-                            <span class="shift-time">{{ shift.timeSlot }}</span>
-                            <div class="shift-progress">
-                              <div class="progress-bar">
-                                <div class="progress-fill"
-                                  [style.width.%]="getResponsePercentage(shift)">
-                                </div>
-                              </div>
-                              <span class="progress-text">{{ shift.responses }}
-                                of {{ shift.capacity }} volunteers</span>
-                            </div>
-                          </div>
+                </button>
+                
+                @if (expandedSection() === 'service') {
+                  <div class="accordion-content">
+                    <div class="form-columns">
+                      <div class="form-group full">
+                        <label>Complete Address</label>
+                        <input type="text" formControlName="completeAddress" placeholder="Your full address" />
+                      </div>
+                      <div class="form-group">
+                        <label>Educational Attainment</label>
+                        <select formControlName="educationalAttainment">
+                          <option value="">Select Level</option>
+                          <option value="Elementary">Elementary</option>
+                          <option value="High School">High School</option>
+                          <option value="College">College</option>
+                          <option value="Post-Graduate">Post-Graduate</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>Availability</label>
+                        <select formControlName="availability">
+                          <option value="">Select Availability</option>
+                          <option value="weekdays">Weekdays</option>
+                          <option value="weekends">Weekends</option>
+                          <option value="flexible">Flexible</option>
+                          <option value="on-call">On-call</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label>Volunteer Preference</label>
+                        <select formControlName="volunteerPreference" (change)="onVolunteerPreferenceChange($event)">
+                          <option value="">Select Preference</option>
+                          <option value="sidewalk-sunday-school">Teaching & Education</option>
+                          <option value="mobile-kitchen">Mobile Kitchen</option>
+                          <option value="relief-operations">Relief Operations</option>
+                          <option value="safety-emergency">Safety & Emergency</option>
+                          <option value="medical-operations">Medical Operations</option>
+                          <option value="wherever-needed">Wherever needed</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                      @if (showOtherPreference()) {
+                        <div class="form-group full">
+                          <label>Specify Other Preference</label>
+                          <input type="text" formControlName="otherPreference" placeholder="Please specify" />
                         </div>
-                        <div class="shift-status">
-                          @if (isShiftFull(shift)) {
-                            <span class="status-badge status-full">
-                              <svg viewBox="0 0 24 24" fill="none"
-                                aria-hidden="true">
-                                <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9
-                                  9 0 0118 0z" stroke="currentColor"
-                                  stroke-width="2" stroke-linecap="round"
-                                  stroke-linejoin="round"/>
-                              </svg>
-                              Full
-                            </span>
-                          } @else {
-                            <span class="status-badge status-available">
-                              <svg viewBox="0 0 24 24" fill="none"
-                                aria-hidden="true">
-                                <path d="M5 13l4 4L19 7"
-                                  stroke="currentColor" stroke-width="2"
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"/>
-                              </svg>
-                              {{ getRemainingSlots(shift) }} spots open
-                            </span>
-                          }
-                        </div>
-                      </button>
-                    }
-                  </div>
-
-                  @if (rsvpError()) {
-                    <div class="rsvp-error">
-                      <svg viewBox="0 0 24 24" fill="none"
-                        aria-hidden="true">
-                        <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0
-                          0118 0z" stroke="currentColor" stroke-width="2"
-                          stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                      <span>{{ rsvpError() }}</span>
-                    </div>
-                  }
-
-                  <div class="rsvp-actions">
-                    <button
-                      type="button"
-                      class="primary-btn rsvp-submit-btn"
-                      [disabled]="selectedShiftId() === null ||
-                        hasSubmittedResponse() || isLoading()"
-                      (click)="submitRsvpResponse()"
-                    >
-                      @if (isLoading()) {
-                        <span class="btn-spinner"></span>
-                        Submitting...
-                      } @else if (hasSubmittedResponse()) {
-                        <svg viewBox="0 0 24 24" fill="none"
-                          aria-hidden="true">
-                          <path d="M5 13l4 4L19 7" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round"/>
-                        </svg>
-                        Response Recorded
-                      } @else {
-                        Submit My Response
                       }
-                    </button>
+                      <div class="form-group full">
+                        <label>Training & Experience</label>
+                        <textarea formControlName="trainingExperience" placeholder="Describe relevant experience" rows="2"></textarea>
+                      </div>
+                    </div>
                   </div>
-                </article>
+                }
+              </div>
+
+              <!-- Emergency Contact Accordion -->
+              <div class="accordion-item">
+                <button type="button" class="accordion-trigger" (click)="toggleSection('emergency')">
+                  <div class="accordion-header">
+                    <svg class="accordion-icon" [class.expanded]="expandedSection() === 'emergency'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M19 12H5M12 19V5"/>
+                    </svg>
+                    <span>Emergency Contact</span>
+                  </div>
+                  @if (expandedSection() === 'emergency') {
+                    <span class="badge-count">3 fields</span>
+                  }
+                </button>
+                
+                @if (expandedSection() === 'emergency') {
+                  <div class="accordion-content">
+                    <div class="form-columns">
+                      <div class="form-group">
+                        <label>Contact Name</label>
+                        <input type="text" formControlName="emergencyContactName" placeholder="Full Name" />
+                      </div>
+                      <div class="form-group">
+                        <label>Relationship</label>
+                        <input type="text" formControlName="emergencyContactRelationship" placeholder="e.g. Parent, Spouse" />
+                      </div>
+                      <div class="form-group">
+                        <label>Contact Number</label>
+                        <input type="text" formControlName="emergencyContactNumber" placeholder="09xxxxxxxxx" />
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </form>
+
+            <!-- Action Buttons -->
+            <div class="profile-actions">
+              @if (isEditMode()) {
+                <button type="button" class="outline-btn" (click)="toggleEditMode()">Cancel</button>
+                <button type="button" class="primary-btn" (click)="saveProfile()" [disabled]="profileForm.invalid">Save Changes</button>
+              } @else {
+                <button type="button" class="primary-btn" (click)="toggleEditMode()">Edit Profile</button>
               }
-            }
+            </div>
           </section>
         }
 
         @case ('schedule') {
-          <section class="panel schedule-panel">
-            <div class="panel-header">
-              <h2>Attendance Log</h2>
-              <p>
-                {{ attendanceTotalHours() }} hrs logged &mdash;
-                {{ attendanceTotalEntries() }} entries this period
-              </p>
-            </div>
-
-            <div class="schedule-controls">
-              <div class="period-toggle" role="tablist" aria-label="Attendance period">
-                <button
-                  type="button"
-                  class="outline-btn"
-                  [class.active]="attendancePeriod() === 'daily'"
-                  (click)="setAttendancePeriod('daily')"
-                  [attr.aria-pressed]="attendancePeriod() === 'daily'"
-                >
-                  Daily
-                </button>
-                <button
-                  type="button"
-                  class="outline-btn"
-                  [class.active]="attendancePeriod() === 'weekly'"
-                  (click)="setAttendancePeriod('weekly')"
-                  [attr.aria-pressed]="attendancePeriod() === 'weekly'"
-                >
-                  Weekly
-                </button>
-                <button
-                  type="button"
-                  class="outline-btn"
-                  [class.active]="attendancePeriod() === 'monthly'"
-                  (click)="setAttendancePeriod('monthly')"
-                  [attr.aria-pressed]="attendancePeriod() === 'monthly'"
-                >
-                  Monthly
-                </button>
+          <section class="attendance-section">
+            <article class="panel">
+              <div class="panel-header">
+                <h2>Attendance History</h2>
+                <div class="panel-actions">
+                  <select [value]="attendancePeriod()" (change)="onPeriodChange($event)" class="outline-btn" style="padding: 0.5rem;">
+                    <option value="all">All Time</option>
+                    <option value="monthly">This Month</option>
+                    <option value="weekly">This Week</option>
+                  </select>
+                </div>
               </div>
 
-              <div class="search-inline schedule-search">
-                <input
-                  #attendanceSearch
-                  type="text"
-                  class="search-input"
-                  placeholder="Search by description..."
-                  [value]="attendanceSearchQuery()"
-                  (input)="attendanceSearchQuery.set(attendanceSearch.value)"
-                  (keydown.enter)="searchAttendance(attendanceSearch.value)"
-                />
-                <button type="button" class="search-btn"
-                  (click)="searchAttendance(attendanceSearch.value)"
-                  (keydown.enter)="searchAttendance(attendanceSearch.value)">
-                  Search
-                </button>
+              <div class="table-container">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Task / Event</th>
+                      <th>Location</th>
+                      <th>Hours</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of attendanceItems(); track item.attendance_id) {
+                      <tr>
+                        <td>{{ item.date | date:'mediumDate' }}</td>
+                        <td>{{ item.description || 'Shift log entry' }}</td>
+                        <td>{{ item.location || 'N/A' }}</td>
+                        <td>{{ item.hours }} hrs</td>
+                        <td>
+                          <span class="status-badge" [class.completed]="item.status === 'approved'" [class.pending]="item.status === 'pending'" [class.rejected]="item.status === 'rejected'">
+                            {{ item.status | titlecase }}
+                          </span>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="5">
+                          <div class="empty-state">
+                            <p>No attendance records found for this period.</p>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
-            </div>
+            </article>
+          </section>
+        }
 
-            <p class="meta">
-              Attendance entries are managed by admins.
-              This log is read-only for volunteers.
-            </p>
+        @case ('polls') {
+          <section class="poll-section">
+            @if (activePoll(); as poll) {
+              <article class="panel poll-card">
+                <div class="poll-header">
+                  <h2 class="poll-question">{{ poll.title }}</h2>
+                  <p class="poll-meta">Deadline: {{ poll.cutOffDay || poll.date | date:'mediumDate' }}</p>
+                </div>
 
-            <div class="schedule-list">
-              @for (item of attendanceItems(); track item.attendance_id) {
-                <article class="schedule-card">
-                  <div class="schedule-date">
-                    <strong>{{ item.date | date: 'MMM d, yyyy' }}</strong>
+                @if (poll.status !== 'active') {
+                  <div class="empty-state">
+                    <p>This poll is currently {{ poll.status }}. Check back later for new community updates.</p>
                   </div>
-                  <div class="schedule-details">
-                    <h3>{{ item.hours }} hr{{ item.hours !== 1 ? 's' : '' }}</h3>
-                    <p>{{ item.description || 'No description' }}</p>
+                } @else if (!hasSubmittedVote()) {
+                  <div class="poll-options">
+                    @for (option of poll.options; track option.id) {
+                      <label class="poll-option" [class.active]="selectedOptionId() === option.id" [class.disabled]="isOptionFull(option)">
+                        <input type="radio" [name]="'poll-' + poll.id" [value]="option.id" (change)="selectedOptionId.set(option.id)" style="display: none;" [disabled]="isOptionFull(option)" />
+                        <span class="option-label">{{ option.timeSlot }}</span>
+                        <span class="status-badge" [class.completed]="isOptionFull(option)" [class.warning]="!isOptionFull(option)">{{ option.votes }} / {{ option.capacity }} voted</span>
+                      </label>
+                    }
                   </div>
-                  <div class="schedule-status">
-                    <span class="badge"
-                      [class]="getAttendanceStatusClass(item.status)">
-                      {{ item.status }}
-                    </span>
+                  <div class="poll-actions">
+                    <button type="button" class="primary-btn" (click)="submitPollVote()" [disabled]="!selectedOptionId() || isLoading()">Vote</button>
                   </div>
-                </article>
-              } @empty {
-                <p class="empty-state">No attendance records found for this period.</p>
-              }
-            </div>
+                  @if (pollError()) {
+                    <p class="error-text">{{ pollError() }}</p>
+                  }
+                } @else {
+                  <div class="poll-results">
+                    @for (option of poll.options; track option.id) {
+                      <div class="result-item">
+                        <div class="result-info">
+                          <span>{{ option.timeSlot }}</span>
+                          <span>{{ option.votes }} votes</span>
+                        </div>
+                        <div class="result-bar-container">
+                          <div class="result-bar" [style.width.%]="getVotePercentage(option, poll)"></div>
+                        </div>
+                      </div>
+                    }
+                    <div class="empty-state" style="margin-top: 1rem;">
+                      <p>Thank you for participating! Your voice matters.</p>
+                    </div>
+                  </div>
+                }
+              </article>
+            } @else {
+              <div class="empty-state">
+                <p>There are no active community polls at this time.</p>
+              </div>
+            }
           </section>
         }
       }
@@ -995,76 +560,16 @@
   </div>
 </div>
 
+<!-- Modals -->
 @if (showLogoutModal()) {
-  <div class="modal-backdrop" (click)="closeLogoutModal()"
-    (keydown.enter)="closeLogoutModal()" role="button" tabindex="0"
-    aria-label="Close modal">
-    <section class="modal-card" (click)="$event.stopPropagation()" 
-      role="dialog" aria-modal="true" tabindex="-1">
-      <h3>Confirm Logout</h3>
-      <p>Are you sure you want to logout?</p>
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <h3>Sign Out</h3>
+      <p>Are you sure you want to log out of ServeTrack?</p>
       <div class="modal-actions">
-        <button type="button" class="outline-btn" 
-          (click)="closeLogoutModal()" (keydown.enter)="closeLogoutModal()">Cancel</button>
-        <button type="button" class="primary-btn" 
-          (click)="confirmLogout()" (keydown.enter)="confirmLogout()">Yes, Logout</button>
+        <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
+        <button type="button" class="danger-btn" (click)="logout()">Sign Out</button>
       </div>
-    </section>
-  </div>
-}
-
-@if (showSaveConfirmModal()) {
-  <div class="modal-backdrop" (click)="closeSaveConfirmModal()"
-    (keydown.enter)="closeSaveConfirmModal()" role="button" tabindex="0"
-    aria-label="Close modal">
-    <section class="modal-card" (click)="$event.stopPropagation()" 
-      role="dialog" aria-modal="true" tabindex="-1">
-      <h3>Confirm Profile Update</h3>
-      <p>Are you sure you want to save your profile changes?</p>
-      <div class="modal-actions">
-        <button type="button" class="outline-btn" 
-          (click)="closeSaveConfirmModal()" (keydown.enter)="closeSaveConfirmModal()">Cancel</button>
-        <button type="button" class="primary-btn" 
-          (click)="confirmSaveProfile()" (keydown.enter)="confirmSaveProfile()">Yes, Save</button>
-      </div>
-    </section>
-  </div>
-}
-
-@if (showProfileSuccess()) {
-  <div class="modal-backdrop" (click)="closeProfileSuccess()"
-    (keydown.enter)="closeProfileSuccess()" role="button" tabindex="0"
-    aria-label="Close modal">
-    <section class="modal-card" (click)="$event.stopPropagation()" 
-      role="dialog" aria-modal="true" tabindex="-1">
-      <h3>Profile Updated</h3>
-      <p>{{ profileSuccessMessage() || 'Your profile was updated successfully.' }}</p>
-      <div class="modal-actions">
-        <button type="button" class="primary-btn" 
-          (click)="closeProfileSuccess()" (keydown.enter)="closeProfileSuccess()">OK</button>
-      </div>
-    </section>
-  </div>
-}
-
-@if (showProfileError()) {
-  <div class="modal-backdrop" (click)="closeProfileError()"
-    (keydown.enter)="closeProfileError()" role="button" tabindex="0"
-    aria-label="Close modal">
-    <section class="modal-card" (click)="$event.stopPropagation()" 
-      role="dialog" aria-modal="true" tabindex="-1">
-      <h3>Update Failed</h3>
-      <p>{{ profileErrorMessage() }}</p>
-      <div class="modal-actions">
-        <button type="button" class="primary-btn" 
-          (click)="closeProfileError()" (keydown.enter)="closeProfileError()">OK</button>
-      </div>
-    </section>
-  </div>
-}
-
-@if (isLoading()) {
-  <div class="loading-overlay">
-    <div class="spinner" aria-label="Loading..." role="status"></div>
+    </div>
   </div>
 }

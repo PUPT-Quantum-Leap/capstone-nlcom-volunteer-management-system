@@ -19,17 +19,33 @@ import { RsvpService } from '../services/rsvp.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { InputSanitizerService } from '../services/input-sanitizer.service';
+import { DatePipe, TitleCasePipe } from '@angular/common';
 
 import { VolunteerProfile, VolunteerProfileResponse } from '../models/volunteer-profile';
 import { Rsvp, RsvpShift } from '../models/rsvp';
 import { NotificationItem } from '../models/notification-item';
 import { Attendance, AttendancePeriod } from '../models/attendance';
 
-import { DatePipe } from '@angular/common';
+interface PollOption {
+  id: number;
+  timeSlot: string;
+  capacity: number;
+  votes: number;
+}
+
+interface Poll {
+  id: number;
+  title: string;
+  description?: string;
+  date?: string;
+  cutOffDay?: string;
+  status: 'draft' | 'active' | 'closed';
+  options: PollOption[];
+}
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, TitleCasePipe],
   templateUrl: './volunteer-dashboard.html',
   styleUrl: './volunteer-dashboard.scss',
 })
@@ -44,11 +60,38 @@ export class VolunteerDashboard implements OnInit {
 
   readonly defaultPhoto = '/assets/volunteer1.png';
 
-  currentView = signal<'overview' | 'profile' | 'schedule' | 'rsvps'>('overview');
+  // ── Navigation State (Fixed menu close issue) ────────────────────────────
+  currentView = signal<'overview' | 'profile' | 'schedule' | 'rsvps' | 'polls'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Volunteer');
   sidebarCollapsed = signal(false);
   mobileSidebarOpen = signal(false);
+  isMobile = signal(false);
+
   isLoading = signal(false);
+
+  // ── Real-time Clock ──────────────────────────────────────────────────────
+  currentTime = signal(new Date());
+  currentDateFormatted = computed(() => {
+    const date = this.currentTime();
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date);
+  });
+
+  currentTimeFormatted = computed(() => {
+    const date = this.currentTime();
+    return new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }).format(date);
+  });
+
+  private timeUpdateInterval: any;
 
   // ── Attendance (real data) ───────────────────────────────────────────────
   attendancePeriod = signal<AttendancePeriod>('monthly');
@@ -89,22 +132,28 @@ export class VolunteerDashboard implements OnInit {
   hasSubmittedResponse = signal(false);
   rsvpError = signal<string | null>(null);
 
-  totalResponses = computed(() => {
-    const rsvp = this.activeRsvp();
-    return rsvp ? rsvp.totalResponses : 0;
-  });
+  // ── Polls ─────────────────────────────────────────────────────────────────
+  activePoll = signal<Poll | null>(null);
+  hasSubmittedVote = signal(false);
+  selectedOptionId = signal<number | null>(null);
+  pollError = signal<string | null>(null);
 
+// ── Profile ───────────────────────────────────────────────────────────────
   editingProfileId = signal<number | null>(null);
+  isEditMode = signal(false);
   profilePreviewUrl = signal(this.defaultPhoto);
   profiles = signal<VolunteerProfile[]>([]);
   savedProfileData = signal<VolunteerProfileResponse | null>(null);
+  
+  // Accordion state for compact profile layout
+  expandedSection = signal<'personal' | 'service' | 'emergency' | null>('personal');
+  profileErrorMessage = signal('');
 
+  // Profile modal and success/error states
+  showSaveConfirmModal = signal(false);
+  showProfileError = signal(false);
   showProfileSuccess = signal(false);
   profileSuccessMessage = signal('');
-  showSaveConfirmModal = signal(false);
-
-  showProfileError = signal(false);
-  profileErrorMessage = signal('');
 
   private positionToKeyMap: Record<string, string> = {
     'Metro Sidewalk Sunday School (Teaching & Education)': 'sidewalk-sunday-school',
@@ -197,16 +246,55 @@ export class VolunteerDashboard implements OnInit {
   // ─────────────────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
+    this.updateIsMobile();
+    this.startRealTimeClock();
     this.loadProfile();
     this.loadAttendanceStats();
     this.loadAttendance();
     this.loadRsvps();
   }
 
+  private startRealTimeClock(): void {
+    // Update immediately
+    this.currentTime.set(new Date());
+
+    // Update every second
+    this.timeUpdateInterval = setInterval(() => {
+      this.currentTime.set(new Date());
+    }, 1000);
+
+    // Clean up on destroy
+    this.destroyRef.onDestroy(() => {
+      if (this.timeUpdateInterval) {
+        clearInterval(this.timeUpdateInterval);
+      }
+    });
+  }
+
+  // ── Screen Detection for Mobile/Desktop Behavior ─────────────────────────
+  private updateIsMobile(): void {
+    const checkMobile = () => {
+      this.isMobile.set(window.innerWidth <= 860);
+    };
+    checkMobile();
+    // Listen for resize (debounced)
+    let timeout: any;
+    window.addEventListener('resize', () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(checkMobile, 100);
+    });
+  }
+
+  // ── Data loading ──────────────────────────────────────────────────────────
+
   private loadProfile(): void {
     this.volunteerService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
         this.applyProfileResponse(response.data);
+        // Default to view mode after load
+        if (!this.isEditMode()) {
+          this.profileForm.markAsPristine();
+        }
       }
     });
   }
@@ -254,6 +342,9 @@ export class VolunteerDashboard implements OnInit {
 
     this.showOtherPreference.set(positionKey === 'other');
 
+    // Disable form controls since we're in view mode by default
+    this.profileForm.disable();
+
     const existing = this.profiles();
     const profile: VolunteerProfile = {
       id: data.volunteer_id,
@@ -285,23 +376,6 @@ export class VolunteerDashboard implements OnInit {
     this.editingProfileId.set(data.volunteer_id);
   }
 
-  private loadRsvps(): void {
-    this.rsvpService.getRsvps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
-      const active = response.data.filter((r) => r.status === 'active');
-      this.rsvps.set(active);
-      if (active.length > 0 && !this.activeRsvp()) {
-        this.setActiveRsvp(active[0]);
-      }
-    });
-  }
-
-  setActiveRsvp(rsvp: Rsvp): void {
-    this.activeRsvp.set(rsvp);
-    this.selectedShiftId.set(null);
-    this.hasSubmittedResponse.set(false);
-    this.rsvpError.set(null);
-  }
-
   private loadAttendanceStats(): void {
     this.volunteerService.getAttendanceStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
@@ -324,20 +398,25 @@ export class VolunteerDashboard implements OnInit {
         if (response.success) {
           this.attendanceItems.set(response.data ?? []);
         }
+        this.isLoading.set(false);
       });
   }
 
-  closeMobileSidebar(): void {
-    this.mobileSidebarOpen.set(false);
+  loadRsvps(): void {
+    this.rsvpService.getRsvps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response: { data: Rsvp[] }) => {
+      const active = response.data.filter((r: Rsvp) => r.status === 'active');
+      this.rsvps.set(active);
+      if (active.length > 0 && !this.activeRsvp()) {
+        this.setActiveRsvp(active[0]);
+      }
+    });
   }
 
-  setView(view: 'overview' | 'profile' | 'schedule' | 'rsvps'): void {
-    this.currentView.set(view);
-    this.closeMobileSidebar();
-  }
-
-  setSearchQuery(value: string): void {
-    this.searchQuery.set(value);
+  setActiveRsvp(rsvp: Rsvp): void {
+    this.activeRsvp.set(rsvp);
+    this.selectedShiftId.set(null);
+    this.hasSubmittedResponse.set(false);
+    this.rsvpError.set(null);
   }
 
   setAttendancePeriod(period: AttendancePeriod): void {
@@ -348,6 +427,42 @@ export class VolunteerDashboard implements OnInit {
   searchAttendance(query: string): void {
     this.attendanceSearchQuery.set(query);
     this.loadAttendance();
+  }
+
+  onPeriodChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.setAttendancePeriod(select.value as AttendancePeriod);
+  }
+
+  // ── Sidebar / navigation (Fixed close-on-select + mobile overlay) ───────
+
+  toggleSidebar(): void {
+    if (this.isMobile()) {
+      this.mobileSidebarOpen.update((v) => !v);
+    } else {
+      this.sidebarCollapsed.update((v) => !v);
+    }
+  }
+
+  setView(view: 'overview' | 'profile' | 'schedule' | 'rsvps' | 'polls'): void {
+    this.currentView.set(view);
+    // Removed auto-closing per user request - sidebar stays open
+  }
+
+  onOverlayClick(): void {
+    this.mobileSidebarOpen.set(false);
+  }
+
+  toggleMobileSidebar(): void {
+    this.mobileSidebarOpen.update((value) => !value);
+  }
+
+  closeMobileSidebar(): void {
+    this.mobileSidebarOpen.set(false);
+  }
+
+  setSearchQuery(value: string): void {
+    this.searchQuery.set(value);
   }
 
   runSearch(): void {
@@ -384,14 +499,6 @@ export class VolunteerDashboard implements OnInit {
 
   closeNotifications(): void {
     this.showNotifications.set(false);
-  }
-
-  toggleSidebar(): void {
-    this.sidebarCollapsed.update((v) => !v);
-  }
-
-  toggleMobileSidebar(): void {
-    this.mobileSidebarOpen.update((v) => !v);
   }
 
   openLogoutModal(): void {
@@ -496,13 +603,6 @@ export class VolunteerDashboard implements OnInit {
     });
   }
 
-  getResponsePercentage(shift: RsvpShift): number {
-    const rsvp = this.activeRsvp();
-    if (!rsvp || rsvp.totalResponses === 0) {
-      return 0;
-    }
-    return Math.round((shift.responses / rsvp.totalResponses) * 100);
-  }
 
   getRemainingSlots(shift: RsvpShift): number {
     return shift.capacity - shift.responses;
@@ -620,6 +720,10 @@ export class VolunteerDashboard implements OnInit {
 
   // Keep saveProfile for backward compatibility
   async saveProfile(): Promise<void> {
+    if (!this.isEditMode()) {
+      this.enterEditMode();
+      return;
+    }
     this.openSaveConfirmModal();
   }
 
@@ -645,10 +749,71 @@ export class VolunteerDashboard implements OnInit {
     this.showOtherPreference.set(profile.volunteerPreference === 'other');
   }
 
+  enterEditMode(): void {
+    this.isEditMode.set(true);
+    this.profileForm.enable();
+    this.profileForm.markAllAsTouched();
+  }
+
+  exitEditMode(cancel: boolean = false): void {
+    this.isEditMode.set(false);
+    this.profileForm.disable();
+    if (cancel) {
+      // Reset form to saved profile data
+      const savedData = this.savedProfileData();
+      if (savedData) {
+        const positionKey = this.getPositionKey(savedData.positions?.[0]?.name || '');
+        const availabilityKey = this.getAvailabilityKey(savedData.availabilities?.[0]?.name || '');
+        this.profileForm.patchValue({
+          firstName: savedData.first_name,
+          lastName: savedData.last_name,
+          facebookName: savedData.facebook_name ?? '',
+          email: savedData.email,
+          mobileNumber: savedData.mobile_number,
+          birthdate: savedData.birthdate,
+          lastMedicalExam: savedData.last_medical_examination,
+          completeAddress: savedData.address,
+          educationalAttainment: savedData.educational_attainment,
+          trainingExperience: savedData.training_experience ?? '',
+          skillsHobbies: savedData.skills_hobbies ?? '',
+          classesTraining: savedData.classes_training ?? '',
+          volunteerPreference: positionKey,
+          availability: availabilityKey,
+          otherAvailability: savedData.availabilities?.[0]?.pivot?.custom_description ?? '',
+          partOfLifegroup: savedData.lifegroups?.length ? 'yes' : 'no',
+          leadingLifegroup: savedData.lifegroups?.[0]?.pivot?.is_leader ? 'yes' : 'no',
+
+          lifegroupLeaderName: '',
+          emergencyContactName: savedData.emergency_contact?.name ?? '',
+
+          emergencyContactNumber: savedData.emergency_contact?.phone_number ?? '',
+          emergencyContactRelationship: savedData.emergency_contact?.relationship ?? '',
+        });
+        this.profilePreviewUrl.set(this.defaultPhoto);
+      }
+      this.profileForm.markAsPristine();
+    }
+  }
+
+  toggleEditMode(): void {
+    if (this.isEditMode()) {
+      this.exitEditMode(true); // Cancel changes
+    } else {
+      this.enterEditMode();
+    }
+  }
+
+  toggleSection(section: 'personal' | 'service' | 'emergency'): void {
+    if (this.expandedSection() === section) {
+      this.expandedSection.set(null);
+    } else {
+      this.expandedSection.set(section);
+    }
+  }
+
   cancelEdit(): void {
+    this.exitEditMode(true);
     this.editingProfileId.set(null);
-    this.profileForm.reset();
-    this.profilePreviewUrl.set(this.defaultPhoto);
     this.showOtherPreference.set(false);
   }
 
@@ -734,5 +899,32 @@ export class VolunteerDashboard implements OnInit {
     if (status === 'approved') return 'confirmed';
     if (status === 'rejected') return 'rejected';
     return 'pending';
+  }
+
+  // ── Poll methods ──────────────────────────────────────────────────────────
+
+  isOptionFull(option: PollOption): boolean {
+    return option.votes >= option.capacity;
+  }
+
+  submitPollVote(): void {
+    const poll = this.activePoll();
+    const optionId = this.selectedOptionId();
+    if (!poll || optionId === null) return;
+
+    this.isLoading.set(true);
+    this.pollError.set(null);
+
+    // Simulate API call - replace with actual poll service call
+    setTimeout(() => {
+      this.hasSubmittedVote.set(true);
+      this.isLoading.set(false);
+    }, 1000);
+  }
+
+  getVotePercentage(option: PollOption, poll: Poll): number {
+    const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
+    if (totalVotes === 0) return 0;
+    return Math.round((option.votes / totalVotes) * 100);
   }
 }
