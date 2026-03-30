@@ -23,8 +23,8 @@ import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
 import { AdminDashboardService, DashboardVolunteerRow, VolunteerUser } from '../services/admin-dashboard.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Poll, PollOption } from '../models/poll';
-import { PollService } from '../services/poll.service';
+import { Rsvp, RsvpShift } from '../models/rsvp';
+import { RsvpService } from '../services/rsvp.service';
 import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
 import { User } from '../models/user';
 import { UserService } from '../services/user.service';
@@ -50,14 +50,14 @@ export class AdminDashboard implements OnInit {
   private authService = inject(AuthService);
   private adminDashboardService = inject(AdminDashboardService);
   private destroyRef = inject(DestroyRef);
-  private pollService = inject(PollService);
+  private rsvpService = inject(RsvpService);
   private userService = inject(UserService);
   private analyticsService = inject(AnalyticsService);
 
   readonly defaultPhoto = '/assets/nlcom.png';
   readonly Math = Math;
 
-  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
+  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
   userName = computed(() => this.authService.currentUser()?.name || 'Admin');
 
   currentUser = computed(() => this.authService.currentUser());
@@ -68,10 +68,10 @@ export class AdminDashboard implements OnInit {
 
   showNotifications = signal(false);
   showLogoutModal = signal(false);
-  showPollModal = signal(false);
-  showDeletePollModal = signal(false);
-  showSharePollModal = signal(false);
-  sharingPoll = signal<Poll | null>(null);
+  showRsvpModal = signal(false);
+  showDeleteRsvpModal = signal(false);
+  showShareRsvpModal = signal(false);
+  sharingRsvp = signal<Rsvp | null>(null);
   showVolunteerModal = signal(false);
   showDeleteVolunteerModal = signal(false);
   showUserModal = signal(false);
@@ -84,8 +84,8 @@ export class AdminDashboard implements OnInit {
   volunteerSearchQuery = signal('');
   userRoleFilter = signal('');
 
-  editingPoll = signal<Poll | null>(null);
-  deletingPollId = signal<number | null>(null);
+  editingRsvp = signal<Rsvp | null>(null);
+  deletingRsvpId = signal<number | null>(null);
   editingVolunteer = signal<DashboardVolunteerRow | null>(null);
   deletingVolunteerId = signal<number | null>(null);
   editingUser = signal<User | null>(null);
@@ -93,8 +93,7 @@ export class AdminDashboard implements OnInit {
   resettingPasswordUserId = signal<number | null>(null);
   viewingUser = signal<User | null>(null);
 
-  // RSVP signals
-  deletingRsvpId = signal<number | null>(null);
+  // RSVP signals (already declared above)
 
   showAiModal = signal(false);
   currentPage = signal(1);
@@ -123,9 +122,6 @@ export class AdminDashboard implements OnInit {
   selectedReportType = signal<'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'>('volunteers');
   dateRangeFilter = signal<'all' | 'month' | 'quarter' | 'year'>('all');
 
-  // Poll creation loading state
-  isCreatingPoll = signal(false);
-  isDeletingPoll = signal(false);
 
   // RSVP creation loading state
   isCreatingRsvp = signal(false);
@@ -150,8 +146,8 @@ export class AdminDashboard implements OnInit {
 
   volunteerRows = signal<DashboardVolunteerRow[]>([]);
   performanceMetrics = signal<PerformanceMetric[]>([]);
-  polls = signal<Poll[]>([]);
-  pollFilterStatus = signal<'all' | 'active' | 'closed' | 'draft'>('all');
+  rsvps = signal<Rsvp[]>([]);
+  rsvpFilterStatus = signal<'all' | 'active' | 'closed' | 'draft'>('all');
   users = signal<User[]>([]);
   volunteers = signal<VolunteerUser[]>([]);
 
@@ -230,12 +226,12 @@ export class AdminDashboard implements OnInit {
     return (total / metrics.length).toFixed(1);
   });
 
-  filteredPolls = computed(() => {
-    const status = this.pollFilterStatus();
+  filteredRsvps = computed(() => {
+    const status = this.rsvpFilterStatus();
     if (status === 'all') {
-      return this.polls();
+      return this.rsvps();
     }
-    return this.polls().filter((poll) => poll.status === status);
+    return this.rsvps().filter((rsvp) => rsvp.status === status);
   });
 
   filteredUsers = computed(() => {
@@ -314,7 +310,7 @@ export class AdminDashboard implements OnInit {
     };
   }
 
-  pollForm = this.fb.group({
+  rsvpForm = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
     date: ['', Validators.required],
     cutOffDay: ['', Validators.required],
@@ -363,7 +359,7 @@ export class AdminDashboard implements OnInit {
 
   ngOnInit(): void {
     this.loadDashboardData();
-    this.loadPolls();
+    this.loadRsvps();
     this.loadUsers();
   }
 
@@ -401,7 +397,7 @@ export class AdminDashboard implements OnInit {
     this.mobileSidebarOpen.set(false);
   }
 
-  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'polls' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'): void {
+  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'): void {
     this.currentView.set(view);
     this.currentPage.set(1);
     
@@ -440,8 +436,8 @@ export class AdminDashboard implements OnInit {
       return;
     }
 
-    if (query.includes('poll')) {
-      this.setView('polls');
+    if (query.includes('rsvp')) {
+      this.setView('rsvps');
       return;
     }
 
@@ -908,31 +904,31 @@ export class AdminDashboard implements OnInit {
     return 'level-needs-improvement';
   }
 
-  private loadPolls(): void {
-    this.pollService.getPolls().subscribe((response) => {
-      this.polls.set(response.data);
+  private loadRsvps(): void {
+    this.rsvpService.getRsvps().subscribe((response) => {
+      this.rsvps.set(response.data);
     });
   }
 
-  get pollOptions(): FormArray {
-    return this.pollForm.get('options') as FormArray;
+  get rsvpShifts(): FormArray {
+    return this.rsvpForm.get('options') as FormArray;
   }
 
-  openSharePollModal(poll: Poll): void {
-    this.sharingPoll.set(poll);
-    this.showSharePollModal.set(true);
+  openShareRsvpModal(rsvp: Rsvp): void {
+    this.sharingRsvp.set(rsvp);
+    this.showShareRsvpModal.set(true);
   }
 
-  closeSharePollModal(): void {
-    this.sharingPoll.set(null);
-    this.showSharePollModal.set(false);
+  closeShareRsvpModal(): void {
+    this.sharingRsvp.set(null);
+    this.showShareRsvpModal.set(false);
   }
 
   getShareLink(): string {
-    const poll = this.sharingPoll();
-    if (!poll) return '';
-    if (poll.shareUrl) return poll.shareUrl;
-    return `${window.location.origin}/voting-poll?id=${poll.id}`;
+    const rsvp = this.sharingRsvp();
+    if (!rsvp) return '';
+    if (rsvp.shareUrl) return rsvp.shareUrl;
+    return `${window.location.origin}/rsvp?id=${rsvp.id}`;
   }
 
   copyShareLink(): void {
@@ -941,7 +937,7 @@ export class AdminDashboard implements OnInit {
     navigator.clipboard.writeText(link).then(
       () => {
         this.showSnackbar('Link copied to clipboard', 'success');
-        this.closeSharePollModal();
+        this.closeShareRsvpModal();
       },
       () => {
         this.showSnackbar('Failed to copy link', 'error');
@@ -949,7 +945,7 @@ export class AdminDashboard implements OnInit {
     );
   }
 
-   private pollOptionTimeRangeValidator(): ValidatorFn {
+   private rsvpShiftTimeRangeValidator(): ValidatorFn {
     return (group: AbstractControl): ValidationErrors | null => {
       const start = group.get('startTime')?.value as string | undefined;
       const end = group.get('endTime')?.value as string | undefined;
@@ -960,18 +956,18 @@ export class AdminDashboard implements OnInit {
     };
   }
 
-  openCreatePollModal(): void {
-    this.editingPoll.set(null);
-    this.pollForm.reset();
-    this.pollOptions.clear();
-    this.addPollOption();
-    this.addPollOption();
-    this.showPollModal.set(true);
+  openCreateRsvpModal(): void {
+    this.editingRsvp.set(null);
+    this.rsvpForm.reset();
+    this.rsvpShifts.clear();
+    this.addRsvpShift();
+    this.addRsvpShift();
+    this.showRsvpModal.set(true);
   }
 
-  openEditPollModal(poll: Poll): void {
-    this.editingPoll.set(poll);
-    this.pollOptions.clear();
+  openEditRsvpModal(rsvp: Rsvp): void {
+    this.editingRsvp.set(rsvp);
+    this.rsvpShifts.clear();
     
 
     const parseBackendTime = (timeString: string): string => {
@@ -993,28 +989,28 @@ export class AdminDashboard implements OnInit {
       return `${hour.toString().padStart(2, '0')}:${minutes}`;
     };
 
-    poll.options.forEach((option) => {
+    rsvp.shifts.forEach((shift) => {
       let startTime = '';
       let endTime = '';
 
       // Try to parse timeSlot (e.g. "04:30 - 14:00")
-      if (option.timeSlot) {
-        const parts = option.timeSlot.split('-').map(p => p.trim());
+      if (shift.timeSlot) {
+        const parts = shift.timeSlot.split('-').map(p => p.trim());
         if (parts.length === 2) {
           startTime = parseBackendTime(parts[0]);
           endTime = parseBackendTime(parts[1]);
         } else {
           // Fallback if format is unexpected
-          startTime = parseBackendTime(option.timeSlot);
+          startTime = parseBackendTime(shift.timeSlot);
         }
       }
 
-      this.pollOptions.push(
+      this.rsvpShifts.push(
         this.fb.group({
           startTime: [startTime, Validators.required],
           endTime: [endTime, Validators.required],
-          capacity: [option.capacity, [Validators.required, Validators.min(1)]],
-        }, { validators: this.pollOptionTimeRangeValidator() })
+          capacity: [shift.capacity, [Validators.required, Validators.min(1)]],
+        }, { validators: this.rsvpShiftTimeRangeValidator() })
       );
     });
 
@@ -1063,49 +1059,49 @@ export class AdminDashboard implements OnInit {
       return date.toISOString().split('T')[0]; 
     };
 
-    this.pollForm.patchValue({
-      title: poll.title,
-      date: parseBackendDate(poll.date),
-      cutOffDay: parseBackendDate(poll.cutOffDay),
-      cutOffTime: parseBackendTime(poll.cutOffTime),
-      description: poll.description,
+    this.rsvpForm.patchValue({
+      title: rsvp.title,
+      date: parseBackendDate(rsvp.date),
+      cutOffDay: parseBackendDate(rsvp.cutOffDay),
+      cutOffTime: parseBackendTime(rsvp.cutOffTime),
+      description: rsvp.description,
     });
 
-    this.showPollModal.set(true);
+    this.showRsvpModal.set(true);
   }
 
-  closePollModal(): void {
-    this.showPollModal.set(false);
-    this.editingPoll.set(null);
-    this.pollForm.reset();
+  closeRsvpModal(): void {
+    this.showRsvpModal.set(false);
+    this.editingRsvp.set(null);
+    this.rsvpForm.reset();
   }
 
-  addPollOption(): void {
-    this.pollOptions.push(
+  addRsvpShift(): void {
+    this.rsvpShifts.push(
       this.fb.group({
         startTime: ['', Validators.required],
         endTime: ['', Validators.required],
         capacity: [10, [Validators.required, Validators.min(1)]],
-      }, { validators: this.pollOptionTimeRangeValidator() })
+      }, { validators: this.rsvpShiftTimeRangeValidator() })
     );
   }
 
-  removePollOption(index: number): void {
-    if (this.pollOptions.length > 1) {
-      this.pollOptions.removeAt(index);
+  removeRsvpShift(index: number): void {
+    if (this.rsvpShifts.length > 1) {
+      this.rsvpShifts.removeAt(index);
     }
   }
 
-  savePoll(): void {
-    if (this.pollForm.invalid) {
-      this.pollForm.markAllAsTouched();
+  saveRsvp(): void {
+    if (this.rsvpForm.invalid) {
+      this.rsvpForm.markAllAsTouched();
       return;
     }
 
     // Set loading state
-    this.isCreatingPoll.set(true);
+    this.isCreatingRsvp.set(true);
 
-    const formValue = this.pollForm.value;
+    const formValue = this.rsvpForm.value;
 
     // Format dates for backend - date inputs return ISO strings
     const formatDateForBackend = (dateString: string): string => {
@@ -1141,75 +1137,75 @@ export class AdminDashboard implements OnInit {
       }),
     };
 
-    const editingPoll = this.editingPoll();
-    if (editingPoll) {
-      this.pollService.updatePoll(editingPoll.id, payload).subscribe({
+    const editingRsvp = this.editingRsvp();
+    if (editingRsvp) {
+      this.rsvpService.updateRsvp(editingRsvp.id, payload).subscribe({
         next: () => {
-          this.loadPolls();
-          this.closePollModal();
-          this.showSnackbar('Poll updated successfully', 'success');
-          this.isCreatingPoll.set(false);
+          this.loadRsvps();
+          this.closeRsvpModal();
+          this.showSnackbar('RSVP updated successfully', 'success');
+          this.isCreatingRsvp.set(false);
         },
         error: () => {
-          this.showSnackbar('Poll update failed', 'error');
-          this.isCreatingPoll.set(false);
+          this.showSnackbar('RSVP update failed', 'error');
+          this.isCreatingRsvp.set(false);
         }
       });
     } else {
-      this.pollService.createPoll(payload).subscribe({
+      this.rsvpService.createRsvp(payload).subscribe({
         next: () => {
-          this.loadPolls();
-          this.closePollModal();
-          this.showSnackbar('Poll created successfully', 'success');
-          this.isCreatingPoll.set(false);
+          this.loadRsvps();
+          this.closeRsvpModal();
+          this.showSnackbar('RSVP created successfully', 'success');
+          this.isCreatingRsvp.set(false);
         },
         error: () => {
-          this.showSnackbar('Poll creation failed', 'error');
-          this.isCreatingPoll.set(false);
+          this.showSnackbar('RSVP creation failed', 'error');
+          this.isCreatingRsvp.set(false);
         }
       });
     }
   }
 
-  confirmDeletePoll(pollId: number): void {
-    this.deletingPollId.set(pollId);
-    this.showDeletePollModal.set(true);
+  confirmDeleteRsvp(rsvpId: number): void {
+    this.deletingRsvpId.set(rsvpId);
+    this.showDeleteRsvpModal.set(true);
   }
 
-  closeDeletePollModal(): void {
-    this.showDeletePollModal.set(false);
-    this.deletingPollId.set(null);
+  closeDeleteRsvpModal(): void {
+    this.showDeleteRsvpModal.set(false);
+    this.deletingRsvpId.set(null);
   }
 
-  deletePoll(): void {
-    const pollId = this.deletingPollId();
-    if (pollId !== null) {
+  deleteRsvp(): void {
+    const rsvpId = this.deletingRsvpId();
+    if (rsvpId !== null) {
       // Set loading state
-      this.isDeletingPoll.set(true);
+      this.isDeletingRsvp.set(true);
 
-      this.pollService.deletePoll(pollId).subscribe({
+      this.rsvpService.deleteRsvp(rsvpId).subscribe({
         next: () => {
-          this.loadPolls();
-          this.closeDeletePollModal();
-          this.showSnackbar('Poll deleted successfully', 'success');
-          this.isDeletingPoll.set(false);
+          this.loadRsvps();
+          this.closeDeleteRsvpModal();
+          this.showSnackbar('RSVP deleted successfully', 'success');
+          this.isDeletingRsvp.set(false);
         },
         error: () => {
-          this.showSnackbar('Poll deletion failed', 'error');
-          this.isDeletingPoll.set(false);
+          this.showSnackbar('RSVP deletion failed', 'error');
+          this.isDeletingRsvp.set(false);
         }
       });
     }
   }
 
-  updatePollStatus(pollId: number, status: 'active' | 'closed' | 'draft'): void {
-    this.pollService.updatePollStatus(pollId, status).subscribe(() => {
-      this.loadPolls();
+  updateRsvpStatus(rsvpId: number, status: 'active' | 'closed' | 'draft'): void {
+    this.rsvpService.updateRsvpStatus(rsvpId, status).subscribe(() => {
+      this.loadRsvps();
     });
   }
 
-  setPollFilterStatus(status: 'all' | 'active' | 'closed' | 'draft'): void {
-    this.pollFilterStatus.set(status);
+  setRsvpFilterStatus(status: 'all' | 'active' | 'closed' | 'draft'): void {
+    this.rsvpFilterStatus.set(status);
   }
 
   openCreateVolunteerModal(): void {
@@ -1382,16 +1378,16 @@ export class AdminDashboard implements OnInit {
     this.loadArchivedVolunteers();
   }
 
-  getVotePercentage(poll: Poll, option: PollOption): number {
-    return poll.totalVotes > 0 ? (option.votes / poll.totalVotes) * 100 : 0;
+  getResponsePercentage(rsvp: Rsvp, shift: RsvpShift): number {
+    return rsvp.totalResponses > 0 ? (shift.responses / rsvp.totalResponses) * 100 : 0;
   }
 
-  getRemainingSlots(option: PollOption): number {
-    return option.capacity - option.votes;
+  getRemainingSlots(shift: RsvpShift): number {
+    return shift.capacity - shift.responses;
   }
 
-  isFull(option: PollOption): boolean {
-    return option.votes >= option.capacity;
+  isFull(shift: RsvpShift): boolean {
+    return shift.responses >= shift.capacity;
   }
 
   // Helper function to format time from 24-hour to 12-hour format with AM/PM

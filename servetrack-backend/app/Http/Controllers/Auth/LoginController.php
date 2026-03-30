@@ -6,10 +6,12 @@ use App\Constants\TokenAbilities;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
+use App\Models\Volunteer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
@@ -116,6 +118,114 @@ class LoginController extends Controller
         $userData['admin_profile'] = $user->admin;
 
         return $this->buildAuthenticatedResponse($userData, $user, TokenAbilities::ADMIN);
+    }
+
+    /**
+     * Redirect to Facebook OAuth for authentication.
+     */
+    public function redirectToFacebook(): JsonResponse
+    {
+        $facebookAppId = config('services.facebook.app_id');
+        $redirectUri = config('services.facebook.redirect_uri');
+
+        if (! $facebookAppId || ! $redirectUri) {
+            return response()->json([
+                'message' => 'Facebook login is not configured.',
+            ], 500);
+        }
+
+        $permissions = 'email,public_profile';
+        $oauthUrl = "https://www.facebook.com/v18.0/dialog/oauth?client_id={$facebookAppId}&redirect_uri={$redirectUri}&scope={$permissions}&response_type=code&state=".csrf_token();
+
+        return response()->json(['redirect_url' => $oauthUrl]);
+    }
+
+    /**
+     * Handle Facebook OAuth callback.
+     */
+    public function handleFacebookCallback(Request $request): JsonResponse
+    {
+        $code = $request->query('code');
+        $redirectUri = config('services.facebook.redirect_uri');
+
+        if (! $code) {
+            return response()->json(['message' => 'Authorization code not provided.'], 400);
+        }
+
+        $facebookAppId = config('services.facebook.app_id');
+        $facebookAppSecret = config('services.facebook.app_secret');
+
+        try {
+            $tokenResponse = Http::get('https://graph.facebook.com/v18.0/oauth/access_token', [
+                'client_id' => $facebookAppId,
+                'client_secret' => $facebookAppSecret,
+                'redirect_uri' => $redirectUri,
+                'code' => $code,
+            ]);
+
+            if ($tokenResponse->failed()) {
+                return response()->json(['message' => 'Failed to exchange code for access token.'], 400);
+            }
+
+            $accessToken = $tokenResponse->json('access_token');
+
+            $userResponse = Http::get('https://graph.facebook.com/v18.0/me', [
+                'fields' => 'id,name,email,first_name,last_name',
+                'access_token' => $accessToken,
+            ]);
+
+            if ($userResponse->failed()) {
+                return response()->json(['message' => 'Failed to fetch user profile.'], 400);
+            }
+
+            $fbUser = $userResponse->json();
+
+            $volunteer = Volunteer::where('facebook_id', $fbUser['id'])->first();
+
+            if (! $volunteer) {
+                $user = User::where('email', $fbUser['email'] ?? null)
+                    ->where('role', 'volunteer')
+                    ->first();
+
+                if ($user) {
+                    $volunteer = Volunteer::where('user_id', $user->id)->first();
+                }
+
+                if (! $volunteer && isset($fbUser['email'])) {
+                    $user = User::create([
+                        'name' => $fbUser['first_name'].' '.$fbUser['last_name'],
+                        'email' => $fbUser['email'],
+                        'password' => bcrypt('fb_'.$fbUser['id'].'_'.time()),
+                        'role' => 'volunteer',
+                    ]);
+
+                    $volunteer = Volunteer::create([
+                        'user_id' => $user->id,
+                        'first_name' => $fbUser['first_name'],
+                        'last_name' => $fbUser['last_name'],
+                        'facebook_id' => $fbUser['id'],
+                        'facebook_name' => $fbUser['name'],
+                    ]);
+                } else {
+                    return response()->json([
+                        'message' => 'No account found. Please register first.',
+                    ], 404);
+                }
+            }
+
+            $user = $volunteer->user;
+
+            $userData = $user->toArray();
+            $userData['user_type'] = 'volunteer';
+            $userData['volunteer_profile'] = $volunteer;
+
+            return $this->buildAuthenticatedResponse($userData, $user, TokenAbilities::VOLUNTEER);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Facebook authentication failed.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

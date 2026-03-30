@@ -15,17 +15,16 @@ import {
 } from '../validators/password.validator';
 import { AuthService } from '../services/auth.service';
 import { VolunteerService } from '../services/volunteer.service';
-import { PollService } from '../services/poll.service';
+import { RsvpService } from '../services/rsvp.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { InputSanitizerService } from '../services/input-sanitizer.service';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 
 import { VolunteerProfile, VolunteerProfileResponse } from '../models/volunteer-profile';
-import { Poll, PollOption } from '../models/poll';
+import { Rsvp, RsvpShift } from '../models/rsvp';
 import { NotificationItem } from '../models/notification-item';
 import { Attendance, AttendancePeriod } from '../models/attendance';
-import { VolunteerPoll } from '../models/volunteer-poll';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,14 +37,14 @@ export class VolunteerDashboard implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
-  private pollService = inject(PollService);
+  private rsvpService = inject(RsvpService);
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(InputSanitizerService);
 
   readonly defaultPhoto = '/assets/volunteer1.png';
 
   // ── Navigation State (Fixed menu close issue) ────────────────────────────
-  currentView = signal<'overview' | 'profile' | 'schedule' | 'polls' | 'rsvps'>('overview');
+  currentView = signal<'overview' | 'profile' | 'schedule' | 'rsvps'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Volunteer');
   sidebarCollapsed = signal(false);
   mobileSidebarOpen = signal(false);
@@ -110,11 +109,11 @@ export class VolunteerDashboard implements OnInit {
     () => this.notifications().filter((n) => !n.read).length,
   );
 
-  polls = signal<Poll[]>([]);
-  activePoll = signal<Poll | null>(null);
-  selectedOptionId = signal<number | null>(null);
-  hasSubmittedVote = signal(false);
-  pollError = signal<string | null>(null);
+  rsvps = signal<Rsvp[]>([]);
+  activeRsvp = signal<Rsvp | null>(null);
+  selectedShiftId = signal<number | null>(null);
+  hasSubmittedResponse = signal(false);
+  rsvpError = signal<string | null>(null);
 
 // ── Profile ───────────────────────────────────────────────────────────────
   editingProfileId = signal<number | null>(null);
@@ -229,7 +228,7 @@ export class VolunteerDashboard implements OnInit {
     this.loadProfile();
     this.loadAttendanceStats();
     this.loadAttendance();
-    this.loadPolls();
+    this.loadRsvps();
   }
 
   private startRealTimeClock(): void {
@@ -380,26 +379,21 @@ export class VolunteerDashboard implements OnInit {
       });
   }
 
-  private loadPolls(): void {
-    this.pollService.getPolls().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
-      const active = response.data.filter((p) => p.status === 'active');
-      this.polls.set(active);
-      if (active.length > 0 && !this.activePoll()) {
-        this.setActivePoll(active[0]);
+  loadRsvps(): void {
+    this.rsvpService.getRsvps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response: { data: Rsvp[] }) => {
+      const active = response.data.filter((r: Rsvp) => r.status === 'active');
+      this.rsvps.set(active);
+      if (active.length > 0 && !this.activeRsvp()) {
+        this.setActiveRsvp(active[0]);
       }
     });
   }
 
-  private loadRsvps(): void {
-    // Placeholder for RSVP loading functionality
-    // This would load RSVP data from a service
-  }
-
-  setActivePoll(poll: Poll): void {
-    this.activePoll.set(poll);
-    this.selectedOptionId.set(null);
-    this.hasSubmittedVote.set(false);
-    this.pollError.set(null);
+  setActiveRsvp(rsvp: Rsvp): void {
+    this.activeRsvp.set(rsvp);
+    this.selectedShiftId.set(null);
+    this.hasSubmittedResponse.set(false);
+    this.rsvpError.set(null);
   }
 
   setAttendancePeriod(period: AttendancePeriod): void {
@@ -427,7 +421,7 @@ export class VolunteerDashboard implements OnInit {
     }
   }
 
-  setView(view: 'overview' | 'profile' | 'schedule' | 'polls' | 'rsvps'): void {
+  setView(view: 'overview' | 'profile' | 'schedule' | 'rsvps'): void {
     this.currentView.set(view);
     // Removed auto-closing per user request - sidebar stays open
   }
@@ -464,8 +458,8 @@ export class VolunteerDashboard implements OnInit {
       return;
     }
 
-    if (query.includes('poll') || query.includes('vote')) {
-      this.setView('polls');
+    if (query.includes('rsvp') || query.includes('shift')) {
+      this.setView('rsvps');
       return;
     }
 
@@ -557,49 +551,42 @@ export class VolunteerDashboard implements OnInit {
     return 'Invalid field';
   }
 
-  selectOption(optionId: number): void {
-    const poll = this.activePoll();
-    if (!poll || this.hasSubmittedVote()) return;
-    const option = poll.options.find((o) => o.id === optionId);
-    if (option && option.votes < option.capacity) {
-      this.selectedOptionId.set(optionId);
+  selectShift(shiftId: number): void {
+    const rsvp = this.activeRsvp();
+    if (!rsvp || this.hasSubmittedResponse()) return;
+    const shift = rsvp.shifts.find((s) => s.id === shiftId);
+    if (shift && shift.responses < shift.capacity) {
+      this.selectedShiftId.set(shiftId);
     }
   }
 
-  submitPollVote(): void {
-    const poll = this.activePoll();
-    const optionId = this.selectedOptionId();
-    if (!poll || optionId === null || this.hasSubmittedVote()) return;
+  submitRsvpResponse(): void {
+    const rsvp = this.activeRsvp();
+    const shiftId = this.selectedShiftId();
+    if (!rsvp || shiftId === null || this.hasSubmittedResponse()) return;
 
     this.isLoading.set(true);
-    this.pollError.set(null);
-    this.pollService.vote(poll.id, optionId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.rsvpError.set(null);
+    this.rsvpService.respond(rsvp.id, shiftId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => {
-        this.hasSubmittedVote.set(true);
+        this.hasSubmittedResponse.set(true);
         this.isLoading.set(false);
-        this.loadPolls();
+        this.loadRsvps();
       },
       error: (err: { error?: { message?: string } }) => {
-        this.pollError.set(err?.error?.message ?? 'Failed to submit vote. Please try again.');
+        this.rsvpError.set(err?.error?.message ?? 'Failed to submit response. Please try again.');
         this.isLoading.set(false);
       },
     });
   }
 
-  getVotePercentage(option: PollOption, poll?: Poll): number {
-    const p = poll || this.activePoll();
-    if (!p || p.totalVotes === 0) {
-      return 0;
-    }
-    return Math.round((option.votes / p.totalVotes) * 100);
+
+  getRemainingSlots(shift: RsvpShift): number {
+    return shift.capacity - shift.responses;
   }
 
-  getRemainingSlots(option: PollOption): number {
-    return option.capacity - option.votes;
-  }
-
-  isOptionFull(option: PollOption): boolean {
-    return option.votes >= option.capacity;
+  isShiftFull(shift: RsvpShift): boolean {
+    return shift.responses >= shift.capacity;
   }
 
   // ── Photo ─────────────────────────────────────────────────────────────────

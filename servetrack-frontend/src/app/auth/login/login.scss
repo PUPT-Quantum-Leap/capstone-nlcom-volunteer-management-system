@@ -275,6 +275,47 @@ $error-light: #fee2e2;
   &.btn-full {
     width: 100%;
   }
+
+  &.btn-facebook {
+    background: #1877f2;
+    color: $white;
+
+    &:hover:not(:disabled) {
+      background: #166fe5;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(24, 119, 242, 0.3);
+    }
+
+    &:disabled {
+      background: #e4e6eb;
+      color: #bcc0c4;
+      cursor: not-allowed;
+    }
+
+    .facebook-icon {
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid $border;
+  }
+
+  span {
+    padding: 0 1rem;
+    color: $text-muted;
+    font-size: 0.875rem;
+  }
 }
 
 .loading-spinner {

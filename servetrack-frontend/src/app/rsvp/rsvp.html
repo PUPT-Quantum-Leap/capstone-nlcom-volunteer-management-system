@@ -1,0 +1,130 @@
+<div class="rsvp-container">
+  @if (isLoading() && !rsvp()) {
+    <div class="rsvp-card">
+      <p class="loading-text">Loading RSVP…</p>
+    </div>
+  } @else if (error()) {
+    <div class="rsvp-card">
+      <p class="error-message">{{ error() }}</p>
+    </div>
+  } @else if (rsvp(); as rsvp) {
+    <div class="rsvp-card">
+      <!-- RSVP Header -->
+      <div class="rsvp-header">
+        <h2 class="rsvp-title">{{ rsvp.title }} ({{ rsvp.date }})</h2>
+        @if (rsvp.eventLocation) {
+          <div class="event-location">
+            <span class="location-label">Location:</span>
+            <span class="location-value">{{ rsvp.eventLocation }}</span>
+          </div>
+        }
+        <div class="rsvp-cutoff">
+          <span class="cutoff-label">Cut-Off for RSVP is</span>
+          <span class="cutoff-time">{{ rsvp.cutOffDay }} {{ rsvp.cutOffTime }}</span>
+        </div>
+      </div>
+
+      <!-- RSVP Description -->
+      @if (rsvp.description) {
+        <div class="rsvp-description">
+          <p>{{ rsvp.description }}</p>
+        </div>
+      }
+
+      @if (rsvp.status !== 'active') {
+        <div class="rsvp-closed-notice">
+          <p>This RSVP is <strong>{{ rsvp.status }}</strong> and no longer accepting responses.</p>
+        </div>
+      }
+
+      <!-- RSVP Shifts -->
+      <div class="rsvp-shifts">
+        @for (shift of rsvp.shifts; track shift.id) {
+            <div
+              class="rsvp-shift"
+              [class.selected]="selectedShiftId() === shift.id"
+              [class.disabled]="isFull(shift) || hasSubmittedRsvp() || rsvp.status !== 'active'"
+              (click)="selectShift(shift.id)"
+            >
+            <div class="shift-header">
+              <div class="shift-info">
+                <input
+                  type="radio"
+                  [id]="'shift-' + shift.id"
+                  [checked]="selectedShiftId() === shift.id"
+                  [disabled]="isFull(shift) || hasSubmittedRsvp() || rsvp.status !== 'active'"
+                  class="shift-radio"
+                  (change)="selectShift(shift.id)"
+                  name="shiftGroup"
+                />
+                <label [for]="'shift-' + shift.id" class="shift-label">
+                  {{ shift.timeSlot }}
+                </label>
+                @if (isFull(shift)) {
+                  <span class="full-badge">FULL</span>
+                }
+              </div>
+              <div class="response-count">
+                <span class="response-number">{{ shift.responses }}</span>
+                <span class="response-text">/ {{ shift.capacity }}</span>
+              </div>
+            </div>
+
+            <!-- Capacity Info -->
+            <div class="capacity-info">
+              <span class="capacity-label">
+                @if (isFull(shift)) {
+                  <span class="slots-full">No slots available</span>
+                } @else {
+                  <span class="remaining-slots">{{ getRemainingSlots(shift) }} slots remaining</span>
+                }
+              </span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-bar-container">
+              <div
+                class="progress-bar-fill"
+                [class.full]="isFull(shift)"
+                [style.width.%]="(shift.responses / shift.capacity) * 100"
+              ></div>
+            </div>
+
+            <!-- Percentage -->
+            <div class="percentage-label">
+              {{ getResponsePercentage(shift.responses) | number: '1.0-1' }}% of total responses
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Total Responses -->
+      <div class="rsvp-footer">
+        <div class="total-responses">
+          <span class="total-label">Total Responses:</span>
+          <span class="total-number">{{ totalResponses() }}</span>
+        </div>
+
+        @if (rsvpError()) {
+          <p class="error-message">{{ rsvpError() }}</p>
+        }
+
+        @if (rsvp.status === 'active') {
+          <button
+            class="btn-submit"
+            [disabled]="!hasSelectedShift() || hasSubmittedRsvp() || isLoading()"
+            (click)="submitRsvp()"
+          >
+            @if (isLoading()) {
+              Submitting…
+            } @else if (hasSubmittedRsvp()) {
+              RSVP Recorded
+            } @else {
+              Submit RSVP
+            }
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>
