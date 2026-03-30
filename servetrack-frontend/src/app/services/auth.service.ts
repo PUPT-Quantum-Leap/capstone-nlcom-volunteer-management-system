@@ -136,6 +136,13 @@ export class AuthService {
     return this.loginWithEndpoint$(credentials, '/admin/login');
   }
 
+  /**
+   * Get Facebook OAuth redirect URL.
+   */
+  getFacebookAuthUrl$(): Observable<{ redirect_url: string }> {
+    return this.http.get<{ redirect_url: string }>(`${environment.apiUrl}/auth/facebook`, { withCredentials: true });
+  }
+
   private loginWithEndpoint$(
     credentials: LoginCredentials,
     endpoint: '/login' | '/admin/login',

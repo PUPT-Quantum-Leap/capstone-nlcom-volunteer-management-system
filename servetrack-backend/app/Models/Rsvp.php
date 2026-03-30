@@ -5,18 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Poll extends Model
+class Rsvp extends Model
 {
     use HasFactory;
 
-    protected $table = 'poll';
+    protected $table = 'rsvp';
 
-    protected $primaryKey = 'poll_id';
+    protected $primaryKey = 'rsvp_id';
 
     protected $fillable = [
         'title',
         'description',
         'date',
+        'event_location',
         'cutoff_day',
         'cutoff_time',
         'status',
@@ -32,28 +33,17 @@ class Poll extends Model
         ];
     }
 
-    /**
-     * Options associated with this poll (via poll_option junction table).
-     * The junction table carries time_slot and capacity per poll-option pair.
-     */
-    public function options(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function shifts(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsToMany(Option::class, 'poll_option', 'poll_id', 'option_id')
-            ->withPivot('poll_option_id', 'time_slot', 'capacity');
+        return $this->belongsToMany(TimeSlot::class, 'rsvp_shift', 'rsvp_id', 'time_slot_id')
+            ->withPivot('time_slot', 'capacity');
     }
 
-    /**
-     * Votes cast on this poll.
-     */
-    public function votes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function responses(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(PollVote::class, 'poll_id');
+        return $this->hasMany(RsvpResponse::class, 'rsvp_id');
     }
 
-    /**
-     * Check if the poll's cutoff date/time has passed.
-     * Returns false if no cutoff is set (allows voting).
-     */
     public function isCutoffPassed(): bool
     {
         $cutoffDay = $this->cutoff_day;
