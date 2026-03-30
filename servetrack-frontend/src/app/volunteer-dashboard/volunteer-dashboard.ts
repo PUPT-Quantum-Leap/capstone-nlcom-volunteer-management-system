@@ -26,6 +26,23 @@ import { Rsvp, RsvpShift } from '../models/rsvp';
 import { NotificationItem } from '../models/notification-item';
 import { Attendance, AttendancePeriod } from '../models/attendance';
 
+interface PollOption {
+  id: number;
+  timeSlot: string;
+  capacity: number;
+  votes: number;
+}
+
+interface Poll {
+  id: number;
+  title: string;
+  description?: string;
+  date?: string;
+  cutOffDay?: string;
+  status: 'draft' | 'active' | 'closed';
+  options: PollOption[];
+}
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, DatePipe, TitleCasePipe],
@@ -44,7 +61,7 @@ export class VolunteerDashboard implements OnInit {
   readonly defaultPhoto = '/assets/volunteer1.png';
 
   // ── Navigation State (Fixed menu close issue) ────────────────────────────
-  currentView = signal<'overview' | 'profile' | 'schedule' | 'rsvps'>('overview');
+  currentView = signal<'overview' | 'profile' | 'schedule' | 'rsvps' | 'polls'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Volunteer');
   sidebarCollapsed = signal(false);
   mobileSidebarOpen = signal(false);
@@ -114,6 +131,12 @@ export class VolunteerDashboard implements OnInit {
   selectedShiftId = signal<number | null>(null);
   hasSubmittedResponse = signal(false);
   rsvpError = signal<string | null>(null);
+
+  // ── Polls ─────────────────────────────────────────────────────────────────
+  activePoll = signal<Poll | null>(null);
+  hasSubmittedVote = signal(false);
+  selectedOptionId = signal<number | null>(null);
+  pollError = signal<string | null>(null);
 
 // ── Profile ───────────────────────────────────────────────────────────────
   editingProfileId = signal<number | null>(null);
@@ -421,7 +444,7 @@ export class VolunteerDashboard implements OnInit {
     }
   }
 
-  setView(view: 'overview' | 'profile' | 'schedule' | 'rsvps'): void {
+  setView(view: 'overview' | 'profile' | 'schedule' | 'rsvps' | 'polls'): void {
     this.currentView.set(view);
     // Removed auto-closing per user request - sidebar stays open
   }
@@ -876,5 +899,32 @@ export class VolunteerDashboard implements OnInit {
     if (status === 'approved') return 'confirmed';
     if (status === 'rejected') return 'rejected';
     return 'pending';
+  }
+
+  // ── Poll methods ──────────────────────────────────────────────────────────
+
+  isOptionFull(option: PollOption): boolean {
+    return option.votes >= option.capacity;
+  }
+
+  submitPollVote(): void {
+    const poll = this.activePoll();
+    const optionId = this.selectedOptionId();
+    if (!poll || optionId === null) return;
+
+    this.isLoading.set(true);
+    this.pollError.set(null);
+
+    // Simulate API call - replace with actual poll service call
+    setTimeout(() => {
+      this.hasSubmittedVote.set(true);
+      this.isLoading.set(false);
+    }, 1000);
+  }
+
+  getVotePercentage(option: PollOption, poll: Poll): number {
+    const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
+    if (totalVotes === 0) return 0;
+    return Math.round((option.votes / totalVotes) * 100);
   }
 }
