@@ -19,6 +19,7 @@ import { PollService } from '../services/poll.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { InputSanitizerService } from '../services/input-sanitizer.service';
+import { DatePipe, TitleCasePipe } from '@angular/common';
 
 import { VolunteerProfile, VolunteerProfileResponse } from '../models/volunteer-profile';
 import { Poll, PollOption } from '../models/poll';
@@ -26,11 +27,9 @@ import { NotificationItem } from '../models/notification-item';
 import { Attendance, AttendancePeriod } from '../models/attendance';
 import { VolunteerPoll } from '../models/volunteer-poll';
 
-import { DatePipe } from '@angular/common';
-
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe],
+  imports: [ReactiveFormsModule, DatePipe, TitleCasePipe],
   templateUrl: './volunteer-dashboard.html',
   styleUrl: './volunteer-dashboard.scss',
 })
@@ -53,6 +52,30 @@ export class VolunteerDashboard implements OnInit {
   isMobile = signal(false);
 
   isLoading = signal(false);
+
+  // ── Real-time Clock ──────────────────────────────────────────────────────
+  currentTime = signal(new Date());
+  currentDateFormatted = computed(() => {
+    const date = this.currentTime();
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date);
+  });
+
+  currentTimeFormatted = computed(() => {
+    const date = this.currentTime();
+    return new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }).format(date);
+  });
+
+  private timeUpdateInterval: any;
 
   // ── Attendance (real data) ───────────────────────────────────────────────
   attendancePeriod = signal<AttendancePeriod>('monthly');
@@ -99,13 +122,16 @@ export class VolunteerDashboard implements OnInit {
   profilePreviewUrl = signal(this.defaultPhoto);
   profiles = signal<VolunteerProfile[]>([]);
   savedProfileData = signal<VolunteerProfileResponse | null>(null);
+  
+  // Accordion state for compact profile layout
+  expandedSection = signal<'personal' | 'service' | 'emergency' | null>('personal');
+  profileErrorMessage = signal('');
 
+  // Profile modal and success/error states
+  showSaveConfirmModal = signal(false);
+  showProfileError = signal(false);
   showProfileSuccess = signal(false);
   profileSuccessMessage = signal('');
-  showSaveConfirmModal = signal(false);
-
-  showProfileError = signal(false);
-  profileErrorMessage = signal('');
 
   private positionToKeyMap: Record<string, string> = {
     'Metro Sidewalk Sunday School (Teaching & Education)': 'sidewalk-sunday-school',
@@ -199,10 +225,28 @@ export class VolunteerDashboard implements OnInit {
 
   ngOnInit(): void {
     this.updateIsMobile();
+    this.startRealTimeClock();
     this.loadProfile();
     this.loadAttendanceStats();
     this.loadAttendance();
     this.loadPolls();
+  }
+
+  private startRealTimeClock(): void {
+    // Update immediately
+    this.currentTime.set(new Date());
+
+    // Update every second
+    this.timeUpdateInterval = setInterval(() => {
+      this.currentTime.set(new Date());
+    }, 1000);
+
+    // Clean up on destroy
+    this.destroyRef.onDestroy(() => {
+      if (this.timeUpdateInterval) {
+        clearInterval(this.timeUpdateInterval);
+      }
+    });
   }
 
   // ── Screen Detection for Mobile/Desktop Behavior ─────────────────────────
@@ -361,6 +405,11 @@ export class VolunteerDashboard implements OnInit {
   searchAttendance(query: string): void {
     this.attendanceSearchQuery.set(query);
     this.loadAttendance();
+  }
+
+  onPeriodChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.setAttendancePeriod(select.value as AttendancePeriod);
   }
 
   // ── Sidebar / navigation (Fixed close-on-select + mobile overlay) ───────
@@ -532,12 +581,12 @@ export class VolunteerDashboard implements OnInit {
     });
   }
 
-  getVotePercentage(option: PollOption): number {
-    const poll = this.activePoll();
-    if (!poll || poll.totalVotes === 0) {
+  getVotePercentage(option: PollOption, poll?: Poll): number {
+    const p = poll || this.activePoll();
+    if (!p || p.totalVotes === 0) {
       return 0;
     }
-    return Math.round((option.votes / poll.totalVotes) * 100);
+    return Math.round((option.votes / p.totalVotes) * 100);
   }
 
   getRemainingSlots(option: PollOption): number {
@@ -736,6 +785,14 @@ export class VolunteerDashboard implements OnInit {
       this.exitEditMode(true); // Cancel changes
     } else {
       this.enterEditMode();
+    }
+  }
+
+  toggleSection(section: 'personal' | 'service' | 'emergency'): void {
+    if (this.expandedSection() === section) {
+      this.expandedSection.set(null);
+    } else {
+      this.expandedSection.set(section);
     }
   }
 

@@ -8,6 +8,7 @@ export interface Attendance {
   date: string;
   hours: number;
   description: string | null;
+  location?: string | null;
   status: AttendanceStatus;
   created_by: number | null;
   created_at: string;
