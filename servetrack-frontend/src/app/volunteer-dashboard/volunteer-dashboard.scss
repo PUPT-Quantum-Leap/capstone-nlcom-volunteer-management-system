@@ -801,6 +801,20 @@
     }
   }
 
+  .stat-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--primary-500);
+    flex-shrink: 0;
+  }
+
   .label {
     font-size: 0.75rem;
     font-weight: 500;
@@ -888,6 +902,19 @@
     h3 {
       color: var(--primary-600);
     }
+  }
+
+  .action-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .action-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--primary-500);
+    flex-shrink: 0;
   }
 
   h3 {
