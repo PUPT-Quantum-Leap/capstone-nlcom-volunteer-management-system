@@ -17,15 +17,17 @@ Developer Machine
 └────────────────────────────────────────────────────────────┘
 ```
 
-### Files to Create (5 files)
+### Files to Create (7 files)
 
-| #  | File                                  | Purpose                                        |
-|----|---------------------------------------|------------------------------------------------|
-| 1  | `servetrack-frontend/.dockerignore`   | Exclude node_modules, dist                     |
-| 2  | `servetrack-frontend/Dockerfile`      | Node 22 + `ng serve` with HMR                 |
-| 3  | `servetrack-backend/.dockerignore`    | Exclude vendor, storage/logs                   |
-| 4  | `servetrack-backend/Dockerfile`       | PHP 8.2 CLI + extensions + Composer            |
-| 5  | `docker-compose.yml`                  | All 3 services with bind-mounts                |
+| #  | File                                  | Purpose                          |
+|----|---------------------------------------|----------------------------------|
+| 1  | `servetrack-frontend/.dockerignore`   | Exclude node_modules, dist       |
+| 2  | `servetrack-frontend/Dockerfile`      | Node 22 + `ng serve`             |
+| 3  | `servetrack-backend/.dockerignore`    | Exclude vendor, storage/logs     |
+| 4  | `servetrack-backend/Dockerfile`       | PHP 8.2 + Composer + entrypoint  |
+| 5  | `servetrack-backend/entrypoint.sh`    | Install deps, key:generate, perms|
+| 6  | `servetrack-backend/.env.docker`      | Docker-specific env vars         |
+| 7  | `docker-compose.yml`                  | 3 services + volumes + network   |
 
 ### Service Details
 
@@ -34,7 +36,7 @@ Developer Machine
 - Workdir: `/app`
 - Bind-mount: `./servetrack-frontend:/app` (source code for live edits)
 - Named volume: `frontend_node_modules` (excluded from bind-mount to keep host clean)
-- Command: `npm start` (runs `ng serve --host 0.0.0.0 --poll 2000`)
+- Command: `npm start` (runs `ng serve --host 0.0.0.0 --poll 2000` via package.json)
 - Port: `4200:4200`
 - Environment: `CHOKIDAR_USEPOLLING=true` (ensures file watcher works in Docker on all OS)
 
@@ -43,9 +45,11 @@ Developer Machine
 - Extensions: `pdo_mysql`, `bcmath`, `gd`, `xml`, `zip`, `intl`
 - Composer installed globally
 - Bind-mount: `./servetrack-backend:/var/www`
+- Named volume: `backend_vendor` (excluded from bind-mount)
 - Port: `8000:8000`
+- Entrypoint: `entrypoint.sh` handles composer install, APP_KEY, permissions, migrations
 - Command: `php artisan serve --host=0.0.0.0 --port=8000`
-- Entrypoint runs: `composer install`, key generation
+- Environment: loaded from `servetrack-backend/.env.docker`
 
 **MySQL Container**
 - Image: `mysql:8.0`
@@ -53,7 +57,7 @@ Developer Machine
 - Port: `3306:3306` (accessible from host for tools like TablePlus)
 - Healthcheck: `mysqladmin ping`
 
-### docker-compose.yml Structure
+### docker-compose.yml
 
 ```yaml
 services:
@@ -68,6 +72,7 @@ services:
       - frontend_node_modules:/app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+    networks: [servetrack]
     depends_on:
       backend:
         condition: service_started
@@ -81,13 +86,9 @@ services:
     volumes:
       - ./servetrack-backend:/var/www
       - backend_vendor:/var/www/vendor
-    environment:
-      - DB_HOST=mysql
-      - DB_DATABASE=servetrack
-      - DB_USERNAME=servetrack
-      - DB_PASSWORD=secret
-      - APP_ENV=local
-      - APP_DEBUG=true
+    env_file:
+      - ./servetrack-backend/.env.docker
+    networks: [servetrack]
     depends_on:
       mysql:
         condition: service_healthy
@@ -108,6 +109,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks: [servetrack]
+
+networks:
+  servetrack:
+    driver: bridge
 
 volumes:
   frontend_node_modules:
@@ -121,38 +127,112 @@ volumes:
 
 ```dockerfile
 FROM node:22-alpine
+
 WORKDIR /app
+
 COPY package*.json ./
 RUN npm ci
+
 COPY . .
+
 EXPOSE 4200
-CMD ["npm", "start", "--", "--host", "0.0.0.0", "--poll", "2000"]
+
+CMD ["npm", "start"]
 ```
+
+> **Note:** `start` script in `package.json` must be:
+> ```json
+> "start": "ng serve --host 0.0.0.0 --poll 2000"
+> ```
 
 **`servetrack-backend/Dockerfile`**
 
 ```dockerfile
 FROM php:8.2-cli
-RUN apt-get update && apt-get install -y git curl zip unzip \
+
+RUN apt-get update && apt-get install -y \
+    git curl zip unzip \
     libpng-dev libxml2-dev libzip-dev libicu-dev \
-    && docker-php-ext-install pdo_mysql bcmath gd xml zip intl
+    && docker-php-ext-install pdo_mysql bcmath gd xml zip intl \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
 WORKDIR /var/www
+
 COPY . .
-RUN composer install
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 8000
+
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+```
+
+**`servetrack-backend/entrypoint.sh`**
+
+```sh
+#!/bin/sh
+set -e
+
+composer install --no-interaction --prefer-dist
+
+if [ ! -f .env ]; then
+    cp .env.docker .env
+fi
+
+# Generate APP_KEY if not set
+grep -q "APP_KEY=base64" .env || php artisan key:generate --no-interaction
+
+# Fix permissions
+chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+
+php artisan migrate --force
+
+exec "$@"
+```
+
+**`servetrack-backend/.env.docker`**
+
+```
+APP_NAME=ServeTrack
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+
+LOG_CHANNEL=stack
+LOG_LEVEL=debug
+
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=servetrack
+DB_USERNAME=servetrack
+DB_PASSWORD=secret
+
+BROADCAST_DRIVER=log
+CACHE_DRIVER=file
+FILESYSTEM_DISK=local
+QUEUE_CONNECTION=sync
+SESSION_DRIVER=file
+SESSION_LIFETIME=120
+
+ADMIN_INVITE_CODE=ChangeMe123!
+ADMIN_ALLOWED_DOMAINS=example.com
 ```
 
 ### Usage
 
 ```bash
-# Start everything
+# Start everything (first time)
 docker compose up -d --build
 
-# First-time setup
-docker compose exec backend php artisan key:generate
-docker compose exec backend php artisan migrate:fresh --seed
+# Seed the database
+docker compose exec backend php artisan db:seed
 
 # Access
 # Frontend:  http://localhost:4200
@@ -166,21 +246,19 @@ docker compose logs -f backend
 # Stop
 docker compose down
 
-# Reset everything (including DB)
+# Stop and remove DB data
 docker compose down -v
 ```
 
-### Implementation Order
+### What the Entrypoint Handles Automatically
 
-1. Create `servetrack-frontend/.dockerignore`
-2. Create `servetrack-frontend/Dockerfile` (Node 22 + ng serve)
-3. Create `servetrack-backend/.dockerignore`
-4. Create `servetrack-backend/Dockerfile` (PHP 8.2 CLI + Composer)
-5. Create `docker-compose.yml` (3 services + volumes)
-6. Test: `docker compose config` — validate YAML syntax
-7. Test: `docker compose build` — verify images build successfully
-8. Test: `docker compose up -d` — verify all services start
-9. Verify: Open `http://localhost:4200`, test login, test API calls
+| Concern          | Solution                                              |
+|------------------|-------------------------------------------------------|
+| APP_KEY missing  | `php artisan key:generate` runs on every start        |
+| storage/ perms   | `chmod -R 775` + `chown` on every start              |
+| .env missing     | Copies `.env.docker` as `.env` if none exists         |
+| vendor/ missing  | `composer install` runs on every start                |
+| Migrations       | `php artisan migrate --force` on every start          |
 
 ### Key Considerations
 
@@ -193,6 +271,8 @@ docker compose down -v
 | Source changes        | Bind-mounts mean edits on host reflect immediately in containers           |
 | Frontend → Backend   | Angular calls `http://localhost:8000/api` (already in `environment.ts`)   |
 | CORS                 | Laravel CORS middleware already configured in `bootstrap/app.php`         |
+| Named network        | `servetrack` bridge network for inter-service communication               |
+| .env conflict        | Separate `.env.docker` avoids conflicts with host `.env`                  |
 
 ---
 
@@ -230,20 +310,19 @@ Internet
 | 4  | `servetrack-backend/docker/nginx.conf`        | Nginx config for Laravel fastcgi    |
 | 5  | `Caddyfile`                                   | Reverse proxy + auto HTTPS          |
 | 6  | `docker-compose.prod.yml`                     | Production services                 |
-| 7  | `.env.docker`                                 | Docker env template                 |
+| 7  | `.env.production`                             | Production env template             |
 
 ### Production Usage
 
 ```bash
 # Copy and edit environment
-cp .env.docker .env
-# Edit: DOMAIN, DB_PASSWORD, MYSQL_ROOT_PASSWORD, APP_KEY
+cp .env.production .env
+# Edit: DOMAIN, DB_PASSWORD, MYSQL_ROOT_PASSWORD
 
 # Build and start
 docker compose -f docker-compose.prod.yml up -d --build
 
 # First-time setup
-docker compose -f docker-compose.prod.yml exec backend php artisan key:generate
 docker compose -f docker-compose.prod.yml exec backend php artisan migrate --seed
 docker compose -f docker-compose.prod.yml exec backend php artisan storage:link
 ```
