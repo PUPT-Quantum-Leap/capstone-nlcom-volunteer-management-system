@@ -3,9 +3,8 @@ set -e
 
 composer install --no-interaction --prefer-dist
 
-if [ ! -f .env ]; then
-    cp .env.docker .env
-fi
+# Always use Docker env config
+cp .env.docker .env
 
 # Generate APP_KEY if not set
 grep -q "APP_KEY=base64" .env || php artisan key:generate --no-interaction
