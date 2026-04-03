@@ -37,14 +37,16 @@ return new class extends Migration
         });
 
         // Drop FKs and indexes on rsvp_shift (formerly poll_option)
-        // Must use raw SQL because FK constraint names reference the original table name
-        $db = config('database.connections.mysql.database');
-        $fks = DB::select(
-            "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'rsvp_shift' AND REFERENCED_TABLE_NAME IS NOT NULL",
-            [$db]
-        );
-        foreach ($fks as $fk) {
-            DB::statement("ALTER TABLE `rsvp_shift` DROP FOREIGN KEY `{$fk->CONSTRAINT_NAME}`");
+        // Must use raw SQL on MySQL because FK constraint names reference the original table name
+        if (DB::getDriverName() === 'mysql') {
+            $db = config('database.connections.mysql.database');
+            $fks = DB::select(
+                "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'rsvp_shift' AND REFERENCED_TABLE_NAME IS NOT NULL",
+                [$db]
+            );
+            foreach ($fks as $fk) {
+                DB::statement("ALTER TABLE `rsvp_shift` DROP FOREIGN KEY `{$fk->CONSTRAINT_NAME}`");
+            }
         }
 
         Schema::table('rsvp_shift', function (Blueprint $table) {
@@ -65,12 +67,15 @@ return new class extends Migration
         });
 
         // Drop FKs and indexes on rsvp_response (formerly poll_vote)
-        $fks = DB::select(
-            "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'rsvp_response' AND REFERENCED_TABLE_NAME IS NOT NULL",
-            [$db]
-        );
-        foreach ($fks as $fk) {
-            DB::statement("ALTER TABLE `rsvp_response` DROP FOREIGN KEY `{$fk->CONSTRAINT_NAME}`");
+        if (DB::getDriverName() === 'mysql') {
+            $db = config('database.connections.mysql.database');
+            $fks = DB::select(
+                "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'rsvp_response' AND REFERENCED_TABLE_NAME IS NOT NULL",
+                [$db]
+            );
+            foreach ($fks as $fk) {
+                DB::statement("ALTER TABLE `rsvp_response` DROP FOREIGN KEY `{$fk->CONSTRAINT_NAME}`");
+            }
         }
 
         Schema::table('rsvp_response', function (Blueprint $table) {
@@ -99,14 +104,16 @@ return new class extends Migration
     public function down(): void
     {
         // Drop FKs on rsvp_response by querying constraint names
-        $db = config('database.connections.mysql.database');
+        if (DB::getDriverName() === 'mysql') {
+            $db = config('database.connections.mysql.database');
 
-        $fks = DB::select(
-            "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'rsvp_response' AND REFERENCED_TABLE_NAME IS NOT NULL",
-            [$db]
-        );
-        foreach ($fks as $fk) {
-            DB::statement("ALTER TABLE `rsvp_response` DROP FOREIGN KEY `{$fk->CONSTRAINT_NAME}`");
+            $fks = DB::select(
+                "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'rsvp_response' AND REFERENCED_TABLE_NAME IS NOT NULL",
+                [$db]
+            );
+            foreach ($fks as $fk) {
+                DB::statement("ALTER TABLE `rsvp_response` DROP FOREIGN KEY `{$fk->CONSTRAINT_NAME}`");
+            }
         }
 
         Schema::table('rsvp_response', function (Blueprint $table) {
@@ -132,12 +139,15 @@ return new class extends Migration
         });
 
         // Drop FKs on rsvp_shift
-        $fks = DB::select(
-            "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'rsvp_shift' AND REFERENCED_TABLE_NAME IS NOT NULL",
-            [$db]
-        );
-        foreach ($fks as $fk) {
-            DB::statement("ALTER TABLE `rsvp_shift` DROP FOREIGN KEY `{$fk->CONSTRAINT_NAME}`");
+        if (DB::getDriverName() === 'mysql') {
+            $db = config('database.connections.mysql.database');
+            $fks = DB::select(
+                "SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'rsvp_shift' AND REFERENCED_TABLE_NAME IS NOT NULL",
+                [$db]
+            );
+            foreach ($fks as $fk) {
+                DB::statement("ALTER TABLE `rsvp_shift` DROP FOREIGN KEY `{$fk->CONSTRAINT_NAME}`");
+            }
         }
 
         Schema::table('rsvp_shift', function (Blueprint $table) {
