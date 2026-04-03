@@ -167,6 +167,14 @@ return new class extends Migration
             $table->dropColumn('event_location');
         });
 
+        Schema::table('rsvp', function (Blueprint $table) {
+            $table->renameColumn('rsvp_id', 'poll_id');
+        });
+
+        Schema::table('rsvp_shift', function (Blueprint $table) {
+            $table->renameColumn('rsvp_shift_id', 'poll_option_id');
+        });
+
         Schema::rename('rsvp_response', 'poll_vote');
         Schema::rename('rsvp_shift', 'poll_option');
         Schema::rename('rsvp', 'poll');
