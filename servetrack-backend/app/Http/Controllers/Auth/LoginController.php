@@ -124,7 +124,7 @@ class LoginController extends Controller
     /**
      * Redirect to Facebook OAuth for authentication.
      */
-    public function redirectToFacebook(): JsonResponse
+    public function redirectToFacebook(Request $request): JsonResponse
     {
         $facebookAppId = config('services.facebook.app_id');
         $redirectUri = config('services.facebook.redirect_uri');
@@ -137,7 +137,6 @@ class LoginController extends Controller
 
         $permissions = 'email,public_profile';
         $state = bin2hex(random_bytes(32));
-        $request = request();
         if ($request->hasSession()) {
             $request->session()->put('facebook_oauth_state', $state);
         }
