@@ -35,7 +35,7 @@ import { AnalyticsService, ReportData } from '../services/analytics.service';
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, CommonModule, IncidentCommandSystemComponent],
+  imports: [ReactiveFormsModule, DatePipe, CommonModule, IncidentCommandSystemComponent, AdminHeaderComponent],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
