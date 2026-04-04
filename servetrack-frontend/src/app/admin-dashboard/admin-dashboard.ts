@@ -55,6 +55,7 @@ export class AdminDashboard implements OnInit {
   currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Admin');
   sidebarCollapsed = signal(false);
+  mobileSidebarOpen = signal(false);
   isLoading = signal(false);
 
   showNotifications = signal(false);
@@ -366,6 +367,14 @@ export class AdminDashboard implements OnInit {
 
   toggleSidebar(): void {
     this.sidebarCollapsed.update((v) => !v);
+  }
+
+  toggleMobileSidebar(): void {
+    this.mobileSidebarOpen.update((v) => !v);
+  }
+
+  closeMobileSidebar(): void {
+    this.mobileSidebarOpen.set(false);
   }
 
   setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'): void {
