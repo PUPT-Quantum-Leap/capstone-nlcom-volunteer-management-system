@@ -29,6 +29,8 @@ import { RsvpService } from '../services/rsvp.service';
 import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
 import { User } from '../models/user';
 import { UserService } from '../services/user.service';
+import { AdminHeaderComponent } from '../components/admin-header/admin-header.component';
+import { AnalyticsService, ReportData } from '../services/analytics.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -45,6 +47,7 @@ export class AdminDashboard implements OnInit {
   private destroyRef = inject(DestroyRef);
   private rsvpService = inject(RsvpService);
   private userService = inject(UserService);
+  private analyticsService = inject(AnalyticsService);
 
   readonly defaultPhoto = '/assets/nlcom.png';
   readonly Math = Math;
@@ -80,6 +83,8 @@ export class AdminDashboard implements OnInit {
   resettingPasswordUserId = signal<number | null>(null);
   viewingUser = signal<User | null>(null);
 
+  // RSVP signals (already declared above)
+
   showAiModal = signal(false);
   currentPage = signal(1);
   usersPerPage = signal(5);
@@ -90,6 +95,13 @@ export class AdminDashboard implements OnInit {
   volunteersTotalPages = computed(() => Math.ceil(this.volunteerRows().length / this.volunteersPerPage()));
   showArchivedVolunteers = signal(false);
   archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
+
+  // Analytics signals
+  reportData = signal<ReportData | null>(null);
+  analyticsLoading = signal(false);
+  selectedReportType = signal<'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'>('volunteers');
+  dateRangeFilter = signal<'all' | 'month' | 'quarter' | 'year'>('all');
+
 
   // RSVP creation loading state
   isCreatingRsvp = signal(false);
@@ -1280,5 +1292,116 @@ export class AdminDashboard implements OnInit {
 
   isFull(shift: RsvpShift): boolean {
     return shift.responses >= shift.capacity;
+  }
+
+  // Helper function to format time from 24-hour to 12-hour format with AM/PM
+  formatTimeTo12Hour(time24: string): string {
+    if (!time24) return '';
+    
+    let hours: number, minutes: string;
+    
+    // Handle various time formats
+    if (time24.includes(':')) {
+      const parts = time24.split(':');
+      hours = parseInt(parts[0], 10);
+      minutes = parts[1];
+    } else if (time24.includes('AM') || time24.includes('PM')) {
+      return time24.trim();
+    } else {
+      return time24;
+    }
+    
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours === 0 ? 12 : (hours > 12 ? hours - 12 : hours);
+    
+    return `${displayHours}:${minutes} ${period}`;
+  }
+
+  // Helper function to format time slot for display
+  formatTimeSlot(timeSlot: string): string {
+    if (!timeSlot) return '';
+    
+    // Handle format like "13:00 - 14:00" or "9:00 AM - 12:00 PM"
+    if (timeSlot.includes(' - ')) {
+      const parts = timeSlot.split(' - ');
+      const startTime = this.formatTimeTo12Hour(parts[0].trim());
+      const endTime = this.formatTimeTo12Hour(parts[1].trim());
+      return `${startTime} - ${endTime}`;
+    }
+    
+    return this.formatTimeTo12Hour(timeSlot);
+  }
+
+  // Analytics methods
+  loadAnalyticsData(): void {
+    this.analyticsLoading.set(true);
+    this.analyticsService.getReportData().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.reportData.set(response.data);
+        }
+        this.analyticsLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading analytics data:', error);
+        this.analyticsLoading.set(false);
+      }
+    });
+  }
+
+  setReportType(type: 'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'): void {
+    this.selectedReportType.set(type);
+  }
+
+  setDateRange(range: 'all' | 'month' | 'quarter' | 'year'): void {
+    this.dateRangeFilter.set(range);
+  }
+
+  exportReport(format: 'pdf' | 'excel'): void {
+    this.analyticsLoading.set(true);
+    this.analyticsService.exportReport(format).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (blob) => {
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `servetrack-analytics-report-${timestamp}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+        this.analyticsService.downloadFile(blob, filename);
+        this.showSnackbar(`${format.toUpperCase()} report downloaded successfully`, 'success');
+        this.analyticsLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Error exporting report:', error);
+        this.showSnackbar('Failed to export report', 'error');
+        this.analyticsLoading.set(false);
+      }
+    });
+  }
+
+  getActivityIcon(type: string): string {
+    switch (type) {
+      case 'registration':
+        return '👤';
+      case 'attendance':
+        return '✓';
+      case 'task':
+        return '📋';
+      case 'event':
+        return '📅';
+      default:
+        return '📌';
+    }
+  }
+
+  getActivityTypeClass(type: string): string {
+    switch (type) {
+      case 'registration':
+        return 'activity-registration';
+      case 'attendance':
+        return 'activity-attendance';
+      case 'task':
+        return 'activity-task';
+      case 'event':
+        return 'activity-event';
+      default:
+        return '';
+    }
   }
 }
