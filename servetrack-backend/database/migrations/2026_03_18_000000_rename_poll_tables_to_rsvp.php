@@ -161,10 +161,28 @@ return new class extends Migration
         });
 
         Schema::table('rsvp_shift', function (Blueprint $table) {
+            $table->renameColumn('rsvp_id', 'poll_id');
+            $table->renameColumn('time_slot_id', 'option_id');
+        });
+
+        Schema::table('rsvp_shift', function (Blueprint $table) {
             $table->index('poll_id', 'idx_po_poll_id');
             $table->index('option_id', 'idx_po_option_id');
             $table->foreign('poll_id')->references('poll_id')->on('poll')->onDelete('cascade')->onUpdate('cascade');
             $table->foreign('option_id')->references('option_id')->on('option')->onDelete('restrict')->onUpdate('cascade');
+        });
+
+        Schema::table('rsvp_response', function (Blueprint $table) {
+            $table->dropUnique('uq_rsvp_volunteer_rsvp');
+            $table->index('volunteer_id', 'idx_pv_volunteer_id');
+            $table->index('poll_id', 'idx_pv_poll_id');
+            $table->index('option_id', 'idx_pv_option_id');
+            $table->unique(['volunteer_id', 'poll_id'], 'uq_pv_volunteer_poll');
+        });
+
+        Schema::table('rsvp_shift', function (Blueprint $table) {
+            $table->index('poll_id', 'idx_po_poll_id');
+            $table->index('option_id', 'idx_po_option_id');
         });
 
         Schema::table('rsvp_response', function (Blueprint $table) {
@@ -189,5 +207,17 @@ return new class extends Migration
         Schema::rename('rsvp_shift', 'poll_option');
         Schema::rename('rsvp', 'poll');
         Schema::rename('time_slot', 'option');
+
+        Schema::table('poll', function (Blueprint $table) {
+            $table->renameColumn('rsvp_id', 'poll_id');
+        });
+
+        Schema::table('option', function (Blueprint $table) {
+            $table->renameColumn('time_slot_id', 'option_id');
+        });
+
+        Schema::table('poll_option', function (Blueprint $table) {
+            $table->renameColumn('rsvp_shift_id', 'poll_option_id');
+        });
     }
 };

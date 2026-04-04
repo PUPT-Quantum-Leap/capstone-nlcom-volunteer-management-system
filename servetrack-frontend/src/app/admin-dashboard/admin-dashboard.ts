@@ -19,6 +19,7 @@ import {
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { DatePipe, CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
 import { AdminDashboardService, DashboardVolunteerRow, VolunteerUser } from '../services/admin-dashboard.service';
@@ -34,13 +35,7 @@ import { AnalyticsService, ReportData } from '../services/analytics.service';
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    ReactiveFormsModule, 
-    DatePipe, 
-    CommonModule, 
-    IncidentCommandSystemComponent,
-    AdminHeaderComponent
-  ],
+  imports: [ReactiveFormsModule, DatePipe, CommonModule, IncidentCommandSystemComponent, AdminHeaderComponent],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
@@ -58,10 +53,7 @@ export class AdminDashboard implements OnInit {
   readonly Math = Math;
 
   currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
-  userName = computed(() => this.authService.currentUser()?.name || 'Admin');
-
-  currentUser = computed(() => this.authService.currentUser());
-  
+  userName = signal(this.authService.currentUser()?.name || 'Admin');
   sidebarCollapsed = signal(false);
   mobileSidebarOpen = signal(false);
   isLoading = signal(false);
@@ -81,7 +73,6 @@ export class AdminDashboard implements OnInit {
 
   searchQuery = signal('');
   userSearchQuery = signal('');
-  volunteerSearchQuery = signal('');
   userRoleFilter = signal('');
 
   editingRsvp = signal<Rsvp | null>(null);
@@ -99,20 +90,10 @@ export class AdminDashboard implements OnInit {
   currentPage = signal(1);
   usersPerPage = signal(5);
   usersTotalPages = computed(() => Math.ceil(this.filteredUsers().length / this.usersPerPage()));
-  showArchivedUsers = signal(false);
-  archivedUsers = signal<User[]>([]);
-  archivedUsersPage = signal(1);
-  archivedUsersPerPage = signal(5);
-  archivedUsersTotalPages = computed(() => Math.ceil(this.archivedUsers().length / this.archivedUsersPerPage()));
-  paginatedArchivedUsers = computed(() => {
-    const start = (this.archivedUsersPage() - 1) * this.archivedUsersPerPage();
-    const end = start + this.archivedUsersPerPage();
-    return this.archivedUsers().slice(start, end);
-  });
   
   volunteersPage = signal(1);
   volunteersPerPage = signal(5);
-  volunteersTotalPages = computed(() => Math.ceil(this.filteredVolunteers().length / this.volunteersPerPage()));
+  volunteersTotalPages = computed(() => Math.ceil(this.volunteerRows().length / this.volunteersPerPage()));
   showArchivedVolunteers = signal(false);
   archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
 
@@ -235,7 +216,18 @@ export class AdminDashboard implements OnInit {
   });
 
   filteredUsers = computed(() => {
-    let filtered = this.users().filter(u => !u.deleted_at);
+    let filtered = this.volunteers().map((v: VolunteerUser) => ({
+      id: v.volunteer_id,
+      name: v.full_name,
+      email: v.email,
+      role: 'volunteer' as 'admin' | 'coordinator' | 'volunteer',
+      created_at: v.created_at,
+      updated_at: v.updated_at,
+      deleted_at: null
+    }));
+    
+    // Filter out soft-deleted users
+    filtered = filtered.filter(u => !u.deleted_at);
     
     const role = this.userRoleFilter();
     const search = this.userSearchQuery().toLowerCase().trim();
@@ -259,27 +251,14 @@ export class AdminDashboard implements OnInit {
   });
 
   paginatedVolunteers = computed(() => {
-    const volunteers = this.filteredVolunteers();
+    const volunteers = this.showArchivedVolunteers() 
+      ? this.archivedVolunteerRows() 
+      : this.volunteerRows();
     const page = this.volunteersPage();
     const perPage = this.volunteersPerPage();
     const start = (page - 1) * perPage;
     const end = start + perPage;
     return volunteers.slice(start, end);
-  });
-
-  filteredVolunteers = computed(() => {
-    const volunteers = this.showArchivedVolunteers() 
-      ? this.archivedVolunteerRows() 
-      : this.volunteerRows();
-    const search = this.volunteerSearchQuery().toLowerCase().trim();
-    if (!search) {
-      return volunteers;
-    }
-    return volunteers.filter(v => 
-      v.name.toLowerCase().includes(search) || 
-      v.email.toLowerCase().includes(search) ||
-      v.department?.toLowerCase().includes(search)
-    );
   });
 
   // Custom validator to ensure cutoff date is not after event date
@@ -312,11 +291,12 @@ export class AdminDashboard implements OnInit {
 
   rsvpForm = this.fb.group({
     title: ['', [Validators.required, Validators.minLength(3)]],
+    eventLocation: ['', [Validators.required, Validators.maxLength(255)]],
     date: ['', Validators.required],
     cutOffDay: ['', Validators.required],
     cutOffTime: ['', Validators.required],
     description: ['', [Validators.required, Validators.minLength(10)]],
-    options: this.fb.array([]),
+    shifts: this.fb.array([]),
   }, { validators: this.cutoffDateValidator() });
 
   volunteerForm = this.fb.group({
@@ -400,19 +380,10 @@ export class AdminDashboard implements OnInit {
   setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'): void {
     this.currentView.set(view);
     this.currentPage.set(1);
-    
-    if (view === 'users') {
-      this.loadUsers();
-    }
   }
 
   setSearchQuery(value: string): void {
     this.searchQuery.set(value);
-  }
-
-  setVolunteerSearchQuery(value: string): void {
-    this.volunteerSearchQuery.set(value);
-    this.volunteersPage.set(1);
   }
 
   runSearch(): void {
@@ -503,46 +474,11 @@ export class AdminDashboard implements OnInit {
   }
 
   loadUsers(): void {
-    this.isLoading.set(true);
-    this.userService.getUsers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.users.set(response.data);
-        }
-        this.isLoading.set(false);
-      },
-      error: (error) => {
-        console.error('Error loading users:', error);
-        this.isLoading.set(false);
+    this.userService.getUsers().subscribe((response) => {
+      if (response.success) {
+        this.users.set(response.data);
       }
     });
-  }
-
-  loadArchivedUsers(): void {
-    this.isLoading.set(true);
-    this.userService.getArchivedUsers().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.archivedUsers.set(response.data);
-        }
-        this.isLoading.set(false);
-      },
-      error: (error) => {
-        console.error('Error loading archived users:', error);
-        this.isLoading.set(false);
-      }
-    });
-  }
-
-  switchToActiveUsers(): void {
-    this.showArchivedUsers.set(false);
-    this.currentPage.set(1);
-  }
-
-  switchToArchivedUsers(): void {
-    this.showArchivedUsers.set(true);
-    this.archivedUsersPage.set(1);
-    this.loadArchivedUsers();
   }
 
   setUserSearchQuery(query: string): void {
@@ -595,48 +531,6 @@ export class AdminDashboard implements OnInit {
     }
     
     return pages;
-  }
-
-  getArchivedUsersPageNumbers(): number[] {
-    const total = this.archivedUsersTotalPages();
-    const current = this.archivedUsersPage();
-    const pages: number[] = [];
-    
-    if (total <= 7) {
-      for (let i = 1; i <= total; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (current <= 3) {
-        pages.push(1, 2, 3, 4, -1, total);
-      } else if (current >= total - 2) {
-        pages.push(1, -1, total - 3, total - 2, total - 1, total);
-      } else {
-        pages.push(1, -1, current - 1, current, current + 1, -1, total);
-      }
-    }
-    
-    return pages;
-  }
-
-  goToArchivedUsersPage(page: number): void {
-    const totalPages = this.archivedUsersTotalPages();
-    if (page >= 1 && page <= totalPages) {
-      this.archivedUsersPage.set(page);
-    }
-  }
-
-  nextArchivedUsersPage(): void {
-    const totalPages = this.archivedUsersTotalPages();
-    if (this.archivedUsersPage() < totalPages) {
-      this.archivedUsersPage.update(page => page + 1);
-    }
-  }
-
-  previousArchivedUsersPage(): void {
-    if (this.archivedUsersPage() > 1) {
-      this.archivedUsersPage.update(page => page - 1);
-    }
   }
 
   goToVolunteersPage(page: number): void {
@@ -911,7 +805,7 @@ export class AdminDashboard implements OnInit {
   }
 
   get rsvpShifts(): FormArray {
-    return this.rsvpForm.get('options') as FormArray;
+    return this.rsvpForm.get('shifts') as FormArray;
   }
 
   openShareRsvpModal(rsvp: Rsvp): void {
@@ -1061,6 +955,7 @@ export class AdminDashboard implements OnInit {
 
     this.rsvpForm.patchValue({
       title: rsvp.title,
+      eventLocation: rsvp.eventLocation ?? '',
       date: parseBackendDate(rsvp.date),
       cutOffDay: parseBackendDate(rsvp.cutOffDay),
       cutOffTime: parseBackendTime(rsvp.cutOffTime),
@@ -1121,11 +1016,12 @@ export class AdminDashboard implements OnInit {
     // The frontend form / DTO uses camelCase; the API requires snake_case field names.
     const payload = {
       title: formValue.title!,
+      event_location: formValue.eventLocation!,
       date: formatDateForBackend(formValue.date!),
       cutoff_day: formatDateForBackend(formValue.cutOffDay!),
       cutoff_time: formatTimeForBackend(formValue.cutOffTime!),
       description: formValue.description!,
-      options: (formValue.options as { startTime: string; endTime: string; capacity: number }[]).map((opt) => {
+      shifts: (formValue.shifts as { startTime: string; endTime: string; capacity: number }[]).map((opt) => {
         const timeSlotStr = `${opt.startTime} - ${opt.endTime}`;
         return {
           // `text` is required by the backend (stored in the `option` lookup table).
@@ -1201,6 +1097,23 @@ export class AdminDashboard implements OnInit {
   updateRsvpStatus(rsvpId: number, status: 'active' | 'closed' | 'draft'): void {
     this.rsvpService.updateRsvpStatus(rsvpId, status).subscribe(() => {
       this.loadRsvps();
+    });
+  }
+
+  notifyRsvp(rsvp: Rsvp): void {
+    forkJoin([
+      this.rsvpService.notifyFacebook(rsvp.id),
+      this.rsvpService.notifySms(rsvp.id),
+    ]).subscribe({
+      next: ([facebookResult, smsResult]) => {
+        this.showSnackbar(
+          `Notifications sent. Facebook: ${facebookResult.sent}/${facebookResult.total}, SMS: ${smsResult.sent}/${smsResult.total}`,
+          'success',
+        );
+      },
+      error: () => {
+        this.showSnackbar('Failed to send RSVP notifications', 'error');
+      },
     });
   }
 

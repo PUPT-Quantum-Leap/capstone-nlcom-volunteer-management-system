@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\CoordinatorController;
+use App\Http\Controllers\FacebookWebhookController;
 use App\Http\Controllers\RsvpController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VolunteerController;
@@ -30,6 +31,9 @@ Route::post('/admin/register', [AdminController::class, 'register'])
 // Coordinator registration - public signup with registration rate limit + email normalization
 Route::post('/coordinator/register', [CoordinatorController::class, 'register'])
     ->middleware(['api', 'guest', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration']);
+
+Route::get('/webhooks/facebook', [FacebookWebhookController::class, 'verify']);
+Route::post('/webhooks/facebook', [FacebookWebhookController::class, 'handle']);
 
 // Auth-required routes (all authenticated users)
 Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
