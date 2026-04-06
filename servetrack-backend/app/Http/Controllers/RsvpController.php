@@ -128,13 +128,17 @@ class RsvpController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        $rsvp = Rsvp::query()->find($id);
+        $rsvp = Rsvp::query()->with(['shifts', 'responses'])->find($id);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
         }
 
-        $rsvp->delete();
+        DB::transaction(function () use ($rsvp): void {
+            $rsvp->responses()->delete();
+            $rsvp->shifts()->detach();
+            $rsvp->delete();
+        });
 
         return response()->json(['message' => 'RSVP deleted successfully.']);
     }

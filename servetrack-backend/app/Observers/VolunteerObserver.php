@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\ProfileChangeLog;
 use App\Models\Volunteer;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class VolunteerObserver
 {
@@ -23,34 +24,41 @@ class VolunteerObserver
     {
         $dirty = $volunteer->getDirty();
         $original = $volunteer->getOriginal();
-        $userId = Auth::id() ?? $volunteer->user_id; // Use volunteer's user_id if auth is null
+        $userId = Auth::id() ?? $volunteer->user_id;
         $ip = request()->ip();
+
+        $logs = [];
 
         foreach ($dirty as $field => $newValue) {
             $oldValue = $original[$field] ?? null;
 
-            // Skip timestamps
             if (in_array($field, ['created_at', 'updated_at'])) {
                 continue;
             }
 
-            // Normalize values for comparison (handle date/time casting)
             $normalizedOld = $this->normalizeValue($oldValue);
             $normalizedNew = $this->normalizeValue($newValue);
 
-            // Skip if value hasn't actually changed
             if ($normalizedOld === $normalizedNew) {
                 continue;
             }
 
-            ProfileChangeLog::create([
+            $logs[] = [
                 'volunteer_id' => $volunteer->volunteer_id,
                 'changed_by_user_id' => $userId,
                 'field_name' => $field,
                 'old_value' => $normalizedOld,
                 'new_value' => $normalizedNew,
                 'ip_address' => $ip,
-            ]);
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        if (! empty($logs)) {
+            DB::transaction(function () use ($logs): void {
+                ProfileChangeLog::insert($logs);
+            });
         }
     }
 

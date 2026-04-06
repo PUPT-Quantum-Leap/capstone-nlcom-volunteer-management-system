@@ -472,14 +472,14 @@ class VolunteerController extends Controller
             ], 404);
         }
 
-        // Delete old photo if exists
-        if ($volunteer->profile_photo) {
-            Storage::disk('public')->delete($volunteer->profile_photo);
-        }
-
+        $oldPath = $volunteer->profile_photo;
         $path = $request->file('photo')->store('profile-photos', 'public');
 
         $volunteer->update(['profile_photo' => $path]);
+
+        if ($oldPath) {
+            Storage::disk('public')->delete($oldPath);
+        }
 
         return response()->json([
             'success' => true,
@@ -900,7 +900,7 @@ class VolunteerController extends Controller
      */
     public function softDelete(Request $request, int $id): JsonResponse
     {
-        $volunteer = Volunteer::withTrashed()->find($id);
+        $volunteer = Volunteer::withTrashed()->with('user')->find($id);
 
         if (! $volunteer) {
             return response()->json([
@@ -909,9 +909,14 @@ class VolunteerController extends Controller
             ], 404);
         }
 
-        // Use Laravel's soft delete method
         if (! $volunteer->trashed()) {
-            $volunteer->delete(); // This sets deleted_at automatically
+            DB::transaction(function () use ($volunteer): void {
+                $volunteer->delete();
+
+                if ($volunteer->user && ! $volunteer->user->trashed()) {
+                    $volunteer->user->delete();
+                }
+            });
         }
 
         return response()->json([
@@ -925,7 +930,7 @@ class VolunteerController extends Controller
      */
     public function restore(Request $request, int $id): JsonResponse
     {
-        $volunteer = Volunteer::onlyTrashed()->find($id);
+        $volunteer = Volunteer::onlyTrashed()->with('user')->find($id);
 
         if (! $volunteer) {
             return response()->json([
@@ -934,8 +939,13 @@ class VolunteerController extends Controller
             ], 404);
         }
 
-        // Use Laravel's restore method
-        $volunteer->restore(); // This clears deleted_at automatically
+        DB::transaction(function () use ($volunteer): void {
+            $volunteer->restore();
+
+            if ($volunteer->user && $volunteer->user->trashed()) {
+                $volunteer->user->restore();
+            }
+        });
 
         return response()->json([
             'success' => true,

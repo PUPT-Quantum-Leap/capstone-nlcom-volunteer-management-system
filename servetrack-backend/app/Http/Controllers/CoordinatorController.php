@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -36,13 +37,14 @@ class CoordinatorController extends Controller
         }
 
         try {
-            // Create coordinator user
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'role' => 'coordinator',
-            ]);
+            $user = DB::transaction(function () use ($request): User {
+                return User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'password' => Hash::make($request->password),
+                    'role' => 'coordinator',
+                ]);
+            });
 
             // Log the user in
             Auth::login($user);
@@ -73,7 +75,7 @@ class CoordinatorController extends Controller
             ], 201)->withCookie($cookie);
 
         } catch (\Exception $e) {
-            \Log::error('Coordinator registration failed', [
+            Log::error('Coordinator registration failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

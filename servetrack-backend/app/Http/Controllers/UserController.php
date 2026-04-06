@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
@@ -163,7 +164,7 @@ class UserController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
-        $user = User::withTrashed()->find($id);
+        $user = User::withTrashed()->with(['volunteer', 'admin', 'coordinator'])->find($id);
 
         if (! $user) {
             return response()->json([
@@ -173,7 +174,21 @@ class UserController extends Controller
         }
 
         try {
-            $user->forceDelete();
+            DB::transaction(function () use ($user): void {
+                if ($user->volunteer) {
+                    $user->volunteer->forceDelete();
+                }
+
+                if ($user->admin) {
+                    $user->admin->delete();
+                }
+
+                if ($user->coordinator) {
+                    $user->coordinator->delete();
+                }
+
+                $user->forceDelete();
+            });
 
             return response()->json([
                 'success' => true,
@@ -193,7 +208,7 @@ class UserController extends Controller
      */
     public function softDelete(Request $request, int $id): JsonResponse
     {
-        $user = User::withTrashed()->find($id);
+        $user = User::withTrashed()->with('volunteer')->find($id);
 
         if (! $user) {
             return response()->json([
@@ -203,7 +218,13 @@ class UserController extends Controller
         }
 
         if (! $user->trashed()) {
-            $user->delete();
+            DB::transaction(function () use ($user): void {
+                if ($user->volunteer && ! $user->volunteer->trashed()) {
+                    $user->volunteer->delete();
+                }
+
+                $user->delete();
+            });
         }
 
         return response()->json([
