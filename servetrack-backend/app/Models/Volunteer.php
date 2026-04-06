@@ -119,9 +119,9 @@ class Volunteer extends Model
         );
     }
 
-    public function pollVotes(): HasMany
+    public function rsvpResponses(): HasMany
     {
-        return $this->hasMany(PollVote::class, 'volunteer_id');
+        return $this->hasMany(RsvpResponse::class, 'volunteer_id');
     }
 
     public function smsNotifications(): HasMany

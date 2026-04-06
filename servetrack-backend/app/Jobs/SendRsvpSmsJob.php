@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 
 class SendRsvpSmsJob implements ShouldQueue
 {
@@ -18,10 +19,15 @@ class SendRsvpSmsJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
+    protected ?string $batchId;
+
     public function __construct(
         public int $volunteerId,
-        public int $rsvpId
-    ) {}
+        public int $rsvpId,
+        ?string $batchId = null
+    ) {
+        $this->batchId = $batchId;
+    }
 
     public function handle(SmsService $smsService): void
     {
@@ -29,9 +35,21 @@ class SendRsvpSmsJob implements ShouldQueue
         $rsvp = Rsvp::query()->find($this->rsvpId);
 
         if (! $volunteer || ! $rsvp) {
+            if ($this->batchId) {
+                Cache::increment("{$this->batchId}_failed");
+            }
+
             return;
         }
 
-        $smsService->sendRsvpNotification($volunteer, $rsvp);
+        if ($smsService->sendRsvpNotification($volunteer, $rsvp)) {
+            if ($this->batchId) {
+                Cache::increment("{$this->batchId}_sent");
+            }
+        } else {
+            if ($this->batchId) {
+                Cache::increment("{$this->batchId}_failed");
+            }
+        }
     }
 }

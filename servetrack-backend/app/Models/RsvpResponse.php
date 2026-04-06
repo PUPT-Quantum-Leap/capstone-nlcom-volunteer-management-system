@@ -9,8 +9,6 @@ class RsvpResponse extends Model
 {
     use HasFactory;
 
-    public $timestamps = false;
-
     protected $table = 'rsvp_response';
 
     protected $primaryKey = 'rsvp_response_id';
@@ -21,8 +19,6 @@ class RsvpResponse extends Model
         'time_slot_id',
         'voted_at',
         'sms_sent',
-        'facebook_id',
-        'facebook_name',
         'checked_in_at',
         'checked_out_at',
         'attendance_status',
@@ -56,7 +52,7 @@ class RsvpResponse extends Model
 
     public function smsNotifications(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(SmsNotification::class, 'poll_vote_id');
+        return $this->hasMany(SmsNotification::class, 'rsvp_response_id');
     }
 
     public function checkIn(): void

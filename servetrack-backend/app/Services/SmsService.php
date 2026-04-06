@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Jobs\SendRsvpSmsJob;
 use App\Models\Rsvp;
 use App\Models\Volunteer;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Twilio\Rest\Client;
 
@@ -75,18 +76,33 @@ class SmsService
         }
     }
 
-    public function broadcastRsvpNotification(Rsvp $rsvp): array
+    public function broadcastRsvpNotification(Rsvp $rsvp, int $ttl = 60): array
     {
+        $batchId = 'sms_broadcast_'.$rsvp->rsvp_id;
+
         $volunteers = Volunteer::whereNotNull('mobile_number')->get();
 
+        Cache::put("{$batchId}_total", $volunteers->count(), $ttl);
+        Cache::put("{$batchId}_sent", 0, $ttl);
+        Cache::put("{$batchId}_failed", 0, $ttl);
+
         foreach ($volunteers as $volunteer) {
-            SendRsvpSmsJob::dispatch($volunteer->volunteer_id, $rsvp->rsvp_id);
+            SendRsvpSmsJob::dispatch($volunteer->volunteer_id, $rsvp->rsvp_id, $batchId);
         }
 
         return [
             'total' => $volunteers->count(),
             'sent' => 0,
             'failed' => 0,
+        ];
+    }
+
+    public static function getBroadcastProgress(string $batchId): array
+    {
+        return [
+            'total' => Cache::get("{$batchId}_total", 0),
+            'sent' => Cache::get("{$batchId}_sent", 0),
+            'failed' => Cache::get("{$batchId}_failed", 0),
         ];
     }
 

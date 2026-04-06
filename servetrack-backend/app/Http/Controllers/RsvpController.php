@@ -308,7 +308,7 @@ class RsvpController extends Controller
         ]);
     }
 
-    public function notifyFacebook(int $id): JsonResponse
+    public function notifyFacebook(int $id, Request $request): JsonResponse
     {
         $rsvp = Rsvp::query()->find($id);
 
@@ -321,14 +321,15 @@ class RsvpController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Facebook notifications sent: {$result['sent']}/{$result['total']}",
+            'message' => "Facebook notifications queued: {$result['total']}",
             'total' => $result['total'],
             'sent' => $result['sent'],
             'failed' => $result['failed'],
+            'batchId' => "fb_broadcast_{$id}",
         ]);
     }
 
-    public function notifySms(int $id): JsonResponse
+    public function notifySms(int $id, Request $request): JsonResponse
     {
         $rsvp = Rsvp::query()->find($id);
 
@@ -346,10 +347,11 @@ class RsvpController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "SMS notifications sent: {$result['sent']}/{$result['total']}",
+            'message' => "SMS notifications queued: {$result['total']}",
             'total' => $result['total'],
             'sent' => $result['sent'],
             'failed' => $result['failed'],
+            'batchId' => "sms_broadcast_{$id}",
         ]);
     }
 }
