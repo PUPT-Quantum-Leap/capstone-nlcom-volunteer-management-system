@@ -1,0 +1,233 @@
+name: ServeTrack CD Deployment Workflow
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: servetrack-cd
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+      DEPLOY_BRANCH: ${{ secrets.DEPLOY_BRANCH || 'prod' }}
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js (frontend)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: servetrack-frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: servetrack-frontend
+        run: |
+          npm ci
+          npm run build --configuration=production
+
+      - name: Prepare prod branch (build artifacts)
+        run: |
+          set -e
+          mkdir -p /tmp/servetrack-build/frontend
+          mkdir -p /tmp/servetrack-build/backend
+          mkdir -p /tmp/servetrack-build/scripts
+          mkdir -p /tmp/servetrack-build/config
+
+          cp -R servetrack-frontend/dist /tmp/servetrack-build/frontend/
+          cp -R servetrack-backend /tmp/servetrack-build/backend/
+          cp -R scripts /tmp/servetrack-build/
+          cp -R config /tmp/servetrack-build/
+
+          git fetch origin prod || true
+          git checkout prod 2>/dev/null || git checkout --orphan prod
+
+          git rm -rf . 2>/dev/null || true
+
+          mkdir -p servetrack-frontend
+          mkdir -p servetrack-backend
+          mkdir -p scripts
+          mkdir -p config
+
+          cp -R /tmp/servetrack-build/frontend/dist servetrack-frontend/
+          cp -R /tmp/servetrack-build/backend/servetrack-backend/* servetrack-backend/
+          cp -R /tmp/servetrack-build/scripts/* scripts/
+          cp -R /tmp/servetrack-build/config/* config/
+
+          git add -f servetrack-frontend/dist
+          git add -f servetrack-backend
+          git add -f scripts
+          git add -f config
+
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git commit -m "Deploy: Build from main $(git rev-parse --short origin/main) at $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "No changes to commit"
+          git push origin prod --force
+
+      - name: Create backend env file artifact
+        run: |
+          mkdir -p build_artifacts
+          cat > build_artifacts/backend.env << 'EOF'
+          APP_NAME=ServeTrack
+          APP_ENV=production
+          APP_KEY=${{ secrets.APP_KEY }}
+          APP_DEBUG=false
+          APP_URL=https://servetrack.kaelvxdev.space
+          
+          LOG_CHANNEL=stack
+          LOG_LEVEL=info
+          
+          DB_CONNECTION=mysql
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_DATABASE=${{ secrets.DB_DATABASE }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          
+          CACHE_STORE=file
+          QUEUE_CONNECTION=sync
+          SESSION_DRIVER=file
+          SESSION_LIFETIME=120
+          
+          SANCTUM_STATEFUL_DOMAINS=servetrack.kaelvxdev.space
+          CORS_ALLOWED_ORIGINS=https://servetrack.kaelvxdev.space
+          
+          ADMIN_INVITE_CODE=${{ secrets.ADMIN_INVITE_CODE }}
+          ADMIN_ALLOWED_DOMAINS=${{ secrets.ADMIN_ALLOWED_DOMAINS }}
+          EOF
+
+      - name: Deploy environment file to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ env.VPS_PORT }}
+          script: |
+            sudo mkdir -p /etc/servetrack
+            sudo chmod 750 /etc/servetrack
+
+      - name: Copy environment file to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ env.VPS_PORT }}
+          source: "build_artifacts/backend.env"
+          target: "/tmp/"
+          overwrite: true
+
+      - name: Install env file securely
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ env.VPS_PORT }}
+          script: |
+            sudo mv /tmp/build_artifacts/backend.env /etc/servetrack/backend.env
+            sudo chown root:root /etc/servetrack/backend.env
+            sudo chmod 640 /etc/servetrack/backend.env
+
+      - name: Ensure VPS app directories
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ env.VPS_PORT }}
+          script: |
+            sudo mkdir -p /var/www/servetrack/scripts
+            sudo mkdir -p /var/www/servetrack/repo
+            sudo chown -R $USER:$USER /var/www/servetrack
+
+      - name: Copy deployment script to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ env.VPS_PORT }}
+          source: "scripts/deploy.sh"
+          target: "/var/www/servetrack/"
+          overwrite: true
+
+      - name: Copy systemd service to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ env.VPS_PORT }}
+          source: "config/servetrack-backend.service"
+          target: "/tmp/"
+          overwrite: true
+
+      - name: Copy nginx config to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ env.VPS_PORT }}
+          source: "config/servetrack-nginx.conf"
+          target: "/tmp/"
+          overwrite: true
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ env.VPS_PORT }}
+          script: |
+            sudo mkdir -p /var/www/servetrack
+            sudo chmod 755 /var/www/servetrack
+
+            sudo install -m 644 /tmp/config/servetrack-backend.service /etc/systemd/system/servetrack-backend.service
+            if [ ! -f /etc/nginx/sites-available/servetrack ] || [ ! -d /etc/letsencrypt/live/servetrack.kaelvxdev.space ]; then
+              sudo install -m 644 /tmp/config/servetrack-nginx.conf /etc/nginx/sites-available/servetrack
+            else
+              echo "Keeping existing nginx config to preserve Certbot SSL config"
+            fi
+            sudo ln -sf /etc/nginx/sites-available/servetrack /etc/nginx/sites-enabled/servetrack
+
+            sudo rm -f /etc/nginx/sites-enabled/default || true
+            sudo nginx -t
+            sudo systemctl reload nginx
+
+            if ! sudo test -d /etc/letsencrypt/live/servetrack.kaelvxdev.space; then
+              echo "No cert found yet. Run on VPS: sudo certbot --nginx -d servetrack.kaelvxdev.space"
+            fi
+
+            sudo chmod +x /var/www/servetrack/scripts/deploy.sh
+            export SERVETRACK_REPO_URL="${{ secrets.DEPLOY_REPO_URL }}"
+            export SERVETRACK_DEPLOY_BRANCH="${{ env.DEPLOY_BRANCH }}"
+            /var/www/servetrack/scripts/deploy.sh
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ env.VPS_PORT }}
+          script: |
+            systemctl is-active servetrack-backend nginx
+            echo "Checking local health..."
+            curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:8000/up
