@@ -46,6 +46,7 @@ return [
         'page_id' => env('FACEBOOK_PAGE_ID'),
         'page_access_token' => env('FACEBOOK_PAGE_ACCESS_TOKEN'),
         'redirect_uri' => env('FACEBOOK_REDIRECT_URI'),
+        'webhook_verify_token' => env('FACEBOOK_WEBHOOK_VERIFY_TOKEN'),
     ],
 
     'twilio' => [

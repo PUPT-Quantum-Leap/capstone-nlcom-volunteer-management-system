@@ -376,6 +376,37 @@ export class VolunteerDashboard implements OnInit {
     this.editingProfileId.set(data.volunteer_id);
   }
 
+  private loadRsvps(): void {
+    this.rsvpService.getRsvps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
+      const active = response.data.filter((r) => r.status === 'active');
+      this.rsvps.set(active);
+      const currentActiveRsvp = this.activeRsvp();
+
+      if (currentActiveRsvp) {
+        const refreshedActiveRsvp = active.find((rsvp) => rsvp.id === currentActiveRsvp.id);
+
+        if (refreshedActiveRsvp) {
+          this.activeRsvp.set(refreshedActiveRsvp);
+
+          return;
+        }
+      }
+
+      if (active.length > 0) {
+        this.setActiveRsvp(active[0]);
+      } else {
+        this.activeRsvp.set(null);
+      }
+    });
+  }
+
+  setActiveRsvp(rsvp: Rsvp): void {
+    this.activeRsvp.set(rsvp);
+    this.selectedShiftId.set(null);
+    this.hasSubmittedResponse.set(false);
+    this.rsvpError.set(null);
+  }
+
   private loadAttendanceStats(): void {
     this.volunteerService.getAttendanceStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
@@ -400,23 +431,6 @@ export class VolunteerDashboard implements OnInit {
         }
         this.isLoading.set(false);
       });
-  }
-
-  loadRsvps(): void {
-    this.rsvpService.getRsvps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response: { data: Rsvp[] }) => {
-      const active = response.data.filter((r: Rsvp) => r.status === 'active');
-      this.rsvps.set(active);
-      if (active.length > 0 && !this.activeRsvp()) {
-        this.setActiveRsvp(active[0]);
-      }
-    });
-  }
-
-  setActiveRsvp(rsvp: Rsvp): void {
-    this.activeRsvp.set(rsvp);
-    this.selectedShiftId.set(null);
-    this.hasSubmittedResponse.set(false);
-    this.rsvpError.set(null);
   }
 
   setAttendancePeriod(period: AttendancePeriod): void {

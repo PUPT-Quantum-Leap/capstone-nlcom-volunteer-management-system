@@ -25,6 +25,7 @@ class Volunteer extends Model
         'last_name',
         'facebook_name',
         'facebook_id',
+        'messenger_psid',
         'email',
         'birthdate',
         'address',
@@ -41,6 +42,7 @@ class Volunteer extends Model
         'birthdate' => 'date',
         'last_medical_examination' => 'date',
         'facebook_id' => 'integer',
+        'messenger_psid' => 'string',
     ];
 
     // Define Relationships

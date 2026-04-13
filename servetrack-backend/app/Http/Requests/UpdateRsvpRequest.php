@@ -18,7 +18,7 @@ class UpdateRsvpRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'date' => ['sometimes', 'date'],
             'event_location' => ['nullable', 'string', 'max:255'],
-            'cutoff_day' => ['sometimes', 'date', 'before_or_equal:date'],
+            'cutoff_day' => ['sometimes', 'date', 'after_or_equal:today', 'before_or_equal:date'],
             'cutoff_time' => ['sometimes', 'regex:/^([01]?[0-9]|1[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/', 'max:20'],
             'status' => ['sometimes', 'in:draft,active,closed'],
             'share_url' => ['nullable', 'string', 'max:500'],
@@ -34,6 +34,7 @@ class UpdateRsvpRequest extends FormRequest
         return [
             'title.max' => 'RSVP title may not exceed 100 characters.',
             'date.date' => 'Event date must be a valid date.',
+            'cutoff_day.after_or_equal' => 'Cut-off day cannot be in the past.',
             'cutoff_day.before_or_equal' => 'Cut-off day must not be after the event date.',
             'status.in' => 'Status must be draft, active, or closed.',
             'shifts.min' => 'At least one shift is required.',

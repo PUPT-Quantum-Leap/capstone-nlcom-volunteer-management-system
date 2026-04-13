@@ -1,0 +1,60 @@
+services:
+  frontend:
+    build:
+      context: ./servetrack-frontend
+      dockerfile: Dockerfile
+    command: npm run start:docker
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./servetrack-frontend:/app
+      - frontend_node_modules:/app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    networks: [servetrack]
+    depends_on:
+      backend:
+        condition: service_started
+
+  backend:
+    build:
+      context: ./servetrack-backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./servetrack-backend:/var/www
+      - backend_vendor:/var/www/vendor
+    env_file:
+      - ./servetrack-backend/.env.docker
+    networks: [servetrack]
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootsecret
+      MYSQL_DATABASE: servetrack
+      MYSQL_USER: servetrack
+      MYSQL_PASSWORD: secret
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [servetrack]
+
+networks:
+  servetrack:
+    driver: bridge
+
+volumes:
+  frontend_node_modules:
+  backend_vendor:
+  mysql_data:
