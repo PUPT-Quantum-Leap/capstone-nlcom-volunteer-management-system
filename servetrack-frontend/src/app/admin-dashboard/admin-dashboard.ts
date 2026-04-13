@@ -18,28 +18,53 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { DatePipe, CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
+import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
 import { AdminDashboardService, DashboardVolunteerRow, VolunteerUser } from '../services/admin-dashboard.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Rsvp, RsvpShift } from '../models/rsvp';
 import { RsvpService } from '../services/rsvp.service';
-import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
 import { User } from '../models/user';
 import { UserService } from '../services/user.service';
-import { AdminHeaderComponent } from '../components/admin-header/admin-header.component';
 import { AnalyticsService, ReportData } from '../services/analytics.service';
+
+interface EventModuleCard {
+  label: string;
+  value: number;
+  helper: string;
+}
+
+interface BackupRecord {
+  id: number;
+  name: string;
+  createdAt: string;
+  size: string;
+  type: 'Automatic' | 'Manual';
+  status: 'Completed' | 'In Progress' | 'Failed';
+}
+
+type DashboardView =
+  | 'overview'
+  | 'volunteers'
+  | 'attendance'
+  | 'performance'
+  | 'rsvps'
+  | 'ics'
+  | 'users'
+  | 'analytics'
+  | 'events'
+  | 'sms'
+  | 'backup';
 
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    ReactiveFormsModule, 
-    DatePipe, 
-    CommonModule, 
-    IncidentCommandSystemComponent,
-    AdminHeaderComponent
+    ReactiveFormsModule,
+    CommonModule,
+    IncidentCommandSystemComponent
   ],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
@@ -57,7 +82,22 @@ export class AdminDashboard implements OnInit {
   readonly defaultPhoto = '/assets/nlcom.png';
   readonly Math = Math;
 
-  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
+  readonly viewTitleMap: Record<DashboardView, string> = {
+    overview: 'Dashboard',
+    volunteers: 'Volunteer Management',
+    attendance: 'Attendance Management',
+    performance: 'Performance Metrics',
+    rsvps: 'RSVP Management',
+    ics: 'Incident Command System',
+    users: 'User Management',
+    analytics: 'Analytics',
+    events: 'Events Management',
+    sms: 'SMS Notifications',
+    backup: 'Backup and Recovery',
+  };
+
+  currentView = signal<DashboardView>('overview');
+  pageTitle = computed(() => this.viewTitleMap[this.currentView()]);
   userName = computed(() => this.authService.currentUser()?.name || 'Admin');
 
   currentUser = computed(() => this.authService.currentUser());
@@ -95,7 +135,7 @@ export class AdminDashboard implements OnInit {
 
   // RSVP signals (already declared above)
 
-  showAiModal = signal(false);
+
   currentPage = signal(1);
   usersPerPage = signal(5);
   usersTotalPages = computed(() => Math.ceil(this.filteredUsers().length / this.usersPerPage()));
@@ -135,6 +175,61 @@ export class AdminDashboard implements OnInit {
 
   notifications = signal<NotificationItem[]>([]);
 
+  smsMessage = signal('');
+  smsAudience = signal<'all' | 'active' | 'new'>('active');
+  smsSending = signal(false);
+  selectedSmsTemplate = signal('');
+
+  backupRecords = signal<BackupRecord[]>([
+    {
+      id: 1,
+      name: 'servetrack_backup_2026_03_01.zip',
+      createdAt: '2026-03-01T07:00:00',
+      size: '124.5 MB',
+      type: 'Automatic',
+      status: 'Completed',
+    },
+    {
+      id: 2,
+      name: 'servetrack_backup_2026_02_28.zip',
+      createdAt: '2026-02-28T23:30:00',
+      size: '118.2 MB',
+      type: 'Manual',
+      status: 'Completed',
+    },
+    {
+      id: 3,
+      name: 'servetrack_backup_2026_02_25.zip',
+      createdAt: '2026-02-25T03:00:00',
+      size: '115.8 MB',
+      type: 'Automatic',
+      status: 'Completed',
+    },
+  ]);
+  backupHistoryPage = signal(1);
+  backupHistoryPageSize = signal(5);
+  backupActionLoading = signal(false);
+  scheduledBackupEnabled = signal(true);
+  scheduledBackupFrequency = signal<'daily' | 'weekly' | 'monthly'>('weekly');
+
+  readonly smsTemplates: ReadonlyArray<{ name: string; message: string }> = [
+    {
+      name: 'Attendance Reminder',
+      message:
+        'Hello team! Friendly reminder to confirm attendance for your next assigned mission.',
+    },
+    {
+      name: 'Urgent Deployment',
+      message:
+        'Urgent volunteer callout: please check your ServeTrack dashboard for immediate deployment details.',
+    },
+    {
+      name: 'Thank You Note',
+      message:
+        'Thank you for serving with us. Your time and effort made a real impact in our latest outreach.',
+    },
+  ];
+
   notificationCount = computed(
     () => this.notifications().filter((notification) => !notification.read).length,
   );
@@ -143,6 +238,28 @@ export class AdminDashboard implements OnInit {
   activeVolunteers = signal(0);
   upcomingEvents = signal(0);
   completedMissions = signal(0);
+
+  // ── Real-time Clock ──────────────────────────────────────────────────────
+  currentTime = signal(new Date());
+  currentDateFormatted = computed(() => {
+    const date = this.currentTime();
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date);
+  });
+  currentTimeFormatted = computed(() => {
+    const date = this.currentTime();
+    return new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }).format(date);
+  });
+  private timeUpdateInterval: any;
 
   volunteerRows = signal<DashboardVolunteerRow[]>([]);
   performanceMetrics = signal<PerformanceMetric[]>([]);
@@ -232,6 +349,93 @@ export class AdminDashboard implements OnInit {
       return this.rsvps();
     }
     return this.rsvps().filter((rsvp) => rsvp.status === status);
+  });
+
+  upcomingEventRows = computed(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return this.rsvps()
+      .map((rsvp) => {
+        const parsedDate = this.safeDate(rsvp.date);
+        return {
+          id: rsvp.id,
+          title: rsvp.title,
+          dateLabel: rsvp.date,
+          dateValue: parsedDate ? parsedDate.getTime() : Number.MAX_SAFE_INTEGER,
+          status: rsvp.status,
+          responses: rsvp.totalResponses,
+        };
+      })
+      .filter((event) => event.dateValue >= today.getTime())
+      .sort((a, b) => a.dateValue - b.dateValue)
+      .slice(0, 5);
+  });
+
+  eventsModuleCards = computed<EventModuleCard[]>(() => {
+    const rsvps = this.rsvps();
+    const active = rsvps.filter((item) => item.status === 'active').length;
+    const closed = rsvps.filter((item) => item.status === 'closed').length;
+    const upcoming = this.upcomingEventRows().length;
+
+    return [
+      { label: 'Active RSVPs', value: active, helper: 'open for responses' },
+      { label: 'Upcoming Events', value: upcoming, helper: 'scheduled entries' },
+      { label: 'Closed Events', value: closed, helper: 'ready for review' },
+    ];
+  });
+
+  smsCharacterCount = computed(() => this.smsMessage().trim().length);
+
+  smsRecipientsCount = computed(() => {
+    const volunteers = this.volunteerRows().length;
+    const users = this.users().filter((user) => !user.deleted_at);
+
+    if (this.smsAudience() === 'all') {
+      return Math.max(volunteers, users.length);
+    }
+
+    if (this.smsAudience() === 'new') {
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+      return users.filter((user) => {
+        const created = this.safeDate(user.created_at);
+        return Boolean(created && created >= oneMonthAgo);
+      }).length;
+    }
+
+    return this.activeVolunteers();
+  });
+
+  backupTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.backupRecords().length / this.backupHistoryPageSize())),
+  );
+
+  paginatedBackupRecords = computed(() => {
+    const page = this.backupHistoryPage();
+    const size = this.backupHistoryPageSize();
+    const start = (page - 1) * size;
+    const end = start + size;
+
+    return this.backupRecords()
+      .slice()
+      .sort((a, b) => {
+        const bDate = this.safeDate(b.createdAt)?.getTime() ?? 0;
+        const aDate = this.safeDate(a.createdAt)?.getTime() ?? 0;
+        return bDate - aDate;
+      })
+      .slice(start, end);
+  });
+
+  latestBackup = computed(() => {
+    return this.backupRecords()
+      .slice()
+      .sort((a, b) => {
+        const bDate = this.safeDate(b.createdAt)?.getTime() ?? 0;
+        const aDate = this.safeDate(a.createdAt)?.getTime() ?? 0;
+        return bDate - aDate;
+      })[0] ?? null;
   });
 
   filteredUsers = computed(() => {
@@ -361,6 +565,21 @@ export class AdminDashboard implements OnInit {
     this.loadDashboardData();
     this.loadRsvps();
     this.loadUsers();
+
+    // Initialize clock
+    this.currentTime.set(new Date());
+
+    // Update every second
+    this.timeUpdateInterval = setInterval(() => {
+      this.currentTime.set(new Date());
+    }, 1000);
+
+    // Clean up on destroy
+    this.destroyRef.onDestroy(() => {
+      if (this.timeUpdateInterval) {
+        clearInterval(this.timeUpdateInterval);
+      }
+    });
   }
 
   private loadDashboardData(): void {
@@ -397,12 +616,16 @@ export class AdminDashboard implements OnInit {
     this.mobileSidebarOpen.set(false);
   }
 
-  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'): void {
+  setView(view: DashboardView): void {
     this.currentView.set(view);
     this.currentPage.set(1);
-    
+
     if (view === 'users') {
       this.loadUsers();
+    }
+
+    if (view === 'analytics') {
+      this.loadAnalyticsData();
     }
   }
 
@@ -474,6 +697,122 @@ export class AdminDashboard implements OnInit {
     this.setView('overview');
   }
 
+  goToVolunteersModule(): void {
+    this.setView('volunteers');
+  }
+
+  goToRsvpsModule(): void {
+    this.setView('rsvps');
+  }
+
+  setSmsAudience(value: 'all' | 'active' | 'new'): void {
+    this.smsAudience.set(value);
+  }
+
+  updateSmsMessage(value: string): void {
+    this.smsMessage.set(value);
+  }
+
+  applySmsTemplate(templateMessage: string): void {
+    this.selectedSmsTemplate.set(templateMessage);
+    this.smsMessage.set(templateMessage);
+  }
+
+  sendSmsBroadcast(): void {
+    const message = this.smsMessage().trim();
+
+    if (!message) {
+      this.showSnackbar('Enter a message before sending.', 'error');
+      return;
+    }
+
+    if (this.smsRecipientsCount() <= 0) {
+      this.showSnackbar('No recipients available for the selected audience.', 'error');
+      return;
+    }
+
+    this.smsSending.set(true);
+    window.setTimeout(() => {
+      this.smsSending.set(false);
+      this.showSnackbar(`SMS broadcast queued for ${this.smsRecipientsCount()} recipients.`, 'success');
+      this.smsMessage.set('');
+      this.selectedSmsTemplate.set('');
+    }, 900);
+  }
+
+  createBackup(): void {
+    this.backupActionLoading.set(true);
+    window.setTimeout(() => {
+      const now = new Date();
+      const backupName = `servetrack_backup_${now.toISOString().slice(0, 10).replace(/-/g, '_')}.zip`;
+      const sizeMb = (114 + Math.random() * 15).toFixed(1);
+
+      this.backupRecords.update((items) => [
+        {
+          id: Date.now(),
+          name: backupName,
+          createdAt: now.toISOString(),
+          size: `${sizeMb} MB`,
+          type: 'Manual',
+          status: 'Completed',
+        },
+        ...items,
+      ]);
+      this.backupHistoryPage.set(1);
+      this.backupActionLoading.set(false);
+      this.showSnackbar('Backup created successfully.', 'success');
+    }, 1000);
+  }
+
+  refreshBackups(): void {
+    this.backupActionLoading.set(true);
+    window.setTimeout(() => {
+      this.backupActionLoading.set(false);
+      this.showSnackbar('Backup history refreshed.', 'info');
+    }, 500);
+  }
+
+  downloadBackup(backup: BackupRecord): void {
+    this.showSnackbar(`Download started for ${backup.name}.`, 'info');
+  }
+
+  restoreBackup(backup: BackupRecord): void {
+    this.showSnackbar(`Restore request queued for ${backup.name}.`, 'success');
+  }
+
+  deleteBackup(backupId: number): void {
+    this.backupRecords.update((items) => items.filter((item) => item.id !== backupId));
+
+    const totalPages = this.backupTotalPages();
+    if (this.backupHistoryPage() > totalPages) {
+      this.backupHistoryPage.set(totalPages);
+    }
+
+    this.showSnackbar('Backup removed from history.', 'success');
+  }
+
+  setScheduledBackupFrequency(value: 'daily' | 'weekly' | 'monthly'): void {
+    this.scheduledBackupFrequency.set(value);
+  }
+
+  toggleScheduledBackups(): void {
+    this.scheduledBackupEnabled.update((enabled) => !enabled);
+    const stateLabel = this.scheduledBackupEnabled() ? 'enabled' : 'disabled';
+    this.showSnackbar(`Scheduled backups ${stateLabel}.`, 'info');
+  }
+
+  nextBackupHistoryPage(): void {
+    if (this.backupHistoryPage() < this.backupTotalPages()) {
+      this.backupHistoryPage.update((page) => page + 1);
+    }
+  }
+
+  previousBackupHistoryPage(): void {
+    if (this.backupHistoryPage() > 1) {
+      this.backupHistoryPage.update((page) => page - 1);
+    }
+  }
+
   toggleNotifications(): void {
     this.showNotifications.update((value) => !value);
   }
@@ -494,13 +833,7 @@ export class AdminDashboard implements OnInit {
     this.showLogoutModal.set(false);
   }
 
-  openAiModal(): void {
-    this.showAiModal.set(true);
-  }
 
-  closeAiModal(): void {
-    this.showAiModal.set(false);
-  }
 
   loadUsers(): void {
     this.isLoading.set(true);
@@ -1499,5 +1832,10 @@ export class AdminDashboard implements OnInit {
       default:
         return '';
     }
+  }
+
+  private safeDate(dateValue: string): Date | null {
+    const parsed = new Date(dateValue);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 }
