@@ -124,7 +124,7 @@ fi
 echo ""
 echo "Step 7: Installing PHP dependencies..."
 cd "$BACKEND_DIR"
-composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+sudo -u www-data composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 if [[ ! -f "$BACKEND_DIR/vendor/autoload.php" ]]; then
   echo "ERROR: composer install did not produce vendor/autoload.php"
@@ -133,11 +133,11 @@ fi
 
 echo ""
 echo "Step 8: Optimizing Laravel + migrating..."
-php artisan storage:link || true
-php artisan config:cache || true
-php artisan route:cache || true
-php artisan view:cache || true
-php artisan migrate --force
+sudo -u www-data php artisan storage:link || true
+sudo -u www-data php artisan config:cache || true
+sudo -u www-data php artisan route:cache || true
+sudo -u www-data php artisan view:cache || true
+sudo -u www-data php artisan migrate --force
 
 echo ""
 echo "Step 9: Restarting backend service..."
