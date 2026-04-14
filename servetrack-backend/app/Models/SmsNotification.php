@@ -13,7 +13,7 @@ class SmsNotification extends Model
 
     protected $fillable = [
         'volunteer_id',
-        'poll_vote_id',
+        'rsvp_response_id',
         'message',
         'sent_date',
     ];
@@ -27,8 +27,8 @@ class SmsNotification extends Model
         return $this->belongsTo(Volunteer::class, 'volunteer_id');
     }
 
-    public function pollVote(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function rsvpResponse(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(PollVote::class, 'poll_vote_id');
+        return $this->belongsTo(RsvpResponse::class, 'rsvp_response_id');
     }
 }
