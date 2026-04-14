@@ -61,4 +61,47 @@ class Rsvp extends Model
 
         return now()->greaterThan($cutoffDateTime);
     }
+
+    /**
+     * Validate if a status transition is allowed.
+     * Returns true if transition is valid, false otherwise.
+     *
+     * Valid transitions:
+     * - draft can go to: active, closed
+     * - active can go to: closed (only if no responses), draft (blocked)
+     * - closed cannot transition to anything
+     */
+    public function canTransitionTo(string $newStatus): bool
+    {
+        $currentStatus = $this->status;
+
+        // If status is the same, allow it
+        if ($currentStatus === $newStatus) {
+            return true;
+        }
+
+        // closed status is terminal - cannot transition
+        if ($currentStatus === 'closed') {
+            return false;
+        }
+
+        // draft can transition to active or closed
+        if ($currentStatus === 'draft') {
+            return in_array($newStatus, ['active', 'closed']);
+        }
+
+        // active can only transition to closed (must have no responses) or stay active
+        if ($currentStatus === 'active') {
+            if ($newStatus === 'draft') {
+                return false; // Cannot go back to draft
+            }
+
+            if ($newStatus === 'closed') {
+                // Allow closing only if there are no responses
+                return $this->responses()->count() === 0;
+            }
+        }
+
+        return false;
+    }
 }

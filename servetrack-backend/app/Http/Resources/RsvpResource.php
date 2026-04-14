@@ -19,13 +19,17 @@ class RsvpResource extends JsonResource
             'cutOffTime' => $this->cutoff_time ? date('g:i A', strtotime($this->cutoff_time)) : null,
             'status' => $this->status,
             'shareUrl' => $this->share_url,
-            'totalResponses' => $this->responses()->count(),
+            'totalResponses' => $this->responses_count ?? 0,
             'createdAt' => $this->created_at?->toDateString(),
             'shifts' => $this->whenLoaded('shifts', function () {
                 return $this->shifts->map(function ($shift) {
-                    $responseCount = $this->responses()
-                        ->where('time_slot_id', $shift->time_slot_id)
-                        ->count();
+                    // Count responses for this shift from the loaded responses relationship
+                    $responseCount = 0;
+                    if ($this->relationLoaded('responses')) {
+                        $responseCount = $this->responses
+                            ->where('time_slot_id', $shift->time_slot_id)
+                            ->count();
+                    }
 
                     return [
                         'id' => $shift->time_slot_id,

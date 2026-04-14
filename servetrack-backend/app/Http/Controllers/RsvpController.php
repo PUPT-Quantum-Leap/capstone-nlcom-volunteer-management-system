@@ -20,20 +20,25 @@ class RsvpController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = Rsvp::query()->with('shifts');
+        $query = Rsvp::query()
+            ->with(['shifts', 'responses'])
+            ->withCount('responses');
 
         if ($request->user()->role !== 'admin') {
             $query->where('status', 'active');
         }
 
-        $rsvps = $query->latest()->get();
+        $rsvps = $query->latest()->paginate(15);
 
         return RsvpResource::collection($rsvps);
     }
 
     public function show(int $id): RsvpResource|JsonResponse
     {
-        $rsvp = Rsvp::query()->with('shifts')->find($id);
+        $rsvp = Rsvp::query()
+            ->with(['shifts', 'responses'])
+            ->withCount('responses')
+            ->find($id);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
@@ -150,7 +155,20 @@ class RsvpController extends Controller
             return response()->json(['message' => 'RSVP not found.'], 404);
         }
 
-        $rsvp->update(['status' => $request->input('status')]);
+        $newStatus = $request->input('status');
+
+        // Check if transition is valid
+        if (! $rsvp->canTransitionTo($newStatus)) {
+            $message = match ($rsvp->status) {
+                'closed' => 'Cannot transition from closed status.',
+                'active' => $newStatus === 'draft' ? 'Cannot transition from active back to draft.' : 'Cannot close an active RSVP with responses.',
+                default => "Invalid status transition from {$rsvp->status} to {$newStatus}."
+            };
+
+            return response()->json(['message' => $message], 422);
+        }
+
+        $rsvp->update(['status' => $newStatus]);
         $rsvp->refresh();
 
         return response()->json(['message' => 'RSVP status updated.', 'status' => $rsvp->status]);
@@ -261,6 +279,12 @@ class RsvpController extends Controller
             'volunteer_id' => ['required', 'exists:volunteer,volunteer_id'],
         ]);
 
+        // Authorization: ensure user can only check in themselves
+        $volunteer = $request->user()->volunteer;
+        if (! $volunteer || $volunteer->volunteer_id != $request->volunteer_id) {
+            return response()->json(['message' => 'Unauthorized: You can only check in yourself.'], 403);
+        }
+
         $response = RsvpResponse::where('rsvp_id', $id)
             ->where('volunteer_id', $request->volunteer_id)
             ->first();
@@ -280,6 +304,12 @@ class RsvpController extends Controller
             'volunteer_id' => ['required', 'exists:volunteer,volunteer_id'],
         ]);
 
+        // Authorization: ensure user can only check out themselves
+        $volunteer = $request->user()->volunteer;
+        if (! $volunteer || $volunteer->volunteer_id != $request->volunteer_id) {
+            return response()->json(['message' => 'Unauthorized: You can only check out yourself.'], 403);
+        }
+
         $response = RsvpResponse::where('rsvp_id', $id)
             ->where('volunteer_id', $request->volunteer_id)
             ->first();
@@ -297,14 +327,21 @@ class RsvpController extends Controller
     {
         Rsvp::query()->findOrFail($id);
 
-        $responses = RsvpResponse::where('rsvp_id', $id)->get();
+        $responses = RsvpResponse::where('rsvp_id', $id)->paginate(50);
 
         return response()->json([
-            'total' => $responses->count(),
+            'total' => $responses->total(),
             'checked_in' => $responses->where('attendance_status', 'checked_in')->count(),
             'checked_out' => $responses->where('attendance_status', 'checked_out')->count(),
             'no_show' => $responses->where('attendance_status', 'no_show')->count(),
             'registered' => $responses->where('attendance_status', 'registered')->count(),
+            'data' => $responses->items(),
+            'pagination' => [
+                'current_page' => $responses->currentPage(),
+                'last_page' => $responses->lastPage(),
+                'per_page' => $responses->perPage(),
+                'total' => $responses->total(),
+            ],
         ]);
     }
 
