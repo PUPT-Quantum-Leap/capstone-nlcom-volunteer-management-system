@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Storage;
 
 describe('Profile Photo Upload', function (): void {
     beforeEach(function (): void {
+        if (! function_exists('imagecreatetruecolor')) {
+            $this->markTestSkipped('GD extension is required for image tests.');
+        }
         Storage::fake('public');
         $this->user = User::factory()->create();
         $this->volunteer = Volunteer::factory()->create(['user_id' => $this->user->id]);
@@ -27,14 +30,12 @@ describe('Profile Photo Upload', function (): void {
     });
 
     it('deletes old photo when uploading new one', function (): void {
-        // Upload first photo
         $oldPhoto = UploadedFile::fake()->image('old.jpg');
         $this->postJson('/api/volunteer/profile/photo', ['photo' => $oldPhoto])
             ->assertSuccessful();
 
         $oldPath = $this->volunteer->fresh()->profile_photo;
 
-        // Upload replacement photo
         $newPhoto = UploadedFile::fake()->image('new.jpg');
         $this->postJson('/api/volunteer/profile/photo', ['photo' => $newPhoto])
             ->assertSuccessful();
