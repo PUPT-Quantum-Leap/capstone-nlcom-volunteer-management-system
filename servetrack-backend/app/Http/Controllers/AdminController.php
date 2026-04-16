@@ -152,16 +152,31 @@ class AdminController extends Controller
         // Email normalization is now handled by NormalizeEmail middleware
 
         // Security gate: verify invite code and email domain before any other processing.
-        $genericError = 'Registration failed. Please contact your administrator.';
-
         $inviteCode = config('services.admin.invite_code');
-        if (empty($inviteCode) || $request->input('inviteCode') !== $inviteCode) {
-            return response()->json(['success' => false, 'message' => $genericError], 422);
+        if (empty($inviteCode)) {
+            Log::error('Admin registration attempted but no invite code is configured in .env');
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration is currently disabled. Please contact the system administrator.',
+            ], 422);
+        }
+
+        if ($request->input('inviteCode') !== $inviteCode) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid invite code. Please check and try again.',
+            ], 422);
         }
 
         $allowedDomainsRaw = config('services.admin.allowed_domains');
         if (empty($allowedDomainsRaw)) {
-            return response()->json(['success' => false, 'message' => $genericError], 422);
+            Log::error('Admin registration attempted but no allowed domains are configured in .env');
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration is currently disabled. Please contact the system administrator.',
+            ], 422);
         }
 
         $allowedDomains = array_map(
@@ -171,7 +186,10 @@ class AdminController extends Controller
 
         $emailDomain = strtolower(substr(strrchr((string) $request->input('email', ''), '@'), 1));
         if (! in_array($emailDomain, $allowedDomains, true)) {
-            return response()->json(['success' => false, 'message' => $genericError], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid email domain. Only addresses from '.config('services.admin.allowed_domains').' are allowed.',
+            ], 422);
         }
 
         // Validate incoming data
