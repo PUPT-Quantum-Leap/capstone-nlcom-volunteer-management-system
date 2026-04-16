@@ -18,7 +18,7 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { DatePipe, CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
@@ -61,7 +61,7 @@ type DashboardView =
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, CommonModule, IncidentCommandSystemComponent, AdminHeaderComponent],
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
@@ -79,7 +79,35 @@ export class AdminDashboard implements OnInit {
   readonly Math = Math;
 
   currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
-  userName = signal(this.authService.currentUser()?.name || 'Admin');
+  currentUser = computed(() => this.authService.currentUser());
+  pageTitle = computed(() => {
+    switch (this.currentView()) {
+      case 'overview':
+        return 'Dashboard';
+      case 'volunteers':
+        return 'Volunteer Management';
+      case 'attendance':
+        return 'Attendance';
+      case 'performance':
+        return 'Performance';
+      case 'rsvps':
+        return 'RSVP Management';
+      case 'ics':
+        return 'Incident Command System';
+      case 'users':
+        return 'User Management';
+      case 'analytics':
+        return 'Analytics & Reports';
+      case 'events':
+        return 'Events Overview';
+      case 'sms':
+        return 'SMS Notifications';
+      case 'backup':
+        return 'Backup & Recovery';
+      default:
+        return 'Admin Dashboard';
+    }
+  });
   sidebarCollapsed = signal(false);
   mobileSidebarOpen = signal(false);
   isLoading = signal(false);
@@ -96,6 +124,7 @@ export class AdminDashboard implements OnInit {
   showDeleteUserModal = signal(false);
   showResetPasswordModal = signal(false);
   showUserDetailsModal = signal(false);
+  showAiSidebar = signal(false);
 
   searchQuery = signal('');
   userSearchQuery = signal('');
@@ -119,9 +148,29 @@ export class AdminDashboard implements OnInit {
   
   volunteersPage = signal(1);
   volunteersPerPage = signal(5);
-  volunteersTotalPages = computed(() => Math.ceil(this.volunteerRows().length / this.volunteersPerPage()));
+  volunteerSearchQuery = signal('');
   showArchivedVolunteers = signal(false);
   archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
+
+  filteredVolunteers = computed(() => {
+    const search = this.volunteerSearchQuery().toLowerCase().trim();
+    const volunteers = this.showArchivedVolunteers()
+      ? this.archivedVolunteerRows()
+      : this.volunteerRows();
+
+    if (!search) {
+      return volunteers;
+    }
+
+    return volunteers.filter(v =>
+      v.name.toLowerCase().includes(search) ||
+      v.email.toLowerCase().includes(search) ||
+      (v.facebookName && v.facebookName.toLowerCase().includes(search)) ||
+      v.department.toLowerCase().includes(search)
+    );
+  });
+
+  volunteersTotalPages = computed(() => Math.ceil(this.filteredVolunteers().length / this.volunteersPerPage()));
 
   // Analytics signals
   reportData = signal<ReportData | null>(null);
@@ -406,19 +455,9 @@ export class AdminDashboard implements OnInit {
   });
 
   filteredUsers = computed(() => {
-    let filtered = this.volunteers().map((v: VolunteerUser) => ({
-      id: v.volunteer_id,
-      name: v.full_name,
-      email: v.email,
-      role: 'volunteer' as 'admin' | 'coordinator' | 'volunteer',
-      created_at: v.created_at,
-      updated_at: v.updated_at,
-      deleted_at: null
-    }));
-    
-    // Filter out soft-deleted users
-    filtered = filtered.filter(u => !u.deleted_at);
-    
+    // Use users() which contains all user types (admin, coordinator, volunteer)
+    let filtered = this.users().filter(u => !u.deleted_at);
+
     const role = this.userRoleFilter();
     const search = this.userSearchQuery().toLowerCase().trim();
 
@@ -441,14 +480,12 @@ export class AdminDashboard implements OnInit {
   });
 
   paginatedVolunteers = computed(() => {
-    const volunteers = this.showArchivedVolunteers() 
-      ? this.archivedVolunteerRows() 
-      : this.volunteerRows();
+    const filtered = this.filteredVolunteers();
     const page = this.volunteersPage();
     const perPage = this.volunteersPerPage();
     const start = (page - 1) * perPage;
     const end = start + perPage;
-    return volunteers.slice(start, end);
+    return filtered.slice(start, end);
   });
 
   // Custom validator to ensure cutoff date is not after event date
@@ -1551,6 +1588,14 @@ export class AdminDashboard implements OnInit {
     this.showArchivedVolunteers.update(show => !show);
   }
 
+  toggleAiSidebar(): void {
+    this.showAiSidebar.update(show => !show);
+  }
+
+  closeAiSidebar(): void {
+    this.showAiSidebar.set(false);
+  }
+
   showSnackbar(message: string, type: 'success' | 'error' | 'info' = 'success'): void {
     this.snackbarMessage.set(message);
     this.snackbarType.set(type);
@@ -1604,6 +1649,11 @@ export class AdminDashboard implements OnInit {
     this.showArchivedVolunteers.set(true);
     this.volunteersPage.set(1);
     this.loadArchivedVolunteers();
+  }
+
+  setVolunteerSearchQuery(query: string): void {
+    this.volunteerSearchQuery.set(query);
+    this.volunteersPage.set(1);
   }
 
   getResponsePercentage(rsvp: Rsvp, shift: RsvpShift): number {
