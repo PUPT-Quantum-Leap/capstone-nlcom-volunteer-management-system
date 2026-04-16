@@ -511,16 +511,16 @@
               </div>
             </div>
 
-            <div class="table-container">
+            <div class="table-container volunteer-table-container">
               <table class="data-table">
                 <thead>
                   <tr>
                     <th scope="col">Volunteer</th>
-                    <th scope="col">Facebook Name</th>
+                    <th scope="col">Facebook</th>
                     <th scope="col">Phone</th>
-                    <th scope="col">Department</th>
+                    <th scope="col">Dept</th>
                     <th scope="col">Status</th>
-                    <th scope="col">Joined Date</th>
+                    <th scope="col">Joined</th>
                     <th scope="col" style="text-align: right;">Actions</th>
                   </tr>
                 </thead>
@@ -548,8 +548,8 @@
                         </span>
                       </td>
                       <td>{{ volunteer.joined_date | date: 'MMM d, yyyy' }}</td>
-                      <td>
-                        <div class="action-buttons" style="justify-content: flex-end;">
+                      <td class="actions-cell">
+                        <div class="action-buttons">
                           @if (!showArchivedVolunteers()) {
                             <button type="button" class="icon-btn icon-btn-warning" (click)="openEditVolunteerModal(volunteer)"
                               [attr.aria-label]="'Edit ' + volunteer.name" title="Edit">
@@ -632,19 +632,144 @@
             <header class="module-header">
               <div class="header-content">
                 <h2>Attendance Management</h2>
-                <p>Track volunteer attendance and participation</p>
+                <p>Track volunteer check-ins, attendance history, and participation</p>
+              </div>
+              <div class="header-actions">
+                <button type="button" class="outline-btn" [class.active]="attendanceView() === 'daily'" (click)="setAttendanceView('daily')">Daily</button>
+                <button type="button" class="outline-btn" [class.active]="attendanceView() === 'history'" (click)="setAttendanceView('history')">History</button>
+                <button type="button" class="outline-btn" [class.active]="attendanceView() === 'reports'" (click)="setAttendanceView('reports')">Reports</button>
+                <div class="export-buttons">
+                  <button type="button" class="icon-btn icon-btn-secondary" (click)="exportAttendanceToPDF()" title="Export to PDF">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M12 18V12M12 12L9.5 14.5M12 12L14.5 14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <button type="button" class="icon-btn icon-btn-success" (click)="exportAttendanceToExcel()" title="Export to Excel">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M8 13H8.01M12 13H12.01M16 13H16.01M8 17H8.01M12 17H12.01M16 17H16.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </header>
-            <div class="empty-state-container coming-soon-card">
-              <div class="coming-soon-badge">Coming Soon</div>
-              <svg class="empty-state-icon coming-soon-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4"
-                  stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M12 2V11M12 11L9 8M12 11L15 8" stroke="currentColor" stroke-width="2"
-                  stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              <h3>Attendance Tracking</h3>
-              <p>We're building a comprehensive attendance management system. Monitor check-ins, track participation rates, and generate detailed reports — all in one place.</p>
+
+            <div class="filters-bar">
+              <div class="search-wrapper">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" />
+                  <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+                <input type="text" placeholder="Search volunteers..." [value]="attendanceSearchQuery()"
+                  (input)="setAttendanceSearchQuery(attendanceSearchInput.value)" #attendanceSearchInput
+                  aria-label="Search attendance records" />
+              </div>
+              <input type="date" class="filter-date-input" [value]="attendanceDateFilter()"
+                (change)="setAttendanceDateFilter(dateInput.value)" #dateInput aria-label="Filter by date" />
+            </div>
+
+            <div class="table-container attendance-table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Volunteer</th>
+                    <th scope="col">Department</th>
+                    <th scope="col">Check-in Time</th>
+                    <th scope="col">Check-out Time</th>
+                    <th scope="col">Duration</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (record of paginatedAttendance(); track record.id) {
+                    <tr>
+                      <td>
+                        <div class="volunteer-info-cell">
+                          <div class="volunteer-avatar" aria-hidden="true">
+                            {{ record.volunteerName.charAt(0) }}
+                          </div>
+                          <div class="volunteer-details">
+                            <span class="volunteer-name">{{ record.volunteerName }}</span>
+                            <span class="volunteer-meta">{{ record.email }}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{{ record.department }}</td>
+                      <td>{{ record.checkInTime || '—' }}</td>
+                      <td>{{ record.checkOutTime || '—' }}</td>
+                      <td>{{ record.duration || '—' }}</td>
+                      <td>
+                        <span class="status-badge" [class.status-active]="record.status === 'present'"
+                          [class.status-inactive]="record.status === 'absent'"
+                          [class.status-warning]="record.status === 'late'">
+                          {{ record.status | titlecase }}
+                        </span>
+                      </td>
+                      <td class="actions-cell">
+                        <div class="action-buttons">
+                          <button type="button" class="icon-btn icon-btn-info"
+                            (click)="viewAttendanceDetails(record)" title="View Details">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                              <path d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                              <path d="M2 12C2 12 5 5 12 5C19 5 22 12 22 12C22 12 19 19 12 19C5 19 2 12 2 12Z"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="7">
+                        <div class="empty-state-container">
+                          <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                            <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                          </svg>
+                          <p class="empty-state">No attendance records found for this date.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="pagination-container">
+              <div class="pagination-info">
+                @if (paginatedAttendance().length > 0) {
+                  Showing <strong>{{ (attendancePage() - 1) * attendancePerPage() + 1 }}</strong> to
+                  <strong>{{ Math.min(attendancePage() * attendancePerPage(), filteredAttendance().length) }}</strong>
+                  of <strong>{{ filteredAttendance().length }}</strong> records
+                } @else {
+                  No records found
+                }
+              </div>
+              @if (attendanceTotalPages() > 1) {
+                <nav class="pagination-controls" aria-label="Attendance pages">
+                  <button type="button" class="pagination-btn" [disabled]="attendancePage() === 1"
+                    (click)="previousAttendancePage()">Previous</button>
+                  <div class="pagination-numbers">
+                    @for (page of getAttendancePageNumbers(); track page) {
+                      @if (page === -1) {
+                        <span class="pagination-ellipsis">…</span>
+                      } @else {
+                        <button type="button" class="pagination-number" [class.active]="attendancePage() === page"
+                          (click)="goToAttendancePage(page)" [attr.aria-current]="attendancePage() === page ? 'page' : null">
+                          {{ page }}
+                        </button>
+                      }
+                    }
+                  </div>
+                  <button type="button" class="pagination-btn" [disabled]="attendancePage() === attendanceTotalPages()"
+                    (click)="nextAttendancePage()">Next</button>
+                </nav>
+              }
             </div>
           </section>
         }
@@ -1011,14 +1136,14 @@
               </select>
             </div>
 
-            <div class="table-container">
+            <div class="table-container users-table-container">
               <table class="data-table">
                 <thead>
                   <tr>
                     <th scope="col">User</th>
                     <th scope="col">Role</th>
                     <th scope="col">Joined Date</th>
-                    <th scope="col" style="text-align: right;">Actions</th>
+                    <th scope="col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1039,8 +1164,8 @@
                         <span class="role-badge" [class]="'role-' + user.role">{{ user.role }}</span>
                       </td>
                       <td>{{ user.created_at | date: 'MMM d, yyyy' }}</td>
-                      <td>
-                        <div class="action-buttons" style="justify-content: flex-end;">
+                      <td class="actions-cell">
+                        <div class="action-buttons">
                           <button type="button" class="icon-btn icon-btn-info" (click)="openUserDetailsModal(user)"
                             [attr.aria-label]="'View details for ' + user.name" title="View Details">
                             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -1453,7 +1578,7 @@
             </header>
 
             <section class="sms-layout">
-              <article class="sms-panel">
+              <article class="sms-panel sms-panel-compose">
                 <header class="sms-panel-header">
                   <h3>Compose Message</h3>
                 </header>
@@ -1510,6 +1635,45 @@
                       <p class="template-body">{{ template.message }}</p>
                     </button>
                   }
+                </div>
+              </article>
+
+              <article class="sms-panel sms-panel-auto sms-panel-compact">
+                <header class="sms-panel-header">
+                  <h3>Auto Cutoff SMS</h3>
+                  <span class="badge" [class.badge-active]="autoSmsEnabled()" [class.badge-inactive]="!autoSmsEnabled()">
+                    {{ autoSmsEnabled() ? 'ON' : 'OFF' }}
+                  </span>
+                </header>
+
+                <div class="auto-sms-compact">
+                  <label class="toggle-label">
+                    <input type="checkbox" [checked]="autoSmsEnabled()" (change)="setAutoSmsEnabled($any($event.target).checked)" />
+                    <span class="toggle-switch"></span>
+                    <span class="toggle-text">Auto-send before cutoff</span>
+                  </label>
+
+                  <div class="compact-row" [class.disabled]="!autoSmsEnabled()">
+                    <select class="form-input form-input-sm" [value]="autoSmsHoursBefore()"
+                      (change)="setAutoSmsHoursBefore(+$any($event.target).value)" [disabled]="!autoSmsEnabled()">
+                      <option value="6">6h</option>
+                      <option value="12">12h</option>
+                      <option value="24">24h</option>
+                      <option value="48">48h</option>
+                      <option value="72">72h</option>
+                    </select>
+                    <span class="compact-label">before cutoff</span>
+                  </div>
+
+                  <div class="compact-status">
+                    <span class="status-count">{{ autoSmsCutoffRecipients().length }}</span>
+                    <span class="status-text">upcoming</span>
+                  </div>
+
+                  <button type="button" class="primary-btn btn-sm" [disabled]="!autoSmsEnabled() || autoSmsCutoffRecipients().length === 0"
+                    (click)="sendAutomaticCutoffReminders()">
+                    Send Now
+                  </button>
                 </div>
               </article>
             </section>

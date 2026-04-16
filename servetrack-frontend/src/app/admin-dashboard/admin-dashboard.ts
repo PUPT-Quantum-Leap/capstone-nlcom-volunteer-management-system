@@ -45,6 +45,17 @@ interface BackupRecord {
   status: 'Completed' | 'In Progress' | 'Failed';
 }
 
+interface AttendanceRecord {
+  id: number;
+  volunteerName: string;
+  email: string;
+  department: string;
+  checkInTime: string | null;
+  checkOutTime: string | null;
+  duration: string | null;
+  status: 'present' | 'absent' | 'late';
+}
+
 type DashboardView =
   | 'overview'
   | 'volunteers'
@@ -172,6 +183,48 @@ export class AdminDashboard implements OnInit {
 
   volunteersTotalPages = computed(() => Math.ceil(this.filteredVolunteers().length / this.volunteersPerPage()));
 
+  // Attendance management signals
+  attendanceView = signal<'daily' | 'history' | 'reports'>('daily');
+  attendancePage = signal(1);
+  attendancePerPage = signal(5);
+  attendanceSearchQuery = signal('');
+  attendanceDateFilter = signal(new Date().toISOString().split('T')[0]);
+
+  // Mock attendance data (will be replaced with API call)
+  attendanceRecords = signal<AttendanceRecord[]>([
+    { id: 1, volunteerName: 'Agnes Felix', email: 'agnes.felix.21@servetrack.local', department: 'Mobile Kitchen Operations', checkInTime: '08:30 AM', checkOutTime: '12:00 PM', duration: '3h 30m', status: 'present' },
+    { id: 2, volunteerName: 'Robbie Panaligan', email: 'robbie.panaligan.22@servetrack.local', department: 'Relief Operations', checkInTime: '09:00 AM', checkOutTime: '11:30 AM', duration: '2h 30m', status: 'present' },
+    { id: 3, volunteerName: 'Natasya Angelina Lim', email: 'natasya.angelina.lim.23@servetrack.local', department: 'Mobile Kitchen Operations', checkInTime: '08:45 AM', checkOutTime: '01:00 PM', duration: '4h 15m', status: 'present' },
+    { id: 4, volunteerName: 'Lea Therese Chua', email: 'lea.therese.chua.24@servetrack.local', department: 'Individual & Corporate Partnerships', checkInTime: '09:15 AM', checkOutTime: null, duration: null, status: 'late' },
+    { id: 5, volunteerName: 'George Arvin Ventura', email: 'george.arvin.ventura.25@servetrack.local', department: 'Mobile Kitchen Operations', checkInTime: null, checkOutTime: null, duration: null, status: 'absent' },
+  ]);
+
+  filteredAttendance = computed(() => {
+    const search = this.attendanceSearchQuery().toLowerCase().trim();
+    const records = this.attendanceRecords();
+
+    if (!search) {
+      return records;
+    }
+
+    return records.filter(r =>
+      r.volunteerName.toLowerCase().includes(search) ||
+      r.email.toLowerCase().includes(search) ||
+      r.department.toLowerCase().includes(search)
+    );
+  });
+
+  paginatedAttendance = computed(() => {
+    const filtered = this.filteredAttendance();
+    const page = this.attendancePage();
+    const perPage = this.attendancePerPage();
+    const start = (page - 1) * perPage;
+    const end = start + perPage;
+    return filtered.slice(start, end);
+  });
+
+  attendanceTotalPages = computed(() => Math.ceil(this.filteredAttendance().length / this.attendancePerPage()));
+
   // Analytics signals
   reportData = signal<ReportData | null>(null);
   analyticsLoading = signal(false);
@@ -244,7 +297,26 @@ export class AdminDashboard implements OnInit {
       message:
         'Thank you for serving with us. Your time and effort made a real impact in our latest outreach.',
     },
+    {
+      name: 'RSVP Cutoff Reminder',
+      message:
+        'Reminder: The RSVP deadline for {event} is approaching on {cutoffDate}. Please confirm your attendance.',
+    },
   ];
+
+  // Automatic SMS for cutoff reminders
+  autoSmsEnabled = signal(false);
+  autoSmsHoursBefore = signal(24); // Hours before cutoff to send reminder
+  autoSmsCutoffRecipients = computed(() => {
+    const now = new Date();
+    const upcomingCutoffs = this.rsvps().filter(rsvp => {
+      if (!rsvp.cutOffDay) return false;
+      const cutoff = new Date(rsvp.cutOffDay + 'T' + (rsvp.cutOffTime || '23:59'));
+      const hoursUntil = (cutoff.getTime() - now.getTime()) / (1000 * 60 * 60);
+      return hoursUntil > 0 && hoursUntil <= this.autoSmsHoursBefore() && rsvp.status === 'active';
+    });
+    return upcomingCutoffs;
+  });
 
   notificationCount = computed(
     () => this.notifications().filter((notification) => !notification.read).length,
@@ -708,6 +780,39 @@ export class AdminDashboard implements OnInit {
     this.smsMessage.set(templateMessage);
   }
 
+  setAutoSmsEnabled(enabled: boolean): void {
+    this.autoSmsEnabled.set(enabled);
+    if (enabled) {
+      this.showSnackbar('Automatic SMS reminders enabled for upcoming cutoffs', 'success');
+    } else {
+      this.showSnackbar('Automatic SMS reminders disabled', 'info');
+    }
+  }
+
+  setAutoSmsHoursBefore(hours: number): void {
+    this.autoSmsHoursBefore.set(hours);
+  }
+
+  sendAutomaticCutoffReminders(): void {
+    const upcoming = this.autoSmsCutoffRecipients();
+    if (upcoming.length === 0) {
+      this.showSnackbar('No upcoming cutoffs within the configured timeframe', 'info');
+      return;
+    }
+
+    upcoming.forEach(rsvp => {
+      const message = this.smsTemplates
+        .find(t => t.name === 'RSVP Cutoff Reminder')?.message
+        .replace('{event}', rsvp.title)
+        .replace('{cutoffDate}', rsvp.cutOffDay) || '';
+
+      // TODO: Call API to send SMS to RSVP participants
+      console.log(`Sending cutoff reminder for ${rsvp.title}: ${message}`);
+    });
+
+    this.showSnackbar(`Sent cutoff reminders for ${upcoming.length} events`, 'success');
+  }
+
   sendSmsBroadcast(): void {
     const message = this.smsMessage().trim();
 
@@ -909,7 +1014,7 @@ export class AdminDashboard implements OnInit {
     const total = this.volunteersTotalPages();
     const current = this.volunteersPage();
     const pages: number[] = [];
-    
+
     if (total <= 7) {
       for (let i = 1; i <= total; i++) {
         pages.push(i);
@@ -923,8 +1028,76 @@ export class AdminDashboard implements OnInit {
         pages.push(1, -1, current - 1, current, current + 1, -1, total);
       }
     }
-    
+
     return pages;
+  }
+
+  // Attendance management methods
+  setAttendanceView(view: 'daily' | 'history' | 'reports'): void {
+    this.attendanceView.set(view);
+    this.attendancePage.set(1);
+  }
+
+  setAttendanceSearchQuery(query: string): void {
+    this.attendanceSearchQuery.set(query);
+    this.attendancePage.set(1);
+  }
+
+  setAttendanceDateFilter(date: string): void {
+    this.attendanceDateFilter.set(date);
+    this.attendancePage.set(1);
+  }
+
+  previousAttendancePage(): void {
+    if (this.attendancePage() > 1) {
+      this.attendancePage.update(p => p - 1);
+    }
+  }
+
+  nextAttendancePage(): void {
+    if (this.attendancePage() < this.attendanceTotalPages()) {
+      this.attendancePage.update(p => p + 1);
+    }
+  }
+
+  goToAttendancePage(page: number): void {
+    this.attendancePage.set(page);
+  }
+
+  getAttendancePageNumbers(): number[] {
+    const total = this.attendanceTotalPages();
+    const current = this.attendancePage();
+    const pages: number[] = [];
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (current <= 3) {
+        pages.push(1, 2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(1, -1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(1, -1, current - 1, current, current + 1, -1, total);
+      }
+    }
+
+    return pages;
+  }
+
+  viewAttendanceDetails(record: AttendanceRecord): void {
+    this.showSnackbar(`Viewing attendance for ${record.volunteerName}`, 'info');
+  }
+
+  exportAttendanceToPDF(): void {
+    this.showSnackbar('Exporting attendance to PDF...', 'info');
+    // TODO: Implement PDF export
+  }
+
+  exportAttendanceToExcel(): void {
+    this.showSnackbar('Exporting attendance to Excel...', 'info');
+    // TODO: Implement Excel export
   }
 
   openCreateUserModal(): void {
