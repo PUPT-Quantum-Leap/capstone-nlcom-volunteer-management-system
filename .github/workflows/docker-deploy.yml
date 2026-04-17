@@ -1,0 +1,123 @@
+name: Docker Build & Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ============================================
+  # STAGE 1: Run Tests (CI)
+  # ============================================
+  ci-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: "Frontend Tests"
+            working-directory: servetrack-frontend
+            steps: |
+              npm ci
+              npm run build
+              npm test
+          - name: "Backend Tests"
+            working-directory: servetrack-backend
+            steps: |
+              composer install
+              php artisan test
+
+    name: Test - ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js (Frontend)
+        if: matrix.name == 'Frontend Tests'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: servetrack-frontend/package-lock.json
+
+      - name: Setup PHP (Backend)
+        if: matrix.name == 'Backend Tests'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+          extensions: pdo_mysql
+
+      - name: Run Tests - ${{ matrix.name }}
+        working-directory: ${{ matrix.working-directory }}
+        env:
+          CI: true
+        run: ${{ matrix.steps }}
+
+  # ============================================
+  # STAGE 2: Build & Push Docker Images
+  # ============================================
+  build-and-push:
+    needs: ci-tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./servetrack-frontend
+          file: ./servetrack-frontend/Dockerfile.prod
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/servetrack-frontend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./servetrack-backend
+          file: ./servetrack-backend/Dockerfile.prod
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/servetrack-backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================
+  # STAGE 3: Deploy to VPS via SSH
+  # ============================================
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+            bash scripts/docker-deploy.sh
+        env:
+          DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+
+      - name: Deployment Status
+        run: |
+          echo "✅ Deployment completed!"
+          echo "App URL: https://servetrack.kaelvxdev.space"
