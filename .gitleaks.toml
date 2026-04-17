@@ -8,6 +8,7 @@ paths = [
   '''test/fixtures/secrets/*''',
   '''node_modules/*''',
   '''vendor/*''',
+  '''DOCKER_DEPLOYMENT_GUIDE\.md''',
 ]
 
 # Regex patterns for common secrets
