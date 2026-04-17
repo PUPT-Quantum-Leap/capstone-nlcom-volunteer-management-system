@@ -1687,6 +1687,98 @@ a:focus-visible {
   font-size: 0.9375rem;
 }
 
+// Export Buttons - Global styles for modern export actions
+.export-actions {
+  display: flex;
+  gap: 0.75rem;
+
+  .export-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--white);
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .export-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .export-text {
+      white-space: nowrap;
+    }
+
+    &.export-pdf {
+      border-color: #ff6b6b;
+      color: #ffffff;
+      background: #ff6b6b;
+
+      &:hover:not(:disabled) {
+        background: #fa5252;
+        border-color: #fa5252;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(255, 107, 107, 0.35);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.25);
+      }
+
+      .export-icon {
+        color: #ffffff;
+      }
+    }
+
+    &.export-excel {
+      border-color: #51cf66;
+      color: #ffffff;
+      background: #51cf66;
+
+      &:hover:not(:disabled) {
+        background: #40c057;
+        border-color: #40c057;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(81, 207, 102, 0.35);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+        box-shadow: 0 2px 8px rgba(81, 207, 102, 0.25);
+      }
+
+      .export-icon {
+        color: #ffffff;
+      }
+    }
+  }
+
+  @media (max-width: 576px) {
+    flex-direction: column;
+
+    .export-btn {
+      justify-content: center;
+    }
+  }
+}
+
 // Icon Button - for table actions and icon-only buttons
 .icon-btn {
   display: inline-flex;
@@ -2407,24 +2499,28 @@ a:focus-visible {
       font-weight: 600;
       text-transform: capitalize;
 
+      &.level-excellent,
       &.excellent {
-        background: var(--success-50);
-        color: var(--success-500);
+        background: var(--success-100);
+        color: var(--success-700);
       }
 
+      &.level-good,
       &.good {
-        background: var(--primary-50);
-        color: var(--primary-600);
+        background: var(--primary-100);
+        color: var(--primary-700);
       }
 
+      &.level-fair,
       &.average {
-        background: var(--warning-50);
-        color: var(--warning-500);
+        background: var(--warning-100);
+        color: var(--warning-700);
       }
 
+      &.level-needs-improvement,
       &.needs-improvement {
-        background: var(--danger-50);
-        color: var(--danger-500);
+        background: var(--danger-100);
+        color: var(--danger-700);
       }
     }
   }
@@ -4309,25 +4405,46 @@ a:focus-visible {
   flex-direction: column;
   gap: 1.25rem;
 
-  // Use consistent module-header styling
-  .module-header {
-     .header-actions {
-      gap: 0.625rem;
+  // Analytics filters with labels
+  .analytics-filters {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 1rem;
 
-      .outline-btn {
-        padding: 0.5rem 0.875rem;
-        font-size: 0.8125rem;
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
 
-        svg {
-          width: 16px;
-          height: 16px;
+      label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+      }
+
+      .filter-select {
+        min-width: 180px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+
+      .filter-group {
+        .filter-select {
+          width: 100%;
         }
       }
     }
   }
 
   // Stats grid - 3 columns max for better content visibility
-  .stats-grid {
+  .analytics-stats {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1rem;
 
@@ -4337,6 +4454,21 @@ a:focus-visible {
 
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
+    }
+
+    // Consistent icon sizing
+    .stat-icon {
+      svg {
+        width: 24px;
+        height: 24px;
+      }
+    }
+
+    // Fix trend indicator stroke-width consistency
+    .trend-indicator {
+      svg {
+        stroke-width: 2;
+      }
     }
   }
 }
@@ -4825,6 +4957,14 @@ a:focus-visible {
   .table-container {
     margin-top: 0.5rem;
   }
+
+  .pagination-container {
+    padding: 0.75rem 1rem;
+    background: var(--gray-50);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    border: 1px solid var(--gray-200);
+    border-top: none;
+  }
 }
 
 .volunteers-layout {
@@ -4993,25 +5133,19 @@ a:focus-visible {
 // SMS Module
 .sms-layout {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 1.5fr 1fr;
   gap: 1rem;
   align-items: start;
 
-  @media (max-width: 1200px) {
-    grid-template-columns: 1fr 1fr;
-
-    .sms-panel-compose {
-      grid-column: 1 / -1;
-    }
-  }
-
-  @media (max-width: 768px) {
+  @media (max-width: 992px) {
     grid-template-columns: 1fr;
-
-    .sms-panel-compose {
-      grid-column: auto;
-    }
   }
+}
+
+.sms-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .sms-panel {
@@ -5051,15 +5185,15 @@ a:focus-visible {
   }
 }
 
-// Automatic SMS panel styles
+// Auto SMS panel (in sidebar)
 .sms-panel-auto {
-  .auto-sms-config {
+  .auto-sms-content {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 
-  .toggle-group {
+  .auto-sms-toggle {
     .toggle-label {
       display: flex;
       align-items: center;
@@ -5085,6 +5219,7 @@ a:focus-visible {
         border-radius: 12px;
         position: relative;
         transition: background 0.2s ease;
+        flex-shrink: 0;
 
         &::after {
           content: '';
@@ -5106,192 +5241,77 @@ a:focus-visible {
     }
   }
 
-  .form-group.disabled {
-    opacity: 0.5;
-    pointer-events: none;
+  .auto-sms-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    &.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: var(--gray-600);
+    }
+
+    .time-selector {
+      select {
+        width: 100%;
+      }
+    }
   }
 
   .auto-sms-status {
-    padding: 0.75rem;
-    background: var(--gray-50);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--gray-200);
-
-    .status-row {
+    .status-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.5rem;
+      padding: 0.75rem;
+      background: var(--gray-50);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--gray-200);
 
       .status-label {
         font-size: 0.85rem;
         color: var(--gray-600);
       }
 
-      .status-value {
-        font-size: 0.9rem;
+      .status-badge {
+        padding: 0.25rem 0.625rem;
+        background: var(--primary-100);
+        color: var(--primary-700);
+        border-radius: var(--radius-full);
+        font-size: 0.875rem;
         font-weight: 600;
-        color: var(--primary-600);
-      }
-    }
-
-    .upcoming-cutoffs-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-top: 0.75rem;
-      padding-top: 0.75rem;
-      border-top: 1px solid var(--gray-200);
-
-      .cutoff-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.5rem;
-        background: white;
-        border-radius: var(--radius-sm);
-        font-size: 0.85rem;
-
-        .cutoff-title {
-          font-weight: 500;
-          color: var(--gray-800);
-        }
-
-        .cutoff-date {
-          color: var(--gray-500);
-          font-size: 0.8rem;
-        }
       }
     }
   }
 }
 
-// Compact auto SMS panel (smaller, on the right)
-.sms-panel-compact {
-  padding: 0.875rem;
-
-  .sms-panel-header {
-    margin-bottom: 0.75rem;
-
-    h3 {
-      font-size: 0.9rem;
-    }
-
-    .badge {
-      padding: 0.2rem 0.5rem;
-      font-size: 0.7rem;
-    }
-  }
-
-  .auto-sms-compact {
+// Compose panel
+.sms-panel-compose {
+  .compose-form {
     display: flex;
     flex-direction: column;
-    gap: 0.625rem;
+    gap: 1rem;
+  }
 
-    .toggle-label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
 
-      input[type="checkbox"] {
-        display: none;
-
-        &:checked + .toggle-switch {
-          background: var(--primary-500);
-
-          &::after {
-            transform: translateX(16px);
-          }
-        }
-      }
-
-      .toggle-switch {
-        width: 36px;
-        height: 20px;
-        background: var(--gray-300);
-        border-radius: 10px;
-        position: relative;
-        transition: background 0.2s ease;
-        flex-shrink: 0;
-
-        &::after {
-          content: '';
-          position: absolute;
-          top: 2px;
-          left: 2px;
-          width: 16px;
-          height: 16px;
-          background: white;
-          border-radius: 50%;
-          transition: transform 0.2s ease;
-        }
-      }
-
-      .toggle-text {
-        font-size: 0.8rem;
-        color: var(--gray-700);
-      }
-    }
-
-    .compact-row {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-
-      &.disabled {
-        opacity: 0.5;
-        pointer-events: none;
-      }
-
-      .form-input-sm {
-        padding: 0.375rem 0.5rem;
-        font-size: 0.8rem;
-        width: auto;
-        min-width: 60px;
-      }
-
-      .compact-label {
-        font-size: 0.75rem;
-        color: var(--gray-500);
-      }
-    }
-
-    .compact-status {
-      display: flex;
-      align-items: center;
-      gap: 0.375rem;
-      padding: 0.5rem;
-      background: var(--gray-50);
-      border-radius: var(--radius-md);
-
-      .status-count {
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--primary-600);
-      }
-
-      .status-text {
-        font-size: 0.75rem;
-        color: var(--gray-500);
-      }
-    }
-
-    .btn-sm {
-      padding: 0.5rem 0.75rem;
-      font-size: 0.8rem;
+    @media (max-width: 576px) {
+      grid-template-columns: 1fr;
     }
   }
-}
-
-.sms-form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
 }
 
 .sms-message-input {
-  min-height: 140px;
+  min-height: 120px;
+  resize: vertical;
 }
 
 .sms-footer-row {
@@ -5300,44 +5320,77 @@ a:focus-visible {
   margin-top: 0.5rem;
   font-size: 0.8rem;
   color: var(--gray-600);
-}
 
-.sms-actions {
-  margin-top: 1rem;
-}
-
-.sms-template-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.sms-template-item {
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
-  background: var(--gray-50);
-  text-align: left;
-  padding: 0.75rem;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-
-  &:hover {
-    border-color: var(--primary-500);
-    background: var(--primary-50);
+  strong {
+    color: var(--gray-900);
   }
 }
 
-.template-name {
-  margin: 0;
-  font-weight: 600;
-  color: var(--gray-900);
+.sms-actions {
+  margin-top: 0.5rem;
 }
 
-.template-body {
-  margin: 0.35rem 0 0;
-  color: var(--gray-600);
-  font-size: 0.85rem;
-  line-height: 1.35;
+// Templates panel
+.sms-panel-templates {
+  .sms-template-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .sms-template-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    background: var(--gray-50);
+    text-align: left;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--primary-50);
+      border-color: var(--primary-200);
+    }
+
+    .template-icon {
+      flex-shrink: 0;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--white);
+      border-radius: var(--radius-md);
+      color: var(--primary-600);
+
+      svg {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+    }
+
+    .template-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .template-name {
+      margin: 0 0 0.25rem 0;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--gray-900);
+    }
+
+    .template-preview {
+      margin: 0;
+      font-size: 0.75rem;
+      color: var(--gray-500);
+      line-height: 1.4;
+    }
+  }
 }
 
 // Backup Module refinements

@@ -638,20 +638,28 @@
                 <button type="button" class="outline-btn" [class.active]="attendanceView() === 'daily'" (click)="setAttendanceView('daily')">Daily</button>
                 <button type="button" class="outline-btn" [class.active]="attendanceView() === 'history'" (click)="setAttendanceView('history')">History</button>
                 <button type="button" class="outline-btn" [class.active]="attendanceView() === 'reports'" (click)="setAttendanceView('reports')">Reports</button>
-                <div class="export-buttons">
-                  <button type="button" class="icon-btn icon-btn-secondary" (click)="exportAttendanceToPDF()" title="Export to PDF">
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M12 18V12M12 12L9.5 14.5M12 12L14.5 14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                <div class="export-actions">
+                  <button type="button" class="export-btn export-pdf" (click)="exportAttendanceToPDF()">
+                    <span class="export-icon">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M13 3V9H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M9 13H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M9 17H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </span>
+                    <span class="export-text">Export PDF</span>
                   </button>
-                  <button type="button" class="icon-btn icon-btn-success" (click)="exportAttendanceToExcel()" title="Export to Excel">
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M14 2V8H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path d="M8 13H8.01M12 13H12.01M16 13H16.01M8 17H8.01M12 17H12.01M16 17H16.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                  <button type="button" class="export-btn export-excel" (click)="exportAttendanceToExcel()">
+                    <span class="export-icon">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M13 3V9H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M9 17L11 15L9 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 15H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </span>
+                    <span class="export-text">Export Excel</span>
                   </button>
                 </div>
               </div>
@@ -787,10 +795,9 @@
               <article class="stat-card">
                 <div class="stat-icon attendance-icon">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.8333 20.9435 14.7213 21.4778C12.6092 22.0122 10.3751 21.8151 8.38909 20.9216C6.40312 20.028 4.78471 18.4873 3.79118 16.5511C2.79764 14.6149 2.48443 12.3931 2.90479 10.2518C3.32515 8.11059 4.45053 6.18295 6.08779 4.77218C7.72505 3.36141 9.77125 2.55379 11.902 2.4802"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M22 4L12 14.01L9 11.01" stroke="currentColor" stroke-width="2"
-                      stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M22 11l-4 4-2-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </div>
                 <div class="stat-content">
@@ -803,8 +810,8 @@
               <article class="stat-card">
                 <div class="stat-icon hours-icon">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
-                    <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                    <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </div>
                 <div class="stat-content">
@@ -817,8 +824,8 @@
               <article class="stat-card">
                 <div class="stat-icon tasks-icon">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 8 21H16C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 16 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5M9 12L11 14L15 10"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </div>
                 <div class="stat-content">
@@ -831,8 +838,7 @@
               <article class="stat-card">
                 <div class="stat-icon rating-icon">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                   </svg>
                 </div>
                 <div class="stat-content">
@@ -892,34 +898,81 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (metric of sortedPerformanceMetrics(); track metric.id) {
-                    <tr>
-                      <td class="volunteer-name">{{ metric.volunteerName }}</td>
-                      <td>
-                        <div class="attendance-cell">
-                          <span class="attendance-value">{{ metric.attendanceRate }}%</span>
-                          <div class="mini-progress" role="progressbar"
-                            [attr.aria-valuenow]="metric.attendanceRate" aria-valuemin="0" aria-valuemax="100">
-                            <div class="mini-progress-fill" [style.width.%]="metric.attendanceRate"></div>
+                  @if (sortedPerformanceMetrics().length > 0) {
+                    @for (metric of paginatedPerformanceMetrics(); track metric.id) {
+                      <tr>
+                        <td class="volunteer-name">{{ metric.volunteerName }}</td>
+                        <td>
+                          <div class="attendance-cell">
+                            <span class="attendance-value">{{ metric.attendanceRate }}%</span>
+                            <div class="mini-progress" role="progressbar"
+                              [attr.aria-valuenow]="metric.attendanceRate" aria-valuemin="0" aria-valuemax="100">
+                              <div class="mini-progress-fill" [style.width.%]="metric.attendanceRate"></div>
+                            </div>
                           </div>
+                        </td>
+                        <td>{{ metric.hoursServed }}h</td>
+                        <td>{{ metric.tasksCompleted }}</td>
+                        <td class="rating-cell">
+                          <span class="rating-stars" aria-hidden="true">{{ getRatingStars(metric.rating) }}</span>
+                          <span class="rating-value">{{ metric.rating }}</span>
+                        </td>
+                        <td>
+                          <span class="performance-badge" [class]="getPerformanceLevelClass(metric.attendanceRate)">
+                            {{ getPerformanceLevel(metric.attendanceRate) }}
+                          </span>
+                        </td>
+                        <td class="last-activity">{{ metric.lastActivity | date: 'MMM d, yyyy' }}</td>
+                      </tr>
+                    }
+                  } @else {
+                    <tr class="empty-state-row">
+                      <td colspan="7">
+                        <div class="empty-state">
+                          <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                          <p class="empty-state-title">No performance data yet</p>
+                          <p class="empty-state-text">Volunteer performance metrics will appear here once activities are recorded.</p>
                         </div>
                       </td>
-                      <td>{{ metric.hoursServed }}h</td>
-                      <td>{{ metric.tasksCompleted }}</td>
-                      <td class="rating-cell">
-                        <span class="rating-stars" aria-hidden="true">{{ getRatingStars(metric.rating) }}</span>
-                        <span class="rating-value">{{ metric.rating }}</span>
-                      </td>
-                      <td>
-                        <span class="performance-badge" [class]="getPerformanceLevelClass(metric.attendanceRate)">
-                          {{ getPerformanceLevel(metric.attendanceRate) }}
-                        </span>
-                      </td>
-                      <td class="last-activity">{{ metric.lastActivity | date: 'MMM d, yyyy' }}</td>
                     </tr>
                   }
                 </tbody>
               </table>
+            </div>
+
+            <div class="pagination-container">
+              <div class="pagination-info">
+                @if (sortedPerformanceMetrics().length > 0) {
+                  Showing <strong>{{ (performancePage() - 1) * performancePerPage() + 1 }}</strong> to
+                  <strong>{{ Math.min(performancePage() * performancePerPage(), sortedPerformanceMetrics().length) }}</strong>
+                  of <strong>{{ sortedPerformanceMetrics().length }}</strong> records
+                } @else {
+                  No records found
+                }
+              </div>
+              @if (performanceTotalPages() > 1) {
+                <nav class="pagination-controls" aria-label="Performance pages">
+                  <button type="button" class="pagination-btn" [disabled]="performancePage() === 1"
+                    (click)="previousPerformancePage()">Previous</button>
+                  <div class="pagination-numbers">
+                    @for (page of getPerformancePageNumbers(); track page) {
+                      @if (page === -1) {
+                        <span class="pagination-ellipsis">…</span>
+                      } @else {
+                        <button type="button" class="pagination-number" [class.active]="performancePage() === page"
+                          (click)="goToPerformancePage(page)" [attr.aria-current]="performancePage() === page ? 'page' : null">
+                          {{ page }}
+                        </button>
+                      }
+                    }
+                  </div>
+                  <button type="button" class="pagination-btn" [disabled]="performancePage() === performanceTotalPages()"
+                    (click)="nextPerformancePage()">Next</button>
+                </nav>
+              }
             </div>
           </section>
         }
@@ -1263,61 +1316,64 @@
                 <h2>Analytics & Reports</h2>
                 <p>Comprehensive insights into volunteer performance and system metrics</p>
               </div>
-              <div class="header-actions">
-                <button type="button" class="outline-btn" (click)="exportReport('pdf')" [disabled]="analyticsLoading()">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M14 2V8H20M12 18V12M12 12L9 15M12 12L15 15"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  Export PDF
+              <div class="header-actions export-actions">
+                <button type="button" class="export-btn export-pdf" (click)="exportReport('pdf')" [disabled]="analyticsLoading()">
+                  <span class="export-icon">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M13 3V9H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M9 13H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M9 17H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                  <span class="export-text">Export PDF</span>
                 </button>
-                <button type="button" class="outline-btn" (click)="exportReport('excel')" [disabled]="analyticsLoading()">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M14 2V8H20M8 13H16M8 17H16M10 9H16"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  Export Excel
+                <button type="button" class="export-btn export-excel" (click)="exportReport('excel')" [disabled]="analyticsLoading()">
+                  <span class="export-icon">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M13 3V9H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M9 17L11 15L9 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M12 15H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </span>
+                  <span class="export-text">Export Excel</span>
                 </button>
               </div>
             </header>
 
-            <div class="filters-bar">
-              <select class="filter-select" [value]="selectedReportType()"
-                (change)="setReportType($any($event.target).value)" aria-label="Report type">
-                <option value="volunteers">Volunteer Overview</option>
-                <option value="attendance">Attendance Analysis</option>
-                <option value="performance">Performance Metrics</option>
-                <option value="department">Department Breakdown</option>
-                <option value="trends">Monthly Trends</option>
-              </select>
-              <select class="filter-select" [value]="dateRangeFilter()"
-                (change)="setDateRange($any($event.target).value)" aria-label="Date range">
-                <option value="all">All Time</option>
-                <option value="month">This Month</option>
-                <option value="quarter">This Quarter</option>
-                <option value="year">This Year</option>
-              </select>
-              <div class="header-actions">
-                <button type="button" class="outline-btn btn-sm" (click)="loadAnalyticsData()" [disabled]="analyticsLoading()">
-                  <svg viewBox="0 0 24 24" fill="none" [class.spinning]="analyticsLoading()" aria-hidden="true">
-                    <path d="M23 4V10H17M1 20V14H7M3.51 9C4.48765 6.6386 6.14526 4.62912 8.28383 3.23883C10.4224 1.84854 12.9156 1.13525 15.45 1.19503C17.9844 1.25481 20.4381 2.08516 22.5 3.57"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                  Refresh
-                </button>
+            <div class="filters-bar analytics-filters">
+              <div class="filter-group">
+                <label for="report-type">Report Type</label>
+                <select id="report-type" class="filter-select" [value]="selectedReportType()"
+                  (change)="setReportType($any($event.target).value)" aria-label="Report type">
+                  <option value="volunteers">Volunteer Overview</option>
+                  <option value="attendance">Attendance Analysis</option>
+                  <option value="performance">Performance Metrics</option>
+                  <option value="department">Department Breakdown</option>
+                  <option value="trends">Monthly Trends</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label for="date-range">Date Range</label>
+                <select id="date-range" class="filter-select" [value]="dateRangeFilter()"
+                  (change)="setDateRange($any($event.target).value)" aria-label="Date range">
+                  <option value="all">All Time</option>
+                  <option value="month">This Month</option>
+                  <option value="quarter">This Quarter</option>
+                  <option value="year">This Year</option>
+                </select>
               </div>
             </div>
 
-            <div class="stats-grid">
+            <div class="stats-grid analytics-stats">
               <article class="stat-card">
                 <div class="stat-icon total-icon">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M17 20C17 18.3431 14.7614 17 12 17C9.23858 17 7 18.3431 7 20M21 17C21 15.3431 19.2091 14 17 14M3 17C3 15.3431 4.79086 14 7 14M12 14C9.79086 14 8 12.2091 8 10C8 7.79086 9.79086 6 12 6C14.2091 6 16 7.79086 16 10C16 12.2091 14.2091 14 12 14ZM19 10C19 8.34315 17.6569 7 16 7M5 10C5 8.34315 6.34315 7 8 7"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
                 <div class="stat-content">
@@ -1326,8 +1382,8 @@
                   <div class="meta">
                     <span>Registered members</span>
                     <span class="trend-indicator up">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
-                        <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round" />
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                       +12%
                     </span>
@@ -1338,8 +1394,8 @@
               <article class="stat-card">
                 <div class="stat-icon active-icon">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
                 <div class="stat-content">
@@ -1348,8 +1404,8 @@
                   <div class="meta">
                     <span>Currently engaged</span>
                     <span class="trend-indicator up">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
-                        <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round" />
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                       +5.4%
                     </span>
@@ -1360,8 +1416,8 @@
               <article class="stat-card">
                 <div class="stat-icon hours-icon">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
-                    <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                    <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
                 <div class="stat-content">
@@ -1370,8 +1426,8 @@
                   <div class="meta">
                     <span>Hours served</span>
                     <span class="trend-indicator down">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
-                        <path d="M12 5v14M5 12l7 7 7-7" stroke-linecap="round" stroke-linejoin="round" />
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M12 5v14M5 12l7 7 7-7" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                       -0.8%
                     </span>
@@ -1382,9 +1438,9 @@
               <article class="stat-card">
                 <div class="stat-icon attendance-icon">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M22 11.08V12C21.9988 14.1564 21.3005 16.2547 20.0093 17.9818C18.7182 19.709 16.8333 20.9435 14.7213 21.4778C12.6092 22.0122 10.3751 21.8151 8.38909 20.9216C6.40312 20.028 4.78471 18.4873 3.79118 16.5511C2.79764 14.6149 2.48443 12.3931 2.90479 10.2518C3.32515 8.11059 4.45053 6.18295 6.08779 4.77218C7.72505 3.36141 9.77125 2.55379 11.902 2.4802"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M22 4L12 14.01L9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M22 11l-4 4-2-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
                 <div class="stat-content">
@@ -1396,8 +1452,8 @@
                   </div>
                   <div class="meta" style="margin-top: 0.75rem;">
                     <span class="trend-indicator up">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
-                        <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round" />
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                       +2.1%
                     </span>
@@ -1408,8 +1464,8 @@
               <article class="stat-card">
                 <div class="stat-icon tasks-icon">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 8 21H16C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 16 5H15M9 5C9 6.10457 9.89543 7 11 7H13C14.1046 7 15 6.10457 15 5M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5M9 12L11 14L15 10"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
                 <div class="stat-content">
@@ -1422,8 +1478,7 @@
               <article class="stat-card">
                 <div class="stat-icon rating-icon">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
                 <div class="stat-content">
@@ -1583,99 +1638,117 @@
                   <h3>Compose Message</h3>
                 </header>
 
-                <div class="sms-form-grid">
-                  <div class="form-group">
-                    <label for="sms-audience">Audience</label>
-                    <select id="sms-audience" class="form-input" [value]="smsAudience()"
-                      (change)="setSmsAudience($any($event.target).value)">
-                      <option value="active">Active volunteers</option>
-                      <option value="all">All records</option>
-                      <option value="new">New users (last 30 days)</option>
-                    </select>
+                <div class="compose-form">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="sms-audience">Audience</label>
+                      <select id="sms-audience" class="form-input" [value]="smsAudience()"
+                        (change)="setSmsAudience($any($event.target).value)">
+                        <option value="active">Active volunteers</option>
+                        <option value="all">All records</option>
+                        <option value="new">New users (last 30 days)</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="sms-template">Template</label>
+                      <select id="sms-template" class="form-input" [value]="selectedSmsTemplate()"
+                        (change)="applySmsTemplate($any($event.target).value)">
+                        <option value="">Start from scratch</option>
+                        @for (template of smsTemplates; track template.name) {
+                          <option [value]="template.message">{{ template.name }}</option>
+                        }
+                      </select>
+                    </div>
                   </div>
 
                   <div class="form-group">
-                    <label for="sms-template">Template</label>
-                    <select id="sms-template" class="form-input" [value]="selectedSmsTemplate()"
-                      (change)="applySmsTemplate($any($event.target).value)">
-                      <option value="">Start from scratch</option>
-                      @for (template of smsTemplates; track template.name) {
-                        <option [value]="template.message">{{ template.name }}</option>
-                      }
-                    </select>
+                    <label for="sms-message">Message</label>
+                    <textarea id="sms-message" class="form-textarea sms-message-input" rows="5" [value]="smsMessage()"
+                      (input)="updateSmsMessage($any($event.target).value)"
+                      placeholder="Type your broadcast message here…"></textarea>
+                    <div class="sms-footer-row">
+                      <span>Recipients: <strong>{{ smsRecipientsCount() }}</strong></span>
+                      <span>Characters: <strong>{{ smsCharacterCount() }}</strong></span>
+                    </div>
                   </div>
-                </div>
 
-                <div class="form-group">
-                  <label for="sms-message">Message</label>
-                  <textarea id="sms-message" class="form-textarea sms-message-input" rows="5" [value]="smsMessage()"
-                    (input)="updateSmsMessage($any($event.target).value)"
-                    placeholder="Type your broadcast message here…"></textarea>
-                  <div class="sms-footer-row">
-                    <span>Recipients: <strong>{{ smsRecipientsCount() }}</strong></span>
-                    <span>Characters: <strong>{{ smsCharacterCount() }}</strong></span>
-                  </div>
-                </div>
-
-                <div class="sms-actions">
-                  <button type="button" class="primary-btn" [disabled]="smsSending()" (click)="sendSmsBroadcast()">
-                    @if (smsSending()) { Sending… } @else { Queue Broadcast }
-                  </button>
-                </div>
-              </article>
-
-              <article class="sms-panel">
-                <header class="sms-panel-header">
-                  <h3>Template Quick Pick</h3>
-                </header>
-                <div class="sms-template-list">
-                  @for (template of smsTemplates; track template.name) {
-                    <button type="button" class="sms-template-item" (click)="applySmsTemplate(template.message)">
-                      <p class="template-name">{{ template.name }}</p>
-                      <p class="template-body">{{ template.message }}</p>
+                  <div class="sms-actions">
+                    <button type="button" class="primary-btn" [disabled]="smsSending()" (click)="sendSmsBroadcast()">
+                      @if (smsSending()) { Sending… } @else { Queue Broadcast }
                     </button>
-                  }
+                  </div>
                 </div>
               </article>
 
-              <article class="sms-panel sms-panel-auto sms-panel-compact">
-                <header class="sms-panel-header">
-                  <h3>Auto Cutoff SMS</h3>
-                  <span class="badge" [class.badge-active]="autoSmsEnabled()" [class.badge-inactive]="!autoSmsEnabled()">
-                    {{ autoSmsEnabled() ? 'ON' : 'OFF' }}
-                  </span>
-                </header>
-
-                <div class="auto-sms-compact">
-                  <label class="toggle-label">
-                    <input type="checkbox" [checked]="autoSmsEnabled()" (change)="setAutoSmsEnabled($any($event.target).checked)" />
-                    <span class="toggle-switch"></span>
-                    <span class="toggle-text">Auto-send before cutoff</span>
-                  </label>
-
-                  <div class="compact-row" [class.disabled]="!autoSmsEnabled()">
-                    <select class="form-input form-input-sm" [value]="autoSmsHoursBefore()"
-                      (change)="setAutoSmsHoursBefore(+$any($event.target).value)" [disabled]="!autoSmsEnabled()">
-                      <option value="6">6h</option>
-                      <option value="12">12h</option>
-                      <option value="24">24h</option>
-                      <option value="48">48h</option>
-                      <option value="72">72h</option>
-                    </select>
-                    <span class="compact-label">before cutoff</span>
+              <div class="sms-sidebar">
+                <article class="sms-panel sms-panel-templates">
+                  <header class="sms-panel-header">
+                    <h3>Templates</h3>
+                  </header>
+                  <div class="sms-template-list">
+                    @for (template of smsTemplates; track template.name) {
+                      <button type="button" class="sms-template-item" (click)="applySmsTemplate(template.message)">
+                        <span class="template-icon">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                          </svg>
+                        </span>
+                        <div class="template-content">
+                          <p class="template-name">{{ template.name }}</p>
+                          <p class="template-preview">{{ template.message | slice:0:40 }}{{ template.message.length > 40 ? '...' : '' }}</p>
+                        </div>
+                      </button>
+                    }
                   </div>
+                </article>
 
-                  <div class="compact-status">
-                    <span class="status-count">{{ autoSmsCutoffRecipients().length }}</span>
-                    <span class="status-text">upcoming</span>
+                <article class="sms-panel sms-panel-auto">
+                  <header class="sms-panel-header">
+                    <h3>Auto Cutoff SMS</h3>
+                    <span class="badge" [class.badge-active]="autoSmsEnabled()" [class.badge-inactive]="!autoSmsEnabled()">
+                      {{ autoSmsEnabled() ? 'ON' : 'OFF' }}
+                    </span>
+                  </header>
+
+                  <div class="auto-sms-content">
+                    <div class="auto-sms-toggle">
+                      <label class="toggle-label">
+                        <input type="checkbox" [checked]="autoSmsEnabled()" (change)="setAutoSmsEnabled($any($event.target).checked)" />
+                        <span class="toggle-switch"></span>
+                        <span class="toggle-text">Auto-send reminders</span>
+                      </label>
+                    </div>
+
+                    <div class="auto-sms-settings" [class.disabled]="!autoSmsEnabled()">
+                      <label>Send before cutoff</label>
+                      <div class="time-selector">
+                        <select class="form-input" [value]="autoSmsHoursBefore()"
+                          (change)="setAutoSmsHoursBefore(+$any($event.target).value)" [disabled]="!autoSmsEnabled()">
+                          <option value="6">6 hours</option>
+                          <option value="12">12 hours</option>
+                          <option value="24">24 hours</option>
+                          <option value="48">48 hours</option>
+                          <option value="72">72 hours</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="auto-sms-status">
+                      <div class="status-item">
+                        <span class="status-label">Upcoming cutoffs</span>
+                        <span class="status-badge">{{ autoSmsCutoffRecipients().length }}</span>
+                      </div>
+                    </div>
+
+                    <button type="button" class="primary-btn btn-sm" [disabled]="!autoSmsEnabled() || autoSmsCutoffRecipients().length === 0"
+                      (click)="sendAutomaticCutoffReminders()">
+                      Send Reminders Now
+                    </button>
                   </div>
-
-                  <button type="button" class="primary-btn btn-sm" [disabled]="!autoSmsEnabled() || autoSmsCutoffRecipients().length === 0"
-                    (click)="sendAutomaticCutoffReminders()">
-                    Send Now
-                  </button>
-                </div>
-              </article>
+                </article>
+              </div>
             </section>
           </section>
         }

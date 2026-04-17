@@ -358,6 +358,8 @@ export class AdminDashboard implements OnInit {
 
   sortField = signal<'name' | 'attendance' | 'hours' | 'tasks' | 'rating'>('attendance');
   sortDirection = signal<'asc' | 'desc'>('desc');
+  performancePage = signal(1);
+  performancePerPage = signal(10);
 
   sortedPerformanceMetrics = computed(() => {
     const metrics = [...this.performanceMetrics()];
@@ -403,6 +405,17 @@ export class AdminDashboard implements OnInit {
     });
 
     return metrics;
+  });
+
+  paginatedPerformanceMetrics = computed(() => {
+    const metrics = this.sortedPerformanceMetrics();
+    const start = (this.performancePage() - 1) * this.performancePerPage();
+    const end = start + this.performancePerPage();
+    return metrics.slice(start, end);
+  });
+
+  performanceTotalPages = computed(() => {
+    return Math.ceil(this.sortedPerformanceMetrics().length / this.performancePerPage());
   });
 
   averageAttendanceRate = computed(() => {
@@ -1291,6 +1304,52 @@ export class AdminDashboard implements OnInit {
       this.sortField.set(field);
       this.sortDirection.set('desc');
     }
+    this.performancePage.set(1);
+  }
+
+  previousPerformancePage(): void {
+    if (this.performancePage() > 1) {
+      this.performancePage.update((p) => p - 1);
+    }
+  }
+
+  nextPerformancePage(): void {
+    if (this.performancePage() < this.performanceTotalPages()) {
+      this.performancePage.update((p) => p + 1);
+    }
+  }
+
+  goToPerformancePage(page: number): void {
+    if (page >= 1 && page <= this.performanceTotalPages()) {
+      this.performancePage.set(page);
+    }
+  }
+
+  getPerformancePageNumbers(): number[] {
+    const total = this.performanceTotalPages();
+    const current = this.performancePage();
+    const pages: number[] = [];
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (current > 3) {
+        pages.push(-1);
+      }
+      const start = Math.max(2, current - 1);
+      const end = Math.min(total - 1, current + 1);
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) {
+        pages.push(-1);
+      }
+      pages.push(total);
+    }
+    return pages;
   }
 
   getRatingStars(rating: number): string {
