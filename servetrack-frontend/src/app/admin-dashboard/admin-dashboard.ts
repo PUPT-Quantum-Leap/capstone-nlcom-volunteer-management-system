@@ -188,6 +188,16 @@ export class AdminDashboard implements OnInit {
   attendanceSearchQuery = signal('');
   attendanceDateFilter = signal(new Date().toISOString().split('T')[0]);
 
+  // Assign Volunteer & Photo Upload OCR signals
+  showAssignVolunteerModal = signal(false);
+  showPhotoUploadModal = signal(false);
+  availableVolunteersForAssignment = signal<VolunteerUser[]>([]);
+  selectedVolunteersForAssignment = signal<number[]>([]);
+  photoUploadProcessing = signal(false);
+  photoUploadPreview = signal<string | null>(null);
+  detectedVolunteersFromPhoto = signal<Array<{ name: string; confidence: number }>>([]);
+  isAssigningVolunteers = signal(false);
+
   // Mock attendance data (will be replaced with API call)
   attendanceRecords = signal<AttendanceRecord[]>([
     { id: 1, volunteerName: 'Agnes Felix', email: 'agnes.felix.21@servetrack.local', department: 'Mobile Kitchen Operations', checkInTime: '08:30 AM', checkOutTime: '12:00 PM', duration: '3h 30m', status: 'present' },
@@ -1109,6 +1119,167 @@ export class AdminDashboard implements OnInit {
   exportAttendanceToExcel(): void {
     this.showSnackbar('Exporting attendance to Excel...', 'info');
     // TODO: Implement Excel export
+  }
+
+  // Assign Volunteer & Photo Upload OCR Methods
+  openAssignVolunteerModal(): void {
+    // Load available volunteers (those not already assigned for the selected date)
+    const assignedIds = this.attendanceRecords().map(r => r.id);
+    const available = this.volunteers().filter(v => !assignedIds.includes(v.volunteer_id));
+    this.availableVolunteersForAssignment.set(available);
+    this.selectedVolunteersForAssignment.set([]);
+    this.showAssignVolunteerModal.set(true);
+  }
+
+  closeAssignVolunteerModal(): void {
+    this.showAssignVolunteerModal.set(false);
+    this.selectedVolunteersForAssignment.set([]);
+    this.availableVolunteersForAssignment.set([]);
+  }
+
+  toggleVolunteerSelection(volunteerId: number): void {
+    const current = this.selectedVolunteersForAssignment();
+    if (current.includes(volunteerId)) {
+      this.selectedVolunteersForAssignment.set(current.filter(id => id !== volunteerId));
+    } else {
+      this.selectedVolunteersForAssignment.set([...current, volunteerId]);
+    }
+  }
+
+  selectAllVolunteers(): void {
+    const allIds = this.availableVolunteersForAssignment().map(v => v.volunteer_id);
+    this.selectedVolunteersForAssignment.set(allIds);
+  }
+
+  clearVolunteerSelection(): void {
+    this.selectedVolunteersForAssignment.set([]);
+  }
+
+  async assignSelectedVolunteers(): Promise<void> {
+    if (this.selectedVolunteersForAssignment().length === 0) {
+      this.showSnackbar('Please select at least one volunteer', 'error');
+      return;
+    }
+
+    this.isAssigningVolunteers.set(true);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const selectedVolunteers = this.volunteers().filter(v =>
+      this.selectedVolunteersForAssignment().includes(v.volunteer_id)
+    );
+
+    // Add to attendance records
+    const newRecords: AttendanceRecord[] = selectedVolunteers.map(v => ({
+      id: v.volunteer_id,
+      volunteerName: v.full_name,
+      email: v.email,
+      department: 'Unassigned',
+      checkInTime: null,
+      checkOutTime: null,
+      duration: null,
+      status: 'absent'
+    }));
+
+    this.attendanceRecords.update(records => [...records, ...newRecords]);
+
+    this.isAssigningVolunteers.set(false);
+    this.closeAssignVolunteerModal();
+    this.showSnackbar(`${newRecords.length} volunteer(s) assigned successfully`, 'success');
+  }
+
+  openPhotoUploadModal(): void {
+    this.showPhotoUploadModal.set(true);
+    this.photoUploadPreview.set(null);
+    this.detectedVolunteersFromPhoto.set([]);
+  }
+
+  closePhotoUploadModal(): void {
+    this.showPhotoUploadModal.set(false);
+    this.photoUploadPreview.set(null);
+    this.detectedVolunteersFromPhoto.set([]);
+    this.photoUploadProcessing.set(false);
+  }
+
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.showSnackbar('Please select a valid image file', 'error');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      this.showSnackbar('Image file size should be less than 10MB', 'error');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.photoUploadPreview.set(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async processPhotoOCR(): Promise<void> {
+    if (!this.photoUploadPreview()) {
+      this.showSnackbar('Please upload a photo first', 'error');
+      return;
+    }
+
+    this.photoUploadProcessing.set(true);
+
+    // Simulate OCR processing
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Mock detected volunteers (in real implementation, this would come from OCR API)
+    const mockDetected = [
+      { name: 'Agnes Felix', confidence: 95 },
+      { name: 'Robbie Panaligan', confidence: 88 },
+      { name: 'Natasya Angelina Lim', confidence: 92 },
+      { name: 'Lea Therese Chua', confidence: 85 },
+    ];
+
+    this.detectedVolunteersFromPhoto.set(mockDetected);
+    this.photoUploadProcessing.set(false);
+    this.showSnackbar(`Detected ${mockDetected.length} volunteers from photo`, 'success');
+  }
+
+  markDetectedVolunteersAsPresent(): void {
+    const detected = this.detectedVolunteersFromPhoto();
+    const currentTime = new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+
+    this.attendanceRecords.update(records =>
+      records.map(record => {
+        const detectedVolunteer = detected.find(d =>
+          record.volunteerName.toLowerCase().includes(d.name.toLowerCase()) ||
+          d.name.toLowerCase().includes(record.volunteerName.toLowerCase())
+        );
+
+        if (detectedVolunteer && record.status !== 'present') {
+          return {
+            ...record,
+            checkInTime: currentTime,
+            status: 'present'
+          };
+        }
+        return record;
+      })
+    );
+
+    this.closePhotoUploadModal();
+    this.showSnackbar('Attendance updated based on photo detection', 'success');
   }
 
   openCreateUserModal(): void {

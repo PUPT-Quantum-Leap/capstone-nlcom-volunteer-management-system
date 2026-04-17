@@ -611,6 +611,15 @@
                 <button type="button" class="outline-btn" [class.active]="attendanceView() === 'daily'" (click)="setAttendanceView('daily')">Daily</button>
                 <button type="button" class="outline-btn" [class.active]="attendanceView() === 'history'" (click)="setAttendanceView('history')">History</button>
                 <button type="button" class="outline-btn" [class.active]="attendanceView() === 'reports'" (click)="setAttendanceView('reports')">Reports</button>
+                <div class="attendance-actions">
+                  <button type="button" class="outline-btn photo-upload-btn" (click)="openPhotoUploadModal()">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Upload Photo
+                  </button>
+                </div>
                 <div class="export-actions">
                   <button type="button" class="export-btn export-pdf" (click)="exportAttendanceToPDF()">
                     <span class="export-icon">
@@ -752,6 +761,185 @@
                 </nav>
               }
             </div>
+
+            <!-- Assign Volunteer Modal -->
+            @if (showAssignVolunteerModal()) {
+              <div class="modal-backdrop" (click)="closeAssignVolunteerModal()">
+                <section class="modal-card assign-volunteer-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
+                  aria-labelledby="assign-volunteer-title">
+                  <header class="modal-header">
+                    <div class="modal-title-wrapper">
+                      <div class="modal-icon">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <h3 id="assign-volunteer-title">Assign Volunteers</h3>
+                    </div>
+                    <button type="button" class="modal-close-btn" (click)="closeAssignVolunteerModal()" aria-label="Close">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </button>
+                  </header>
+
+                  <div class="modal-body">
+                    <div class="assignment-info">
+                      <p class="assignment-date">
+                        <strong>Date:</strong> {{ attendanceDateFilter() | date:'mediumDate' }}
+                      </p>
+                      <p class="assignment-count" *ngIf="selectedVolunteersForAssignment().length > 0">
+                        {{ selectedVolunteersForAssignment().length }} volunteer(s) selected
+                      </p>
+                    </div>
+
+                    <div class="volunteer-selection-actions">
+                      <button type="button" class="text-btn" (click)="selectAllVolunteers()">Select All</button>
+                      <button type="button" class="text-btn" (click)="clearVolunteerSelection()">Clear Selection</button>
+                    </div>
+
+                    <div class="volunteers-selection-list">
+                      @if (availableVolunteersForAssignment().length > 0) {
+                        @for (volunteer of availableVolunteersForAssignment(); track volunteer.volunteer_id) {
+                          <label class="volunteer-checkbox-item">
+                            <input type="checkbox"
+                              [checked]="selectedVolunteersForAssignment().includes(volunteer.volunteer_id)"
+                              (change)="toggleVolunteerSelection(volunteer.volunteer_id)" />
+                            <div class="volunteer-checkbox-content">
+                              <div class="volunteer-avatar-sm">{{ volunteer.full_name.charAt(0) }}</div>
+                              <div class="volunteer-info">
+                                <span class="volunteer-name">{{ volunteer.full_name }}</span>
+                                <span class="volunteer-email">{{ volunteer.email }}</span>
+                              </div>
+                            </div>
+                          </label>
+                        }
+                      } @else {
+                        <div class="empty-state-container">
+                          <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                            <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                          </svg>
+                          <p class="empty-state">No available volunteers to assign.</p>
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="modal-footer modern-footer">
+                    <button type="button" class="outline-btn" (click)="closeAssignVolunteerModal()">Cancel</button>
+                    <button type="button" class="primary-btn" (click)="assignSelectedVolunteers()" [disabled]="selectedVolunteersForAssignment().length === 0 || isAssigningVolunteers()">
+                      @if (isAssigningVolunteers()) {
+                        <span class="loading-spinner" aria-hidden="true"></span>
+                        Assigning...
+                      } @else {
+                        Assign {{ selectedVolunteersForAssignment().length > 0 ? '(' + selectedVolunteersForAssignment().length + ')' : '' }}
+                      }
+                    </button>
+                  </div>
+                </section>
+              </div>
+            }
+
+            <!-- Photo Upload OCR Modal -->
+            @if (showPhotoUploadModal()) {
+              <div class="modal-backdrop" (click)="closePhotoUploadModal()">
+                <section class="modal-card photo-upload-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
+                  aria-labelledby="photo-upload-title">
+                  <header class="modal-header">
+                    <div class="modal-title-wrapper">
+                      <div class="modal-icon">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <h3 id="photo-upload-title">Upload Attendance Photo</h3>
+                    </div>
+                    <button type="button" class="modal-close-btn" (click)="closePhotoUploadModal()" aria-label="Close">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </button>
+                  </header>
+
+                  <div class="modal-body">
+                    <div class="photo-upload-instructions">
+                      <p>Upload a photo containing volunteer names. The system will detect and mark their attendance automatically.</p>
+                    </div>
+
+                    <div class="photo-upload-area">
+                      @if (!photoUploadPreview()) {
+                        <div class="upload-placeholder">
+                          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                          <p>Click to upload or drag and drop</p>
+                          <span class="upload-hint">Supports: JPG, PNG, WEBP (Max 10MB)</span>
+                          <input type="file" accept="image/*" (change)="onPhotoSelected($event)" class="file-input" />
+                        </div>
+                      } @else {
+                        <div class="photo-preview-container">
+                          <img [src]="photoUploadPreview()" alt="Uploaded photo preview" class="photo-preview" />
+                          <button type="button" class="remove-photo-btn" (click)="photoUploadPreview.set(null); detectedVolunteersFromPhoto.set([]);">
+                            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            Remove Photo
+                          </button>
+                        </div>
+                      }
+                    </div>
+
+                    <!-- OCR Processing Status -->
+                    @if (photoUploadProcessing()) {
+                      <div class="ocr-processing">
+                        <div class="processing-spinner"></div>
+                        <p>Analyzing photo for volunteer names...</p>
+                      </div>
+                    }
+
+                    <!-- Detected Volunteers -->
+                    @if (detectedVolunteersFromPhoto().length > 0 && !photoUploadProcessing()) {
+                      <div class="detected-volunteers">
+                        <h4>Detected Volunteers ({{ detectedVolunteersFromPhoto().length }})</h4>
+                        <ul class="detected-list">
+                          @for (detected of detectedVolunteersFromPhoto(); track detected.name) {
+                            <li class="detected-item">
+                              <span class="detected-name">{{ detected.name }}</span>
+                              <span class="detected-confidence">{{ detected.confidence }}% match</span>
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="modal-footer modern-footer">
+                    <button type="button" class="outline-btn" (click)="closePhotoUploadModal()">Cancel</button>
+                    @if (detectedVolunteersFromPhoto().length > 0) {
+                      <button type="button" class="primary-btn" (click)="markDetectedVolunteersAsPresent()">
+                        Mark {{ detectedVolunteersFromPhoto().length }} as Present
+                      </button>
+                    } @else {
+                      <button type="button" class="primary-btn" (click)="processPhotoOCR()" [disabled]="!photoUploadPreview() || photoUploadProcessing()">
+                        @if (photoUploadProcessing()) {
+                          <span class="loading-spinner" aria-hidden="true"></span>
+                          Processing...
+                        } @else {
+                          Detect Names
+                        }
+                      </button>
+                    }
+                  </div>
+                </section>
+              </div>
+            }
           </section>
         }
 
