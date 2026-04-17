@@ -186,7 +186,7 @@ Create these secrets:
 | `DOCKER_HUB_USERNAME` | Your Docker Hub username (create free account at https://hub.docker.com) | `yourusername` |
 | `VPS_HOST` | Your VPS IP or domain | `servetrack.kaelvxdev.space` |
 | `VPS_USER` | Deploy user (from Phase 1.4) | `deploy` |
-| `VPS_SSH_KEY` | Private SSH key (contents of `~/.ssh/servetrack_vps`) | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
+| `VPS_SSH_KEY` | Private SSH key (contents of `~/.ssh/servetrack_vps`) | (full private key file content) |
 | `VPS_SSH_PORT` | SSH port on VPS | `22` |
 | `DEPLOY_PATH` | Path on VPS where repo cloned | `/home/deploy/servetrack` |
 
