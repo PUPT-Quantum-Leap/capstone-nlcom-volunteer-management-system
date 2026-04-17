@@ -952,63 +952,24 @@
               </div>
             </header>
 
-            <section class="stats-grid performance-stats" aria-label="Performance summary">
-              <article class="stat-card">
-                <div class="stat-icon attendance-icon">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M22 11l-4 4-2-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
+            <!-- Top Performer Section -->
+            @if (topPerformer()) {
+              <section class="top-performer-simple" aria-label="Top performer">
+                <div class="top-performer-content">
+                  <div class="top-performer-avatar">{{ topPerformer()?.volunteerName?.charAt(0) }}</div>
+                  <div class="top-performer-info">
+                    <h3 class="top-performer-name">{{ topPerformer()?.volunteerName }}</h3>
+                    <span class="top-performer-hours">{{ topPerformer()?.hoursServed }} hours served</span>
+                  </div>
+                  <div class="top-performer-badge">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Top Performer
+                  </div>
                 </div>
-                <div class="stat-content">
-                  <div class="label">Avg Attendance</div>
-                  <div class="value">{{ averageAttendanceRate() }}<span class="value-unit">%</span></div>
-                  <div class="meta">Overall attendance rate</div>
-                </div>
-              </article>
-
-              <article class="stat-card">
-                <div class="stat-icon hours-icon">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
-                    <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </div>
-                <div class="stat-content">
-                  <div class="label">Total Hours</div>
-                  <div class="value">{{ totalHoursServed() }}<span class="value-unit">hrs</span></div>
-                  <div class="meta">Cumulative service hours</div>
-                </div>
-              </article>
-
-              <article class="stat-card">
-                <div class="stat-icon tasks-icon">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </div>
-                <div class="stat-content">
-                  <div class="label">Tasks Done</div>
-                  <div class="value">{{ totalTasksCompleted() }}</div>
-                  <div class="meta">Total tasks accomplished</div>
-                </div>
-              </article>
-
-              <article class="stat-card">
-                <div class="stat-icon rating-icon">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                  </svg>
-                </div>
-                <div class="stat-content">
-                  <div class="label">Avg Rating</div>
-                  <div class="value">{{ averageRating() }}<span class="value-unit">/5.0</span></div>
-                  <div class="meta">Overall performance rating</div>
-                </div>
-              </article>
-            </section>
+              </section>
+            }
 
             <div class="table-container">
               <table class="data-table">

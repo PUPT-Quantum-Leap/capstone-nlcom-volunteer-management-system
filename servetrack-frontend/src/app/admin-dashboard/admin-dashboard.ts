@@ -452,6 +452,16 @@ export class AdminDashboard implements OnInit {
     return (total / metrics.length).toFixed(1);
   });
 
+  topPerformer = computed(() => {
+    const metrics = this.performanceMetrics();
+    if (metrics.length === 0) {
+      return null;
+    }
+    return metrics.reduce((top, current) =>
+      current.hoursServed > top.hoursServed ? current : top
+    );
+  });
+
   filteredRsvps = computed(() => {
     const status = this.rsvpFilterStatus();
     if (status === 'all') {
