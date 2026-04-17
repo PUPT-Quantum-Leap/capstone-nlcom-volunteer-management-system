@@ -1,0 +1,83 @@
+# Laravel Multi-stage Dockerfile for Production
+
+# Stage 1: Builder
+FROM php:8.2-fpm-alpine as builder
+
+# Install build dependencies
+RUN apk add --no-cache \
+    git \
+    curl \
+    zip \
+    unzip \
+    libpng-dev \
+    libxml2-dev \
+    libzip-dev \
+    libicu-dev \
+    mysql-client \
+    && docker-php-ext-install \
+        pdo_mysql \
+        bcmath \
+        gd \
+        xml \
+        zip \
+        intl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+WORKDIR /var/www
+
+# Copy composer files and install dependencies
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Copy application code
+COPY . .
+
+# Set permissions
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+# Stage 2: Production
+FROM php:8.2-fpm-alpine
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    libpng-dev \
+    libxml2-dev \
+    libzip-dev \
+    libicu-dev \
+    && docker-php-ext-install \
+        pdo_mysql \
+        bcmath \
+        gd \
+        xml \
+        zip \
+        intl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy code and vendor from builder
+WORKDIR /var/www
+COPY --from=builder /var/www/vendor ./vendor
+COPY --from=builder /var/www/.env.example .env.example
+COPY --from=builder /var/www/.env.docker .env.docker
+COPY --from=builder /var/www/artisan ./artisan
+COPY --from=builder /var/www/config ./config
+COPY --from=builder /var/www/public ./public
+COPY --from=builder /var/www/resources ./resources
+COPY --from=builder /var/www/routes ./routes
+COPY --from=builder /var/www/src ./src
+COPY --from=builder /var/www/storage ./storage
+COPY --from=builder /var/www/bootstrap ./bootstrap
+
+# Set permissions
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+# Copy entrypoint script
+COPY docker-entrypoint.prod.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.prod.sh
+
+EXPOSE 9000
+
+ENTRYPOINT ["docker-entrypoint.prod.sh"]
+CMD ["php-fpm"]
