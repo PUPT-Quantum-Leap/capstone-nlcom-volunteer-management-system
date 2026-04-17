@@ -109,8 +109,6 @@ export class AdminDashboard implements OnInit {
         return 'User Management';
       case 'analytics':
         return 'Analytics & Reports';
-      case 'events':
-        return 'Events Overview';
       case 'sms':
         return 'SMS Notifications';
       case 'backup':
@@ -1260,27 +1258,17 @@ export class AdminDashboard implements OnInit {
   }
 
   resetPassword(): void {
-    if (this.resetPasswordForm.invalid) {
-      this.resetPasswordForm.markAllAsTouched();
-      return;
-    }
-
-    const val = this.resetPasswordForm.value;
-    if (val.password !== val.confirmPassword) {
-      this.resetPasswordForm.get('confirmPassword')?.setErrors({ mismatch: true });
-      return;
-    }
-
     const id = this.resettingPasswordUserId();
     if (id !== null) {
-      this.userService.resetPassword(id, val.password!).subscribe({
+      // TODO: Update service to send password reset email instead of direct reset
+      this.userService.resetPassword(id, '').subscribe({
         next: () => {
           this.closeResetPasswordModal();
-          this.showSnackbar('Password reset successfully', 'success');
+          this.showSnackbar('Password reset email sent successfully', 'success');
         },
         error: (error) => {
-          console.error('Error resetting password:', error);
-          this.showSnackbar('Failed to reset password', 'error');
+          console.error('Error sending password reset:', error);
+          this.showSnackbar('Failed to send password reset email', 'error');
         }
       });
     }

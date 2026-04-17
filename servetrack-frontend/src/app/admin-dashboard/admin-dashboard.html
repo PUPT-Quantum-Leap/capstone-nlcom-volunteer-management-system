@@ -64,20 +64,6 @@
           </button>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'events'"
-            (click)="setView('events'); closeMobileSidebar()"
-            [attr.aria-current]="currentView() === 'events' ? 'page' : null">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-            <span class="nav-text">Events</span>
-          </button>
-        </li>
-        <li>
           <button type="button" [class.active]="currentView() === 'attendance'"
             (click)="setView('attendance'); closeMobileSidebar()"
             [attr.aria-current]="currentView() === 'attendance' ? 'page' : null">
@@ -417,19 +403,6 @@
                 <p>Create schedules, manage shifts, and monitor responses.</p>
               </button>
 
-              <button type="button" class="action-card" (click)="setView('events')">
-                <div class="action-header">
-                  <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <line x1="16" y1="2" x2="16" y2="6"/>
-                    <line x1="8" y1="2" x2="8" y2="6"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
-                  <h3>View Events</h3>
-                </div>
-                <p>Track upcoming schedules and jump into operational tools.</p>
-              </button>
             </div>
 
             <div class="overview-panels-grid">
@@ -1566,63 +1539,6 @@
           </section>
         }
 
-        @case ('events') {
-          <section class="module-container events-layout">
-            <header class="module-header">
-              <div class="header-content">
-                <h2>Events Overview</h2>
-                <p>Track upcoming schedules and jump into operational workflows.</p>
-              </div>
-            </header>
-
-            <div class="events-cards-grid">
-              @for (card of eventsModuleCards(); track card.label) {
-                <article class="events-card">
-                  <p class="events-card-label">{{ card.label }}</p>
-                  <h3>{{ card.value }}</h3>
-                  <p class="events-card-helper">{{ card.helper }}</p>
-                </article>
-              }
-            </div>
-
-            <div class="events-panels-grid">
-              <article class="events-panel">
-                <header class="events-panel-header">
-                  <h3>Upcoming Event Schedule</h3>
-                </header>
-                @if (upcomingEventRows().length > 0) {
-                  <div class="events-list">
-                    @for (event of upcomingEventRows(); track event.id) {
-                      <div class="event-row">
-                        <div>
-                          <p class="event-title">{{ event.title }}</p>
-                          <p class="event-date">{{ event.dateLabel | date: 'MMM d, yyyy' }}</p>
-                        </div>
-                        <div class="event-meta">
-                          <span>{{ event.status }}</span>
-                          <span>{{ event.responses }} responses</span>
-                        </div>
-                      </div>
-                    }
-                  </div>
-                } @else {
-                  <div class="empty-mini-state">No upcoming RSVP events are scheduled.</div>
-                }
-              </article>
-
-              <article class="events-panel">
-                <header class="events-panel-header">
-                  <h3>Operations Shortcuts</h3>
-                </header>
-                <div class="events-actions">
-                  <button type="button" class="primary-btn" (click)="goToRsvpsModule()">Create or Edit RSVP</button>
-                  <button type="button" class="outline-btn" (click)="goToVolunteersModule()">Review Volunteer Capacity</button>
-                </div>
-              </article>
-            </div>
-          </section>
-        }
-
         @case ('sms') {
           <section class="module-container">
             <header class="module-header">
@@ -1682,28 +1598,6 @@
               </article>
 
               <div class="sms-sidebar">
-                <article class="sms-panel sms-panel-templates">
-                  <header class="sms-panel-header">
-                    <h3>Templates</h3>
-                  </header>
-                  <div class="sms-template-list">
-                    @for (template of smsTemplates; track template.name) {
-                      <button type="button" class="sms-template-item" (click)="applySmsTemplate(template.message)">
-                        <span class="template-icon">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                          </svg>
-                        </span>
-                        <div class="template-content">
-                          <p class="template-name">{{ template.name }}</p>
-                          <p class="template-preview">{{ template.message | slice:0:40 }}{{ template.message.length > 40 ? '...' : '' }}</p>
-                        </div>
-                      </button>
-                    }
-                  </div>
-                </article>
-
                 <article class="sms-panel sms-panel-auto">
                   <header class="sms-panel-header">
                     <h3>Auto Cutoff SMS</h3>
@@ -1742,7 +1636,7 @@
                       </div>
                     </div>
 
-                    <button type="button" class="primary-btn btn-sm" [disabled]="!autoSmsEnabled() || autoSmsCutoffRecipients().length === 0"
+                    <button type="button" class="primary-btn" [disabled]="!autoSmsEnabled() || autoSmsCutoffRecipients().length === 0"
                       (click)="sendAutomaticCutoffReminders()">
                       Send Reminders Now
                     </button>
@@ -1938,9 +1832,6 @@
           <button type="button" class="ai-action-btn" (click)="setView('volunteers'); closeAiSidebar()">
             <span>📋</span> Manage Volunteers
           </button>
-          <button type="button" class="ai-action-btn" (click)="setView('events'); closeAiSidebar()">
-            <span>📅</span> View Events
-          </button>
           <button type="button" class="ai-action-btn" (click)="setView('analytics'); closeAiSidebar()">
             <span>📊</span> View Analytics
           </button>
@@ -1993,108 +1884,116 @@
 }
 
 @if (showRsvpModal()) {
-  <div class="modal-backdrop">
-    <section class="modal-card rsvp-modal" role="dialog" aria-modal="true"
+  <div class="modal-backdrop" (click)="closeRsvpModal()">
+    <section class="modal-card rsvp-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
       [attr.aria-labelledby]="'rsvp-modal-title'">
       <header class="modal-header">
-        <h3 id="rsvp-modal-title">{{ editingRsvp() ? 'Edit RSVP' : 'Create New RSVP' }}</h3>
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 id="rsvp-modal-title">{{ editingRsvp() ? 'Edit RSVP Event' : 'Create New RSVP' }}</h3>
+        </div>
         <button type="button" class="modal-close-btn" (click)="closeRsvpModal()" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </button>
       </header>
       <form [formGroup]="rsvpForm" (ngSubmit)="saveRsvp()">
         <div class="modal-body">
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="rsvp-title">RSVP Title *</label>
-              <input id="rsvp-title" type="text" formControlName="title"
-                placeholder="e.g., Mobile Kitchen Operations" class="form-input" />
-              @if (rsvpForm.get('title')?.invalid && rsvpForm.get('title')?.touched) {
-                <span class="form-error" role="alert">Title is required (min 3 characters)</span>
-              }
+          <div class="form-section">
+            <h4 class="section-title">Event Details</h4>
+            <div class="form-grid modern-form-grid">
+              <div class="form-group">
+                <label for="rsvp-title">RSVP Title *</label>
+                <input id="rsvp-title" type="text" formControlName="title"
+                  placeholder="e.g., Mobile Kitchen Operations" class="form-input" />
+                @if (rsvpForm.get('title')?.invalid && rsvpForm.get('title')?.touched) {
+                  <span class="form-error" role="alert">Title is required (min 3 characters)</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="rsvp-date">Event Date *</label>
+                <input id="rsvp-date" type="date" formControlName="date" class="form-input" />
+                @if (rsvpForm.get('date')?.invalid && rsvpForm.get('date')?.touched) {
+                  <span class="form-error" role="alert">Date is required</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="rsvp-cutoff-day">Cut-off Date *</label>
+                <input id="rsvp-cutoff-day" type="date" formControlName="cutOffDay" class="form-input" />
+                @if (rsvpForm.get('cutOffDay')?.invalid && rsvpForm.get('cutOffDay')?.touched) {
+                  <span class="form-error" role="alert">Cut-off date is required</span>
+                }
+                @if (rsvpForm.errors?.['cutoffAfterEvent']) {
+                  <span class="form-error" role="alert">Cut-off date must not be after the event date</span>
+                }
+                @if (rsvpForm.errors?.['cutoffBeforeToday']) {
+                  <span class="form-error" role="alert">Cut-off date must not be before today</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="rsvp-cutoff-time">Cut-off Time *</label>
+                <input id="rsvp-cutoff-time" type="time" formControlName="cutOffTime" class="form-input" />
+                @if (rsvpForm.get('cutOffTime')?.invalid && rsvpForm.get('cutOffTime')?.touched) {
+                  <span class="form-error" role="alert">Cut-off time is required</span>
+                }
+              </div>
             </div>
 
-            <div class="form-group">
-              <label for="rsvp-date">Event Date *</label>
-              <input id="rsvp-date" type="date" formControlName="date" class="form-input" />
-              @if (rsvpForm.get('date')?.invalid && rsvpForm.get('date')?.touched) {
-                <span class="form-error" role="alert">Date is required</span>
-              }
-            </div>
-
-            <div class="form-group">
-              <label for="rsvp-cutoff-day">Cut-off Date *</label>
-              <input id="rsvp-cutoff-day" type="date" formControlName="cutOffDay" class="form-input" />
-              @if (rsvpForm.get('cutOffDay')?.invalid && rsvpForm.get('cutOffDay')?.touched) {
-                <span class="form-error" role="alert">Cut-off date is required</span>
-              }
-              @if (rsvpForm.errors?.['cutoffAfterEvent']) {
-                <span class="form-error" role="alert">Cut-off date must not be after the event date</span>
-              }
-              @if (rsvpForm.errors?.['cutoffBeforeToday']) {
-                <span class="form-error" role="alert">Cut-off date must not be before today</span>
-              }
-            </div>
-
-            <div class="form-group">
-              <label for="rsvp-cutoff-time">Cut-off Time *</label>
-              <input id="rsvp-cutoff-time" type="time" formControlName="cutOffTime" class="form-input" />
-              @if (rsvpForm.get('cutOffTime')?.invalid && rsvpForm.get('cutOffTime')?.touched) {
-                <span class="form-error" role="alert">Cut-off time is required</span>
+            <div class="form-group full-width">
+              <label for="rsvp-description">Description *</label>
+              <textarea id="rsvp-description" formControlName="description"
+                placeholder="Describe the purpose of this RSVP…" class="form-textarea" rows="3"></textarea>
+              @if (rsvpForm.get('description')?.invalid && rsvpForm.get('description')?.touched) {
+                <span class="form-error" role="alert">Description is required (min 10 characters)</span>
               }
             </div>
           </div>
 
-          <div class="form-group full-width">
-            <label for="rsvp-description">Description *</label>
-            <textarea id="rsvp-description" formControlName="description"
-              placeholder="Describe the purpose of this RSVP…" class="form-textarea" rows="3"></textarea>
-            @if (rsvpForm.get('description')?.invalid && rsvpForm.get('description')?.touched) {
-              <span class="form-error" role="alert">Description is required (min 10 characters)</span>
-            }
-          </div>
-
-          <div class="form-group full-width" style="margin-top: 1.5rem;">
-            <div class="options-header"
-              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-              <label style="font-weight: 600;">Shifts *</label>
-              <button type="button" class="add-option-btn outline-btn btn-sm" (click)="addRsvpShift()">
-                <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style="margin-right: 4px;" aria-hidden="true">
+          <div class="form-section">
+            <div class="section-header">
+              <div class="section-title-wrapper">
+                <h4 class="section-title">Shifts</h4>
+                <span class="section-subtitle">Configure time slots and capacity</span>
+              </div>
+              <button type="button" class="add-shift-btn" (click)="addRsvpShift()">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
-                Add Option
+                Add Shift
               </button>
             </div>
 
-            <div formArrayName="options" class="rsvp-shifts-form">
-              @for (option of rsvpShifts.controls; track $index; let i = $index) {
-                <div [formGroupName]="i" class="rsvp-shift-form-item"
-                  style="display: flex; gap: 0.75rem; align-items: flex-end; margin-bottom: 0.75rem; background: var(--gray-50); padding: 1rem; border-radius: var(--radius-lg);">
-                  <div class="option-number"
-                    style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary-100); color: var(--primary-600); display: grid; place-items: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;"
-                    aria-hidden="true">{{ i + 1 }}</div>
-                  <div class="option-fields"
-                    style="flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
+            <div formArrayName="shifts" class="rsvp-shifts-list">
+              @for (shift of rsvpShifts.controls; track $index; let i = $index) {
+                <div [formGroupName]="i" class="shift-card">
+                  <div class="shift-number">{{ i + 1 }}</div>
+                  <div class="shift-fields-grid">
                     <div class="form-group">
-                      <label [for]="'rsvp-shift-start-time-' + i" style="font-size: 0.75rem;">Start Time</label>
+                      <label [for]="'rsvp-shift-start-time-' + i">Start Time</label>
                       <input [id]="'rsvp-shift-start-time-' + i" type="time" formControlName="startTime" class="form-input" />
                     </div>
                     <div class="form-group">
-                      <label [for]="'rsvp-shift-end-time-' + i" style="font-size: 0.75rem;">End Time</label>
+                      <label [for]="'rsvp-shift-end-time-' + i">End Time</label>
                       <input [id]="'rsvp-shift-end-time-' + i" type="time" formControlName="endTime" class="form-input" />
                     </div>
-                    <div class="form-group">
-                      <label [for]="'rsvp-shift-capacity-' + i" style="font-size: 0.75rem;">Capacity</label>
+                    <div class="form-group capacity-field">
+                      <label [for]="'rsvp-shift-capacity-' + i">Capacity</label>
                       <input [id]="'rsvp-shift-capacity-' + i" type="number" formControlName="capacity"
-                        placeholder="Capacity" min="1" class="form-input" />
+                        placeholder="10" min="1" class="form-input" />
                     </div>
                   </div>
                   @if (rsvpShifts.length > 1) {
-                    <button type="button" class="remove-option-btn text-danger" (click)="removeRsvpShift(i)"
-                      [attr.aria-label]="'Remove shift ' + (i + 1)" style="padding: 0.5rem;">
-                      <svg viewBox="0 0 24 24" fill="none" width="18" height="18" aria-hidden="true">
+                    <button type="button" class="shift-remove-btn" (click)="removeRsvpShift(i)"
+                      [attr.aria-label]="'Remove shift ' + (i + 1)">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                         <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                       </svg>
                     </button>
@@ -2105,7 +2004,7 @@
           </div>
         </div>
 
-        <div class="modal-footer">
+        <div class="modal-footer modern-footer">
           <button type="button" class="outline-btn" (click)="closeRsvpModal()" [disabled]="isCreatingRsvp()">Cancel</button>
           <button type="submit" class="primary-btn" [disabled]="isCreatingRsvp()">
             @if (isCreatingRsvp()) {
@@ -2179,250 +2078,285 @@
 }
 
 @if (showVolunteerModal()) {
-  <div class="modal-backdrop">
-    <section class="modal-card volunteer-modal" role="dialog" aria-modal="true"
+  <div class="modal-backdrop" (click)="closeVolunteerModal()">
+    <section class="modal-card volunteer-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
       [attr.aria-labelledby]="'volunteer-modal-title'">
-      <div class="modal-header">
-        <h3 id="volunteer-modal-title">
-          {{ editingVolunteer() ? 'Edit Volunteer' : 'Add New Volunteer' }}
-        </h3>
+      <header class="modal-header">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 id="volunteer-modal-title">{{ editingVolunteer() ? 'Edit Volunteer' : 'Add New Volunteer' }}</h3>
+        </div>
         <button type="button" class="modal-close-btn" (click)="closeVolunteerModal()" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </button>
-      </div>
+      </header>
 
-      <form [formGroup]="volunteerForm" (ngSubmit)="saveVolunteer()" class="modal-form">
+      <form [formGroup]="volunteerForm" (ngSubmit)="saveVolunteer()">
         <div class="modal-body">
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="volunteer-first-name">First Name <span class="required" aria-hidden="true">*</span></label>
-              <input id="volunteer-first-name" type="text" formControlName="firstName"
-                placeholder="Enter first name" class="form-input" autocomplete="given-name" />
-              @if (volunteerForm.get('firstName')?.invalid && volunteerForm.get('firstName')?.touched) {
-                <span class="error-message" role="alert">First name is required (minimum 2 characters)</span>
-              }
-            </div>
+          <!-- Personal Information -->
+          <div class="form-section">
+            <h4 class="section-title">Personal Information</h4>
+            <div class="form-grid modern-form-grid">
+              <div class="form-group">
+                <label for="volunteer-first-name">First Name *</label>
+                <input id="volunteer-first-name" type="text" formControlName="firstName"
+                  placeholder="Enter first name" class="form-input" autocomplete="given-name" />
+                @if (volunteerForm.get('firstName')?.invalid && volunteerForm.get('firstName')?.touched) {
+                  <span class="form-error" role="alert">First name required (min 2 characters)</span>
+                }
+              </div>
 
-            <div class="form-group">
-              <label for="volunteer-last-name">Last Name <span class="required" aria-hidden="true">*</span></label>
-              <input id="volunteer-last-name" type="text" formControlName="lastName"
-                placeholder="Enter last name" class="form-input" autocomplete="family-name" />
-              @if (volunteerForm.get('lastName')?.invalid && volunteerForm.get('lastName')?.touched) {
-                <span class="error-message" role="alert">Last name is required (minimum 2 characters)</span>
-              }
-            </div>
+              <div class="form-group">
+                <label for="volunteer-last-name">Last Name *</label>
+                <input id="volunteer-last-name" type="text" formControlName="lastName"
+                  placeholder="Enter last name" class="form-input" autocomplete="family-name" />
+                @if (volunteerForm.get('lastName')?.invalid && volunteerForm.get('lastName')?.touched) {
+                  <span class="form-error" role="alert">Last name required (min 2 characters)</span>
+                }
+              </div>
 
-            <div class="form-group full-width">
-              <label for="volunteer-facebook">Facebook Name <span class="required" aria-hidden="true">*</span></label>
-              <input id="volunteer-facebook" type="text" formControlName="facebookName"
-                placeholder="Enter Facebook name" class="form-input" />
-              @if (volunteerForm.get('facebookName')?.invalid && volunteerForm.get('facebookName')?.touched) {
-                <span class="error-message" role="alert">Facebook name is required</span>
-              }
-            </div>
+              <div class="form-group">
+                <label for="volunteer-birthdate">Birthdate *</label>
+                <input id="volunteer-birthdate" type="date" formControlName="birthdate" class="form-input" />
+                @if (volunteerForm.get('birthdate')?.invalid && volunteerForm.get('birthdate')?.touched) {
+                  <span class="form-error" role="alert">Birthdate is required</span>
+                }
+              </div>
 
-            <div class="form-group">
-              <label for="volunteer-email">Email <span class="required" aria-hidden="true">*</span></label>
-              <input id="volunteer-email" type="email" formControlName="email"
-                placeholder="your.email@example.com" class="form-input" autocomplete="email" />
-              @if (volunteerForm.get('email')?.invalid && volunteerForm.get('email')?.touched) {
-                <span class="error-message" role="alert">Valid email is required</span>
-              }
-            </div>
+              <div class="form-group">
+                <label for="volunteer-medical-exam">Last Medical Exam *</label>
+                <input id="volunteer-medical-exam" type="date" formControlName="lastMedicalExam" class="form-input" />
+                @if (volunteerForm.get('lastMedicalExam')?.invalid && volunteerForm.get('lastMedicalExam')?.touched) {
+                  <span class="form-error" role="alert">Medical exam date required</span>
+                }
+              </div>
 
-            <div class="form-group">
-              <label for="volunteer-mobile">Mobile Number <span class="required" aria-hidden="true">*</span></label>
-              <input id="volunteer-mobile" type="tel" formControlName="mobileNumber"
-                placeholder="09XXXXXXXXX" class="form-input" autocomplete="tel" />
-              @if (volunteerForm.get('mobileNumber')?.invalid && volunteerForm.get('mobileNumber')?.touched) {
-                <span class="error-message" role="alert">Valid 11-digit mobile number is required</span>
-              }
-            </div>
+              <div class="form-group full-width">
+                <label for="volunteer-education">Educational Attainment *</label>
+                <select id="volunteer-education" formControlName="educationalAttainment" class="form-input">
+                  <option value="" disabled selected>Select educational attainment</option>
+                  <option value="elementary">Elementary</option>
+                  <option value="high-school">High School</option>
+                  <option value="senior-high">Senior High School</option>
+                  <option value="vocational">Vocational Course</option>
+                  <option value="college-undergraduate">College Undergraduate</option>
+                  <option value="college-graduate">College Graduate</option>
+                  <option value="masters">Master's Degree</option>
+                  <option value="doctorate">Doctorate Degree</option>
+                </select>
+                @if (volunteerForm.get('educationalAttainment')?.invalid && volunteerForm.get('educationalAttainment')?.touched) {
+                  <span class="form-error" role="alert">Educational attainment required</span>
+                }
+              </div>
 
-            <div class="form-group">
-              <label for="volunteer-birthdate">Birthdate <span class="required" aria-hidden="true">*</span></label>
-              <input id="volunteer-birthdate" type="date" formControlName="birthdate" class="form-input" />
-              @if (volunteerForm.get('birthdate')?.invalid && volunteerForm.get('birthdate')?.touched) {
-                <span class="error-message" role="alert">Birthdate is required</span>
-              }
-            </div>
-
-            <div class="form-group">
-              <label for="volunteer-medical-exam">Last Medical Examination <span class="required" aria-hidden="true">*</span></label>
-              <input id="volunteer-medical-exam" type="date" formControlName="lastMedicalExam" class="form-input" />
-              @if (volunteerForm.get('lastMedicalExam')?.invalid && volunteerForm.get('lastMedicalExam')?.touched) {
-                <span class="error-message" role="alert">Last medical examination date is required</span>
-              }
-            </div>
-
-            <div class="form-group full-width">
-              <label for="volunteer-address">Complete Address <span class="required" aria-hidden="true">*</span></label>
-              <textarea id="volunteer-address" formControlName="completeAddress"
-                placeholder="Enter complete address" rows="3" class="form-input"></textarea>
-              @if (volunteerForm.get('completeAddress')?.invalid && volunteerForm.get('completeAddress')?.touched) {
-                <span class="error-message" role="alert">Complete address is required</span>
-              }
-            </div>
-
-            <div class="form-group full-width">
-              <label for="volunteer-education">Educational Attainment <span class="required" aria-hidden="true">*</span></label>
-              <select id="volunteer-education" formControlName="educationalAttainment" class="form-input">
-                <option value="" disabled selected>Select your educational attainment</option>
-                <option value="elementary">Elementary</option>
-                <option value="high-school">High School</option>
-                <option value="senior-high">Senior High School</option>
-                <option value="vocational">Vocational Course</option>
-                <option value="college-undergraduate">College Undergraduate</option>
-                <option value="college-graduate">College Graduate</option>
-                <option value="masters">Master's Degree</option>
-                <option value="doctorate">Doctorate Degree</option>
-              </select>
-              @if (volunteerForm.get('educationalAttainment')?.invalid && volunteerForm.get('educationalAttainment')?.touched) {
-                <span class="error-message" role="alert">Educational attainment is required</span>
-              }
-            </div>
-
-            <div class="form-group full-width">
-              <label for="volunteer-training">Training and Experience</label>
-              <textarea id="volunteer-training" formControlName="trainingExperience"
-                placeholder="Describe your training and work experience (optional)" rows="3" class="form-input"></textarea>
-            </div>
-
-            <div class="form-group full-width">
-              <label for="volunteer-skills">Skills or Hobbies</label>
-              <textarea id="volunteer-skills" formControlName="skillsHobbies"
-                placeholder="List your skills or hobbies (optional)" rows="3" class="form-input"></textarea>
-            </div>
-
-            <div class="form-group full-width">
-              <label for="volunteer-classes">Classes and Training Attended</label>
-              <textarea id="volunteer-classes" formControlName="classesTraining"
-                placeholder="List classes or training programs you attended (optional)" rows="3" class="form-input"></textarea>
-            </div>
-
-            <div class="form-group full-width">
-              <label for="volunteer-preference">Where do you want to volunteer? <span class="required" aria-hidden="true">*</span></label>
-              <select id="volunteer-preference" formControlName="volunteerPreference" class="form-input">
-                <option value="" disabled selected>Select your preference</option>
-                <option value="sidewalk-sunday-school">Metro Sidewalk Sunday School (Teaching & Education)</option>
-                <option value="mobile-kitchen">Mobile Kitchen Operations</option>
-                <option value="relief-operations">Relief Operations</option>
-                <option value="safety-emergency">Safety and Emergency Response</option>
-                <option value="medical-operations">Medical Operations</option>
-                <option value="psychological-aid">Psychological First Aid</option>
-                <option value="transportation-logistics">Transportation & Logistics Team</option>
-                <option value="purchasing">Purchasing Team</option>
-                <option value="partnerships">Individual & Corporate Partnerships</option>
-                <option value="digital-marketing">Digital Marketing & Promotions</option>
-                <option value="creatives">Creatives (Video / Photos)</option>
-                <option value="healing">Healing</option>
-                <option value="real-estate-sports">Real Estate & Sports</option>
-                <option value="kitchen-related">Anything kitchen-related</option>
-                <option value="wherever-needed">Wherever is needed</option>
-                <option value="dont-know">Don't know yet</option>
-                <option value="other">Other</option>
-              </select>
-              @if (volunteerForm.get('volunteerPreference')?.invalid && volunteerForm.get('volunteerPreference')?.touched) {
-                <span class="error-message" role="alert">Volunteer preference is required</span>
-              }
-            </div>
-
-            <div class="form-group full-width">
-              <label for="volunteer-other-preference">Other Preference (if applicable)</label>
-              <input id="volunteer-other-preference" type="text" formControlName="otherPreference"
-                placeholder="Specify other preference" class="form-input" />
-            </div>
-
-            <div class="form-group full-width">
-              <label for="volunteer-availability">Availability <span class="required" aria-hidden="true">*</span></label>
-              <select id="volunteer-availability" formControlName="availability" class="form-input">
-                <option value="" disabled selected>Select your availability</option>
-                <option value="anytime">Anytime / On Call</option>
-                <option value="weekends-only">Weekends Only</option>
-                <option value="weekdays-only">Weekdays Only</option>
-                <option value="weekdays-weekends">Weekdays & Weekends</option>
-                <option value="friday-saturday">Friday & Saturday Only</option>
-                <option value="scheduled">Scheduled (By Arrangement)</option>
-                <option value="holidays">Holidays (If Available)</option>
-                <option value="rest-days">Rest Days / With Filed Leave</option>
-                <option value="limited-weekdays">Limited Weekdays (Not Whole Day)</option>
-                <option value="day-off">Day Off Only</option>
-                <option value="others">Others</option>
-              </select>
-              @if (volunteerForm.get('availability')?.invalid && volunteerForm.get('availability')?.touched) {
-                <span class="error-message" role="alert">Availability is required</span>
-              }
-            </div>
-
-            <div class="form-group full-width">
-              <label for="volunteer-other-availability">Other Availability (if applicable)</label>
-              <input id="volunteer-other-availability" type="text" formControlName="otherAvailability"
-                placeholder="Specify other availability" class="form-input" />
-            </div>
-
-            <div class="form-group">
-              <label for="volunteer-lifegroup">Part of a lifegroup? <span class="required" aria-hidden="true">*</span></label>
-              <select id="volunteer-lifegroup" formControlName="partOfLifegroup" class="form-input">
-                <option value="" disabled selected>Select an option</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-              @if (volunteerForm.get('partOfLifegroup')?.invalid && volunteerForm.get('partOfLifegroup')?.touched) {
-                <span class="error-message" role="alert">This field is required</span>
-              }
-            </div>
-
-            <div class="form-group">
-              <label for="volunteer-lifegroup-leader">Lifegroup Leader Name</label>
-              <input id="volunteer-lifegroup-leader" type="text" formControlName="lifegroupLeaderName"
-                placeholder="Enter lifegroup leader name (if applicable)" class="form-input" />
-            </div>
-
-            <div class="form-group full-width">
-              <label for="volunteer-leading-lifegroup">Leading a lifegroup? <span class="required" aria-hidden="true">*</span></label>
-              <select id="volunteer-leading-lifegroup" formControlName="leadingLifegroup" class="form-input">
-                <option value="" disabled selected>Select an option</option>
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-              @if (volunteerForm.get('leadingLifegroup')?.invalid && volunteerForm.get('leadingLifegroup')?.touched) {
-                <span class="error-message" role="alert">This field is required</span>
-              }
-            </div>
-
-            <div class="form-group">
-              <label for="volunteer-emergency-name">Emergency Contact Name <span class="required" aria-hidden="true">*</span></label>
-              <input id="volunteer-emergency-name" type="text" formControlName="emergencyContactName"
-                placeholder="Full name" class="form-input" />
-              @if (volunteerForm.get('emergencyContactName')?.invalid && volunteerForm.get('emergencyContactName')?.touched) {
-                <span class="error-message" role="alert">Emergency contact name is required</span>
-              }
-            </div>
-
-            <div class="form-group">
-              <label for="volunteer-emergency-number">Emergency Contact Number <span class="required" aria-hidden="true">*</span></label>
-              <input id="volunteer-emergency-number" type="tel" formControlName="emergencyContactNumber"
-                placeholder="09XXXXXXXXX" class="form-input" />
-              @if (volunteerForm.get('emergencyContactNumber')?.invalid && volunteerForm.get('emergencyContactNumber')?.touched) {
-                <span class="error-message" role="alert">Valid 11-digit mobile number is required</span>
-              }
-            </div>
-
-            <div class="form-group full-width">
-              <label for="volunteer-emergency-relationship">Emergency Contact Relationship <span class="required" aria-hidden="true">*</span></label>
-              <input id="volunteer-emergency-relationship" type="text" formControlName="emergencyContactRelationship"
-                placeholder="e.g., Spouse, Parent, Sibling" class="form-input" />
-              @if (volunteerForm.get('emergencyContactRelationship')?.invalid && volunteerForm.get('emergencyContactRelationship')?.touched) {
-                <span class="error-message" role="alert">Emergency contact relationship is required</span>
-              }
+              <div class="form-group full-width">
+                <label for="volunteer-address">Complete Address *</label>
+                <textarea id="volunteer-address" formControlName="completeAddress"
+                  placeholder="Enter complete address" rows="3" class="form-input"></textarea>
+                @if (volunteerForm.get('completeAddress')?.invalid && volunteerForm.get('completeAddress')?.touched) {
+                  <span class="form-error" role="alert">Address is required</span>
+                }
+              </div>
             </div>
           </div>
-          <!-- FIX 2: </div> here closes .form-grid; the next </div> closes .modal-body -->
+
+          <!-- Contact Information -->
+          <div class="form-section">
+            <h4 class="section-title">Contact Information</h4>
+            <div class="form-grid modern-form-grid">
+              <div class="form-group">
+                <label for="volunteer-email">Email Address *</label>
+                <input id="volunteer-email" type="email" formControlName="email"
+                  placeholder="user@example.com" class="form-input" autocomplete="email" />
+                @if (volunteerForm.get('email')?.invalid && volunteerForm.get('email')?.touched) {
+                  <span class="form-error" role="alert">Valid email required</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="volunteer-mobile">Mobile Number *</label>
+                <input id="volunteer-mobile" type="tel" formControlName="mobileNumber"
+                  placeholder="09XXXXXXXXX" class="form-input" autocomplete="tel" />
+                @if (volunteerForm.get('mobileNumber')?.invalid && volunteerForm.get('mobileNumber')?.touched) {
+                  <span class="form-error" role="alert">Valid 11-digit number required</span>
+                }
+              </div>
+
+              <div class="form-group full-width">
+                <label for="volunteer-facebook">Facebook Name *</label>
+                <input id="volunteer-facebook" type="text" formControlName="facebookName"
+                  placeholder="Enter Facebook name" class="form-input" />
+                @if (volunteerForm.get('facebookName')?.invalid && volunteerForm.get('facebookName')?.touched) {
+                  <span class="form-error" role="alert">Facebook name required</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Volunteer Details -->
+          <div class="form-section">
+            <h4 class="section-title">Volunteer Details</h4>
+            <div class="form-grid modern-form-grid">
+              <div class="form-group full-width">
+                <label for="volunteer-preference">Preferred Volunteer Area *</label>
+                <select id="volunteer-preference" formControlName="volunteerPreference" class="form-input">
+                  <option value="" disabled selected>Select preference</option>
+                  <option value="sidewalk-sunday-school">Metro Sidewalk Sunday School</option>
+                  <option value="mobile-kitchen">Mobile Kitchen Operations</option>
+                  <option value="relief-operations">Relief Operations</option>
+                  <option value="safety-emergency">Safety & Emergency Response</option>
+                  <option value="medical-operations">Medical Operations</option>
+                  <option value="psychological-aid">Psychological First Aid</option>
+                  <option value="transportation-logistics">Transportation & Logistics</option>
+                  <option value="purchasing">Purchasing Team</option>
+                  <option value="partnerships">Individual & Corporate Partnerships</option>
+                  <option value="digital-marketing">Digital Marketing & Promotions</option>
+                  <option value="creatives">Creatives (Video / Photos)</option>
+                  <option value="healing">Healing</option>
+                  <option value="real-estate-sports">Real Estate & Sports</option>
+                  <option value="kitchen-related">Kitchen-related</option>
+                  <option value="wherever-needed">Wherever is needed</option>
+                  <option value="dont-know">Don't know yet</option>
+                  <option value="other">Other</option>
+                </select>
+                @if (volunteerForm.get('volunteerPreference')?.invalid && volunteerForm.get('volunteerPreference')?.touched) {
+                  <span class="form-error" role="alert">Preference is required</span>
+                }
+              </div>
+
+              <div class="form-group full-width">
+                <label for="volunteer-other-preference">Other Preference</label>
+                <input id="volunteer-other-preference" type="text" formControlName="otherPreference"
+                  placeholder="Specify if Other selected" class="form-input" />
+              </div>
+
+              <div class="form-group full-width">
+                <label for="volunteer-availability">Availability *</label>
+                <select id="volunteer-availability" formControlName="availability" class="form-input">
+                  <option value="" disabled selected>Select availability</option>
+                  <option value="anytime">Anytime / On Call</option>
+                  <option value="weekends-only">Weekends Only</option>
+                  <option value="weekdays-only">Weekdays Only</option>
+                  <option value="weekdays-weekends">Weekdays & Weekends</option>
+                  <option value="friday-saturday">Friday & Saturday Only</option>
+                  <option value="scheduled">Scheduled (By Arrangement)</option>
+                  <option value="holidays">Holidays (If Available)</option>
+                  <option value="rest-days">Rest Days / With Filed Leave</option>
+                  <option value="limited-weekdays">Limited Weekdays</option>
+                  <option value="day-off">Day Off Only</option>
+                  <option value="others">Others</option>
+                </select>
+                @if (volunteerForm.get('availability')?.invalid && volunteerForm.get('availability')?.touched) {
+                  <span class="form-error" role="alert">Availability is required</span>
+                }
+              </div>
+
+              <div class="form-group full-width">
+                <label for="volunteer-other-availability">Other Availability</label>
+                <input id="volunteer-other-availability" type="text" formControlName="otherAvailability"
+                  placeholder="Specify if Others selected" class="form-input" />
+              </div>
+
+              <div class="form-group">
+                <label for="volunteer-lifegroup">Part of a Lifegroup? *</label>
+                <select id="volunteer-lifegroup" formControlName="partOfLifegroup" class="form-input">
+                  <option value="" disabled selected>Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+                @if (volunteerForm.get('partOfLifegroup')?.invalid && volunteerForm.get('partOfLifegroup')?.touched) {
+                  <span class="form-error" role="alert">Required</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="volunteer-lifegroup-leader">Lifegroup Leader</label>
+                <input id="volunteer-lifegroup-leader" type="text" formControlName="lifegroupLeaderName"
+                  placeholder="Leader name (if applicable)" class="form-input" />
+              </div>
+
+              <div class="form-group full-width">
+                <label for="volunteer-leading-lifegroup">Leading a Lifegroup? *</label>
+                <select id="volunteer-leading-lifegroup" formControlName="leadingLifegroup" class="form-input">
+                  <option value="" disabled selected>Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+                @if (volunteerForm.get('leadingLifegroup')?.invalid && volunteerForm.get('leadingLifegroup')?.touched) {
+                  <span class="form-error" role="alert">Required</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Background & Experience -->
+          <div class="form-section">
+            <h4 class="section-title">Background & Experience</h4>
+            <div class="form-grid modern-form-grid">
+              <div class="form-group full-width">
+                <label for="volunteer-training">Training & Experience</label>
+                <textarea id="volunteer-training" formControlName="trainingExperience"
+                  placeholder="Describe training and work experience (optional)" rows="3" class="form-input"></textarea>
+              </div>
+
+              <div class="form-group full-width">
+                <label for="volunteer-skills">Skills or Hobbies</label>
+                <textarea id="volunteer-skills" formControlName="skillsHobbies"
+                  placeholder="List skills or hobbies (optional)" rows="3" class="form-input"></textarea>
+              </div>
+
+              <div class="form-group full-width">
+                <label for="volunteer-classes">Classes & Training Attended</label>
+                <textarea id="volunteer-classes" formControlName="classesTraining"
+                  placeholder="List classes or programs attended (optional)" rows="3" class="form-input"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Emergency Contact -->
+          <div class="form-section">
+            <h4 class="section-title">Emergency Contact</h4>
+            <div class="form-grid modern-form-grid">
+              <div class="form-group">
+                <label for="volunteer-emergency-name">Contact Name *</label>
+                <input id="volunteer-emergency-name" type="text" formControlName="emergencyContactName"
+                  placeholder="Full name" class="form-input" />
+                @if (volunteerForm.get('emergencyContactName')?.invalid && volunteerForm.get('emergencyContactName')?.touched) {
+                  <span class="form-error" role="alert">Name required</span>
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="volunteer-emergency-number">Contact Number *</label>
+                <input id="volunteer-emergency-number" type="tel" formControlName="emergencyContactNumber"
+                  placeholder="09XXXXXXXXX" class="form-input" />
+                @if (volunteerForm.get('emergencyContactNumber')?.invalid && volunteerForm.get('emergencyContactNumber')?.touched) {
+                  <span class="form-error" role="alert">Valid 11-digit number required</span>
+                }
+              </div>
+
+              <div class="form-group full-width">
+                <label for="volunteer-emergency-relationship">Relationship *</label>
+                <input id="volunteer-emergency-relationship" type="text" formControlName="emergencyContactRelationship"
+                  placeholder="e.g., Spouse, Parent, Sibling" class="form-input" />
+                @if (volunteerForm.get('emergencyContactRelationship')?.invalid && volunteerForm.get('emergencyContactRelationship')?.touched) {
+                  <span class="form-error" role="alert">Relationship required</span>
+                }
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="modal-footer">
+        <div class="modal-footer modern-footer">
           <button type="button" class="outline-btn" (click)="closeVolunteerModal()">Cancel</button>
           <button type="submit" class="primary-btn">
             {{ editingVolunteer() ? 'Update Volunteer' : 'Add Volunteer' }}
@@ -2456,68 +2390,97 @@
 }
 
 @if (showUserModal()) {
-  <div class="modal-backdrop">
-    <section class="modal-card user-modal" role="dialog" aria-modal="true"
+  <div class="modal-backdrop" (click)="closeUserModal()">
+    <section class="modal-card user-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
       [attr.aria-labelledby]="'user-modal-title'">
-      <div class="modal-header">
-        <h3 id="user-modal-title">{{ editingUser() ? 'Edit User' : 'Add New User' }}</h3>
+      <header class="modal-header">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon" [class]="'role-icon-' + (editingUser()?.role || 'new')">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              @if (editingUser()) {
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              } @else {
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="19" y1="8" x2="19" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="22" y1="11" x2="16" y2="11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              }
+            </svg>
+          </div>
+          <h3 id="user-modal-title">{{ editingUser() ? 'Edit User' : 'Add New User' }}</h3>
+        </div>
         <button type="button" class="modal-close-btn" (click)="closeUserModal()" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </button>
-      </div>
+      </header>
 
       <form [formGroup]="userForm" (ngSubmit)="saveUser()" autocomplete="off">
         <div class="modal-body">
-          <div class="form-group">
-            <label for="user-name">Full Name *</label>
-            <input id="user-name" type="text" formControlName="name" class="form-input" autocomplete="name" />
-            @if (userForm.get('name')?.invalid && userForm.get('name')?.touched) {
-              <span class="form-error" role="alert">Name is required</span>
-            }
-          </div>
+          <!-- User Info Section -->
+          <div class="form-section">
+            <h4 class="section-title">User Information</h4>
+            <div class="form-grid modern-form-grid">
+              <div class="form-group">
+                <label for="user-name">Full Name *</label>
+                <input id="user-name" type="text" formControlName="name" class="form-input" placeholder="Enter full name" autocomplete="name" />
+                @if (userForm.get('name')?.invalid && userForm.get('name')?.touched) {
+                  <span class="form-error" role="alert">Name is required</span>
+                }
+              </div>
 
-          <div class="form-group">
-            <label for="user-email">Email Address *</label>
-            <input id="user-email" type="email" formControlName="email" class="form-input" autocomplete="email" />
-            @if (userForm.get('email')?.invalid && userForm.get('email')?.touched) {
-              <span class="form-error" role="alert">Valid email is required</span>
-            }
-          </div>
+              <div class="form-group">
+                <label for="user-email">Email Address *</label>
+                <input id="user-email" type="email" formControlName="email" class="form-input" placeholder="user@example.com" autocomplete="email" />
+                @if (userForm.get('email')?.invalid && userForm.get('email')?.touched) {
+                  <span class="form-error" role="alert">Valid email is required</span>
+                }
+              </div>
 
-          <div class="form-group">
-            <label for="user-role">Role *</label>
-            <select id="user-role" formControlName="role" class="form-input">
-              <option value="" disabled selected>Select Role</option>
-              <option value="admin">Admin</option>
-              <option value="coordinator">Coordinator</option>
-              <option value="volunteer">Volunteer</option>
-            </select>
-            @if (userForm.get('role')?.invalid && userForm.get('role')?.touched) {
-              <span class="form-error" role="alert">Role is required</span>
-            }
-          </div>
-
-          @if (!editingUser()) {
-            <div class="form-group">
-              <label for="user-password">Password *</label>
-              <input id="user-password" type="password" formControlName="password" class="form-input" autocomplete="new-password" />
-              @if (userForm.get('password')?.invalid && userForm.get('password')?.touched) {
-                <span class="form-error" role="alert">Valid password is required</span>
-              }
+              <div class="form-group full-width">
+                <label for="user-role">Role *</label>
+                <select id="user-role" formControlName="role" class="form-input">
+                  <option value="" disabled selected>Select a role</option>
+                  <option value="admin">Administrator</option>
+                  <option value="coordinator">Coordinator</option>
+                  <option value="volunteer">Volunteer</option>
+                </select>
+                @if (userForm.get('role')?.invalid && userForm.get('role')?.touched) {
+                  <span class="form-error" role="alert">Role is required</span>
+                }
+              </div>
             </div>
-            <div class="form-group">
-              <label for="user-confirm-password">Confirm Password *</label>
-              <input id="user-confirm-password" type="password" formControlName="confirmPassword" class="form-input" autocomplete="new-password" />
-              @if (userForm.get('confirmPassword')?.invalid && userForm.get('confirmPassword')?.touched) {
-                <span class="form-error" role="alert">Passwords must match</span>
-              }
+          </div>
+
+          <!-- Password Section - Only for new users -->
+          @if (!editingUser()) {
+            <div class="form-section">
+              <h4 class="section-title">Set Password</h4>
+              <div class="form-grid modern-form-grid">
+                <div class="form-group">
+                  <label for="user-password">Password *</label>
+                  <input id="user-password" type="password" formControlName="password" class="form-input" placeholder="Min 8 characters" autocomplete="new-password" />
+                  @if (userForm.get('password')?.invalid && userForm.get('password')?.touched) {
+                    <span class="form-error" role="alert">Password must be at least 8 characters</span>
+                  }
+                </div>
+                <div class="form-group">
+                  <label for="user-confirm-password">Confirm Password *</label>
+                  <input id="user-confirm-password" type="password" formControlName="confirmPassword" class="form-input" placeholder="Re-enter password" autocomplete="new-password" />
+                  @if (userForm.get('confirmPassword')?.invalid && userForm.get('confirmPassword')?.touched) {
+                    <span class="form-error" role="alert">Passwords must match</span>
+                  }
+                </div>
+              </div>
             </div>
           }
         </div>
 
-        <div class="modal-footer">
+        <div class="modal-footer modern-footer">
           <button type="button" class="outline-btn" (click)="closeUserModal()">Cancel</button>
           <button type="submit" class="primary-btn">
             {{ editingUser() ? 'Update User' : 'Create User' }}
@@ -2549,44 +2512,25 @@
 }
 
 @if (showResetPasswordModal()) {
-  <div class="modal-backdrop">
-    <section class="modal-card" (click)="$event.stopPropagation()" role="dialog"
+  <div class="modal-backdrop" (click)="closeResetPasswordModal()">
+    <section class="modal-card reset-password-modal" (click)="$event.stopPropagation()" role="dialog"
       aria-modal="true" aria-labelledby="reset-password-title">
-      <div class="modal-header">
-        <h3 id="reset-password-title">Reset Password</h3>
-        <button type="button" class="modal-close-btn" (click)="closeResetPasswordModal()" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
+      <div class="reset-password-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 15V17M6 21H18C19.1046 21 20 20.1046 20 19V11C20 9.89543 19.1046 9 18 9H6C4.89543 9 4 9.89543 4 11V19C4 20.1046 4.89543 21 6 21ZM16 9V7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7V9H16Z"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <h3 id="reset-password-title">Send Password Reset</h3>
+      <p class="reset-password-description">
+        This will send a password reset link to the user's email address. The user can then create their own new password securely.
+      </p>
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeResetPasswordModal()">Cancel</button>
+        <button type="button" class="primary-btn" (click)="resetPassword()">
+          Send Reset Email
         </button>
       </div>
-
-      <!-- FIX 4: wrapped form fields in .modal-body for consistent modal structure -->
-      <form [formGroup]="resetPasswordForm" (ngSubmit)="resetPassword()">
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="reset-password">New Password *</label>
-            <input id="reset-password" type="password" formControlName="password" class="form-input"
-              autocomplete="new-password" />
-            @if (resetPasswordForm.get('password')?.invalid && resetPasswordForm.get('password')?.touched) {
-              <span class="form-error" role="alert">Valid password is required</span>
-            }
-          </div>
-          <div class="form-group">
-            <label for="reset-confirm-password">Confirm New Password *</label>
-            <input id="reset-confirm-password" type="password" formControlName="confirmPassword" class="form-input"
-              autocomplete="new-password" />
-            @if (resetPasswordForm.get('confirmPassword')?.invalid && resetPasswordForm.get('confirmPassword')?.touched) {
-              <span class="form-error" role="alert">Passwords must match</span>
-            }
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="outline-btn" (click)="closeResetPasswordModal()">Cancel</button>
-          <button type="submit" class="primary-btn">Reset Password</button>
-        </div>
-      </form>
-      <!-- END FIX 4 -->
     </section>
   </div>
 }
