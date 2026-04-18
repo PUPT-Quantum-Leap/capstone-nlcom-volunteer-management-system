@@ -131,5 +131,7 @@ jobs:
           script: |
             # Extract the entire tarball
             tar -xzf /tmp/build.tar.gz -C /tmp
+            # Ensure deploy script is executable
+            sudo chmod +x /tmp/staging/scripts/deploy.sh
             # Run the deploy script with sudo (requires passwordless sudoers)
             sudo /tmp/staging/scripts/deploy.sh
