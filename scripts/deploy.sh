@@ -40,7 +40,7 @@ fi
 # Step 2: Extract the build artifact
 echo "Step 2: Extracting build artifact to $NEW_RELEASE_DIR..."
 sudo mkdir -p "$NEW_RELEASE_DIR"
-sudo tar -xzf /tmp/build.tar.gz -C "$NEW_RELEASE_DIR"
+sudo tar -xzf /tmp/build.tar.gz -C "$NEW_RELEASE_DIR" --strip-components=1
 
 # Step 3: Symlink Shared Assets
 echo "Step 3: Symlinking persistent storage and environment..."
