@@ -6,9 +6,9 @@ After=network.target mysql.service
 Type=simple
 User=www-data
 Group=www-data
-WorkingDirectory=/var/www/servetrack/backend
+WorkingDirectory=/var/www/servetrack/current/backend
 
-EnvironmentFile=/etc/servetrack/backend.env
+EnvironmentFile=/var/www/servetrack/shared/.env
 
 ExecStart=/usr/bin/php artisan serve --host=127.0.0.1 --port=8000
 Restart=always
