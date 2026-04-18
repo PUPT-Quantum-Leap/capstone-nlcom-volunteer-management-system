@@ -1,0 +1,226 @@
+================================================================================
+SERVETRACK - CODEBASE ANALYSIS SUMMARY
+Volunteer Management System for NLCOM
+================================================================================
+
+ANALYSIS GENERATED: 2026-04-12
+SCOPE: Complete codebase structure, tech stack, deployment configuration
+DOCUMENTS CREATED: 
+  1. COMPREHENSIVE_CODEBASE_ANALYSIS.md (13 sections, ~500 lines)
+  2. DEPLOYMENT_CRITICAL_INFO.md (troubleshooting & scaling guide)
+
+================================================================================
+KEY FINDINGS
+================================================================================
+
+1. ARCHITECTURE
+   ✓ Monorepo: Angular 21 frontend + Laravel 12 backend
+   ✓ Containerized: Docker Compose for dev & production
+   ✓ Microservices-ready: Independent frontend/backend services
+   ✓ Scalable: Stateless API, CDN-ready frontend
+
+2. FRONTEND (Angular 21)
+   ✓ Language: TypeScript 5.9.2
+   ✓ Testing: Vitest 4.0.18 with @analogjs/vitest-angular
+   ✓ Build: Angular CLI 21.2.2 with Vite support
+   ✓ Size: 2.6 MB production build
+   ✓ Styling: Tailwind CSS (v3/v4)
+   ✓ Runtime: Node 22.x, npm 11.6.3
+   
+   Features:
+   - Admin dashboard with volunteer management
+   - Volunteer self-service dashboard
+   - RSVP/Poll system
+   - Incident Command System (ICS)
+   - Facebook OAuth integration
+   - Role-based access (Admin/Coordinator/Volunteer)
+
+3. BACKEND (Laravel 12)
+   ✓ Language: PHP 8.2+
+   ✓ Framework: Laravel 12.0
+   ✓ Testing: Pest 3.8 with 80%+ coverage requirement
+   ✓ Auth: Laravel Sanctum 4.0 (token-based)
+   ✓ Database: MySQL 8.0 with 38 migrations
+   ✓ Styling: Tailwind CSS 4 (backend UI)
+   
+   Features:
+   - RESTful API with resource classes
+   - Complex volunteer management relationships
+   - RSVP/Poll system with voting
+   - Attendance tracking with indexes
+   - Emergency contact management
+   - Profile change audit logging
+   - SMS notifications (Twilio)
+   - External API integration (Facebook)
+
+4. DATABASE
+   ✓ Total Migrations: 38 files covering all features
+   ✓ Key Tables: users, volunteers, admins, coordinators
+   ✓ Relationships: Complex many-to-many via junction tables
+   ✓ Auditing: Soft deletes + profile change logs
+   ✓ Performance: Indexes on attendance queries
+   ✓ Features: Emergency contacts, availability tracking, skills matrix
+
+5. CI/CD PIPELINE
+   ✓ Platform: GitHub Actions
+   ✓ Workflows: 5 total (ci.yml, gitleaks.yml, others)
+   ✓ Testing: 
+     - Frontend: Vitest (npm test)
+     - Backend: Pest with SQLite :memory:
+   ✓ Code Quality: 
+     - ESLint (frontend)
+     - Laravel Pint (backend)
+     - Prettier (code formatting)
+   ✓ Security: Gitleaks secret scanning
+   ✓ Change Detection: Independent frontend/backend test runs
+
+6. SECURITY
+   ✓ Secret Scanning: Gitleaks in CI/CD + pre-commit hooks
+   ✓ Authentication: Laravel Sanctum tokens
+   ✓ Authorization: Role-based policies
+   ✓ OAuth: Facebook integration
+   ✓ Admin Protection: Invite code required
+   ✓ Environment: .env NOT committed, secrets in GitHub
+   ✓ Soft Deletes: Audit trail maintained
+   ✓ Encryption: APP_KEY based encryption
+
+7. DEPLOYMENT
+   ✓ Containerization: Multi-stage Docker builds
+   ✓ Development: docker-compose.yml (3 services)
+   ✓ Production: docker-compose.prod.yml (4 services + migrate)
+   ✓ Migrations: Automatic via separate migrate service
+   ✓ Reverse Proxy: Nginx (custom nginx.conf needed)
+   ✓ Database: MySQL 8.0 with persistent volumes
+   ✓ Cost: ~$15-20/month (2GB VPS)
+
+8. DEPENDENCIES
+   ✓ Frontend: ~500+ packages (11,223 lines in lock file)
+   ✓ Backend: ~300+ packages (9,763 lines in lock file)
+   ✓ Node: 22.x required globally
+   ✓ npm: 11.6.3 locked in package.json
+   ✓ PHP: 8.2+ with specific extensions
+   ✓ Composer: 2.x required
+
+9. TESTING
+   ✓ Frontend: Vitest with jsdom environment
+   ✓ Backend: Pest with Laravel plugin
+   ✓ Coverage: 80% minimum required (backend)
+   ✓ CI Tests: SQLite in-memory (no MySQL needed)
+   ✓ Pre-commit: Gitleaks + Laravel Pint
+
+10. DEVELOPMENT TOOLS
+    ✓ Code Formatting: Prettier (100 char width)
+    ✓ PHP Formatting: Laravel Pint (PSR-12)
+    ✓ Linting: ESLint + angular-eslint
+    ✓ Git Hooks: Husky (pre-commit)
+    ✓ Secret Scanning: Gitleaks
+    ✓ Dependency Updates: GitHub Dependabot
+
+================================================================================
+CRITICAL DEPLOYMENT INFORMATION
+================================================================================
+
+PORTS:
+  Development:
+    Frontend:  4200
+    Backend:   8000
+    MySQL:     3306 (exposed for local access)
+  
+  Production:
+    Nginx:     80, 443
+    Backend:   9000 (internal, via PHP-FPM)
+    MySQL:     3306 (internal only)
+
+ENVIRONMENT VARIABLES (MUST SET):
+  DB_HOST, DB_USERNAME, DB_PASSWORD
+  APP_KEY (generate: php artisan key:generate)
+  ADMIN_INVITE_CODE (security important!)
+  ADMIN_ALLOWED_DOMAINS
+  FACEBOOK_APP_ID, FACEBOOK_APP_SECRET (if using OAuth)
+  TWILIO credentials (if using SMS)
+  MAIL_* settings
+
+DATABASE:
+  Total Migrations: 38
+  Key Features: Soft deletes, audit logging, many-to-many relationships
+  Performance: Indexes on frequently queried tables
+  Automatic: Migration runs on deployment via migrate service
+
+SERVICES:
+  Development (3): frontend, backend, mysql
+  Production (4): nginx, backend, frontend (static), mysql
+  Plus: migrate service (one-time execution)
+
+DEPLOYMENT PROCESS:
+  1. Configure .env in servetrack-backend/
+  2. Run: docker-compose -f docker-compose.prod.yml build
+  3. Run: docker-compose -f docker-compose.prod.yml up -d
+  4. Verify: Check logs and test endpoints
+  5. Setup: SSL certificate, Nginx configuration
+
+BACKUP STRATEGY:
+  - Daily database exports
+  - Volume snapshots
+  - Git commits for code
+  - 30-day retention minimum
+
+================================================================================
+FILE LOCATIONS (DEPLOYMENT-CRITICAL)
+================================================================================
+
+Configuration:
+  .env.example                         ← Copy to .env (backend only)
+  .env.docker                          ← Docker environment config
+  servetrack-backend/.env              ← ACTUAL config (NOT in git)
+  servetrack-frontend/src/environments ← Frontend config
+
+Docker:
+  docker-compose.yml                   ← Development
+  docker-compose.prod.yml              ← Production
+  servetrack-frontend/Dockerfile       ← Frontend dev
+  servetrack-frontend/Dockerfile.prod  ← Frontend prod
+  servetrack-backend/Dockerfile        ← Backend dev
+  servetrack-backend/Dockerfile.prod   ← Backend prod
+
+CI/CD:
+  .github/workflows/ci.yml             ← Main testing pipeline
+  .github/workflows/gitleaks.yml       ← Security scanning
+  .husky/pre-commit                    ← Local git hooks
+  .gitleaks.toml                       ← Secret detection rules
+
+Database:
+  servetrack-backend/database/migrations/ ← 38 migration files
+  servetrack-backend/database/seeders/    ← Test data
+  servetrack-backend/database/factories/  ← Model factories
+
+Code:
+  servetrack-frontend/src/app/         ← Frontend components
+  servetrack-backend/app/              ← Backend logic
+  servetrack-backend/routes/api.php    ← API endpoints
+  servetrack-backend/tests/            ← Test files
+
+Build Output:
+  servetrack-frontend/dist/            ← Angular build (2.6MB)
+  servetrack-backend/storage/          ← Logs/cache (3.5MB)
+
+================================================================================
+QUICK START REFERENCE
+================================================================================
+
+LOCAL DEVELOPMENT:
+  # Setup
+  npm install
+  cd servetrack-backend && composer install && npm install
+  cd ../servetrack-frontend && npm install
+  
+  # Configure
+  cp servetrack-backend/.env.example servetrack-backend/.env
+  cd servetrack-backend && php artisan key:generate && php artisan migrate
+  
+  # Run (2 terminals)
+  Terminal 1: cd servetrack-backend && composer run dev
+  Terminal 2: cd servetrack-frontend && npm start
+  
+  # Access
+  Frontend: http://localhost:4200
+  Backend: http://l
