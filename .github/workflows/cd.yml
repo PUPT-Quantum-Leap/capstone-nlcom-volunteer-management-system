@@ -87,15 +87,27 @@ jobs:
                    --exclude 'storage/logs/*' \
                    servetrack-backend/ staging/backend/
           
-          cp -R config/* staging/config/
-          cp -R scripts/* staging/scripts/
+          # Copy config and scripts - ensure deploy.sh is included
+          cp config/servetrack-nginx.conf staging/config/
+          cp config/servetrack-backend.service staging/config/
+          cp scripts/deploy.sh staging/scripts/
           
-          # Compress to a single archive
-          cd staging
-          tar -czf ../build.tar.gz .
-          cd ..
+          # Verify critical files exist in staging
+          if [ ! -f staging/scripts/deploy.sh ]; then
+            echo "ERROR: deploy.sh not found in staging/scripts/"
+            exit 1
+          fi
           
-          # Verify the archive was created
+          # Compress to a single archive from parent, including staging/ prefix
+          tar -czf build.tar.gz staging/
+          
+          # Verify the archive was created and contains deploy.sh
+          if ! tar -tzf build.tar.gz | grep -q "staging/scripts/deploy.sh"; then
+            echo "ERROR: deploy.sh not found in archive"
+            tar -tzf build.tar.gz | head -20
+            exit 1
+          fi
+          
           ls -lh build.tar.gz
 
       - name: Transfer Archive to VPS
@@ -117,8 +129,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ env.VPS_PORT }}
           script: |
-            # Extract the deploy script from the tarball temporarily
-            tar -xzf /tmp/build.tar.gz -C /tmp scripts/deploy.sh
-            # Make deploy.sh executable and run it
-            sudo chmod +x /tmp/scripts/deploy.sh
-            sudo /tmp/scripts/deploy.sh
+            # Extract the entire tarball
+            tar -xzf /tmp/build.tar.gz -C /tmp
+            # Run the deploy script with sudo (requires passwordless sudoers)
+            sudo /tmp/staging/scripts/deploy.sh
