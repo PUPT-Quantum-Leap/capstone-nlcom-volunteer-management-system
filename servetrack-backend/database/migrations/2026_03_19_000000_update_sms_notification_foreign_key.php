@@ -9,6 +9,13 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // First, rename the primary key on rsvp_response that was missed in the previous migration
+        if (Schema::hasColumn('rsvp_response', 'poll_vote_id')) {
+            Schema::table('rsvp_response', function (Blueprint $table) {
+                $table->renameColumn('poll_vote_id', 'rsvp_response_id');
+            });
+        }
+
         $driver = DB::getDriverName();
 
         if ($driver === 'mysql') {
