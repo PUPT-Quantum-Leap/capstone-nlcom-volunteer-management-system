@@ -17,6 +17,42 @@ BACKEND_SERVICE="servetrack-backend"
 HEALTH_URL_LOCAL="http://127.0.0.1:8000/up"
 MAX_WAIT_TIME="30"
 
+# Track deployment state
+ATOMIC_SWAP_COMPLETED=false
+
+handle_error() {
+    echo "=========================================="
+    echo "CRITICAL ERROR DETECTED DURING DEPLOYMENT!"
+    echo "=========================================="
+    
+    if [ "$ATOMIC_SWAP_COMPLETED" = true ]; then
+        echo "Error occurred AFTER atomic swap. Initiating full rollback..."
+        # Find previous release
+        PREV_RELEASE=$(ls -1dt "$RELEASES_DIR"/* | grep -v "$NEW_RELEASE_DIR" | head -n 1 || true)
+        if [[ -n "$PREV_RELEASE" ]]; then
+            echo "Rolling back to previous release: $PREV_RELEASE"
+            sudo ln -nfs "$PREV_RELEASE" "$CURRENT_DIR"
+            sudo systemctl restart "$BACKEND_SERVICE" || true
+            sudo systemctl reload nginx || true
+            echo "Rollback complete. Please check the logs."
+        else
+            echo "CRITICAL: No previous release found to roll back to!"
+        fi
+        
+        # Show some error logs
+        sudo journalctl -u "$BACKEND_SERVICE" -n 50 --no-pager || true
+    else
+        echo "Error occurred BEFORE atomic swap. Live site is unaffected."
+        echo "Cleaning up failed release directory: $NEW_RELEASE_DIR"
+        sudo rm -rf "$NEW_RELEASE_DIR" || true
+    fi
+    
+    echo "Deployment Failed."
+    exit 1
+}
+
+trap 'handle_error' ERR
+
 echo "Deploying release: $TIMESTAMP"
 
 # Step 1: Ensure directory structure
@@ -34,7 +70,7 @@ sudo chmod -R 775 "$SHARED_DIR/backend/storage" || true
 if [[ ! -f "$SHARED_DIR/.env" ]]; then
     echo "ERROR: Missing production environment file at $SHARED_DIR/.env"
     echo "Please create it manually on the VPS with your Laravel production secrets."
-    exit 1
+    false # Trigger trap
 fi
 
 # Step 2: Extract the build artifact
@@ -81,6 +117,7 @@ sudo ln -sf /etc/nginx/sites-available/servetrack /etc/nginx/sites-enabled/serve
 # Step 6: The Atomic Swap
 echo "Step 6: Executing Atomic Swap..."
 sudo ln -nfs "$NEW_RELEASE_DIR" "$CURRENT_DIR"
+ATOMIC_SWAP_COMPLETED=true
 
 # Step 7: Restart Services
 echo "Step 7: Restarting services..."
@@ -106,28 +143,12 @@ done
 
 if [[ "$READY" != "true" ]]; then
   echo "ERROR: Backend health check failed (HTTP $HTTP_CODE)!"
-  echo "Initiating automated rollback..."
-  
-  # Find previous release
-  PREV_RELEASE=$(ls -1dt "$RELEASES_DIR"/* | grep -v "$NEW_RELEASE_DIR" | head -n 1 || true)
-  if [[ -n "$PREV_RELEASE" ]]; then
-      echo "Rolling back to previous release: $PREV_RELEASE"
-      sudo ln -nfs "$PREV_RELEASE" "$CURRENT_DIR"
-      sudo systemctl restart "$BACKEND_SERVICE"
-      sudo systemctl reload nginx
-      echo "Rollback complete. Please check the logs."
-  else
-      echo "CRITICAL: No previous release found to roll back to!"
-  fi
-  
-  # Show some error logs
-  sudo journalctl -u "$BACKEND_SERVICE" -n 50 --no-pager || true
-  exit 1
+  false # Trigger trap
 fi
 
 # Step 9: Cleanup
 echo "Step 9: Cleaning up old releases (keeping last 5)..."
-ls -1dt "$RELEASES_DIR"/* | tail -n +6 | sudo xargs -r rm -rf
+ls -1dt "$RELEASES_DIR"/* | tail -n +6 | sudo xargs -r rm -rf || true
 sudo rm -f /tmp/build.tar.gz /tmp/scripts/deploy.sh || true
 
 echo "=========================================="
