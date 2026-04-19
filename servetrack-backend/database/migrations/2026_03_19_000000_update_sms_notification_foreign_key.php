@@ -30,15 +30,28 @@ return new class extends Migration
             }
 
             Schema::table('sms_notification', function (Blueprint $table) {
-                $table->dropIndex('idx_sn_poll_vote_id');
+                $sm = Schema::getConnection()->getDoctrineSchemaManager();
+                $indexesFound = $sm->listTableIndexes('sms_notification');
+                if (array_key_exists('idx_sn_poll_vote_id', $indexesFound)) {
+                    $table->dropIndex('idx_sn_poll_vote_id');
+                }
+            });
+
+            if (Schema::hasColumn('sms_notification', 'poll_vote_id')) {
+                Schema::table('sms_notification', function (Blueprint $table) {
+                    $table->renameColumn('poll_vote_id', 'rsvp_response_id');
+                });
+            }
+
+            Schema::table('sms_notification', function (Blueprint $table) {
+                $sm = Schema::getConnection()->getDoctrineSchemaManager();
+                $indexesFound = $sm->listTableIndexes('sms_notification');
+                if (! array_key_exists('idx_sn_rsvp_response_id', $indexesFound)) {
+                    $table->index('rsvp_response_id', 'idx_sn_rsvp_response_id');
+                }
             });
 
             Schema::table('sms_notification', function (Blueprint $table) {
-                $table->renameColumn('poll_vote_id', 'rsvp_response_id');
-            });
-
-            Schema::table('sms_notification', function (Blueprint $table) {
-                $table->index('rsvp_response_id', 'idx_sn_rsvp_response_id');
                 $table->foreign('rsvp_response_id')
                     ->references('rsvp_response_id')
                     ->on('rsvp_response')
