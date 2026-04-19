@@ -29,13 +29,12 @@ return new class extends Migration
                 DB::statement("ALTER TABLE `sms_notification` DROP FOREIGN KEY `{$fk->CONSTRAINT_NAME}`");
             }
 
-            Schema::table('sms_notification', function (Blueprint $table) {
-                $sm = Schema::getConnection()->getDoctrineSchemaManager();
-                $indexesFound = $sm->listTableIndexes('sms_notification');
-                if (array_key_exists('idx_sn_poll_vote_id', $indexesFound)) {
+            // Drop index if it exists
+            if (Schema::hasIndex('sms_notification', 'idx_sn_poll_vote_id')) {
+                Schema::table('sms_notification', function (Blueprint $table) {
                     $table->dropIndex('idx_sn_poll_vote_id');
-                }
-            });
+                });
+            }
 
             if (Schema::hasColumn('sms_notification', 'poll_vote_id')) {
                 Schema::table('sms_notification', function (Blueprint $table) {
@@ -43,13 +42,12 @@ return new class extends Migration
                 });
             }
 
-            Schema::table('sms_notification', function (Blueprint $table) {
-                $sm = Schema::getConnection()->getDoctrineSchemaManager();
-                $indexesFound = $sm->listTableIndexes('sms_notification');
-                if (! array_key_exists('idx_sn_rsvp_response_id', $indexesFound)) {
+            // Add index if it doesn't exist
+            if (! Schema::hasIndex('sms_notification', 'idx_sn_rsvp_response_id')) {
+                Schema::table('sms_notification', function (Blueprint $table) {
                     $table->index('rsvp_response_id', 'idx_sn_rsvp_response_id');
-                }
-            });
+                });
+            }
 
             Schema::table('sms_notification', function (Blueprint $table) {
                 $table->foreign('rsvp_response_id')
