@@ -180,6 +180,9 @@ jobs:
             APP_KEY=${{ secrets.APP_KEY }}
             APP_URL=https://${{ secrets.APP_DOMAIN }}
 
+            LOG_CHANNEL=stack
+            LOG_LEVEL=info
+
             # Database
             DB_CONNECTION=mysql
             DB_HOST=${{ secrets.DB_HOST }}
@@ -188,13 +191,22 @@ jobs:
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
 
+            # Cache / Queue / Session (file-based, no Redis required)
+            CACHE_STORE=file
+            QUEUE_CONNECTION=sync
+            SESSION_DRIVER=file
+            SESSION_LIFETIME=120
+
             # Sanctum (SPA token-based auth)
             SANCTUM_STATEFUL_DOMAINS=${{ secrets.APP_DOMAIN }}
-            SESSION_DOMAIN=${{ secrets.APP_DOMAIN }}
-            SESSION_SECURE_COOKIE=true
+            CORS_ALLOWED_ORIGINS=https://${{ secrets.APP_DOMAIN }}
 
-            # Mail
-            MAIL_MAILER=smtp
+            # Admin security
+            ADMIN_INVITE_CODE=${{ secrets.ADMIN_INVITE_CODE }}
+            ADMIN_ALLOWED_DOMAINS=${{ secrets.APP_DOMAIN }}
+
+            # Mail (optional — leave unset until SMTP is configured)
+            MAIL_MAILER=${{ secrets.MAIL_MAILER }}
             MAIL_HOST=${{ secrets.MAIL_HOST }}
             MAIL_PORT=${{ secrets.MAIL_PORT }}
             MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
@@ -202,14 +214,6 @@ jobs:
             MAIL_ENCRYPTION=tls
             MAIL_FROM_ADDRESS=${{ secrets.MAIL_FROM_ADDRESS }}
             MAIL_FROM_NAME="ServeTrack"
-
-            # Queue & Cache
-            QUEUE_CONNECTION=redis
-            CACHE_STORE=redis
-            SESSION_DRIVER=redis
-            REDIS_HOST=${{ secrets.REDIS_HOST }}
-            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            REDIS_PORT=6379
             EOF
 
             sudo chmod 640 /var/www/servetrack/shared/.env
