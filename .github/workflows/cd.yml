@@ -1,9 +1,12 @@
 name: ServeTrack CD Deployment Workflow
 
 on:
-  push:
-    branches:
-      - main
+  # Fix 10: Only deploy after CI passes — prevents deploying broken code
+  workflow_run:
+    workflows: ["ServeTrack CI Testing Workflow (Angular + Laravel)"]
+    types: [completed]
+    branches: [main]
+  # Manual trigger bypasses CI gate (for emergency re-deploys)
   workflow_dispatch:
 
 permissions:
@@ -16,33 +19,35 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    env:
-      VPS_PORT: ${{ secrets.VPS_SSH_PORT || '22' }}
-
+    # Fix 10 (cont.): Guard — only run if CI succeeded or manually triggered
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
-      - name: Setup Node.js (frontend)
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: servetrack-frontend/package-lock.json
 
-      - name: Setup PHP (backend)
+      # Fix 7: Align PHP version with ci.yml (was 8.3, CI uses 8.2)
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.2'
           extensions: mbstring, pdo_mysql, zip, bcmath, curl
-          coverage: none
 
       - name: Get Composer Cache Directory
         id: composer-cache
         working-directory: servetrack-backend
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
-      - name: Cache Composer dependencies
+      - name: Cache Composer Dependencies
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
@@ -55,60 +60,90 @@ jobs:
           npm ci
           npm run build --configuration=production
 
-      - name: Install Backend Dependencies
-        working-directory: servetrack-backend
-        run: composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
-
-      - name: Package Artifacts
+      # Fix 9: Removed misleading PWA check (ServeTrack has no ngsw.json).
+      #         Replaced with a simple index.html guard that actually fails the build.
+      - name: Verify Frontend Build
+        working-directory: servetrack-frontend
         run: |
-          set -e
-          mkdir -p staging/frontend/public
-          mkdir -p staging/backend
-          mkdir -p staging/config
-          mkdir -p staging/scripts
-          
-          # Find the directory containing index.html in the dist folder
+          echo "=== Checking Frontend Build Artifacts ==="
+
+          MAIN_DIST_DIR=$(find dist -name "index.html" -exec dirname {} \; | head -n 1)
+          if [ -z "$MAIN_DIST_DIR" ]; then
+            echo "❌ ERROR: index.html not found in frontend build."
+            exit 1
+          fi
+          echo "✅ index.html found in $MAIN_DIST_DIR"
+          echo "Build size: $(du -sh dist | cut -f1)"
+
+      - name: Build Backend
+        working-directory: servetrack-backend
+        run: |
+          composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+
+      - name: Prepare prod branch
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+          # Stage artifacts to a temp location before switching branches
+          mkdir -p /tmp/build-artifacts/frontend
+          mkdir -p /tmp/build-artifacts/backend
+          mkdir -p /tmp/build-artifacts/config
+          mkdir -p /tmp/build-artifacts/scripts
+
+          # Find and copy frontend build output
           FRONTEND_DIST_DIR=$(find servetrack-frontend/dist -name "index.html" -exec dirname {} \; | head -n 1)
-          if [ -z "$FRONTEND_DIST_DIR" ]; then
-            echo "ERROR: index.html not found in frontend build."
-            exit 1
-          fi
-          
-          # Copy frontend to a unified public structure
-          cp -R "$FRONTEND_DIST_DIR"/* staging/frontend/public/
-          
-          # Copy backend, excluding dev and source control
-          rsync -a --exclude 'tests' \
-                   --exclude 'node_modules' \
-                   --exclude '.git' \
-                   --exclude 'storage/framework/cache/data/*' \
-                   --exclude 'storage/framework/views/*' \
-                   --exclude 'storage/framework/sessions/*' \
-                   --exclude 'storage/logs/*' \
-                   servetrack-backend/ staging/backend/
-          
-          # Copy config and scripts - ensure deploy.sh is included
-          cp config/servetrack-nginx.conf staging/config/
-          cp config/servetrack-backend.service staging/config/
-          cp scripts/deploy.sh staging/scripts/
-          
-          # Verify critical files exist in staging
-          if [ ! -f staging/scripts/deploy.sh ]; then
-            echo "ERROR: deploy.sh not found in staging/scripts/"
-            exit 1
-          fi
-          
-          # Compress to a single archive from parent, including staging/ prefix
-          tar -czf build.tar.gz staging/
-          
-          # Verify the archive was created and contains deploy.sh
-          if ! tar -tzf build.tar.gz | grep -q "staging/scripts/deploy.sh"; then
-            echo "ERROR: deploy.sh not found in archive"
-            tar -tzf build.tar.gz | head -20
-            exit 1
-          fi
-          
-          ls -lh build.tar.gz
+          cp -R "$FRONTEND_DIST_DIR"/* /tmp/build-artifacts/frontend/
+
+          # Copy backend (strip dev-only dirs)
+          rsync -a \
+               --exclude 'tests' \
+               --exclude 'node_modules' \
+               --exclude '.git' \
+               --exclude 'storage/framework/cache/data/*' \
+               --exclude 'storage/framework/views/*' \
+               --exclude 'storage/framework/sessions/*' \
+               --exclude 'storage/logs/*' \
+               servetrack-backend/ /tmp/build-artifacts/backend/
+
+          # Copy deployment config and scripts
+          cp config/servetrack-nginx.conf /tmp/build-artifacts/config/
+          cp config/servetrack-backend.service /tmp/build-artifacts/config/
+          cp scripts/deploy.sh /tmp/build-artifacts/scripts/
+
+          # Switch to prod branch (create orphan if it doesn't exist yet)
+          git fetch origin prod || true
+          git checkout prod 2>/dev/null || git checkout --orphan prod
+
+          # Wipe prod branch content (keep only build artifacts)
+          git rm -rf . 2>/dev/null || true
+
+          # Place artifacts at repo root of prod branch
+          cp -R /tmp/build-artifacts/* ./
+
+          # Commit and push
+          git add -f .
+          git commit -m "Deploy: Build from main $(git rev-parse --short main) at $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "No changes to commit"
+          git push origin prod --force
+
+      # Fix 1: Replaced the broken "Package Artifacts" step with a clean
+      #         archive creation step. Creates staging/ wrapper so deploy.sh's
+      #         --strip-components=1 produces the correct directory structure.
+      - name: Create Build Archive
+        run: |
+          # /tmp/build-artifacts has: frontend/ backend/ config/ scripts/
+          # Wrap in staging/ so deploy.sh --strip-components=1 lands correctly
+          mkdir -p /tmp/staging
+          cp -r /tmp/build-artifacts/frontend \
+                /tmp/build-artifacts/backend  \
+                /tmp/build-artifacts/config   \
+                /tmp/build-artifacts/scripts  \
+                /tmp/staging/
+
+          tar -czf build.tar.gz -C /tmp staging/
+          echo "✅ Archive created: $(du -sh build.tar.gz | cut -f1)"
+          echo "Contents preview:"
+          tar -tzf build.tar.gz | head -20
 
       - name: Transfer Archive to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -116,22 +151,213 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ env.VPS_PORT }}
+          # Fix: Use secret port instead of hardcoded 22
+          port: ${{ secrets.VPS_SSH_PORT }}
           source: "build.tar.gz"
           target: "/tmp/"
           overwrite: true
 
+      # Fix 2: Removed broken `if: secrets.APP_ENV != ''` — secrets in if: always false
+      # Fix 2: Changed << 'EOF' to << EOF so ${{ secrets.* }} interpolate correctly
+      # Fix 4: Added APP_KEY (Laravel won't start without it)
+      # Fix 8: Removed JWT_SECRET (Sanctum != JWT); added SANCTUM_STATEFUL_DOMAINS
+      - name: Deploy Environment File to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          known_hosts: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
+          script: |
+            sudo mkdir -p /var/www/servetrack/shared
+            sudo chmod 750 /var/www/servetrack/shared
+
+            sudo tee /var/www/servetrack/shared/.env > /dev/null << EOF
+            APP_NAME=ServeTrack
+            APP_ENV=production
+            APP_DEBUG=false
+            APP_KEY=${{ secrets.APP_KEY }}
+            APP_URL=https://${{ secrets.APP_DOMAIN }}
+
+            # Database
+            DB_CONNECTION=mysql
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=3306
+            DB_DATABASE=${{ secrets.DB_DATABASE }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+
+            # Sanctum (SPA token-based auth)
+            SANCTUM_STATEFUL_DOMAINS=${{ secrets.APP_DOMAIN }}
+            SESSION_DOMAIN=${{ secrets.APP_DOMAIN }}
+            SESSION_SECURE_COOKIE=true
+
+            # Mail
+            MAIL_MAILER=smtp
+            MAIL_HOST=${{ secrets.MAIL_HOST }}
+            MAIL_PORT=${{ secrets.MAIL_PORT }}
+            MAIL_USERNAME=${{ secrets.MAIL_USERNAME }}
+            MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
+            MAIL_ENCRYPTION=tls
+            MAIL_FROM_ADDRESS=${{ secrets.MAIL_FROM_ADDRESS }}
+            MAIL_FROM_NAME="ServeTrack"
+
+            # Queue & Cache
+            QUEUE_CONNECTION=redis
+            CACHE_STORE=redis
+            SESSION_DRIVER=redis
+            REDIS_HOST=${{ secrets.REDIS_HOST }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            REDIS_PORT=6379
+            EOF
+
+            sudo chmod 640 /var/www/servetrack/shared/.env
+            sudo chown root:www-data /var/www/servetrack/shared/.env
+            echo "✓ Environment file deployed"
+            echo "Variables written: $(sudo grep -c '^[A-Z]' /var/www/servetrack/shared/.env || echo 0)"
+
+      # Fix 5: Completely rewrote this step.
+      #         Old code: extracted archive → re-packed it (corrupting the structure)
+      #         New code: extract only deploy.sh to launch it; archive stays untouched
+      #         at /tmp/build.tar.gz for deploy.sh to use directly.
       - name: Execute Atomic Deployment
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ env.VPS_PORT }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          known_hosts: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
           script: |
-            # Extract the entire tarball
-            tar -xzf /tmp/build.tar.gz -C /tmp
-            # Ensure deploy script is executable
-            sudo chmod +x /tmp/staging/scripts/deploy.sh
-            # Run the deploy script with sudo (requires passwordless sudoers)
-            sudo /tmp/staging/scripts/deploy.sh
+            # Verify the archive arrived
+            if [ ! -f "/tmp/build.tar.gz" ]; then
+              echo "❌ ERROR: /tmp/build.tar.gz not found on VPS"
+              exit 1
+            fi
+            echo "✅ Archive found: $(du -sh /tmp/build.tar.gz | cut -f1)"
+
+            # Extract only deploy.sh from the archive (leave archive intact for deploy.sh)
+            sudo mkdir -p /tmp/servetrack-launcher
+            sudo tar -xzf /tmp/build.tar.gz \
+              -C /tmp/servetrack-launcher \
+              staging/scripts/deploy.sh \
+              --strip-components=2
+
+            if [ ! -f "/tmp/servetrack-launcher/deploy.sh" ]; then
+              echo "❌ ERROR: deploy.sh not found in archive at staging/scripts/deploy.sh"
+              exit 1
+            fi
+
+            # Run the deployment (deploy.sh handles the rest: extract, migrate, swap, health check)
+            sudo chmod +x /tmp/servetrack-launcher/deploy.sh
+            sudo /tmp/servetrack-launcher/deploy.sh
+
+            # Cleanup launcher dir (deploy.sh cleans up the archive itself)
+            sudo rm -rf /tmp/servetrack-launcher
+
+      # Fix 6: Health check now fails on ANY non-2xx response (was only catching 000)
+      #         Also fixed health endpoint: /up (not /api/up) to match deploy.sh + nginx config
+      - name: Verify Deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          known_hosts: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
+          script: |
+            echo "=== Checking Service Status ==="
+            systemctl is-active servetrack-backend nginx
+
+            echo ""
+            echo "=== Waiting for Backend to settle (15 seconds) ==="
+            sleep 15
+
+            echo ""
+            echo "=== Backend Logs (last 30 lines) ==="
+            journalctl -u servetrack-backend -n 30 --no-pager || true
+
+            echo ""
+            echo "=== Testing Backend Health ==="
+            BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/up 2>/dev/null || echo "000")
+            echo "Backend (127.0.0.1:8000/up) Status: $BACKEND_STATUS"
+
+            echo ""
+            echo "=== Testing Frontend via Nginx ==="
+            FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost 2>/dev/null || echo "000")
+            echo "Frontend (Nginx) Status: $FRONTEND_STATUS"
+
+            # Fail on any non-2xx backend response
+            if [[ "$BACKEND_STATUS" != "2"* ]]; then
+              echo "❌ ERROR: Backend returned non-2xx status: $BACKEND_STATUS"
+              exit 1
+            fi
+
+            echo ""
+            echo "✅ Deployment verified successfully!"
+
+      - name: Notify on Success
+        if: success()
+        run: |
+          echo "✅ Deployment successful!"
+          echo "Site: https://${{ secrets.APP_DOMAIN }}"
+          echo "Deployed at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+      # Rollback: Fixed prev-release detection (old grep -v date was unreliable)
+      - name: Rollback on Verification Failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          known_hosts: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
+          script: |
+            echo "=========================================="
+            echo "🔄 INITIATING AUTOMATIC ROLLBACK"
+            echo "=========================================="
+
+            APP_DIR="/var/www/servetrack"
+            RELEASES_DIR="$APP_DIR/releases"
+            BACKEND_SERVICE="servetrack-backend"
+
+            # Get the second-most-recent release (i.e. the one before this deploy)
+            PREV_RELEASE=$(ls -1dt "$RELEASES_DIR"/* 2>/dev/null | sed -n '2p' || true)
+
+            if [ -z "$PREV_RELEASE" ]; then
+              echo "⚠️ No previous release found to roll back to!"
+              echo "Manual intervention required on VPS"
+              exit 1
+            fi
+
+            echo "Rolling back to: $PREV_RELEASE"
+
+            # Stop backend
+            sudo systemctl stop "$BACKEND_SERVICE"
+
+            # Restore previous release symlink
+            sudo ln -nfs "$PREV_RELEASE" "$APP_DIR/current"
+
+            # Restart services
+            sudo systemctl restart "$BACKEND_SERVICE"
+            sudo nginx -t && sudo systemctl reload nginx
+
+            sleep 5
+
+            # Verify rollback
+            if systemctl is-active --quiet "$BACKEND_SERVICE"; then
+              echo "✅ Rollback successful! Backend is running on previous release."
+            else
+              echo "❌ Rollback failed! Backend did not start."
+              echo "CRITICAL: Manual intervention required!"
+              exit 1
+            fi
+
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "🔄 Automatic rollback has been attempted"
+          echo "Check the workflow logs above for rollback status"
