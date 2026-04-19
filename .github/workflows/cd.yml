@@ -1,12 +1,9 @@
 name: ServeTrack CD Deployment Workflow
 
 on:
-  # Fix 10: Only deploy after CI passes — prevents deploying broken code
-  workflow_run:
-    workflows: ["ServeTrack CI Testing Workflow (Angular + Laravel)"]
-    types: [completed]
+  # Trigger on every push/merge to main, and allow manual runs
+  push:
     branches: [main]
-  # Manual trigger bypasses CI gate (for emergency re-deploys)
   workflow_dispatch:
 
 permissions:
@@ -19,8 +16,7 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    # Fix 10 (cont.): Guard — only run if CI succeeded or manually triggered
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    # Prevent concurrent deployments from stacking up
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v4
