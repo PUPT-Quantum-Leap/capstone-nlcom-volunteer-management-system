@@ -3,190 +3,156 @@
 set -euo pipefail
 
 echo "=========================================="
-echo "ServeTrack Deployment Script"
+echo "ServeTrack Atomic Symlink Deployment"
 echo "Started at: $(date)"
 echo "=========================================="
 
 APP_DIR="/var/www/servetrack"
-BACKUP_DIR="/var/www/servetrack-backups"
-TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-
-FRONTEND_DIR="$APP_DIR/frontend"
-BACKEND_DIR="$APP_DIR/backend"
-
-REPO_URL="${SERVETRACK_REPO_URL:-}"
-REPO_BRANCH="${SERVETRACK_DEPLOY_BRANCH:-prod}"
-
+SHARED_DIR="$APP_DIR/shared"
+RELEASES_DIR="$APP_DIR/releases"
+CURRENT_DIR="$APP_DIR/current"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+NEW_RELEASE_DIR="$RELEASES_DIR/$TIMESTAMP"
 BACKEND_SERVICE="servetrack-backend"
-
 HEALTH_URL_LOCAL="http://127.0.0.1:8000/up"
 MAX_WAIT_TIME="30"
 
-if [[ -z "$REPO_URL" ]]; then
-  echo "ERROR: SERVETRACK_REPO_URL is required (e.g. git@github.com:org/repo.git)"
-  exit 1
+# Track deployment state
+ATOMIC_SWAP_COMPLETED=false
+
+handle_error() {
+    echo "=========================================="
+    echo "CRITICAL ERROR DETECTED DURING DEPLOYMENT!"
+    echo "=========================================="
+    
+    if [ "$ATOMIC_SWAP_COMPLETED" = true ]; then
+        echo "Error occurred AFTER atomic swap. Initiating full rollback..."
+        # Find previous release
+        PREV_RELEASE=$(ls -1dt "$RELEASES_DIR"/* | grep -v "$NEW_RELEASE_DIR" | head -n 1 || true)
+        if [[ -n "$PREV_RELEASE" ]]; then
+            echo "Rolling back to previous release: $PREV_RELEASE"
+            sudo ln -nfs "$PREV_RELEASE" "$CURRENT_DIR"
+            sudo systemctl restart "$BACKEND_SERVICE" || true
+            sudo systemctl reload nginx || true
+            echo "Rollback complete. Please check the logs."
+        else
+            echo "CRITICAL: No previous release found to roll back to!"
+        fi
+        
+        # Show some error logs
+        sudo journalctl -u "$BACKEND_SERVICE" -n 50 --no-pager || true
+    else
+        echo "Error occurred BEFORE atomic swap. Live site is unaffected."
+        echo "Cleaning up failed release directory: $NEW_RELEASE_DIR"
+        sudo rm -rf "$NEW_RELEASE_DIR" || true
+    fi
+    
+    echo "Deployment Failed."
+    exit 1
+}
+
+trap 'handle_error' ERR
+
+echo "Deploying release: $TIMESTAMP"
+
+# Step 1: Ensure directory structure
+echo "Step 1: Ensuring shared and release directories exist..."
+sudo mkdir -p "$SHARED_DIR/backend/storage/framework/cache/data"
+sudo mkdir -p "$SHARED_DIR/backend/storage/framework/sessions"
+sudo mkdir -p "$SHARED_DIR/backend/storage/framework/views"
+sudo mkdir -p "$SHARED_DIR/backend/storage/logs"
+sudo mkdir -p "$SHARED_DIR/backend/storage/app/public"
+sudo mkdir -p "$RELEASES_DIR"
+sudo chown -R "$USER":www-data "$APP_DIR"
+sudo chmod -R 775 "$SHARED_DIR/backend/storage" || true
+
+# Check for .env file
+if [[ ! -f "$SHARED_DIR/.env" ]]; then
+    echo "ERROR: Missing production environment file at $SHARED_DIR/.env"
+    echo "Please create it manually on the VPS with your Laravel production secrets."
+    false # Trigger trap
 fi
 
-echo ""
-echo "Step 0: Ensuring directories exist..."
-sudo mkdir -p "$APP_DIR" "$BACKUP_DIR" "$FRONTEND_DIR" "$BACKEND_DIR"
-sudo chown -R "$USER":"$USER" "$APP_DIR" "$BACKUP_DIR"
+# Step 2: Extract the build artifact
+echo "Step 2: Extracting build artifact to $NEW_RELEASE_DIR..."
+sudo mkdir -p "$NEW_RELEASE_DIR"
+sudo tar -xzf /tmp/build.tar.gz -C "$NEW_RELEASE_DIR" --strip-components=1
 
-echo ""
-echo "Step 1: Creating backup of current deployment..."
-mkdir -p "$BACKUP_DIR/$TIMESTAMP"
-if [[ -d "$FRONTEND_DIR" ]]; then
-  tar -czf "$BACKUP_DIR/$TIMESTAMP/frontend.tgz" -C "$APP_DIR" frontend 2>/dev/null || true
-fi
-if [[ -d "$BACKEND_DIR" ]]; then
-  tar -czf "$BACKUP_DIR/$TIMESTAMP/backend.tgz" -C "$APP_DIR" backend 2>/dev/null || true
-fi
+# Step 3: Symlink Shared Assets
+echo "Step 3: Symlinking persistent storage and environment..."
+sudo ln -nfs "$SHARED_DIR/.env" "$NEW_RELEASE_DIR/backend/.env"
+sudo rm -rf "$NEW_RELEASE_DIR/backend/storage"
+sudo ln -nfs "$SHARED_DIR/backend/storage" "$NEW_RELEASE_DIR/backend/storage"
 
-echo ""
-echo "Step 2: Fetching latest build artifacts..."
-if [[ ! -d "$APP_DIR/repo/.git" ]]; then
-  mkdir -p "$APP_DIR/repo"
-  git clone "$REPO_URL" "$APP_DIR/repo"
-fi
+# Set correct ownership for the new release
+sudo chown -R www-data:www-data "$NEW_RELEASE_DIR/backend"
 
-cd "$APP_DIR/repo"
-git fetch origin "$REPO_BRANCH"
-git checkout "$REPO_BRANCH"
-git reset --hard "origin/$REPO_BRANCH"
+# Step 4: Laravel Cache and Migrations
+echo "Step 4: Running Laravel optimizations and migrations..."
+cd "$NEW_RELEASE_DIR/backend"
 
-if [[ -x "scripts/deploy.sh" && "$(realpath "scripts/deploy.sh")" != "$(realpath "$0")" ]]; then
-  echo ""
-  echo "Switching to latest deploy script from repo..."
-  exec sudo -E bash "$(pwd)/scripts/deploy.sh"
-fi
-
-echo ""
-echo "Step 3: Deploying frontend dist..."
-if [[ ! -d "servetrack-frontend/dist" ]]; then
-  echo "ERROR: Expected Angular build at servetrack-frontend/dist"
-  exit 1
-fi
-
-FRONTEND_BUILD_DIR=""
-if [[ -f "servetrack-frontend/dist/servetrack-frontend/browser/index.html" ]]; then
-  FRONTEND_BUILD_DIR="servetrack-frontend/dist/servetrack-frontend/browser"
-elif [[ -f "servetrack-frontend/dist/browser/index.html" ]]; then
-  FRONTEND_BUILD_DIR="servetrack-frontend/dist/browser"
-elif [[ -f "servetrack-frontend/dist/servetrack-frontend/index.html" ]]; then
-  FRONTEND_BUILD_DIR="servetrack-frontend/dist/servetrack-frontend"
-elif [[ -f "servetrack-frontend/dist/index.html" ]]; then
-  FRONTEND_BUILD_DIR="servetrack-frontend/dist"
-fi
-
-if [[ -z "$FRONTEND_BUILD_DIR" ]]; then
-  echo "ERROR: Could not locate built index.html under servetrack-frontend/dist"
-  echo "Found:"; ls -la servetrack-frontend/dist || true
-  exit 1
-fi
-
-sudo rm -rf "$FRONTEND_DIR"/*
-sudo cp -R "$FRONTEND_BUILD_DIR"/* "$FRONTEND_DIR/"
-
-echo ""
-echo "Step 4: Deploying backend..."
-if [[ ! -f "servetrack-backend/artisan" ]]; then
-  echo "ERROR: Expected Laravel app at servetrack-backend/artisan"
-  exit 1
-fi
-
-rsync -a --delete --exclude ".env" --exclude "storage" --exclude "bootstrap/cache" servetrack-backend/ "$BACKEND_DIR/"
-
-sudo chown -R www-data:www-data "$BACKEND_DIR"
-
-echo ""
-echo "Step 5: Ensuring backend writable paths..."
-mkdir -p "$BACKEND_DIR/storage" "$BACKEND_DIR/bootstrap/cache"
-chmod -R ug+rwX "$BACKEND_DIR/storage" "$BACKEND_DIR/bootstrap/cache" || true
-sudo chown -R www-data:www-data "$BACKEND_DIR/storage" "$BACKEND_DIR/bootstrap/cache"
-
-echo ""
-echo "Step 6: Wiring environment file..."
-if [[ -f "/etc/servetrack/backend.env" ]]; then
-  sudo cp "/etc/servetrack/backend.env" "$BACKEND_DIR/.env"
-else
-  echo "ERROR: /etc/servetrack/backend.env not found (CD should deploy it)"
-  exit 1
-fi
-
-sudo chown www-data:www-data "$BACKEND_DIR/.env"
-sudo chmod 640 "$BACKEND_DIR/.env"
-
-if ! grep -q '^APP_KEY=.' "$BACKEND_DIR/.env"; then
-  echo "ERROR: APP_KEY is missing/empty in $BACKEND_DIR/.env"
-  exit 1
-fi
-
-echo ""
-echo "Step 7: Installing PHP dependencies..."
-cd "$BACKEND_DIR"
-sudo -u www-data composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-
-if [[ ! -f "$BACKEND_DIR/vendor/autoload.php" ]]; then
-  echo "ERROR: composer install did not produce vendor/autoload.php"
-  exit 1
-fi
-
-echo ""
-echo "Step 8: Optimizing Laravel + migrating..."
+# Link storage (public disk) if needed
 sudo -u www-data php artisan storage:link || true
-sudo -u www-data php artisan config:cache || true
-sudo -u www-data php artisan route:cache || true
-sudo -u www-data php artisan view:cache || true
+
+# Clear and rebuild caches
+sudo -u www-data php artisan config:cache
+sudo -u www-data php artisan route:cache
+sudo -u www-data php artisan view:cache
+
+# Run database migrations
 sudo -u www-data php artisan migrate --force
 
-echo ""
-echo "Step 9: Restarting backend service..."
+# Step 5: Update System configs if necessary
+echo "Step 5: Applying Systemd and Nginx configurations..."
+sudo cp "$NEW_RELEASE_DIR/config/servetrack-backend.service" /etc/systemd/system/servetrack-backend.service
 sudo systemctl daemon-reload
-sudo systemctl restart "$BACKEND_SERVICE"
 
-echo ""
-echo "Step 10: Updating Nginx configuration (if present)..."
-if [[ -f "$APP_DIR/repo/config/servetrack-nginx.conf" ]]; then
-  sudo cp "$APP_DIR/repo/config/servetrack-nginx.conf" /etc/nginx/sites-available/servetrack
-  sudo ln -sf /etc/nginx/sites-available/servetrack /etc/nginx/sites-enabled/servetrack
-  sudo nginx -t
-  sudo systemctl reload nginx
+if [ ! -f /etc/nginx/sites-available/servetrack ] || [ ! -d /etc/letsencrypt/live/servetrack.kaelvxdev.space ]; then
+    sudo cp "$NEW_RELEASE_DIR/config/servetrack-nginx.conf" /etc/nginx/sites-available/servetrack
+else
+    echo "Keeping existing nginx config to preserve Certbot SSL config."
 fi
+sudo ln -sf /etc/nginx/sites-available/servetrack /etc/nginx/sites-enabled/servetrack
 
-echo ""
-echo "Step 11: Waiting for backend health..."
+# Step 6: The Atomic Swap
+echo "Step 6: Executing Atomic Swap..."
+sudo ln -nfs "$NEW_RELEASE_DIR" "$CURRENT_DIR"
+ATOMIC_SWAP_COMPLETED=true
+
+# Step 7: Restart Services
+echo "Step 7: Restarting services..."
+sudo systemctl restart "$BACKEND_SERVICE"
+sudo nginx -t && sudo systemctl reload nginx
+
+# Step 8: Health Check and Auto-Rollback
+echo "Step 8: Waiting for backend health..."
 sleep 3
 ELAPSED=3
 READY=false
 while [[ "$ELAPSED" -lt "$MAX_WAIT_TIME" ]]; do
-  HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL_LOCAL" 2>/dev/null || echo "000")
-  if [[ "$HTTP_CODE" != "000" && "$HTTP_CODE" != "502" && "$HTTP_CODE" != "503" ]]; then
+  HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL_LOCAL" || echo "000")
+  if [[ "$HTTP_CODE" == "200" || "$HTTP_CODE" == "301" || "$HTTP_CODE" == "302" ]]; then
     READY=true
     echo "✓ Backend health check passed after ${ELAPSED}s (HTTP $HTTP_CODE)"
     break
   fi
   sleep 2
   ELAPSED=$((ELAPSED + 2))
-  echo "  ... waiting (${ELAPSED}s/${MAX_WAIT_TIME}s)"
+  echo "  ... waiting (${ELAPSED}s/${MAX_WAIT_TIME}s) (HTTP $HTTP_CODE)"
 done
 
 if [[ "$READY" != "true" ]]; then
-  echo "ERROR: Backend did not become healthy (URL: $HEALTH_URL_LOCAL)"
-  sudo journalctl -u "$BACKEND_SERVICE" -n 100 --no-pager || true
-  exit 1
+  echo "ERROR: Backend health check failed (HTTP $HTTP_CODE)!"
+  false # Trigger trap
 fi
 
-echo ""
-echo "Step 12: Cleanup old backups (keeping last 5)..."
-cd "$BACKUP_DIR"
-ls -t | tail -n +6 | xargs -r rm -rf
+# Step 9: Cleanup
+echo "Step 9: Cleaning up old releases (keeping last 5)..."
+ls -1dt "$RELEASES_DIR"/* | tail -n +6 | sudo xargs -r rm -rf || true
+sudo rm -f /tmp/build.tar.gz /tmp/scripts/deploy.sh || true
 
-echo ""
 echo "=========================================="
 echo "Deployment completed successfully!"
 echo "Finished at: $(date)"
+echo "Current Release: $TIMESTAMP"
 echo "=========================================="
-
-echo "Service Status:"
-systemctl is-active "$BACKEND_SERVICE" && echo "✓ Backend: Running" || echo "✗ Backend: Not running"
-systemctl is-active nginx && echo "✓ Nginx: Running" || echo "✗ Nginx: Not running"
