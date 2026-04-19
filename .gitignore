@@ -30,5 +30,5 @@ yarn-error.log*
 # Gitleaks report
 gitleaks-report.json
 
-.gemini/
-gha-creds-*.json
+# Private server configuration
+VPS_CONFIG_PRIVATE.md
