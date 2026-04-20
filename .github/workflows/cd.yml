@@ -158,7 +158,7 @@ jobs:
       # Fix 4: Added APP_KEY (Laravel won't start without it)
       # Fix 8: Removed JWT_SECRET (Sanctum != JWT); added SANCTUM_STATEFUL_DOMAINS
       - name: Deploy Environment File to VPS
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
@@ -222,7 +222,7 @@ jobs:
       #         New code: extract only deploy.sh to launch it; archive stays untouched
       #         at /tmp/build.tar.gz for deploy.sh to use directly.
       - name: Execute Atomic Deployment
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
@@ -259,7 +259,7 @@ jobs:
       # Fix 6: Health check now fails on ANY non-2xx response (was only catching 000)
       #         Also fixed health endpoint: /up (not /api/up) to match deploy.sh + nginx config
       - name: Verify Deployment
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
@@ -307,7 +307,7 @@ jobs:
       # Rollback: Fixed prev-release detection (old grep -v date was unreliable)
       - name: Rollback on Verification Failure
         if: failure()
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
