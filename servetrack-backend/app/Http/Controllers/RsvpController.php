@@ -226,7 +226,7 @@ class RsvpController extends Controller
             }
 
             $shift = $lockedRsvp->shifts()
-                ->where('time_slot.time_slot_id', $request->integer('time_slot_id'))
+                ->where('rsvp_shift.time_slot_id', $request->integer('time_slot_id'))
                 ->lockForUpdate()
                 ->first();
 
@@ -240,7 +240,7 @@ class RsvpController extends Controller
                 ->where('rsvp_id', $lockedRsvp->rsvp_id)
                 ->where('time_slot_id', $shift->time_slot_id)
                 ->lockForUpdate()
-                ->count();
+                ->count(); // Must query DB - cannot rely on cached pivot for concurrent capacity checks
 
             if ($currentResponses >= $shift->pivot->capacity) {
                 $capacityReached = true;
@@ -279,10 +279,15 @@ class RsvpController extends Controller
             'volunteer_id' => ['required', 'exists:volunteer,volunteer_id'],
         ]);
 
-        // Authorization: ensure user can only check in themselves
-        $volunteer = $request->user()->volunteer;
-        if (! $volunteer || $volunteer->volunteer_id != $request->volunteer_id) {
-            return response()->json(['message' => 'Unauthorized: You can only check in yourself.'], 403);
+        $user = $request->user();
+        $isAdmin = $user->role === 'admin';
+
+        // Admins can check in any volunteer; volunteers can only check in themselves
+        if (! $isAdmin) {
+            $volunteer = $user->volunteer;
+            if (! $volunteer || $volunteer->volunteer_id != $request->volunteer_id) {
+                return response()->json(['message' => 'Unauthorized: You can only check in yourself.'], 403);
+            }
         }
 
         $response = RsvpResponse::where('rsvp_id', $id)
@@ -304,10 +309,15 @@ class RsvpController extends Controller
             'volunteer_id' => ['required', 'exists:volunteer,volunteer_id'],
         ]);
 
-        // Authorization: ensure user can only check out themselves
-        $volunteer = $request->user()->volunteer;
-        if (! $volunteer || $volunteer->volunteer_id != $request->volunteer_id) {
-            return response()->json(['message' => 'Unauthorized: You can only check out yourself.'], 403);
+        $user = $request->user();
+        $isAdmin = $user->role === 'admin';
+
+        // Admins can check out any volunteer; volunteers can only check out themselves
+        if (! $isAdmin) {
+            $volunteer = $user->volunteer;
+            if (! $volunteer || $volunteer->volunteer_id != $request->volunteer_id) {
+                return response()->json(['message' => 'Unauthorized: You can only check out yourself.'], 403);
+            }
         }
 
         $response = RsvpResponse::where('rsvp_id', $id)
@@ -329,12 +339,26 @@ class RsvpController extends Controller
 
         $responses = RsvpResponse::where('rsvp_id', $id)->paginate(50);
 
+        $statusCounts = [
+            'checked_in' => 0,
+            'checked_out' => 0,
+            'no_show' => 0,
+            'registered' => 0,
+        ];
+
+        foreach ($responses->items() as $response) {
+            $status = $response->attendance_status;
+            if (isset($statusCounts[$status])) {
+                $statusCounts[$status]++;
+            }
+        }
+
         return response()->json([
             'total' => $responses->total(),
-            'checked_in' => $responses->where('attendance_status', 'checked_in')->count(),
-            'checked_out' => $responses->where('attendance_status', 'checked_out')->count(),
-            'no_show' => $responses->where('attendance_status', 'no_show')->count(),
-            'registered' => $responses->where('attendance_status', 'registered')->count(),
+            'checked_in' => $statusCounts['checked_in'],
+            'checked_out' => $statusCounts['checked_out'],
+            'no_show' => $statusCounts['no_show'],
+            'registered' => $statusCounts['registered'],
             'data' => $responses->items(),
             'pagination' => [
                 'current_page' => $responses->currentPage(),

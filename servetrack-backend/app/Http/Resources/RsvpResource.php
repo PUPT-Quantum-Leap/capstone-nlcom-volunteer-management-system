@@ -22,21 +22,22 @@ class RsvpResource extends JsonResource
             'totalResponses' => $this->responses_count ?? 0,
             'createdAt' => $this->created_at?->toDateString(),
             'shifts' => $this->whenLoaded('shifts', function () {
-                return $this->shifts->map(function ($shift) {
-                    // Count responses for this shift from the loaded responses relationship
-                    $responseCount = 0;
-                    if ($this->relationLoaded('responses')) {
-                        $responseCount = $this->responses
-                            ->where('time_slot_id', $shift->time_slot_id)
-                            ->count();
-                    }
+                $responseCounts = [];
 
+                if ($this->relationLoaded('responses')) {
+                    $grouped = $this->responses->groupBy('time_slot_id');
+                    foreach ($grouped as $timeSlotId => $responses) {
+                        $responseCounts[$timeSlotId] = $responses->count();
+                    }
+                }
+
+                return $this->shifts->map(function ($shift) use ($responseCounts) {
                     return [
                         'id' => $shift->time_slot_id,
                         'text' => $shift->text,
                         'timeSlot' => $shift->pivot->time_slot,
                         'capacity' => $shift->pivot->capacity,
-                        'responses' => $responseCount,
+                        'responses' => $responseCounts[$shift->time_slot_id] ?? 0,
                     ];
                 });
             }),
