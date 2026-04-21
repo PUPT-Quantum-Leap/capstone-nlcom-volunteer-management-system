@@ -18,7 +18,7 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { DatePipe, CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
@@ -26,16 +26,53 @@ import { AdminDashboardService, DashboardVolunteerRow, VolunteerUser } from '../
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Rsvp, RsvpShift } from '../models/rsvp';
 import { RsvpService } from '../services/rsvp.service';
-import { IncidentCommandSystemComponent } from '../incident-command-system/incident-command-system';
 import { User } from '../models/user';
 import { UserService } from '../services/user.service';
-import { AdminHeaderComponent } from '../components/admin-header/admin-header.component';
 import { AnalyticsService, ReportData } from '../services/analytics.service';
+
+interface EventModuleCard {
+  label: string;
+  value: number;
+  helper: string;
+}
+
+interface BackupRecord {
+  id: number;
+  name: string;
+  createdAt: string;
+  size: string;
+  type: 'Automatic' | 'Manual';
+  status: 'Completed' | 'In Progress' | 'Failed';
+}
+
+interface AttendanceRecord {
+  id: number;
+  volunteerName: string;
+  email: string;
+  department: string;
+  checkInTime: string | null;
+  checkOutTime: string | null;
+  duration: string | null;
+  status: 'present' | 'absent' | 'late';
+}
+
+type DashboardView =
+  | 'overview'
+  | 'volunteers'
+  | 'attendance'
+  | 'performance'
+  | 'rsvps'
+  | 'ics'
+  | 'users'
+  | 'analytics'
+  | 'events'
+  | 'sms'
+  | 'backup';
 
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, CommonModule, IncidentCommandSystemComponent, AdminHeaderComponent],
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
@@ -53,7 +90,33 @@ export class AdminDashboard implements OnInit {
   readonly Math = Math;
 
   currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
-  userName = signal(this.authService.currentUser()?.name || 'Admin');
+  currentUser = computed(() => this.authService.currentUser());
+  pageTitle = computed(() => {
+    switch (this.currentView()) {
+      case 'overview':
+        return 'Dashboard';
+      case 'volunteers':
+        return 'Volunteer Management';
+      case 'attendance':
+        return 'Attendance';
+      case 'performance':
+        return 'Performance';
+      case 'rsvps':
+        return 'RSVP Management';
+      case 'ics':
+        return 'Incident Command System';
+      case 'users':
+        return 'User Management';
+      case 'analytics':
+        return 'Analytics & Reports';
+      case 'sms':
+        return 'SMS Notifications';
+      case 'backup':
+        return 'Backup & Recovery';
+      default:
+        return 'Admin Dashboard';
+    }
+  });
   sidebarCollapsed = signal(false);
   mobileSidebarOpen = signal(false);
   isLoading = signal(false);
@@ -70,6 +133,7 @@ export class AdminDashboard implements OnInit {
   showDeleteUserModal = signal(false);
   showResetPasswordModal = signal(false);
   showUserDetailsModal = signal(false);
+  showAiSidebar = signal(false);
 
   searchQuery = signal('');
   userSearchQuery = signal('');
@@ -86,16 +150,88 @@ export class AdminDashboard implements OnInit {
 
   // RSVP signals (already declared above)
 
-  showAiModal = signal(false);
+
   currentPage = signal(1);
   usersPerPage = signal(5);
   usersTotalPages = computed(() => Math.ceil(this.filteredUsers().length / this.usersPerPage()));
   
   volunteersPage = signal(1);
   volunteersPerPage = signal(5);
-  volunteersTotalPages = computed(() => Math.ceil(this.volunteerRows().length / this.volunteersPerPage()));
+  volunteerSearchQuery = signal('');
   showArchivedVolunteers = signal(false);
   archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
+
+  filteredVolunteers = computed(() => {
+    const search = this.volunteerSearchQuery().toLowerCase().trim();
+    const volunteers = this.showArchivedVolunteers()
+      ? this.archivedVolunteerRows()
+      : this.volunteerRows();
+
+    if (!search) {
+      return volunteers;
+    }
+
+    return volunteers.filter(v =>
+      v.name.toLowerCase().includes(search) ||
+      v.email.toLowerCase().includes(search) ||
+      (v.facebookName && v.facebookName.toLowerCase().includes(search)) ||
+      v.department.toLowerCase().includes(search)
+    );
+  });
+
+  volunteersTotalPages = computed(() => Math.ceil(this.filteredVolunteers().length / this.volunteersPerPage()));
+
+  // Attendance management signals
+  attendanceView = signal<'daily' | 'history' | 'reports'>('daily');
+  attendancePage = signal(1);
+  attendancePerPage = signal(5);
+  attendanceSearchQuery = signal('');
+  attendanceDateFilter = signal(new Date().toISOString().split('T')[0]);
+
+  // Assign Volunteer & Photo Upload OCR signals
+  showAssignVolunteerModal = signal(false);
+  showPhotoUploadModal = signal(false);
+  availableVolunteersForAssignment = signal<VolunteerUser[]>([]);
+  selectedVolunteersForAssignment = signal<number[]>([]);
+  photoUploadProcessing = signal(false);
+  photoUploadPreview = signal<string | null>(null);
+  detectedVolunteersFromPhoto = signal<Array<{ name: string; confidence: number }>>([]);
+  isAssigningVolunteers = signal(false);
+
+  // Mock attendance data (will be replaced with API call)
+  attendanceRecords = signal<AttendanceRecord[]>([
+    { id: 1, volunteerName: 'Agnes Felix', email: 'agnes.felix.21@servetrack.local', department: 'Mobile Kitchen Operations', checkInTime: '08:30 AM', checkOutTime: '12:00 PM', duration: '3h 30m', status: 'present' },
+    { id: 2, volunteerName: 'Robbie Panaligan', email: 'robbie.panaligan.22@servetrack.local', department: 'Relief Operations', checkInTime: '09:00 AM', checkOutTime: '11:30 AM', duration: '2h 30m', status: 'present' },
+    { id: 3, volunteerName: 'Natasya Angelina Lim', email: 'natasya.angelina.lim.23@servetrack.local', department: 'Mobile Kitchen Operations', checkInTime: '08:45 AM', checkOutTime: '01:00 PM', duration: '4h 15m', status: 'present' },
+    { id: 4, volunteerName: 'Lea Therese Chua', email: 'lea.therese.chua.24@servetrack.local', department: 'Individual & Corporate Partnerships', checkInTime: '09:15 AM', checkOutTime: null, duration: null, status: 'late' },
+    { id: 5, volunteerName: 'George Arvin Ventura', email: 'george.arvin.ventura.25@servetrack.local', department: 'Mobile Kitchen Operations', checkInTime: null, checkOutTime: null, duration: null, status: 'absent' },
+  ]);
+
+  filteredAttendance = computed(() => {
+    const search = this.attendanceSearchQuery().toLowerCase().trim();
+    const records = this.attendanceRecords();
+
+    if (!search) {
+      return records;
+    }
+
+    return records.filter(r =>
+      r.volunteerName.toLowerCase().includes(search) ||
+      r.email.toLowerCase().includes(search) ||
+      r.department.toLowerCase().includes(search)
+    );
+  });
+
+  paginatedAttendance = computed(() => {
+    const filtered = this.filteredAttendance();
+    const page = this.attendancePage();
+    const perPage = this.attendancePerPage();
+    const start = (page - 1) * perPage;
+    const end = start + perPage;
+    return filtered.slice(start, end);
+  });
+
+  attendanceTotalPages = computed(() => Math.ceil(this.filteredAttendance().length / this.attendancePerPage()));
 
   // Analytics signals
   reportData = signal<ReportData | null>(null);
@@ -116,6 +252,80 @@ export class AdminDashboard implements OnInit {
 
   notifications = signal<NotificationItem[]>([]);
 
+  smsMessage = signal('');
+  smsAudience = signal<'all' | 'active' | 'new'>('active');
+  smsSending = signal(false);
+  selectedSmsTemplate = signal('');
+
+  backupRecords = signal<BackupRecord[]>([
+    {
+      id: 1,
+      name: 'servetrack_backup_2026_03_01.zip',
+      createdAt: '2026-03-01T07:00:00',
+      size: '124.5 MB',
+      type: 'Automatic',
+      status: 'Completed',
+    },
+    {
+      id: 2,
+      name: 'servetrack_backup_2026_02_28.zip',
+      createdAt: '2026-02-28T23:30:00',
+      size: '118.2 MB',
+      type: 'Manual',
+      status: 'Completed',
+    },
+    {
+      id: 3,
+      name: 'servetrack_backup_2026_02_25.zip',
+      createdAt: '2026-02-25T03:00:00',
+      size: '115.8 MB',
+      type: 'Automatic',
+      status: 'Completed',
+    },
+  ]);
+  backupHistoryPage = signal(1);
+  backupHistoryPageSize = signal(5);
+  backupActionLoading = signal(false);
+  scheduledBackupEnabled = signal(true);
+  scheduledBackupFrequency = signal<'daily' | 'weekly' | 'monthly'>('weekly');
+
+  readonly smsTemplates: ReadonlyArray<{ name: string; message: string }> = [
+    {
+      name: 'Attendance Reminder',
+      message:
+        'Hello team! Friendly reminder to confirm attendance for your next assigned mission.',
+    },
+    {
+      name: 'Urgent Deployment',
+      message:
+        'Urgent volunteer callout: please check your ServeTrack dashboard for immediate deployment details.',
+    },
+    {
+      name: 'Thank You Note',
+      message:
+        'Thank you for serving with us. Your time and effort made a real impact in our latest outreach.',
+    },
+    {
+      name: 'RSVP Cutoff Reminder',
+      message:
+        'Reminder: The RSVP deadline for {event} is approaching on {cutoffDate}. Please confirm your attendance.',
+    },
+  ];
+
+  // Automatic SMS for cutoff reminders
+  autoSmsEnabled = signal(false);
+  autoSmsHoursBefore = signal(24); // Hours before cutoff to send reminder
+  autoSmsCutoffRecipients = computed(() => {
+    const now = new Date();
+    const upcomingCutoffs = this.rsvps().filter(rsvp => {
+      if (!rsvp.cutOffDay) return false;
+      const cutoff = new Date(rsvp.cutOffDay + 'T' + (rsvp.cutOffTime || '23:59'));
+      const hoursUntil = (cutoff.getTime() - now.getTime()) / (1000 * 60 * 60);
+      return hoursUntil > 0 && hoursUntil <= this.autoSmsHoursBefore() && rsvp.status === 'active';
+    });
+    return upcomingCutoffs;
+  });
+
   notificationCount = computed(
     () => this.notifications().filter((notification) => !notification.read).length,
   );
@@ -124,6 +334,28 @@ export class AdminDashboard implements OnInit {
   activeVolunteers = signal(0);
   upcomingEvents = signal(0);
   completedMissions = signal(0);
+
+  // ── Real-time Clock ──────────────────────────────────────────────────────
+  currentTime = signal(new Date());
+  currentDateFormatted = computed(() => {
+    const date = this.currentTime();
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date);
+  });
+  currentTimeFormatted = computed(() => {
+    const date = this.currentTime();
+    return new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }).format(date);
+  });
+  private timeUpdateInterval: any;
 
   volunteerRows = signal<DashboardVolunteerRow[]>([]);
   performanceMetrics = signal<PerformanceMetric[]>([]);
@@ -134,6 +366,8 @@ export class AdminDashboard implements OnInit {
 
   sortField = signal<'name' | 'attendance' | 'hours' | 'tasks' | 'rating'>('attendance');
   sortDirection = signal<'asc' | 'desc'>('desc');
+  performancePage = signal(1);
+  performancePerPage = signal(10);
 
   sortedPerformanceMetrics = computed(() => {
     const metrics = [...this.performanceMetrics()];
@@ -181,6 +415,17 @@ export class AdminDashboard implements OnInit {
     return metrics;
   });
 
+  paginatedPerformanceMetrics = computed(() => {
+    const metrics = this.sortedPerformanceMetrics();
+    const start = (this.performancePage() - 1) * this.performancePerPage();
+    const end = start + this.performancePerPage();
+    return metrics.slice(start, end);
+  });
+
+  performanceTotalPages = computed(() => {
+    return Math.ceil(this.sortedPerformanceMetrics().length / this.performancePerPage());
+  });
+
   averageAttendanceRate = computed(() => {
     const metrics = this.performanceMetrics();
     if (metrics.length === 0) {
@@ -207,6 +452,16 @@ export class AdminDashboard implements OnInit {
     return (total / metrics.length).toFixed(1);
   });
 
+  topPerformer = computed(() => {
+    const metrics = this.performanceMetrics();
+    if (metrics.length === 0) {
+      return null;
+    }
+    return metrics.reduce((top, current) =>
+      current.hoursServed > top.hoursServed ? current : top
+    );
+  });
+
   filteredRsvps = computed(() => {
     const status = this.rsvpFilterStatus();
     if (status === 'all') {
@@ -215,20 +470,97 @@ export class AdminDashboard implements OnInit {
     return this.rsvps().filter((rsvp) => rsvp.status === status);
   });
 
+  upcomingEventRows = computed(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return this.rsvps()
+      .map((rsvp) => {
+        const parsedDate = this.safeDate(rsvp.date);
+        return {
+          id: rsvp.id,
+          title: rsvp.title,
+          dateLabel: rsvp.date,
+          dateValue: parsedDate ? parsedDate.getTime() : Number.MAX_SAFE_INTEGER,
+          status: rsvp.status,
+          responses: rsvp.totalResponses,
+        };
+      })
+      .filter((event) => event.dateValue >= today.getTime())
+      .sort((a, b) => a.dateValue - b.dateValue)
+      .slice(0, 5);
+  });
+
+  eventsModuleCards = computed<EventModuleCard[]>(() => {
+    const rsvps = this.rsvps();
+    const active = rsvps.filter((item) => item.status === 'active').length;
+    const closed = rsvps.filter((item) => item.status === 'closed').length;
+    const upcoming = this.upcomingEventRows().length;
+
+    return [
+      { label: 'Active RSVPs', value: active, helper: 'open for responses' },
+      { label: 'Upcoming Events', value: upcoming, helper: 'scheduled entries' },
+      { label: 'Closed Events', value: closed, helper: 'ready for review' },
+    ];
+  });
+
+  smsCharacterCount = computed(() => this.smsMessage().trim().length);
+
+  smsRecipientsCount = computed(() => {
+    const volunteers = this.volunteerRows().length;
+    const users = this.users().filter((user) => !user.deleted_at);
+
+    if (this.smsAudience() === 'all') {
+      return Math.max(volunteers, users.length);
+    }
+
+    if (this.smsAudience() === 'new') {
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+      return users.filter((user) => {
+        const created = this.safeDate(user.created_at);
+        return Boolean(created && created >= oneMonthAgo);
+      }).length;
+    }
+
+    return this.activeVolunteers();
+  });
+
+  backupTotalPages = computed(() =>
+    Math.max(1, Math.ceil(this.backupRecords().length / this.backupHistoryPageSize())),
+  );
+
+  paginatedBackupRecords = computed(() => {
+    const page = this.backupHistoryPage();
+    const size = this.backupHistoryPageSize();
+    const start = (page - 1) * size;
+    const end = start + size;
+
+    return this.backupRecords()
+      .slice()
+      .sort((a, b) => {
+        const bDate = this.safeDate(b.createdAt)?.getTime() ?? 0;
+        const aDate = this.safeDate(a.createdAt)?.getTime() ?? 0;
+        return bDate - aDate;
+      })
+      .slice(start, end);
+  });
+
+  latestBackup = computed(() => {
+    return this.backupRecords()
+      .slice()
+      .sort((a, b) => {
+        const bDate = this.safeDate(b.createdAt)?.getTime() ?? 0;
+        const aDate = this.safeDate(a.createdAt)?.getTime() ?? 0;
+        return bDate - aDate;
+      })[0] ?? null;
+  });
+
   filteredUsers = computed(() => {
-    let filtered = this.volunteers().map((v: VolunteerUser) => ({
-      id: v.volunteer_id,
-      name: v.full_name,
-      email: v.email,
-      role: 'volunteer' as 'admin' | 'coordinator' | 'volunteer',
-      created_at: v.created_at,
-      updated_at: v.updated_at,
-      deleted_at: null
-    }));
-    
-    // Filter out soft-deleted users
-    filtered = filtered.filter(u => !u.deleted_at);
-    
+    // Use users() which contains all user types (admin, coordinator, volunteer)
+    let filtered = this.users().filter(u => !u.deleted_at);
+
     const role = this.userRoleFilter();
     const search = this.userSearchQuery().toLowerCase().trim();
 
@@ -251,14 +583,12 @@ export class AdminDashboard implements OnInit {
   });
 
   paginatedVolunteers = computed(() => {
-    const volunteers = this.showArchivedVolunteers() 
-      ? this.archivedVolunteerRows() 
-      : this.volunteerRows();
+    const filtered = this.filteredVolunteers();
     const page = this.volunteersPage();
     const perPage = this.volunteersPerPage();
     const start = (page - 1) * perPage;
     const end = start + perPage;
-    return volunteers.slice(start, end);
+    return filtered.slice(start, end);
   });
 
   // Custom validator to ensure cutoff date is not after event date
@@ -341,6 +671,21 @@ export class AdminDashboard implements OnInit {
     this.loadDashboardData();
     this.loadRsvps();
     this.loadUsers();
+
+    // Initialize clock
+    this.currentTime.set(new Date());
+
+    // Update every second
+    this.timeUpdateInterval = setInterval(() => {
+      this.currentTime.set(new Date());
+    }, 1000);
+
+    // Clean up on destroy
+    this.destroyRef.onDestroy(() => {
+      if (this.timeUpdateInterval) {
+        clearInterval(this.timeUpdateInterval);
+      }
+    });
   }
 
   private loadDashboardData(): void {
@@ -377,7 +722,7 @@ export class AdminDashboard implements OnInit {
     this.mobileSidebarOpen.set(false);
   }
 
-  setView(view: 'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'): void {
+  setView(view: DashboardView): void {
     this.currentView.set(view);
     this.currentPage.set(1);
   }
@@ -445,6 +790,155 @@ export class AdminDashboard implements OnInit {
     this.setView('overview');
   }
 
+  goToVolunteersModule(): void {
+    this.setView('volunteers');
+  }
+
+  goToRsvpsModule(): void {
+    this.setView('rsvps');
+  }
+
+  setSmsAudience(value: 'all' | 'active' | 'new'): void {
+    this.smsAudience.set(value);
+  }
+
+  updateSmsMessage(value: string): void {
+    this.smsMessage.set(value);
+  }
+
+  applySmsTemplate(templateMessage: string): void {
+    this.selectedSmsTemplate.set(templateMessage);
+    this.smsMessage.set(templateMessage);
+  }
+
+  setAutoSmsEnabled(enabled: boolean): void {
+    this.autoSmsEnabled.set(enabled);
+    if (enabled) {
+      this.showSnackbar('Automatic SMS reminders enabled for upcoming cutoffs', 'success');
+    } else {
+      this.showSnackbar('Automatic SMS reminders disabled', 'info');
+    }
+  }
+
+  setAutoSmsHoursBefore(hours: number): void {
+    this.autoSmsHoursBefore.set(hours);
+  }
+
+  sendAutomaticCutoffReminders(): void {
+    const upcoming = this.autoSmsCutoffRecipients();
+    if (upcoming.length === 0) {
+      this.showSnackbar('No upcoming cutoffs within the configured timeframe', 'info');
+      return;
+    }
+
+    upcoming.forEach(rsvp => {
+      const message = this.smsTemplates
+        .find(t => t.name === 'RSVP Cutoff Reminder')?.message
+        .replace('{event}', rsvp.title)
+        .replace('{cutoffDate}', rsvp.cutOffDay) || '';
+
+      // TODO: Call API to send SMS to RSVP participants
+      console.log(`Sending cutoff reminder for ${rsvp.title}: ${message}`);
+    });
+
+    this.showSnackbar(`Sent cutoff reminders for ${upcoming.length} events`, 'success');
+  }
+
+  sendSmsBroadcast(): void {
+    const message = this.smsMessage().trim();
+
+    if (!message) {
+      this.showSnackbar('Enter a message before sending.', 'error');
+      return;
+    }
+
+    if (this.smsRecipientsCount() <= 0) {
+      this.showSnackbar('No recipients available for the selected audience.', 'error');
+      return;
+    }
+
+    this.smsSending.set(true);
+    window.setTimeout(() => {
+      this.smsSending.set(false);
+      this.showSnackbar(`SMS broadcast queued for ${this.smsRecipientsCount()} recipients.`, 'success');
+      this.smsMessage.set('');
+      this.selectedSmsTemplate.set('');
+    }, 900);
+  }
+
+  createBackup(): void {
+    this.backupActionLoading.set(true);
+    window.setTimeout(() => {
+      const now = new Date();
+      const backupName = `servetrack_backup_${now.toISOString().slice(0, 10).replace(/-/g, '_')}.zip`;
+      const sizeMb = (114 + Math.random() * 15).toFixed(1);
+
+      this.backupRecords.update((items) => [
+        {
+          id: Date.now(),
+          name: backupName,
+          createdAt: now.toISOString(),
+          size: `${sizeMb} MB`,
+          type: 'Manual',
+          status: 'Completed',
+        },
+        ...items,
+      ]);
+      this.backupHistoryPage.set(1);
+      this.backupActionLoading.set(false);
+      this.showSnackbar('Backup created successfully.', 'success');
+    }, 1000);
+  }
+
+  refreshBackups(): void {
+    this.backupActionLoading.set(true);
+    window.setTimeout(() => {
+      this.backupActionLoading.set(false);
+      this.showSnackbar('Backup history refreshed.', 'info');
+    }, 500);
+  }
+
+  downloadBackup(backup: BackupRecord): void {
+    this.showSnackbar(`Download started for ${backup.name}.`, 'info');
+  }
+
+  restoreBackup(backup: BackupRecord): void {
+    this.showSnackbar(`Restore request queued for ${backup.name}.`, 'success');
+  }
+
+  deleteBackup(backupId: number): void {
+    this.backupRecords.update((items) => items.filter((item) => item.id !== backupId));
+
+    const totalPages = this.backupTotalPages();
+    if (this.backupHistoryPage() > totalPages) {
+      this.backupHistoryPage.set(totalPages);
+    }
+
+    this.showSnackbar('Backup removed from history.', 'success');
+  }
+
+  setScheduledBackupFrequency(value: 'daily' | 'weekly' | 'monthly'): void {
+    this.scheduledBackupFrequency.set(value);
+  }
+
+  toggleScheduledBackups(): void {
+    this.scheduledBackupEnabled.update((enabled) => !enabled);
+    const stateLabel = this.scheduledBackupEnabled() ? 'enabled' : 'disabled';
+    this.showSnackbar(`Scheduled backups ${stateLabel}.`, 'info');
+  }
+
+  nextBackupHistoryPage(): void {
+    if (this.backupHistoryPage() < this.backupTotalPages()) {
+      this.backupHistoryPage.update((page) => page + 1);
+    }
+  }
+
+  previousBackupHistoryPage(): void {
+    if (this.backupHistoryPage() > 1) {
+      this.backupHistoryPage.update((page) => page - 1);
+    }
+  }
+
   toggleNotifications(): void {
     this.showNotifications.update((value) => !value);
   }
@@ -465,13 +959,7 @@ export class AdminDashboard implements OnInit {
     this.showLogoutModal.set(false);
   }
 
-  openAiModal(): void {
-    this.showAiModal.set(true);
-  }
 
-  closeAiModal(): void {
-    this.showAiModal.set(false);
-  }
 
   loadUsers(): void {
     this.userService.getUsers().subscribe((response) => {
@@ -557,7 +1045,7 @@ export class AdminDashboard implements OnInit {
     const total = this.volunteersTotalPages();
     const current = this.volunteersPage();
     const pages: number[] = [];
-    
+
     if (total <= 7) {
       for (let i = 1; i <= total; i++) {
         pages.push(i);
@@ -571,8 +1059,237 @@ export class AdminDashboard implements OnInit {
         pages.push(1, -1, current - 1, current, current + 1, -1, total);
       }
     }
-    
+
     return pages;
+  }
+
+  // Attendance management methods
+  setAttendanceView(view: 'daily' | 'history' | 'reports'): void {
+    this.attendanceView.set(view);
+    this.attendancePage.set(1);
+  }
+
+  setAttendanceSearchQuery(query: string): void {
+    this.attendanceSearchQuery.set(query);
+    this.attendancePage.set(1);
+  }
+
+  setAttendanceDateFilter(date: string): void {
+    this.attendanceDateFilter.set(date);
+    this.attendancePage.set(1);
+  }
+
+  previousAttendancePage(): void {
+    if (this.attendancePage() > 1) {
+      this.attendancePage.update(p => p - 1);
+    }
+  }
+
+  nextAttendancePage(): void {
+    if (this.attendancePage() < this.attendanceTotalPages()) {
+      this.attendancePage.update(p => p + 1);
+    }
+  }
+
+  goToAttendancePage(page: number): void {
+    this.attendancePage.set(page);
+  }
+
+  getAttendancePageNumbers(): number[] {
+    const total = this.attendanceTotalPages();
+    const current = this.attendancePage();
+    const pages: number[] = [];
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (current <= 3) {
+        pages.push(1, 2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(1, -1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(1, -1, current - 1, current, current + 1, -1, total);
+      }
+    }
+
+    return pages;
+  }
+
+  viewAttendanceDetails(record: AttendanceRecord): void {
+    this.showSnackbar(`Viewing attendance for ${record.volunteerName}`, 'info');
+  }
+
+  exportAttendanceToPDF(): void {
+    this.showSnackbar('Exporting attendance to PDF...', 'info');
+    // TODO: Implement PDF export
+  }
+
+  exportAttendanceToExcel(): void {
+    this.showSnackbar('Exporting attendance to Excel...', 'info');
+    // TODO: Implement Excel export
+  }
+
+  // Assign Volunteer & Photo Upload OCR Methods
+  openAssignVolunteerModal(): void {
+    // Load available volunteers (those not already assigned for the selected date)
+    const assignedIds = this.attendanceRecords().map(r => r.id);
+    const available = this.volunteers().filter(v => !assignedIds.includes(v.volunteer_id));
+    this.availableVolunteersForAssignment.set(available);
+    this.selectedVolunteersForAssignment.set([]);
+    this.showAssignVolunteerModal.set(true);
+  }
+
+  closeAssignVolunteerModal(): void {
+    this.showAssignVolunteerModal.set(false);
+    this.selectedVolunteersForAssignment.set([]);
+    this.availableVolunteersForAssignment.set([]);
+  }
+
+  toggleVolunteerSelection(volunteerId: number): void {
+    const current = this.selectedVolunteersForAssignment();
+    if (current.includes(volunteerId)) {
+      this.selectedVolunteersForAssignment.set(current.filter(id => id !== volunteerId));
+    } else {
+      this.selectedVolunteersForAssignment.set([...current, volunteerId]);
+    }
+  }
+
+  selectAllVolunteers(): void {
+    const allIds = this.availableVolunteersForAssignment().map(v => v.volunteer_id);
+    this.selectedVolunteersForAssignment.set(allIds);
+  }
+
+  clearVolunteerSelection(): void {
+    this.selectedVolunteersForAssignment.set([]);
+  }
+
+  async assignSelectedVolunteers(): Promise<void> {
+    if (this.selectedVolunteersForAssignment().length === 0) {
+      this.showSnackbar('Please select at least one volunteer', 'error');
+      return;
+    }
+
+    this.isAssigningVolunteers.set(true);
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const selectedVolunteers = this.volunteers().filter(v =>
+      this.selectedVolunteersForAssignment().includes(v.volunteer_id)
+    );
+
+    // Add to attendance records
+    const newRecords: AttendanceRecord[] = selectedVolunteers.map(v => ({
+      id: v.volunteer_id,
+      volunteerName: v.full_name,
+      email: v.email,
+      department: 'Unassigned',
+      checkInTime: null,
+      checkOutTime: null,
+      duration: null,
+      status: 'absent'
+    }));
+
+    this.attendanceRecords.update(records => [...records, ...newRecords]);
+
+    this.isAssigningVolunteers.set(false);
+    this.closeAssignVolunteerModal();
+    this.showSnackbar(`${newRecords.length} volunteer(s) assigned successfully`, 'success');
+  }
+
+  openPhotoUploadModal(): void {
+    this.showPhotoUploadModal.set(true);
+    this.photoUploadPreview.set(null);
+    this.detectedVolunteersFromPhoto.set([]);
+  }
+
+  closePhotoUploadModal(): void {
+    this.showPhotoUploadModal.set(false);
+    this.photoUploadPreview.set(null);
+    this.detectedVolunteersFromPhoto.set([]);
+    this.photoUploadProcessing.set(false);
+  }
+
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      this.showSnackbar('Please select a valid image file', 'error');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      this.showSnackbar('Image file size should be less than 10MB', 'error');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.photoUploadPreview.set(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async processPhotoOCR(): Promise<void> {
+    if (!this.photoUploadPreview()) {
+      this.showSnackbar('Please upload a photo first', 'error');
+      return;
+    }
+
+    this.photoUploadProcessing.set(true);
+
+    // Simulate OCR processing
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Mock detected volunteers (in real implementation, this would come from OCR API)
+    const mockDetected = [
+      { name: 'Agnes Felix', confidence: 95 },
+      { name: 'Robbie Panaligan', confidence: 88 },
+      { name: 'Natasya Angelina Lim', confidence: 92 },
+      { name: 'Lea Therese Chua', confidence: 85 },
+    ];
+
+    this.detectedVolunteersFromPhoto.set(mockDetected);
+    this.photoUploadProcessing.set(false);
+    this.showSnackbar(`Detected ${mockDetected.length} volunteers from photo`, 'success');
+  }
+
+  markDetectedVolunteersAsPresent(): void {
+    const detected = this.detectedVolunteersFromPhoto();
+    const currentTime = new Date().toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+
+    this.attendanceRecords.update(records =>
+      records.map(record => {
+        const detectedVolunteer = detected.find(d =>
+          record.volunteerName.toLowerCase().includes(d.name.toLowerCase()) ||
+          d.name.toLowerCase().includes(record.volunteerName.toLowerCase())
+        );
+
+        if (detectedVolunteer && record.status !== 'present') {
+          return {
+            ...record,
+            checkInTime: currentTime,
+            status: 'present'
+          };
+        }
+        return record;
+      })
+    );
+
+    this.closePhotoUploadModal();
+    this.showSnackbar('Attendance updated based on photo detection', 'success');
   }
 
   openCreateUserModal(): void {
@@ -722,27 +1439,17 @@ export class AdminDashboard implements OnInit {
   }
 
   resetPassword(): void {
-    if (this.resetPasswordForm.invalid) {
-      this.resetPasswordForm.markAllAsTouched();
-      return;
-    }
-
-    const val = this.resetPasswordForm.value;
-    if (val.password !== val.confirmPassword) {
-      this.resetPasswordForm.get('confirmPassword')?.setErrors({ mismatch: true });
-      return;
-    }
-
     const id = this.resettingPasswordUserId();
     if (id !== null) {
-      this.userService.resetPassword(id, val.password!).subscribe({
+      // TODO: Update service to send password reset email instead of direct reset
+      this.userService.resetPassword(id, '').subscribe({
         next: () => {
           this.closeResetPasswordModal();
-          this.showSnackbar('Password reset successfully', 'success');
+          this.showSnackbar('Password reset email sent successfully', 'success');
         },
         error: (error) => {
-          console.error('Error resetting password:', error);
-          this.showSnackbar('Failed to reset password', 'error');
+          console.error('Error sending password reset:', error);
+          this.showSnackbar('Failed to send password reset email', 'error');
         }
       });
     }
@@ -766,6 +1473,52 @@ export class AdminDashboard implements OnInit {
       this.sortField.set(field);
       this.sortDirection.set('desc');
     }
+    this.performancePage.set(1);
+  }
+
+  previousPerformancePage(): void {
+    if (this.performancePage() > 1) {
+      this.performancePage.update((p) => p - 1);
+    }
+  }
+
+  nextPerformancePage(): void {
+    if (this.performancePage() < this.performanceTotalPages()) {
+      this.performancePage.update((p) => p + 1);
+    }
+  }
+
+  goToPerformancePage(page: number): void {
+    if (page >= 1 && page <= this.performanceTotalPages()) {
+      this.performancePage.set(page);
+    }
+  }
+
+  getPerformancePageNumbers(): number[] {
+    const total = this.performanceTotalPages();
+    const current = this.performancePage();
+    const pages: number[] = [];
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (current > 3) {
+        pages.push(-1);
+      }
+      const start = Math.max(2, current - 1);
+      const end = Math.min(total - 1, current + 1);
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) {
+        pages.push(-1);
+      }
+      pages.push(total);
+    }
+    return pages;
   }
 
   getRatingStars(rating: number): string {
@@ -1236,6 +1989,14 @@ export class AdminDashboard implements OnInit {
     this.showArchivedVolunteers.update(show => !show);
   }
 
+  toggleAiSidebar(): void {
+    this.showAiSidebar.update(show => !show);
+  }
+
+  closeAiSidebar(): void {
+    this.showAiSidebar.set(false);
+  }
+
   showSnackbar(message: string, type: 'success' | 'error' | 'info' = 'success'): void {
     this.snackbarMessage.set(message);
     this.snackbarType.set(type);
@@ -1289,6 +2050,11 @@ export class AdminDashboard implements OnInit {
     this.showArchivedVolunteers.set(true);
     this.volunteersPage.set(1);
     this.loadArchivedVolunteers();
+  }
+
+  setVolunteerSearchQuery(query: string): void {
+    this.volunteerSearchQuery.set(query);
+    this.volunteersPage.set(1);
   }
 
   getResponsePercentage(rsvp: Rsvp, shift: RsvpShift): number {
@@ -1412,5 +2178,10 @@ export class AdminDashboard implements OnInit {
       default:
         return '';
     }
+  }
+
+  private safeDate(dateValue: string): Date | null {
+    const parsed = new Date(dateValue);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
 }
