@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateProfilePhotoRequest;
 use App\Http\Requests\UpdateVolunteerProfileRequest;
 use App\Http\Resources\ProfileChangeLogResource;
 use App\Http\Resources\VolunteerProfileResource;
+use App\Models\Experience;
 use App\Models\Position;
 use App\Models\ProfileChangeLog;
 use App\Models\Skill;
@@ -114,26 +115,8 @@ class VolunteerController extends Controller
                 'user_id' => $user->id,
             ]);
 
-            // Process and attach training experience
-            $this->processTrainingExperience($volunteer, $request->trainingExperience);
-
-            // Process and attach skills/hobbies
-            $this->processSkillsHobbies($volunteer, $request->skillsHobbies);
-
-            // Process and attach classes/training
-            $this->processClassesTraining($volunteer, $request->classesTraining);
-
-            // Process volunteer preference and attach to position
-            $this->processVolunteerPreference($volunteer, $request->volunteerPreference, $request->otherPreference);
-
-            // Process emergency contact
-            $this->processEmergencyContact($volunteer, $request->emergencyContactName, $request->emergencyContactNumber, $request->emergencyContactRelationship);
-
-            // Process availability
-            $this->processAvailability($volunteer, $request->availability, $request->otherAvailability);
-
-            // Process lifegroup information
-            $this->processLifegroupInfo($volunteer, $request->partOfLifegroup, $request->lifegroupLeaderName, $request->leadingLifegroup);
+            // Sync all related data
+            $this->syncVolunteerData($volunteer, $request);
 
             // Log the user in
             Auth::login($user);
@@ -207,7 +190,7 @@ class VolunteerController extends Controller
         $volunteer->load(['experiences', 'skills', 'trainings', 'positions', 'availabilities', 'lifegroups', 'emergencyContact']);
 
         // Get text fields from related tables
-        $trainingExperience = $volunteer->trainings->pluck('name')->implode(', ');
+        $trainingExperience = $volunteer->experiences->pluck('name')->implode(', ');
         $skillsHobbies = $volunteer->skills->pluck('name')->implode(', ');
         $classesTraining = $volunteer->trainings->pluck('name')->implode(', ');
 
@@ -270,20 +253,8 @@ class VolunteerController extends Controller
                 $user->email = $request->email;
                 $user->save();
 
-                // Process skills, training, and positions
-                if ($request->skillsHobbies) {
-                    $this->processSkillsHobbies($volunteer, $request->skillsHobbies);
-                }
-                if ($request->trainingExperience) {
-                    $this->processTrainingExperience($volunteer, $request->trainingExperience);
-                }
-                if ($request->classesTraining) {
-                    $this->processClassesTraining($volunteer, $request->classesTraining);
-                }
-                $this->processVolunteerPreference($volunteer, $request->volunteerPreference, $request->otherPreference);
-                $this->processEmergencyContact($volunteer, $request->emergencyContactName, $request->emergencyContactNumber, $request->emergencyContactRelationship);
-                $this->processAvailability($volunteer, $request->availability, $request->otherAvailability);
-                $this->processLifegroupInfo($volunteer, $request->partOfLifegroup, $request->lifegroupLeaderName, $request->leadingLifegroup);
+                // Sync all related data
+                $this->syncVolunteerData($volunteer, $request);
 
                 DB::commit();
 
@@ -724,24 +695,80 @@ class VolunteerController extends Controller
     }
 
     /**
-     * Process training experience text and create/find training records
+     * Sync all related volunteer data from request.
      */
-    private function processTrainingExperience(Volunteer $volunteer, ?string $trainingExperience): void
+    private function syncVolunteerData(Volunteer $volunteer, Request $request): void
     {
-        if (empty($trainingExperience)) {
-            return;
+        // Sync skills
+        $volunteer->skills()->detach();
+        if ($request->has('skillsHobbies')) {
+            $this->processSkillsHobbies($volunteer, $request->skillsHobbies);
+        }
+
+        // Sync experiences
+        $volunteer->experiences()->detach();
+        if ($request->has('trainingExperience')) {
+            $this->processTrainingExperience($volunteer, $request->trainingExperience);
+        }
+
+        // Sync trainings
+        $volunteer->trainings()->detach();
+        if ($request->has('classesTraining')) {
+            $this->processClassesTraining($volunteer, $request->classesTraining);
+        }
+
+        // Sync positions
+        $volunteer->positions()->detach();
+        $this->processVolunteerPreference($volunteer, $request->volunteerPreference, $request->otherPreference);
+
+        // Sync emergency contact
+        $this->processEmergencyContact(
+            $volunteer,
+            $request->emergencyContactName,
+            $request->emergencyContactNumber,
+            $request->emergencyContactRelationship
+        );
+
+        // Sync availability
+        $volunteer->availabilities()->detach();
+        $this->processAvailability($volunteer, $request->availability, $request->otherAvailability);
+
+        // Sync lifegroup info
+        $volunteer->lifegroups()->detach();
+        $this->processLifegroupInfo(
+            $volunteer,
+            $request->partOfLifegroup,
+            $request->lifegroupLeaderName,
+            $request->leadingLifegroup
+        );
+    }
+
+    /**
+     * Parse a delimited string into an array of clean items.
+     */
+    private function parseDelimitedString(?string $input): array
+    {
+        if (empty($input)) {
+            return [];
         }
 
         // Split by common delimiters (commas, semicolons, new lines)
-        $trainingItems = preg_split('/[,;\n]+/', $trainingExperience);
-        $trainingItems = array_map('trim', $trainingItems);
-        $trainingItems = array_filter($trainingItems, 'strlen');
+        $items = preg_split('/[,;\n]+/', $input);
+        $items = array_map('trim', $items);
 
-        foreach ($trainingItems as $trainingName) {
-            if (strlen($trainingName) > 0) {
-                $training = Training::firstOrCreate(['name' => $trainingName]);
-                $volunteer->trainings()->attach($training->training_id);
-            }
+        return array_filter($items, 'strlen');
+    }
+
+    /**
+     * Process training experience text and create/find experience records
+     */
+    private function processTrainingExperience(Volunteer $volunteer, ?string $trainingExperience): void
+    {
+        $experienceItems = $this->parseDelimitedString($trainingExperience);
+
+        foreach ($experienceItems as $experienceName) {
+            $experience = Experience::firstOrCreate(['name' => $experienceName]);
+            $volunteer->experiences()->attach($experience->experience_id);
         }
     }
 
@@ -750,20 +777,11 @@ class VolunteerController extends Controller
      */
     private function processSkillsHobbies(Volunteer $volunteer, ?string $skillsHobbies): void
     {
-        if (empty($skillsHobbies)) {
-            return;
-        }
-
-        // Split by common delimiters
-        $skillItems = preg_split('/[,;\n]+/', $skillsHobbies);
-        $skillItems = array_map('trim', $skillItems);
-        $skillItems = array_filter($skillItems, 'strlen');
+        $skillItems = $this->parseDelimitedString($skillsHobbies);
 
         foreach ($skillItems as $skillName) {
-            if (strlen($skillName) > 0) {
-                $skill = Skill::firstOrCreate(['name' => $skillName]);
-                $volunteer->skills()->attach($skill->skill_id);
-            }
+            $skill = Skill::firstOrCreate(['name' => $skillName]);
+            $volunteer->skills()->attach($skill->skill_id);
         }
     }
 
@@ -772,20 +790,11 @@ class VolunteerController extends Controller
      */
     private function processClassesTraining(Volunteer $volunteer, ?string $classesTraining): void
     {
-        if (empty($classesTraining)) {
-            return;
-        }
+        $trainingItems = $this->parseDelimitedString($classesTraining);
 
-        // Split by common delimiters
-        $classItems = preg_split('/[,;\n]+/', $classesTraining);
-        $classItems = array_map('trim', $classItems);
-        $classItems = array_filter($classItems, 'strlen');
-
-        foreach ($classItems as $className) {
-            if (strlen($className) > 0) {
-                $training = Training::firstOrCreate(['name' => $className]);
-                $volunteer->trainings()->attach($training->training_id);
-            }
+        foreach ($trainingItems as $trainingName) {
+            $training = Training::firstOrCreate(['name' => $trainingName]);
+            $volunteer->trainings()->attach($training->training_id);
         }
     }
 
