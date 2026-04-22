@@ -1860,7 +1860,7 @@
 
                 <div class="backup-health-row">
                   @if (latestBackup(); as latest) {
-                    <p>Latest backup: <strong>{{ latest.name }}</strong> on {{ latest.createdAt | date: 'MMM d, yyyy h:mm a' }}</p>
+                    <p>Latest backup: <strong>{{ latest.name }}</strong> on {{ latest.created_at | date: 'MMM d, yyyy h:mm a' }}</p>
                   } @else {
                     <p>No backups available.</p>
                   }
@@ -1883,38 +1883,60 @@
                         @for (backup of paginatedBackupRecords(); track backup.id) {
                           <tr>
                             <td><div class="backup-name">{{ backup.name }}</div></td>
-                            <td>{{ backup.createdAt | date: 'MMM d, yyyy h:mm a' }}</td>
-                            <td>{{ backup.size }}</td>
+                            <td>{{ backup.created_at | date: 'MMM d, yyyy h:mm a' }}</td>
+                            <td>{{ formatFileSize(backup.size_bytes) }}</td>
                             <td>
-                              <span class="backup-badge" [class.backup-auto]="backup.type === 'Automatic'"
-                                [class.backup-manual]="backup.type === 'Manual'">{{ backup.type }}</span>
+                              <span
+                                class="backup-badge"
+                                [class.backup-auto]="backup.type === 'automatic'"
+                                [class.backup-manual]="backup.type === 'manual'"
+                              >
+                                {{ backup.type === 'automatic' ? 'Automatic' : 'Manual' }}
+                              </span>
                             </td>
                             <td>
-                              <span class="status-badge" [class.status-success]="backup.status === 'Completed'"
-                                [class.status-warning]="backup.status === 'In Progress'"
-                                [class.status-danger]="backup.status === 'Failed'">{{ backup.status }}</span>
+                              <span
+                                class="status-badge"
+                                [class.status-success]="backup.status === 'completed'"
+                                [class.status-warning]="backup.status === 'in_progress'"
+                                [class.status-danger]="backup.status === 'failed'"
+                              >
+                                {{ getBackupStatusText(backup.status) }}
+                              </span>
                             </td>
                             <td>
                               <div class="action-buttons">
-                                <button type="button" class="icon-btn icon-btn-primary"
-                                  [attr.aria-label]="'Download ' + backup.name" title="Download"
-                                  (click)="downloadBackup(backup)">
+                                <button
+                                  type="button"
+                                  class="icon-btn icon-btn-primary"
+                                  [attr.aria-label]="'Download ' + backup.name"
+                                  title="Download"
+                                  (click)="downloadBackup(backup)"
+                                >
                                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
                                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                   </svg>
                                 </button>
-                                <button type="button" class="icon-btn icon-btn-success"
-                                  [attr.aria-label]="'Restore ' + backup.name" title="Restore"
-                                  (click)="restoreBackup(backup)">
+                                <button
+                                  type="button"
+                                  class="icon-btn icon-btn-success"
+                                  [attr.aria-label]="'Restore ' + backup.name"
+                                  title="Restore"
+                                  (click)="restoreBackup(backup)"
+                                >
                                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5"
                                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                   </svg>
                                 </button>
-                                <button type="button" class="icon-btn icon-btn-danger"
-                                  [attr.aria-label]="'Delete ' + backup.name" title="Delete"
-                                  (click)="deleteBackup(backup.id)">
+                                <button
+                                  type="button"
+                                  class="icon-btn icon-btn-danger"
+                                  [attr.aria-label]="'Delete ' + backup.name"
+                                  title="Delete"
+                                  (click)="deleteBackup(backup.id)"
+                                >
                                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                     <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
                                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -2003,10 +2025,56 @@
     <!-- AI Sidebar Overlay -->
     <div class="ai-sidebar-overlay" [class.active]="showAiSidebar()" (click)="closeAiSidebar()" role="button"
       tabindex="0" aria-label="Close AI Assistant sidebar"></div>
-  </div>
-</div>
 
-<!-- ============================================================
+    <!-- Confirmation Dialog -->
+@if (showConfirmationDialog()) {
+  <div class="modal-backdrop" (click)="closeConfirmationDialog()">
+    <section class="modal-card confirmation-modal" (click)="$event.stopPropagation()"
+      role="dialog" aria-modal="true" aria-labelledby="confirmation-title">
+      <header class="modal-header">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon modal-icon-warning">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </div>
+          <h3 id="confirmation-title">{{ confirmationDialogTitle() }}</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeConfirmationDialog()"
+          aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="modal-body">
+        <p class="confirmation-message">{{ confirmationDialogMessage() }}</p>
+      </div>
+
+      <div class="modal-footer modern-footer">
+        <button type="button" class="outline-btn" (click)="closeConfirmationDialog()">
+          Cancel
+        </button>
+        <button type="button" class="warning-btn" (click)="confirmationDialogAction()()">
+          Confirm
+        </button>
+      </header>
+      <div class="modal-body">
+        <p>Are you sure you want to logout from the ServeTrack Admin Dashboard?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
+        <button type="button" class="danger-btn" (click)="confirmLogout()">Yes, Logout</button>
+      </div>
+    </section>
+  </div>
+}
+
+    <!-- ============================================================
      MODALS
      ============================================================ -->
 

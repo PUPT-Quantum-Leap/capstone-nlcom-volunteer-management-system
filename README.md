@@ -26,9 +26,34 @@ A volunteer management system designed for NLCOM (National League of Cities Oper
 
 </div>
 
----
+## Production Deployment
 
-## Architecture
+ServeTrack is deployed using a robust CI/CD pipeline with atomic deployments and automatic SSL certificates.
+
+### Live Application
+
+- **URL**: [https://servetrack.kaelvxdev.space](https://servetrack.kaelvxdev.space)
+- **Health Check**: [https://servetrack.kaelvxdev.space/up](https://servetrack.kaelvxdev.space/up)
+- **SSL Certificate**: Let's Encrypt (auto-renewing)
+
+### Infrastructure
+
+| Component | Technology | Details |
+|-----------|------------|---------|
+| **Web Server** | Nginx | Reverse proxy with SSL termination |
+| **Application Server** | PHP-FPM | Laravel backend on port 8000 |
+| **Database** | MySQL 8.0+ | Production database |
+| **SSL** | Let's Encrypt | Automatic certificate management |
+| **Deployment** | Atomic Symlinks | Zero-downtime deployments |
+
+### Deployment Features
+
+- ✅ **Automatic CI/CD**: GitHub Actions on every push to `main`
+- ✅ **SSL/TLS**: HTTPS with auto-renewing certificates
+- ✅ **Health Checks**: `/up` endpoint for monitoring
+- ✅ **Security Headers**: X-Frame-Options, CSP, HSTS
+- ✅ **API Proxy**: Secure routing to Laravel backend
+- ✅ **Static Asset Caching**: 1-year cache for JS/CSS/images
 
 ServeTrack is a monorepo containing two main applications:
 
@@ -165,6 +190,14 @@ GitHub Actions automatically runs tests on pull requests to `main` and pushes to
 3. Code style checks (Laravel Pint)
 4. Dependency vulnerability scanning
 5. Secret leak detection
+6. **Production Deployment** (on successful tests)
+
+### Deployment
+
+- **Trigger**: Push to `main` branch (after CI passes)
+- **Environment**: Hostinger KVM VPS
+- **SSL**: Automatic Let's Encrypt certificates
+- **Health Check**: Post-deployment verification
 
 See [CI Documentation](./docs/CI_README.md) for details.
 
