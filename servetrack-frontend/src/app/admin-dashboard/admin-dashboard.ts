@@ -39,10 +39,15 @@ interface EventModuleCard {
 interface BackupRecord {
   id: number;
   name: string;
-  createdAt: string;
-  size: string;
-  type: 'Automatic' | 'Manual';
-  status: 'Completed' | 'In Progress' | 'Failed';
+  file_path: string;
+  size_bytes: number;
+  type: 'automatic' | 'manual';
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  description: string | null;
+  completed_at: string | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AttendanceRecord {
@@ -257,37 +262,18 @@ export class AdminDashboard implements OnInit {
   smsSending = signal(false);
   selectedSmsTemplate = signal('');
 
-  backupRecords = signal<BackupRecord[]>([
-    {
-      id: 1,
-      name: 'servetrack_backup_2026_03_01.zip',
-      createdAt: '2026-03-01T07:00:00',
-      size: '124.5 MB',
-      type: 'Automatic',
-      status: 'Completed',
-    },
-    {
-      id: 2,
-      name: 'servetrack_backup_2026_02_28.zip',
-      createdAt: '2026-02-28T23:30:00',
-      size: '118.2 MB',
-      type: 'Manual',
-      status: 'Completed',
-    },
-    {
-      id: 3,
-      name: 'servetrack_backup_2026_02_25.zip',
-      createdAt: '2026-02-25T03:00:00',
-      size: '115.8 MB',
-      type: 'Automatic',
-      status: 'Completed',
-    },
-  ]);
+  backupRecords = signal<BackupRecord[]>([]);
   backupHistoryPage = signal(1);
   backupHistoryPageSize = signal(5);
   backupActionLoading = signal(false);
-  scheduledBackupEnabled = signal(true);
+  scheduledBackupEnabled = signal(false);
   scheduledBackupFrequency = signal<'daily' | 'weekly' | 'monthly'>('weekly');
+  
+  // Confirmation dialog state
+  showConfirmationDialog = signal(false);
+  confirmationDialogTitle = signal('');
+  confirmationDialogMessage = signal('');
+  confirmationDialogAction = signal<() => void>(() => {});
 
   readonly smsTemplates: ReadonlyArray<{ name: string; message: string }> = [
     {
@@ -540,8 +526,8 @@ export class AdminDashboard implements OnInit {
     return this.backupRecords()
       .slice()
       .sort((a, b) => {
-        const bDate = this.safeDate(b.createdAt)?.getTime() ?? 0;
-        const aDate = this.safeDate(a.createdAt)?.getTime() ?? 0;
+        const bDate = this.safeDate(b.created_at)?.getTime() ?? 0;
+        const aDate = this.safeDate(a.created_at)?.getTime() ?? 0;
         return bDate - aDate;
       })
       .slice(start, end);
@@ -551,8 +537,8 @@ export class AdminDashboard implements OnInit {
     return this.backupRecords()
       .slice()
       .sort((a, b) => {
-        const bDate = this.safeDate(b.createdAt)?.getTime() ?? 0;
-        const aDate = this.safeDate(a.createdAt)?.getTime() ?? 0;
+        const bDate = this.safeDate(b.created_at)?.getTime() ?? 0;
+        const aDate = this.safeDate(a.created_at)?.getTime() ?? 0;
         return bDate - aDate;
       })[0] ?? null;
   });
@@ -671,6 +657,8 @@ export class AdminDashboard implements OnInit {
     this.loadDashboardData();
     this.loadRsvps();
     this.loadUsers();
+    this.loadBackups();
+    this.loadScheduledBackupSettings();
 
     // Initialize clock
     this.currentTime.set(new Date());
@@ -866,65 +854,217 @@ export class AdminDashboard implements OnInit {
     }, 900);
   }
 
+  loadBackups(): void {
+    this.adminDashboardService.getBackups(this.backupHistoryPage(), this.backupHistoryPageSize()).subscribe((response) => {
+      if (response.success) {
+        this.backupRecords.set(response.data);
+      } else {
+        this.backupRecords.set([]);
+      }
+    });
+  }
+
+  loadScheduledBackupSettings(): void {
+    this.adminDashboardService.getScheduledBackupSettings().subscribe((response) => {
+      if (response.success && response.data) {
+        this.scheduledBackupEnabled.set(response.data.enabled);
+        this.scheduledBackupFrequency.set(response.data.frequency);
+      }
+    });
+  }
+
   createBackup(): void {
     this.backupActionLoading.set(true);
-    window.setTimeout(() => {
-      const now = new Date();
-      const backupName = `servetrack_backup_${now.toISOString().slice(0, 10).replace(/-/g, '_')}.zip`;
-      const sizeMb = (114 + Math.random() * 15).toFixed(1);
-
-      this.backupRecords.update((items) => [
-        {
-          id: Date.now(),
-          name: backupName,
-          createdAt: now.toISOString(),
-          size: `${sizeMb} MB`,
-          type: 'Manual',
-          status: 'Completed',
-        },
-        ...items,
-      ]);
-      this.backupHistoryPage.set(1);
-      this.backupActionLoading.set(false);
-      this.showSnackbar('Backup created successfully.', 'success');
-    }, 1000);
+    
+    this.adminDashboardService.createBackup('manual').subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.backupRecords.update((items) => [response.data, ...items]);
+          this.backupHistoryPage.set(1);
+          this.showSnackbar('Backup created successfully.', 'success');
+        } else {
+          this.showSnackbar(
+            response.message || 'Failed to create backup',
+            'error'
+          );
+        }
+        this.backupActionLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Error creating backup:', error);
+        this.showSnackbar('Failed to create backup', 'error');
+        this.backupActionLoading.set(false);
+      }
+    });
   }
 
   refreshBackups(): void {
     this.backupActionLoading.set(true);
-    window.setTimeout(() => {
-      this.backupActionLoading.set(false);
-      this.showSnackbar('Backup history refreshed.', 'info');
-    }, 500);
+    
+    this.adminDashboardService.getBackups(
+      this.backupHistoryPage(),
+      this.backupHistoryPageSize()
+    ).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.backupRecords.set(response.data);
+          this.showSnackbar('Backup history refreshed.', 'info');
+        } else {
+          this.showSnackbar('Failed to refresh backup history', 'error');
+        }
+        this.backupActionLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Error refreshing backups:', error);
+        this.showSnackbar('Failed to refresh backup history', 'error');
+        this.backupActionLoading.set(false);
+      }
+    });
   }
 
   downloadBackup(backup: BackupRecord): void {
-    this.showSnackbar(`Download started for ${backup.name}.`, 'info');
+    this.adminDashboardService.downloadBackup(backup.id).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${backup.name}.sql`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        this.showSnackbar(`Download started for ${backup.name}.`, 'info');
+      },
+      error: (error) => {
+        console.error('Error downloading backup:', error);
+        this.showSnackbar('Failed to download backup', 'error');
+      }
+    });
+  }
+
+  // Confirmation dialog helper methods
+  openConfirmationDialog(title: string, message: string, action: () => void): void {
+    this.confirmationDialogTitle.set(title);
+    this.confirmationDialogMessage.set(message);
+    this.confirmationDialogAction.set(() => {
+      this.closeConfirmationDialog();
+      action();
+    });
+    this.showConfirmationDialog.set(true);
+  }
+
+  closeConfirmationDialog(): void {
+    this.showConfirmationDialog.set(false);
+    this.confirmationDialogTitle.set('');
+    this.confirmationDialogMessage.set('');
+    this.confirmationDialogAction.set(() => {});
   }
 
   restoreBackup(backup: BackupRecord): void {
-    this.showSnackbar(`Restore request queued for ${backup.name}.`, 'success');
+    this.openConfirmationDialog(
+      'Restore Backup',
+      `Are you sure you want to restore from backup "${backup.name}"? ` +
+      'This will replace all current data and cannot be undone.',
+      () => {
+        this.backupActionLoading.set(true);
+        
+        this.adminDashboardService.restoreBackup(backup.id).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.showSnackbar(
+                `Database restored successfully from ${backup.name}. ` +
+                'Please refresh the page.',
+                'success'
+              );
+            } else {
+              this.showSnackbar(
+                response.message ||
+                'Failed to restore backup',
+                'error'
+              );
+            }
+            this.backupActionLoading.set(false);
+          },
+          error: (error) => {
+            console.error('Error restoring backup:', error);
+            this.showSnackbar(
+              'Failed to restore backup',
+              'error'
+            );
+            this.backupActionLoading.set(false);
+          }
+        });
+      }
+    );
   }
 
   deleteBackup(backupId: number): void {
-    this.backupRecords.update((items) => items.filter((item) => item.id !== backupId));
+    this.openConfirmationDialog(
+      'Delete Backup',
+      'Are you sure you want to delete this backup? This action cannot be undone.',
+      () => {
+        this.adminDashboardService.deleteBackup(backupId).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.backupRecords.update((items) => items.filter((item) => item.id !== backupId));
 
-    const totalPages = this.backupTotalPages();
-    if (this.backupHistoryPage() > totalPages) {
-      this.backupHistoryPage.set(totalPages);
-    }
+              const totalPages = this.backupTotalPages();
+              if (this.backupHistoryPage() > totalPages) {
+                this.backupHistoryPage.set(totalPages);
+              }
 
-    this.showSnackbar('Backup removed from history.', 'success');
+              this.showSnackbar('Backup deleted successfully.', 'success');
+            } else {
+              this.showSnackbar(response.message || 'Failed to delete backup', 'error');
+            }
+          },
+          error: (error) => {
+            console.error('Error deleting backup:', error);
+            this.showSnackbar('Failed to delete backup', 'error');
+          }
+        });
+      }
+    );
   }
 
   setScheduledBackupFrequency(value: 'daily' | 'weekly' | 'monthly'): void {
-    this.scheduledBackupFrequency.set(value);
+    const currentEnabled = this.scheduledBackupEnabled();
+    
+    this.adminDashboardService.updateScheduledBackupSettings(currentEnabled, value).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.scheduledBackupFrequency.set(value);
+          this.showSnackbar('Backup frequency updated successfully.', 'success');
+        } else {
+          this.showSnackbar(response.message || 'Failed to update backup frequency', 'error');
+        }
+      },
+      error: (error) => {
+        console.error('Error updating backup frequency:', error);
+        this.showSnackbar('Failed to update backup frequency', 'error');
+      }
+    });
   }
 
   toggleScheduledBackups(): void {
-    this.scheduledBackupEnabled.update((enabled) => !enabled);
-    const stateLabel = this.scheduledBackupEnabled() ? 'enabled' : 'disabled';
-    this.showSnackbar(`Scheduled backups ${stateLabel}.`, 'info');
+    const newEnabled = !this.scheduledBackupEnabled();
+    const currentFrequency = this.scheduledBackupFrequency();
+    
+    this.adminDashboardService.updateScheduledBackupSettings(newEnabled, currentFrequency).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.scheduledBackupEnabled.set(newEnabled);
+          const stateLabel = newEnabled ? 'enabled' : 'disabled';
+          this.showSnackbar(`Scheduled backups ${stateLabel}.`, 'success');
+        } else {
+          this.showSnackbar(response.message || 'Failed to toggle scheduled backups', 'error');
+        }
+      },
+      error: (error) => {
+        console.error('Error toggling scheduled backups:', error);
+        this.showSnackbar('Failed to toggle scheduled backups', 'error');
+      }
+    });
   }
 
   nextBackupHistoryPage(): void {
@@ -967,6 +1107,32 @@ export class AdminDashboard implements OnInit {
         this.users.set(response.data);
       }
     });
+  }
+
+  // Helper methods for backup display
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let size = bytes;
+    let unitIndex = 0;
+    
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+    
+    return `${size.toFixed(1)} ${units[unitIndex]}`;
+  }
+
+  getBackupStatusText(status: string): string {
+    switch (status) {
+      case 'pending': return 'Pending';
+      case 'in_progress': return 'In Progress';
+      case 'completed': return 'Completed';
+      case 'failed': return 'Failed';
+      default: return 'Unknown';
+    }
   }
 
   setUserSearchQuery(query: string): void {
