@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\FacebookWebhookController;
 use App\Http\Controllers\RsvpController;
@@ -83,4 +84,18 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::get('/rsvp/{id}/attendance', [RsvpController::class, 'attendance']);
     Route::post('/rsvp/{id}/notify-facebook', [RsvpController::class, 'notifyFacebook']);
     Route::post('/rsvp/{id}/notify-sms', [RsvpController::class, 'notifySms']);
+
+    // Backup management — full CRUD + operations (admin only)
+    Route::get('/backups', [BackupController::class, 'index']);
+    Route::post('/backups', [BackupController::class, 'store']);
+    Route::get('/backups/stats', [BackupController::class, 'stats']);
+    Route::get('/backups/{backup}', [BackupController::class, 'show']);
+    Route::delete('/backups/{backup}', [BackupController::class, 'destroy']);
+    Route::get('/backups/{backup}/download', [BackupController::class, 'download']);
+    Route::post('/backups/{backup}/restore', [BackupController::class, 'restore']);
+    Route::post('/backups/cleanup', [BackupController::class, 'cleanup']);
+
+    // Scheduled backup settings
+    Route::get('/backups/schedule', [BackupController::class, 'getSchedule']);
+    Route::put('/backups/schedule', [BackupController::class, 'updateSchedule']);
 });
