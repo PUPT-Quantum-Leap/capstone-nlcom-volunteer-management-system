@@ -7,7 +7,7 @@ import {
   signal,
   DestroyRef,
 } from '@angular/core';
-import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   passwordMatchValidator,
@@ -15,14 +15,12 @@ import {
 } from '../validators/password.validator';
 import { AuthService } from '../services/auth.service';
 import { VolunteerService } from '../services/volunteer.service';
-import { RsvpService } from '../services/rsvp.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { InputSanitizerService } from '../services/input-sanitizer.service';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 
 import { VolunteerProfile, VolunteerProfileResponse } from '../models/volunteer-profile';
-import { Rsvp, RsvpShift } from '../models/rsvp';
 import { NotificationItem } from '../models/notification-item';
 import { Attendance, AttendancePeriod } from '../models/attendance';
 
@@ -45,7 +43,7 @@ interface Poll {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DatePipe, TitleCasePipe],
+  imports: [ReactiveFormsModule, FormsModule, DatePipe, TitleCasePipe],
   templateUrl: './volunteer-dashboard.html',
   styleUrl: './volunteer-dashboard.scss',
 })
@@ -54,14 +52,13 @@ export class VolunteerDashboard implements OnInit {
   private router = inject(Router);
   private authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
-  private rsvpService = inject(RsvpService);
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(InputSanitizerService);
 
   readonly defaultPhoto = '/assets/volunteer1.png';
 
   // ── Navigation State (Fixed menu close issue) ────────────────────────────
-  currentView = signal<'overview' | 'profile' | 'schedule' | 'rsvps' | 'polls'>('overview');
+  currentView = signal<'overview' | 'profile' | 'schedule' | 'request-changes' | 'polls'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Volunteer');
   sidebarCollapsed = signal(false);
   mobileSidebarOpen = signal(false);
@@ -126,17 +123,49 @@ export class VolunteerDashboard implements OnInit {
     () => this.notifications().filter((n) => !n.read).length,
   );
 
-  rsvps = signal<Rsvp[]>([]);
-  activeRsvp = signal<Rsvp | null>(null);
-  selectedShiftId = signal<number | null>(null);
-  hasSubmittedResponse = signal(false);
-  rsvpError = signal<string | null>(null);
+  // ── Request Changes ────────────────────────────────────────────────────────
+  requestTab = signal<'change-task' | 'close-poll'>('change-task');
+  selectedTask = signal<string>('');
+  changeTaskReason = signal<string>('');
+  changeTaskStatus = signal<'pending' | 'approved' | 'rejected'>('pending');
+  changeTaskResponseReason = signal<string>('');
+
+  closePollAction = signal<'change-time' | 'not-attending'>('change-time');
+  closePollNewTime = signal<string>('');
+  closePollReason = signal<string>('');
+  closePollStatus = signal<'pending' | 'approved' | 'rejected'>('pending');
+  closePollResponseReason = signal<string>('');
+
+  availableTasks = signal<string[]>([
+    'Ushering & Welcome Team',
+    'Media Team (Sound / Lights)',
+    'Photography / Videography',
+    'Social Media / Marketing',
+    'Prayer Ministry',
+    'Admin / Registration',
+    'Ushering',
+    'Kids Ministry',
+    'Worship Team',
+    'Technical Team',
+    'Community Outreach',
+    'Facility Setup',
+    'Hospitality / Food Service',
+    'Transportation',
+    'Translation / Interpretation',
+    'Other',
+  ]);
 
   // ── Polls ─────────────────────────────────────────────────────────────────
   activePoll = signal<Poll | null>(null);
   hasSubmittedVote = signal(false);
   selectedOptionId = signal<number | null>(null);
   pollError = signal<string | null>(null);
+
+  // ── Past Polls ──────────────────────────────────────────────────────────────
+  pollTab = signal<'active' | 'past'>('active');
+  pastPolls = signal<Poll[]>([]);
+  selectedPastPoll = signal<Poll | null>(null);
+  hasViewedPastPoll = signal(false);
 
 // ── Profile ───────────────────────────────────────────────────────────────
   editingProfileId = signal<number | null>(null);
@@ -251,7 +280,69 @@ export class VolunteerDashboard implements OnInit {
     this.loadProfile();
     this.loadAttendanceStats();
     this.loadAttendance();
-    this.loadRsvps();
+    this.loadSamplePolls();
+  }
+
+  // ── Sample Polls Data (Temporary for UI demo) ─────────────────────────────
+  private loadSamplePolls(): void {
+    // Sample active poll
+    this.activePoll.set({
+      id: 1,
+      title: 'March 2026 Outreach Assignment Preferences',
+      description: 'Select your preferred time slot for the upcoming community outreach event.',
+      date: '2026-03-15',
+      cutOffDay: '2026-03-10',
+      status: 'active',
+      options: [
+        { id: 1, timeSlot: 'Morning Shift (6:00 AM - 12:00 PM)', votes: 12, capacity: 20 },
+        { id: 2, timeSlot: 'Afternoon Shift (12:00 PM - 6:00 PM)', votes: 8, capacity: 15 },
+        { id: 3, timeSlot: 'Evening Shift (6:00 PM - 10:00 PM)', votes: 5, capacity: 10 },
+      ],
+    });
+
+    // Sample past polls
+    this.pastPolls.set([
+      {
+        id: 2,
+        title: 'February 2026 Relief Operation Schedule',
+        description: 'Preferred schedule for the disaster relief operation.',
+        date: '2026-02-20',
+        cutOffDay: '2026-02-15',
+        status: 'closed',
+        options: [
+          { id: 4, timeSlot: 'Weekday Morning', votes: 25, capacity: 30 },
+          { id: 5, timeSlot: 'Weekend Full Day', votes: 35, capacity: 40 },
+          { id: 6, timeSlot: 'Weekday Evening', votes: 15, capacity: 20 },
+        ],
+      },
+      {
+        id: 3,
+        title: 'January 2026 Medical Mission Schedule',
+        description: 'Select your availability for the medical mission.',
+        date: '2026-01-18',
+        cutOffDay: '2026-01-12',
+        status: 'closed',
+        options: [
+          { id: 7, timeSlot: 'Day 1 - Morning', votes: 18, capacity: 25 },
+          { id: 8, timeSlot: 'Day 1 - Afternoon', votes: 12, capacity: 20 },
+          { id: 9, timeSlot: 'Day 2 - Morning', votes: 20, capacity: 25 },
+          { id: 10, timeSlot: 'Day 2 - Afternoon', votes: 15, capacity: 20 },
+        ],
+      },
+      {
+        id: 4,
+        title: 'December 2025 Christmas Outreach',
+        description: 'Volunteer shifts for the annual Christmas outreach event.',
+        date: '2025-12-20',
+        cutOffDay: '2025-12-15',
+        status: 'closed',
+        options: [
+          { id: 11, timeSlot: 'Gift Distribution - Morning', votes: 30, capacity: 35 },
+          { id: 12, timeSlot: 'Food Preparation', votes: 20, capacity: 25 },
+          { id: 13, timeSlot: 'Entertainment & Activities', votes: 15, capacity: 20 },
+        ],
+      },
+    ]);
   }
 
   private startRealTimeClock(): void {
@@ -376,37 +467,6 @@ export class VolunteerDashboard implements OnInit {
     this.editingProfileId.set(data.volunteer_id);
   }
 
-  private loadRsvps(): void {
-    this.rsvpService.getRsvps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
-      const active = response.data.filter((r) => r.status === 'active');
-      this.rsvps.set(active);
-      const currentActiveRsvp = this.activeRsvp();
-
-      if (currentActiveRsvp) {
-        const refreshedActiveRsvp = active.find((rsvp) => rsvp.id === currentActiveRsvp.id);
-
-        if (refreshedActiveRsvp) {
-          this.activeRsvp.set(refreshedActiveRsvp);
-
-          return;
-        }
-      }
-
-      if (active.length > 0) {
-        this.setActiveRsvp(active[0]);
-      } else {
-        this.activeRsvp.set(null);
-      }
-    });
-  }
-
-  setActiveRsvp(rsvp: Rsvp): void {
-    this.activeRsvp.set(rsvp);
-    this.selectedShiftId.set(null);
-    this.hasSubmittedResponse.set(false);
-    this.rsvpError.set(null);
-  }
-
   private loadAttendanceStats(): void {
     this.volunteerService.getAttendanceStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
@@ -458,7 +518,7 @@ export class VolunteerDashboard implements OnInit {
     }
   }
 
-  setView(view: 'overview' | 'profile' | 'schedule' | 'rsvps' | 'polls'): void {
+  setView(view: 'overview' | 'profile' | 'schedule' | 'request-changes' | 'polls'): void {
     this.currentView.set(view);
     // Removed auto-closing per user request - sidebar stays open
   }
@@ -495,8 +555,8 @@ export class VolunteerDashboard implements OnInit {
       return;
     }
 
-    if (query.includes('rsvp') || query.includes('shift')) {
-      this.setView('rsvps');
+    if (query.includes('request') || query.includes('change')) {
+      this.setView('request-changes');
       return;
     }
 
@@ -588,42 +648,54 @@ export class VolunteerDashboard implements OnInit {
     return 'Invalid field';
   }
 
-  selectShift(shiftId: number): void {
-    const rsvp = this.activeRsvp();
-    if (!rsvp || this.hasSubmittedResponse()) return;
-    const shift = rsvp.shifts.find((s) => s.id === shiftId);
-    if (shift && shift.responses < shift.capacity) {
-      this.selectedShiftId.set(shiftId);
-    }
+  // ── Request Changes Methods ───────────────────────────────────────────────
+
+  setRequestTab(tab: 'change-task' | 'close-poll'): void {
+    this.requestTab.set(tab);
   }
 
-  submitRsvpResponse(): void {
-    const rsvp = this.activeRsvp();
-    const shiftId = this.selectedShiftId();
-    if (!rsvp || shiftId === null || this.hasSubmittedResponse()) return;
+  submitChangeTaskRequest(): void {
+    if (!this.selectedTask() || !this.changeTaskReason()) return;
 
     this.isLoading.set(true);
-    this.rsvpError.set(null);
-    this.rsvpService.respond(rsvp.id, shiftId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => {
-        this.hasSubmittedResponse.set(true);
-        this.isLoading.set(false);
-        this.loadRsvps();
-      },
-      error: (err: { error?: { message?: string } }) => {
-        this.rsvpError.set(err?.error?.message ?? 'Failed to submit response. Please try again.');
-        this.isLoading.set(false);
-      },
-    });
+    // Simulate API call - replace with actual service call
+    setTimeout(() => {
+      this.changeTaskStatus.set('pending');
+      this.isLoading.set(false);
+      // Reset form after submission
+      this.selectedTask.set('');
+      this.changeTaskReason.set('');
+    }, 1000);
   }
 
+  submitClosePollRequest(): void {
+    if (!this.closePollReason()) return;
+    if (this.closePollAction() === 'change-time' && !this.closePollNewTime()) return;
 
-  getRemainingSlots(shift: RsvpShift): number {
-    return shift.capacity - shift.responses;
+    this.isLoading.set(true);
+    // Simulate API call - replace with actual service call
+    setTimeout(() => {
+      this.closePollStatus.set('pending');
+      this.isLoading.set(false);
+      // Reset form after submission
+      this.closePollNewTime.set('');
+      this.closePollReason.set('');
+    }, 1000);
   }
 
-  isShiftFull(shift: RsvpShift): boolean {
-    return shift.responses >= shift.capacity;
+  resetChangeTaskForm(): void {
+    this.selectedTask.set('');
+    this.changeTaskReason.set('');
+    this.changeTaskStatus.set('pending');
+    this.changeTaskResponseReason.set('');
+  }
+
+  resetClosePollForm(): void {
+    this.closePollAction.set('change-time');
+    this.closePollNewTime.set('');
+    this.closePollReason.set('');
+    this.closePollStatus.set('pending');
+    this.closePollResponseReason.set('');
   }
 
   // ── Photo ─────────────────────────────────────────────────────────────────
@@ -940,5 +1012,48 @@ export class VolunteerDashboard implements OnInit {
     const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
     if (totalVotes === 0) return 0;
     return Math.round((option.votes / totalVotes) * 100);
+  }
+
+  setPollTab(tab: 'active' | 'past'): void {
+    this.pollTab.set(tab);
+    this.selectedPastPoll.set(null);
+    this.hasViewedPastPoll.set(false);
+  }
+
+  selectPastPoll(poll: Poll): void {
+    this.selectedPastPoll.set(poll);
+    this.hasViewedPastPoll.set(true);
+  }
+
+  closePastPollDetail(): void {
+    this.selectedPastPoll.set(null);
+    this.hasViewedPastPoll.set(false);
+  }
+
+  getTotalVotes(poll: Poll): number {
+    return poll.options.reduce((sum, opt) => sum + opt.votes, 0);
+  }
+
+  getMostVotedOption(poll: Poll): PollOption | null {
+    if (poll.options.length === 0) return null;
+    return poll.options.reduce((max, opt) => (opt.votes > max.votes ? opt : max), poll.options[0]);
+  }
+
+  hasUserVotedOnPoll(pollId: number): boolean {
+    // Mock function - in real implementation, this would check against user votes
+    return pollId === 2; // Simulate user voted on poll #2
+  }
+
+  getDaysUntilClosing(cutOffDay: string | undefined, date: string | undefined): string {
+    if (!cutOffDay && !date) return '';
+    const targetDate = new Date(cutOffDay || date || '');
+    const today = new Date();
+    const diffTime = targetDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return 'Poll has closed';
+    if (diffDays === 0) return 'Closes today';
+    if (diffDays === 1) return 'Closes tomorrow';
+    return `${diffDays} days left to vote`;
   }
 }
