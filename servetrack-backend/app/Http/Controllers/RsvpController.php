@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreRsvpRequest;
 use App\Http\Requests\UpdateRsvpRequest;
+use App\Http\Requests\UpdateRsvpResponseRequest;
 use App\Http\Resources\RsvpResource;
+use App\Jobs\NotifyVolunteersOfNewRsvp;
 use App\Models\Rsvp;
 use App\Models\RsvpResponse;
 use App\Models\TimeSlot;
@@ -18,8 +20,24 @@ use Illuminate\Support\Facades\DB;
 
 class RsvpController extends Controller
 {
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection|RsvpResource|JsonResponse
     {
+        // If 'id' query parameter is provided, fetch a single RSVP
+        $id = $request->query('id');
+        if ($id) {
+            $rsvp = Rsvp::query()
+                ->with(['shifts', 'responses'])
+                ->withCount('responses')
+                ->where(fn ($query) => is_numeric($id) ? $query->where('rsvp_id', $id) : $query->where('slug', $id))
+                ->first();
+
+            if (! $rsvp) {
+                return response()->json(['message' => 'RSVP not found.'], 404);
+            }
+
+            return new RsvpResource($rsvp);
+        }
+
         $query = Rsvp::query()
             ->with(['shifts', 'responses'])
             ->withCount('responses');
@@ -33,12 +51,20 @@ class RsvpController extends Controller
         return RsvpResource::collection($rsvps);
     }
 
-    public function show(int $id): RsvpResource|JsonResponse
+    public function show(Request $request, ?string $identifier = null): RsvpResource|JsonResponse
     {
+        // Support: GET /api/rsvp/{slug}, GET /api/rsvp/{id}, GET /api/rsvp?id=123
+        $id = $identifier ?? $request->query('id');
+
+        if (! $id) {
+            return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
         $rsvp = Rsvp::query()
             ->with(['shifts', 'responses'])
             ->withCount('responses')
-            ->find($id);
+            ->where(fn ($query) => is_numeric($id) ? $query->where('rsvp_id', $id) : $query->where('slug', $id))
+            ->first();
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
@@ -72,6 +98,11 @@ class RsvpController extends Controller
 
             return $rsvp->load('shifts');
         });
+
+        // Dispatch notifications if RSVP is created as active
+        if ($rsvp->status === 'active') {
+            NotifyVolunteersOfNewRsvp::dispatch($rsvp);
+        }
 
         return (new RsvpResource($rsvp))
             ->response()
@@ -168,8 +199,14 @@ class RsvpController extends Controller
             return response()->json(['message' => $message], 422);
         }
 
+        $previousStatus = $rsvp->status;
         $rsvp->update(['status' => $newStatus]);
         $rsvp->refresh();
+
+        // Dispatch notifications if transitioning to active for the first time
+        if ($newStatus === 'active' && $previousStatus !== 'active') {
+            NotifyVolunteersOfNewRsvp::dispatch($rsvp);
+        }
 
         return response()->json(['message' => 'RSVP status updated.', 'status' => $rsvp->status]);
     }
@@ -255,6 +292,9 @@ class RsvpController extends Controller
                 'voted_at' => now(),
                 'sms_sent' => false,
                 'attendance_status' => 'registered',
+                'edit_count' => 0,
+                'initial_time_slot_id' => $shift->time_slot_id,
+                'edit_history' => [],
             ]);
         });
 
@@ -388,5 +428,190 @@ class RsvpController extends Controller
             'sent' => $result['sent'],
             'failed' => $result['failed'],
         ]);
+    }
+
+    /**
+     * Get current volunteer's response for a specific RSVP.
+     */
+    public function getMyResponse(Request $request, int $rsvpId): JsonResponse
+    {
+        $rsvp = Rsvp::query()->find($rsvpId);
+
+        if (! $rsvp) {
+            return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        $volunteer = $request->user()->volunteer;
+
+        if (! $volunteer) {
+            return response()->json(['message' => 'Volunteer profile not found.'], 403);
+        }
+
+        $response = RsvpResponse::query()
+            ->where('volunteer_id', $volunteer->volunteer_id)
+            ->where('rsvp_id', $rsvpId)
+            ->first();
+
+        if (! $response) {
+            return response()->json(['message' => 'You have not responded to this RSVP.'], 404);
+        }
+
+        return response()->json([
+            'data' => [
+                'id' => $response->response_id,
+                'volunteerId' => $response->volunteer_id,
+                'rsvpId' => $response->rsvp_id,
+                'timeSlotId' => $response->time_slot_id,
+                'votedAt' => $response->voted_at,
+                'createdAt' => $response->created_at,
+                'editCount' => $response->edit_count,
+                'remainingEdits' => $response->getRemainingEdits(),
+                'lastEditedAt' => $response->last_edited_at,
+                'editHistory' => $response->edit_history ?? [],
+            ],
+        ]);
+    }
+
+    /**
+     * Update an existing RSVP response (volunteer edits their response).
+     */
+    public function updateResponse(UpdateRsvpResponseRequest $request, int $rsvpId): JsonResponse
+    {
+        $rsvp = Rsvp::query()->find($rsvpId);
+
+        if (! $rsvp) {
+            return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        $volunteer = $request->user()->volunteer;
+
+        if (! $volunteer) {
+            return response()->json(['message' => 'Volunteer profile not found.'], 403);
+        }
+
+        $response = RsvpResponse::query()
+            ->where('volunteer_id', $volunteer->volunteer_id)
+            ->where('rsvp_id', $rsvpId)
+            ->first();
+
+        if (! $response) {
+            return response()->json(['message' => 'You have not responded to this RSVP.'], 404);
+        }
+
+        // Check if editing is allowed
+        if (! $response->canEdit()) {
+            if ($rsvp->status !== 'active') {
+                return response()->json(['message' => 'This RSVP is no longer accepting responses.'], 422);
+            }
+
+            if ($rsvp->isCutoffPassed()) {
+                return response()->json(['message' => 'The cutoff time for this RSVP has passed.'], 422);
+            }
+
+            return response()->json(['message' => 'You have used all 3 available edits for this RSVP.'], 422);
+        }
+
+        $newTimeSlotId = $request->integer('time_slot_id');
+        $oldTimeSlotId = $response->time_slot_id;
+
+        // Cannot edit to the same slot
+        if ($newTimeSlotId === $oldTimeSlotId) {
+            return response()->json(['message' => 'Please select a different time slot.'], 422);
+        }
+
+        // Verify new slot exists in this RSVP
+        $newSlot = $rsvp->shifts()
+            ->where('time_slot.time_slot_id', $newTimeSlotId)
+            ->first();
+
+        if (! $newSlot) {
+            return response()->json(['message' => 'Invalid time slot for this RSVP.'], 422);
+        }
+
+        // Check capacity on new slot
+        $capacityUsed = RsvpResponse::query()
+            ->where('rsvp_id', $rsvpId)
+            ->where('time_slot_id', $newTimeSlotId)
+            ->count();
+
+        if ($capacityUsed >= $newSlot->pivot->capacity) {
+            return response()->json(['message' => 'This time slot is already at full capacity.'], 422);
+        }
+
+        // Update in transaction
+        DB::transaction(function () use ($response, $newTimeSlotId, $oldTimeSlotId) {
+            $response->recordEdit($oldTimeSlotId, $newTimeSlotId);
+            $response->time_slot_id = $newTimeSlotId;
+            $response->save();
+        });
+
+        return response()->json([
+            'message' => 'Response updated successfully.',
+            'remaining_edits' => $response->getRemainingEdits(),
+        ]);
+    }
+
+    /**
+     * Get RSVP notifications for authenticated volunteer.
+     */
+    public function getNotifications(Request $request): AnonymousResourceCollection
+    {
+        $volunteer = $request->user()->volunteer;
+
+        if (! $volunteer) {
+            abort(403, 'Volunteer profile not found.');
+        }
+
+        $notifications = \App\Models\RsvpNotification::query()
+            ->where('volunteer_id', $volunteer->volunteer_id)
+            ->latest('created_at')
+            ->paginate(20);
+
+        return \App\Http\Resources\RsvpNotificationResource::collection($notifications);
+    }
+
+    /**
+     * Mark a notification as read.
+     */
+    public function markNotificationAsRead(Request $request, int $notificationId): JsonResponse
+    {
+        $volunteer = $request->user()->volunteer;
+
+        if (! $volunteer) {
+            return response()->json(['message' => 'Volunteer profile not found.'], 403);
+        }
+
+        $notification = \App\Models\RsvpNotification::query()->find($notificationId);
+
+        if (! $notification) {
+            return response()->json(['message' => 'Notification not found.'], 404);
+        }
+
+        if ($notification->volunteer_id !== $volunteer->volunteer_id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $notification->markAsRead();
+
+        return response()->json(['message' => 'Notification marked as read.']);
+    }
+
+    /**
+     * Mark all RSVP notifications as read for authenticated volunteer.
+     */
+    public function markAllNotificationsAsRead(Request $request): JsonResponse
+    {
+        $volunteer = $request->user()->volunteer;
+
+        if (! $volunteer) {
+            return response()->json(['message' => 'Volunteer profile not found.'], 403);
+        }
+
+        \App\Models\RsvpNotification::query()
+            ->where('volunteer_id', $volunteer->volunteer_id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        return response()->json(['message' => 'All notifications marked as read.']);
     }
 }
