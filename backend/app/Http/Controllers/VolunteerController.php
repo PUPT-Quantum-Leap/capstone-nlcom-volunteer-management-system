@@ -8,7 +8,10 @@ use App\Http\Requests\UpdateProfilePhotoRequest;
 use App\Http\Requests\UpdateVolunteerProfileRequest;
 use App\Http\Resources\ProfileChangeLogResource;
 use App\Http\Resources\VolunteerProfileResource;
+use App\Models\Availability;
+use App\Models\EmergencyContact;
 use App\Models\Experience;
+use App\Models\Lifegroup;
 use App\Models\Position;
 use App\Models\ProfileChangeLog;
 use App\Models\Skill;
@@ -844,7 +847,7 @@ class VolunteerController extends Controller
         string $number,
         string $relationship
     ): void {
-        $emergencyContact = \App\Models\EmergencyContact::firstOrCreate([
+        $emergencyContact = EmergencyContact::firstOrCreate([
             'name' => $name,
             'phone_number' => $number,
             'relationship' => $relationship,
@@ -871,7 +874,7 @@ class VolunteerController extends Controller
             $customDescription = $otherAvailability;
         }
 
-        $availabilityRecord = \App\Models\Availability::firstOrCreate([
+        $availabilityRecord = Availability::firstOrCreate([
             'name' => $availabilityName,
         ]);
 
@@ -893,7 +896,7 @@ class VolunteerController extends Controller
         if ($partOfLifegroup === 'yes') {
             $lifegroupName = ! empty($lifegroupLeaderName) ? $lifegroupLeaderName : 'General Lifegroup';
 
-            $lifegroup = \App\Models\Lifegroup::firstOrCreate([
+            $lifegroup = Lifegroup::firstOrCreate([
                 'name' => $lifegroupName,
             ]);
 

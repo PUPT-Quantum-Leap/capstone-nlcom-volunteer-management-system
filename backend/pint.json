@@ -1,0 +1,11 @@
+{
+    "rules": {
+        "ordered_imports": true,
+        "fully_qualified_strict_types": true,
+        "unary_operator_spaces": true,
+        "not_operator_with_successor_space": true,
+        "braces_position": true,
+        "class_definition": true,
+        "single_line_after_imports": true
+    }
+}
