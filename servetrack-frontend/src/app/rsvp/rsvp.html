@@ -109,20 +109,142 @@
           <p class="error-message">{{ rsvpError() }}</p>
         }
 
-        @if (rsvp.status === 'active') {
-          <button
-            class="btn-submit"
-            [disabled]="!hasSelectedShift() || hasSubmittedRsvp() || isLoading()"
-            (click)="submitRsvp()"
-          >
-            @if (isLoading()) {
-              Submitting…
-            } @else if (hasSubmittedRsvp()) {
-              RSVP Recorded
+      @if (rsvp.status === 'active') {
+           <button
+             class="btn-submit"
+             [disabled]="!hasSelectedShift() || hasSubmittedRsvp() || isLoading()"
+             (click)="submitRsvp()"
+           >
+             @if (isLoading()) {
+               Submitting…
+             } @else if (hasSubmittedRsvp()) {
+               RSVP Recorded
+             } @else {
+               Submit RSVP
+             }
+           </button>
+         }
+        </div>
+
+        <!-- Your Response Section -->
+        @if (hasSubmittedRsvp() && rsvpResponse(); as response) {
+          <div class="your-response-section">
+            <div class="response-header">
+              <h3 class="response-title">Your Response</h3>
+              <div class="response-meta">
+                <span class="submitted-label">Submitted:</span>
+                <span class="submitted-time">{{ response.createdAt | date: 'short' }}</span>
+              </div>
+            </div>
+
+            <!-- Current Time Slot -->
+            <div class="response-info">
+              <div class="info-row">
+                <span class="info-label">Time Slot:</span>
+                <span class="info-value">{{ getCurrentShiftLabel() }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Edit Count:</span>
+                <span class="info-value">{{ response.editCount }} / 3</span>
+              </div>
+              @if (response.lastEditedAt) {
+                <div class="info-row">
+                  <span class="info-label">Last Edited:</span>
+                  <span class="info-value">{{ response.lastEditedAt | date: 'short' }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Edit Mode Toggle -->
+            @if (!isEditMode()) {
+              <div class="edit-actions">
+                @if (canEditResponse()) {
+                  <div class="remaining-edits-info">
+                    <span class="remaining-label">Edits remaining: {{ remainingEdits() }}</span>
+                  </div>
+                  <button
+                    class="btn-edit"
+                    (click)="enterEditMode()"
+                    [disabled]="isLoading()"
+                  >
+                    Edit Response
+                  </button>
+                } @else if (hasSubmittedRsvp() && !hasEditsRemaining()) {
+                  <p class="no-edits-message">You have reached the maximum number of edits (3) for this RSVP.</p>
+                } @else if (hasSubmittedRsvp() && rsvp.status !== 'active') {
+                  <p class="no-edits-message">This RSVP is {{ rsvp.status }}. You can no longer edit your response.</p>
+                }
+              </div>
             } @else {
-              Submit RSVP
+              <!-- Edit Mode UI -->
+              <div class="edit-mode-section">
+                <div class="edit-mode-header">
+                  <h4 class="edit-mode-title">Edit Your Response</h4>
+                </div>
+
+                @if (editError()) {
+                  <p class="error-message">{{ editError() }}</p>
+                }
+
+                <!-- Edit Shift Selection -->
+                <div class="edit-shifts">
+                  <p class="edit-shifts-label">Select a different time slot:</p>
+                  @for (shift of rsvp.shifts; track shift.id) {
+                    <div
+                      class="edit-shift-option"
+                      [class.selected]="editShiftId() === shift.id"
+                      [class.disabled]="isFull(shift) || shift.id === response.timeSlotId"
+                      (click)="selectEditShift(shift.id)"
+                    >
+                      <input
+                        type="radio"
+                        [id]="'edit-shift-' + shift.id"
+                        [checked]="editShiftId() === shift.id"
+                        [disabled]="isFull(shift) || shift.id === response.timeSlotId"
+                        class="edit-shift-radio"
+                        (change)="selectEditShift(shift.id)"
+                        name="editShiftGroup"
+                      />
+                      <label [for]="'edit-shift-' + shift.id" class="edit-shift-label">
+                        {{ shift.timeSlot }}
+                        @if (shift.id === response.timeSlotId) {
+                          <span class="current-badge">(Current)</span>
+                        }
+                      </label>
+                      <span class="edit-shift-capacity">
+                        {{ shift.responses }} / {{ shift.capacity }}
+                        @if (isFull(shift)) {
+                          <span class="full-badge">FULL</span>
+                        }
+                      </span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Edit Action Buttons -->
+                <div class="edit-actions">
+                  <button
+                    class="btn-cancel"
+                    (click)="exitEditMode()"
+                    [disabled]="isEditSubmitting()"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    class="btn-save"
+                    [disabled]="editShiftId() === null || editShiftId() === response.timeSlotId || isEditSubmitting()"
+                    (click)="submitEditedResponse()"
+                  >
+                    @if (isEditSubmitting()) {
+                      Saving…
+                    } @else {
+                      Save Changes
+                    }
+                  </button>
+                </div>
+              </div>
             }
-          </button>
+          </div>
         }
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, switchMap } from 'rxjs';
-import { Rsvp } from '../models/rsvp';
+import { Rsvp, RsvpResponse, RsvpNotification } from '../models/rsvp';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
@@ -21,7 +21,7 @@ export class RsvpService {
     return this.http.get<{ data: Rsvp[] }>(this.apiUrl, { withCredentials: true });
   }
 
-  getRsvpById(id: number): Observable<{ data: Rsvp }> {
+  getRsvpById(id: number | string): Observable<{ data: Rsvp }> {
     return this.http.get<{ data: Rsvp }>(`${this.apiUrl}/${id}`, { withCredentials: true });
   }
 
@@ -95,6 +95,49 @@ export class RsvpService {
   notifySms(rsvpId: number): Observable<{ success: boolean; message: string; total: number; sent: number; failed: number }> {
     return this.ensureCsrf().pipe(
       switchMap(() => this.http.post<{ success: boolean; message: string; total: number; sent: number; failed: number }>(`${this.apiUrl}/${rsvpId}/notify-sms`, {}, { withCredentials: true }))
+    );
+  }
+
+  /**
+   * Get current volunteer's response for an RSVP.
+   */
+  getMyResponse(rsvpId: number): Observable<{ data: RsvpResponse }> {
+    return this.http.get<{ data: RsvpResponse }>(`${this.apiUrl}/${rsvpId}/my-response`, { withCredentials: true });
+  }
+
+  /**
+   * Update an existing RSVP response (volunteer edits their response).
+   */
+  updateRsvpResponse(rsvpId: number, timeSlotId: number): Observable<{ message: string; remaining_edits: number }> {
+    return this.ensureCsrf().pipe(
+      switchMap(() => this.http.put<{ message: string; remaining_edits: number }>(`${this.apiUrl}/${rsvpId}/response`, {
+        time_slot_id: timeSlotId,
+      }, { withCredentials: true }))
+    );
+  }
+
+  /**
+   * Get RSVP notifications for authenticated volunteer.
+   */
+  getNotifications(): Observable<{ data: RsvpNotification[] }> {
+    return this.http.get<{ data: RsvpNotification[] }>(`${environment.apiUrl}/notifications/rsvp`, { withCredentials: true });
+  }
+
+  /**
+   * Mark a notification as read.
+   */
+  markNotificationAsRead(notificationId: number): Observable<{ message: string }> {
+    return this.ensureCsrf().pipe(
+      switchMap(() => this.http.patch<{ message: string }>(`${environment.apiUrl}/notifications/${notificationId}/read`, {}, { withCredentials: true }))
+    );
+  }
+
+  /**
+   * Mark all RSVP notifications as read.
+   */
+  markAllNotificationsAsRead(): Observable<{ message: string }> {
+    return this.ensureCsrf().pipe(
+      switchMap(() => this.http.patch<{ message: string }>(`${environment.apiUrl}/notifications/rsvp/read-all`, {}, { withCredentials: true }))
     );
   }
 }

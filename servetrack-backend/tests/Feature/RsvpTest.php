@@ -482,3 +482,453 @@ describe('POST /api/rsvp/{id}/vote', function (): void {
         ]);
     });
 });
+
+describe('PUT /api/rsvp/{rsvpId}/response - Update RSVP Response', function (): void {
+    it('allows volunteer to edit their response', function (): void {
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        ['rsvp' => $rsvp, 'shifts' => $shifts] = createRsvpWithShifts([
+            'status' => 'active',
+            'cutoff_day' => now()->addDay()->toDateString(),
+            'cutoff_time' => '23:59',
+        ]);
+
+        // Initial response
+        $this->actingAs($user)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/vote", ['time_slot_id' => $shifts[0]->time_slot_id])
+            ->assertSuccessful();
+
+        // Update response
+        $this->actingAs($user)
+            ->putJson("/api/rsvp/{$rsvp->rsvp_id}/response", ['time_slot_id' => $shifts[1]->time_slot_id])
+            ->assertSuccessful()
+            ->assertJsonPath('message', 'Response updated successfully.')
+            ->assertJsonPath('remaining_edits', 2);
+
+        // Verify database
+        $this->assertDatabaseHas('rsvp_response', [
+            'volunteer_id' => $volunteer->volunteer_id,
+            'rsvp_id' => $rsvp->rsvp_id,
+            'time_slot_id' => $shifts[1]->time_slot_id,
+            'edit_count' => 1,
+        ]);
+    });
+
+    it('rejects edit if event is not active', function (): void {
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        ['rsvp' => $rsvp, 'shifts' => $shifts] = createRsvpWithShifts(['status' => 'active']);
+
+        // Initial response
+        $this->actingAs($user)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/vote", ['time_slot_id' => $shifts[0]->time_slot_id])
+            ->assertSuccessful();
+
+        // Close RSVP
+        $rsvp->update(['status' => 'closed']);
+
+        // Attempt edit
+        $this->actingAs($user)
+            ->putJson("/api/rsvp/{$rsvp->rsvp_id}/response", ['time_slot_id' => $shifts[1]->time_slot_id])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'This RSVP is no longer accepting responses.');
+    });
+
+    it('rejects edit if cutoff has passed', function (): void {
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        ['rsvp' => $rsvp, 'shifts' => $shifts] = createRsvpWithShifts([
+            'status' => 'active',
+            'cutoff_day' => now()->addDay()->toDateString(),
+            'cutoff_time' => '23:59',
+        ]);
+
+        // Initial response
+        $this->actingAs($user)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/vote", ['time_slot_id' => $shifts[0]->time_slot_id])
+            ->assertSuccessful();
+
+        // Update cutoff to past
+        $rsvp->update([
+            'cutoff_day' => now()->subDay()->toDateString(),
+            'cutoff_time' => '23:59',
+        ]);
+
+        // Attempt edit
+        $this->actingAs($user)
+            ->putJson("/api/rsvp/{$rsvp->rsvp_id}/response", ['time_slot_id' => $shifts[1]->time_slot_id])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'The cutoff time for this RSVP has passed.');
+    });
+
+    it('enforces 3-edit limit', function (): void {
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        ['rsvp' => $rsvp, 'shifts' => $shifts] = createRsvpWithShifts([
+            'status' => 'active',
+            'cutoff_day' => now()->addDay()->toDateString(),
+            'cutoff_time' => '23:59',
+        ]);
+
+        // Add extra shifts for testing
+        foreach (['6:00am - 3:00pm', '2:00pm - 10:00pm', '12:00am - 8:00am'] as $slot) {
+            $timeSlot = TimeSlot::factory()->create(['text' => $slot]);
+            $rsvp->shifts()->attach($timeSlot->time_slot_id, [
+                'time_slot' => $slot,
+                'capacity' => 10,
+            ]);
+            $shifts[] = $timeSlot;
+        }
+        $rsvp->refresh()->load('shifts');
+
+        // Initial response
+        $this->actingAs($user)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/vote", ['time_slot_id' => $shifts[0]->time_slot_id])
+            ->assertSuccessful();
+
+        // Make 3 edits
+        for ($i = 0; $i < 3; $i++) {
+            $response = $this->actingAs($user)
+                ->putJson("/api/rsvp/{$rsvp->rsvp_id}/response", ['time_slot_id' => $shifts[$i + 1]->time_slot_id])
+                ->assertSuccessful();
+        }
+
+        // 4th edit should fail
+        $this->actingAs($user)
+            ->putJson("/api/rsvp/{$rsvp->rsvp_id}/response", ['time_slot_id' => $shifts[0]->time_slot_id])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'You have used all 3 available edits for this RSVP.');
+    });
+
+    it('rejects edit to same time slot', function (): void {
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        ['rsvp' => $rsvp, 'shifts' => $shifts] = createRsvpWithShifts([
+            'status' => 'active',
+            'cutoff_day' => now()->addDay()->toDateString(),
+            'cutoff_time' => '23:59',
+        ]);
+
+        // Initial response
+        $this->actingAs($user)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/vote", ['time_slot_id' => $shifts[0]->time_slot_id])
+            ->assertSuccessful();
+
+        // Try to edit to same slot
+        $this->actingAs($user)
+            ->putJson("/api/rsvp/{$rsvp->rsvp_id}/response", ['time_slot_id' => $shifts[0]->time_slot_id])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Please select a different time slot.');
+    });
+
+    it('respects capacity on new slot', function (): void {
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        $rsvpData = createRsvpWithShifts([
+            'status' => 'active',
+            'cutoff_day' => now()->addDay()->toDateString(),
+            'cutoff_time' => '23:59',
+        ]);
+        $rsvp = $rsvpData['rsvp'];
+        $shifts = $rsvpData['shifts'];
+
+        // Create a limited capacity shift
+        $limitedShift = TimeSlot::factory()->create(['text' => 'Limited Shift']);
+        $rsvp->shifts()->attach($limitedShift->time_slot_id, [
+            'time_slot' => 'Limited Shift',
+            'capacity' => 1,
+        ]);
+
+        // Fill the limited shift
+        $user2 = User::factory()->volunteer()->create();
+        $volunteer2 = Volunteer::factory()->create(['user_id' => $user2->id]);
+        $this->actingAs($user2)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/vote", ['time_slot_id' => $limitedShift->time_slot_id])
+            ->assertSuccessful();
+
+        // First user gets on shift[0]
+        $this->actingAs($user)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/vote", ['time_slot_id' => $shifts[0]->time_slot_id])
+            ->assertSuccessful();
+
+        // First user tries to move to limited shift (should fail)
+        $this->actingAs($user)
+            ->putJson("/api/rsvp/{$rsvp->rsvp_id}/response", ['time_slot_id' => $limitedShift->time_slot_id])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'This time slot is already at full capacity.');
+    });
+
+    it('requires authentication', function (): void {
+        ['rsvp' => $rsvp, 'shifts' => $shifts] = createRsvpWithShifts(['status' => 'active']);
+
+        $this->putJson("/api/rsvp/{$rsvp->rsvp_id}/response", ['time_slot_id' => $shifts[0]->time_slot_id])
+            ->assertUnauthorized();
+    });
+
+    it('tracks edit history', function (): void {
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        ['rsvp' => $rsvp, 'shifts' => $shifts] = createRsvpWithShifts([
+            'status' => 'active',
+            'cutoff_day' => now()->addDay()->toDateString(),
+            'cutoff_time' => '23:59',
+        ]);
+
+        // Initial response
+        $this->actingAs($user)
+            ->postJson("/api/rsvp/{$rsvp->rsvp_id}/vote", ['time_slot_id' => $shifts[0]->time_slot_id])
+            ->assertSuccessful();
+
+        // Edit response
+        $this->actingAs($user)
+            ->putJson("/api/rsvp/{$rsvp->rsvp_id}/response", ['time_slot_id' => $shifts[1]->time_slot_id])
+            ->assertSuccessful();
+
+        // Verify edit history
+        $response = \App\Models\RsvpResponse::query()
+            ->where('volunteer_id', $volunteer->volunteer_id)
+            ->where('rsvp_id', $rsvp->rsvp_id)
+            ->first();
+
+        expect($response->edit_history)->toBeArray();
+        expect($response->edit_history)->toHaveCount(1);
+        expect($response->edit_history[0]['old_time_slot_id'])->toBe($shifts[0]->time_slot_id);
+        expect($response->edit_history[0]['new_time_slot_id'])->toBe($shifts[1]->time_slot_id);
+    });
+});
+
+describe('GET /api/notifications/rsvp - Get RSVP Notifications', function (): void {
+    it('returns notifications for authenticated volunteer', function (): void {
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+
+        // Create notifications
+        $rsvp1 = Rsvp::factory()->active()->create();
+        $rsvp2 = Rsvp::factory()->active()->create();
+
+        \App\Models\RsvpNotification::factory()->create([
+            'volunteer_id' => $volunteer->volunteer_id,
+            'rsvp_id' => $rsvp1->rsvp_id,
+        ]);
+
+        \App\Models\RsvpNotification::factory()->create([
+            'volunteer_id' => $volunteer->volunteer_id,
+            'rsvp_id' => $rsvp2->rsvp_id,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson('/api/notifications/rsvp')
+            ->assertSuccessful()
+            ->assertJsonCount(2, 'data');
+    });
+
+    it('only returns notifications for own volunteer', function (): void {
+        $user1 = User::factory()->volunteer()->create();
+        $volunteer1 = Volunteer::factory()->create(['user_id' => $user1->id]);
+
+        $user2 = User::factory()->volunteer()->create();
+        $volunteer2 = Volunteer::factory()->create(['user_id' => $user2->id]);
+
+        $rsvp = Rsvp::factory()->active()->create();
+
+        \App\Models\RsvpNotification::factory()->create([
+            'volunteer_id' => $volunteer1->volunteer_id,
+            'rsvp_id' => $rsvp->rsvp_id,
+        ]);
+
+        \App\Models\RsvpNotification::factory()->create([
+            'volunteer_id' => $volunteer2->volunteer_id,
+            'rsvp_id' => $rsvp->rsvp_id,
+        ]);
+
+        $response = $this->actingAs($user1)
+            ->getJson('/api/notifications/rsvp')
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data');
+    });
+
+    it('requires authentication', function (): void {
+        $this->getJson('/api/notifications/rsvp')->assertUnauthorized();
+    });
+});
+
+describe('PATCH /api/notifications/{notificationId}/read - Mark Notification as Read', function (): void {
+    it('marks notification as read for volunteer', function (): void {
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        $rsvp = Rsvp::factory()->active()->create();
+
+        $notification = \App\Models\RsvpNotification::factory()->create([
+            'volunteer_id' => $volunteer->volunteer_id,
+            'rsvp_id' => $rsvp->rsvp_id,
+            'read_at' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->patchJson("/api/notifications/{$notification->notification_id}/read")
+            ->assertSuccessful()
+            ->assertJsonPath('message', 'Notification marked as read.');
+
+        $this->assertDatabaseHas('rsvp_notification', [
+            'notification_id' => $notification->notification_id,
+        ]);
+
+        // Verify read_at is set
+        $updated = \App\Models\RsvpNotification::find($notification->notification_id);
+        expect($updated->read_at)->not->toBeNull();
+    });
+
+    it('prevents marking another volunteer\'s notification as read', function (): void {
+        $user1 = User::factory()->volunteer()->create();
+        $volunteer1 = Volunteer::factory()->create(['user_id' => $user1->id]);
+
+        $user2 = User::factory()->volunteer()->create();
+        $volunteer2 = Volunteer::factory()->create(['user_id' => $user2->id]);
+
+        $rsvp = Rsvp::factory()->active()->create();
+
+        $notification = \App\Models\RsvpNotification::factory()->create([
+            'volunteer_id' => $volunteer1->volunteer_id,
+            'rsvp_id' => $rsvp->rsvp_id,
+        ]);
+
+        $this->actingAs($user2)
+            ->patchJson("/api/notifications/{$notification->notification_id}/read")
+            ->assertForbidden();
+    });
+
+    it('requires authentication', function (): void {
+        $this->patchJson('/api/notifications/1/read')->assertUnauthorized();
+    });
+});
+
+describe('PATCH /api/notifications/rsvp/read-all - Mark All Notifications as Read', function (): void {
+    it('marks all notifications as read for volunteer', function (): void {
+        $user = User::factory()->volunteer()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+
+        $rsvp1 = Rsvp::factory()->active()->create();
+        $rsvp2 = Rsvp::factory()->active()->create();
+
+        \App\Models\RsvpNotification::factory()->create([
+            'volunteer_id' => $volunteer->volunteer_id,
+            'rsvp_id' => $rsvp1->rsvp_id,
+            'read_at' => null,
+        ]);
+
+        \App\Models\RsvpNotification::factory()->create([
+            'volunteer_id' => $volunteer->volunteer_id,
+            'rsvp_id' => $rsvp2->rsvp_id,
+            'read_at' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->patchJson('/api/notifications/rsvp/read-all')
+            ->assertSuccessful();
+
+        // Verify all are marked as read
+        $unreadCount = \App\Models\RsvpNotification::query()
+            ->where('volunteer_id', $volunteer->volunteer_id)
+            ->whereNull('read_at')
+            ->count();
+
+        expect($unreadCount)->toBe(0);
+    });
+
+    it('only marks own notifications', function (): void {
+        $user1 = User::factory()->volunteer()->create();
+        $volunteer1 = Volunteer::factory()->create(['user_id' => $user1->id]);
+
+        $user2 = User::factory()->volunteer()->create();
+        $volunteer2 = Volunteer::factory()->create(['user_id' => $user2->id]);
+
+        $rsvp = Rsvp::factory()->active()->create();
+
+        \App\Models\RsvpNotification::factory()->create([
+            'volunteer_id' => $volunteer1->volunteer_id,
+            'rsvp_id' => $rsvp->rsvp_id,
+            'read_at' => null,
+        ]);
+
+        \App\Models\RsvpNotification::factory()->create([
+            'volunteer_id' => $volunteer2->volunteer_id,
+            'rsvp_id' => $rsvp->rsvp_id,
+            'read_at' => null,
+        ]);
+
+        $this->actingAs($user1)
+            ->patchJson('/api/notifications/rsvp/read-all')
+            ->assertSuccessful();
+
+        // Verify only user1's are marked as read
+        $user1Unread = \App\Models\RsvpNotification::query()
+            ->where('volunteer_id', $volunteer1->volunteer_id)
+            ->whereNull('read_at')
+            ->count();
+
+        $user2Unread = \App\Models\RsvpNotification::query()
+            ->where('volunteer_id', $volunteer2->volunteer_id)
+            ->whereNull('read_at')
+            ->count();
+
+        expect($user1Unread)->toBe(0);
+        expect($user2Unread)->toBe(1);
+    });
+
+    it('requires authentication', function (): void {
+        $this->patchJson('/api/notifications/rsvp/read-all')->assertUnauthorized();
+    });
+});
+
+describe('Slug URL Support', function (): void {
+    it('allows fetching RSVP by slug', function (): void {
+        $admin = User::factory()->admin()->create();
+        ['rsvp' => $rsvp] = createRsvpWithShifts(['status' => 'active']);
+
+        $this->actingAs($admin)
+            ->getJson("/api/rsvp/{$rsvp->slug}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.id', $rsvp->rsvp_id)
+            ->assertJsonPath('data.slug', $rsvp->slug);
+    });
+
+    it('allows fetching RSVP by numeric ID', function (): void {
+        $admin = User::factory()->admin()->create();
+        ['rsvp' => $rsvp] = createRsvpWithShifts(['status' => 'active']);
+
+        $this->actingAs($admin)
+            ->getJson("/api/rsvp/{$rsvp->rsvp_id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.id', $rsvp->rsvp_id);
+    });
+
+    it('allows fetching RSVP by query parameter', function (): void {
+        $admin = User::factory()->admin()->create();
+        ['rsvp' => $rsvp] = createRsvpWithShifts(['status' => 'active']);
+
+        $this->actingAs($admin)
+            ->getJson("/api/rsvp?id={$rsvp->rsvp_id}")
+            ->assertSuccessful()
+            ->assertJsonPath('data.id', $rsvp->rsvp_id);
+    });
+
+    it('generates unique slugs for duplicate titles', function (): void {
+        $rsvp1 = Rsvp::factory()->create(['title' => 'Community Service']);
+        $rsvp2 = Rsvp::factory()->create(['title' => 'Community Service']);
+
+        expect($rsvp1->slug)->not->toBe($rsvp2->slug);
+        expect($rsvp2->slug)->toContain('community-service');
+    });
+
+    it('includes slug in shareUrl', function (): void {
+        $admin = User::factory()->admin()->create();
+        ['rsvp' => $rsvp] = createRsvpWithShifts(['status' => 'active']);
+
+        $response = $this->actingAs($admin)
+            ->getJson("/api/rsvp/{$rsvp->rsvp_id}")
+            ->assertSuccessful()
+            ->json('data.shareUrl');
+
+        expect($response)->toContain($rsvp->slug);
+    });
+});
