@@ -243,7 +243,7 @@ export class AdminDashboard implements OnInit {
   analyticsLoading = signal(false);
   selectedReportType = signal<'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'>('volunteers');
   dateRangeFilter = signal<'all' | 'month' | 'quarter' | 'year'>('all');
-  selectedDepartmentFilter = signal<number | null>(null);
+  selectedDepartmentFilter = signal<string | null>(null);
   skillsPage = signal(1);
   skillsPerPage = signal(3);
   departmentsPage = signal(1);
@@ -2339,16 +2339,20 @@ export class AdminDashboard implements OnInit {
 
   setDateRange(range: 'all' | 'month' | 'quarter' | 'year'): void {
     this.dateRangeFilter.set(range);
+    this.skillsPage.set(1);
+    this.departmentsPage.set(1);
     this.loadAnalyticsData();
   }
 
-  setDepartmentFilter(departmentId: number | null): void {
-    this.selectedDepartmentFilter.set(departmentId);
+  setDepartmentFilter(departmentName: string | null): void {
+    this.selectedDepartmentFilter.set(departmentName);
+    this.skillsPage.set(1);
+    this.departmentsPage.set(1);
     this.loadAnalyticsData();
   }
 
   onDepartmentFilterChange(value: string): void {
-    this.setDepartmentFilter(value ? parseInt(value, 10) : null);
+    this.setDepartmentFilter(value || null);
   }
 
   nextSkillsPage(): void {
