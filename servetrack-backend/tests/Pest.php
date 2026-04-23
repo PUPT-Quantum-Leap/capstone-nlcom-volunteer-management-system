@@ -1,5 +1,10 @@
 <?php
 
+use App\Models\User;
+use App\Models\Volunteer;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -40,11 +45,6 @@ expect()->extend('toBeOne', function () {
 | global functions to help you to reduce the number of lines of code in your test files.
 |
 */
-
-use App\Models\User;
-use App\Models\Volunteer;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 
 function createVolunteerUser(array $userOverrides = [], array $volunteerOverrides = []): array
 {
