@@ -9,14 +9,14 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { DecimalPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { RsvpService } from '../services/rsvp.service';
 import { Rsvp as RsvpModel, RsvpShift, RsvpResponse } from '../models/rsvp';
 
 @Component({
   selector: 'app-rsvp',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe],
+  imports: [CommonModule],
   templateUrl: './rsvp.html',
   styleUrl: './rsvp-styles.scss',
 })
