@@ -11,6 +11,7 @@ class RsvpResource extends JsonResource
     {
         return [
             'id' => $this->rsvp_id,
+            'slug' => $this->slug,
             'title' => $this->title,
             'description' => $this->description,
             'date' => $this->date?->format('M d'),
@@ -18,7 +19,7 @@ class RsvpResource extends JsonResource
             'cutOffDay' => $this->cutoff_day?->format('M d, Y'),
             'cutOffTime' => $this->cutoff_time ? date('g:i A', strtotime($this->cutoff_time)) : null,
             'status' => $this->status,
-            'shareUrl' => $this->share_url,
+            'shareUrl' => route('rsvp.show', ['identifier' => $this->slug]),
             'totalResponses' => $this->responses_count ?? 0,
             'createdAt' => $this->created_at?->toDateString(),
             'shifts' => $this->whenLoaded('shifts', function () {
