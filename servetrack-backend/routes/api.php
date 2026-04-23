@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BackupController;
@@ -62,6 +63,12 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
 // Admin-only routes — requires authentication AND admin role
 Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): void {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
+
+    // Analytics & Reports
+    Route::get('/analytics/reports', [AnalyticsController::class, 'reports']);
+    Route::get('/analytics/export/pdf', [AnalyticsController::class, 'exportPdf']);
+    Route::get('/analytics/export/excel', [AnalyticsController::class, 'exportExcel']);
+
     Route::get('/volunteers', [VolunteerController::class, 'index']);
     Route::get('/volunteers/{id}', [VolunteerController::class, 'show']);
     Route::patch('/volunteers/{id}/soft-delete', [VolunteerController::class, 'softDelete']);
