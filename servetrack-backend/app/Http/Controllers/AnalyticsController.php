@@ -243,8 +243,11 @@ class AnalyticsController extends Controller
             ->when($departmentId, fn ($q) => $q->where('position_id', $departmentId))
             ->withCount('volunteers')
             ->get();
+        $departmentName = $departmentId
+            ? Position::query()->where('position_id', $departmentId)->value('name')
+            : null;
         $topPerformers = $this->getTopPerformers($volunteers, 10);
-        $monthlyTrend = $this->getMonthlyTrend($startDate, $departmentId);
+        $monthlyTrend = $this->getMonthlyTrend($startDate, $departmentName);
 
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
