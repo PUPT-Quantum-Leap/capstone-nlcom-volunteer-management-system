@@ -58,7 +58,7 @@ interface AttendanceRecord {
   checkInTime: string | null;
   checkOutTime: string | null;
   duration: string | null;
-  status: 'present' | 'absent' | 'late';
+  status: 'present' | 'absent';
 }
 
 type DashboardView =
@@ -208,7 +208,7 @@ export class AdminDashboard implements OnInit {
     { id: 1, volunteerName: 'Agnes Felix', email: 'agnes.felix.21@servetrack.local', department: 'Mobile Kitchen Operations', checkInTime: '08:30 AM', checkOutTime: '12:00 PM', duration: '3h 30m', status: 'present' },
     { id: 2, volunteerName: 'Robbie Panaligan', email: 'robbie.panaligan.22@servetrack.local', department: 'Relief Operations', checkInTime: '09:00 AM', checkOutTime: '11:30 AM', duration: '2h 30m', status: 'present' },
     { id: 3, volunteerName: 'Natasya Angelina Lim', email: 'natasya.angelina.lim.23@servetrack.local', department: 'Mobile Kitchen Operations', checkInTime: '08:45 AM', checkOutTime: '01:00 PM', duration: '4h 15m', status: 'present' },
-    { id: 4, volunteerName: 'Lea Therese Chua', email: 'lea.therese.chua.24@servetrack.local', department: 'Individual & Corporate Partnerships', checkInTime: '09:15 AM', checkOutTime: null, duration: null, status: 'late' },
+    { id: 4, volunteerName: 'Lea Therese Chua', email: 'lea.therese.chua.24@servetrack.local', department: 'Individual & Corporate Partnerships', checkInTime: '09:15 AM', checkOutTime: null, duration: null, status: 'present' },
     { id: 5, volunteerName: 'George Arvin Ventura', email: 'george.arvin.ventura.25@servetrack.local', department: 'Mobile Kitchen Operations', checkInTime: null, checkOutTime: null, duration: null, status: 'absent' },
   ]);
 
@@ -1326,8 +1326,18 @@ export class AdminDashboard implements OnInit {
     return pages;
   }
 
+  // Attendance details modal signals
+  showAttendanceDetailsModal = signal(false);
+  selectedAttendanceRecord = signal<AttendanceRecord | null>(null);
+
   viewAttendanceDetails(record: AttendanceRecord): void {
-    this.showSnackbar(`Viewing attendance for ${record.volunteerName}`, 'info');
+    this.selectedAttendanceRecord.set(record);
+    this.showAttendanceDetailsModal.set(true);
+  }
+
+  closeAttendanceDetailsModal(): void {
+    this.showAttendanceDetailsModal.set(false);
+    this.selectedAttendanceRecord.set(null);
   }
 
   exportAttendanceToPDF(): void {
@@ -1338,6 +1348,13 @@ export class AdminDashboard implements OnInit {
   exportAttendanceToExcel(): void {
     this.showSnackbar('Exporting attendance to Excel...', 'info');
     // TODO: Implement Excel export
+  }
+
+  updateAttendanceStatus(recordId: number, status: 'present' | 'absent'): void {
+    this.attendanceRecords.update(records =>
+      records.map(r => r.id === recordId ? { ...r, status } : r)
+    );
+    this.showSnackbar(`Attendance status updated to ${status}`, 'success');
   }
 
   // Assign Volunteer & Photo Upload OCR Methods
