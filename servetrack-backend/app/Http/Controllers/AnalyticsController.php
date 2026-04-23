@@ -27,14 +27,19 @@ class AnalyticsController extends Controller
         }
 
         $dateRange = $request->query('dateRange', 'all');
+        $department = $request->query('department');
         $startDate = $this->getStartDate($dateRange);
 
         $volunteers = Volunteer::query()
             ->with(['positions:position_id,name', 'attendances'])
+            ->when($department, fn ($q) => $q->whereHas('positions', fn ($pq) => $pq->where('name', $department)))
             ->get();
+
+        $volunteerIds = $volunteers->pluck('volunteer_id');
 
         $attendances = Attendance::query()
             ->where('status', 'approved')
+            ->whereIn('volunteer_id', $volunteerIds)
             ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate))
             ->get();
 
@@ -51,13 +56,17 @@ class AnalyticsController extends Controller
         $totalTasksCompleted = $attendances->count();
 
         $totalAttendanceRecords = Attendance::query()
+            ->whereIn('volunteer_id', $volunteerIds)
             ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate))
             ->count();
         $averageAttendanceRate = $totalAttendanceRecords > 0
             ? (int) round(($totalTasksCompleted / $totalAttendanceRecords) * 100)
             : 0;
 
-        $positions = Position::query()->withCount('volunteers')->get();
+        $positions = Position::query()
+            ->when($department, fn ($q) => $q->where('name', $department))
+            ->withCount('volunteers')
+            ->get();
         $totalPositionVolunteers = $positions->sum('volunteers_count') ?: 1;
         $departmentBreakdown = $positions->map(function ($pos) use ($totalPositionVolunteers) {
             return [
@@ -69,7 +78,7 @@ class AnalyticsController extends Controller
             ];
         })->filter(fn ($d) => $d['count'] > 0)->values();
 
-        $monthlyTrend = $this->getMonthlyTrend($startDate);
+        $monthlyTrend = $this->getMonthlyTrend($startDate, $department);
 
         $topPerformers = $this->getTopPerformers($volunteers, 10);
 
@@ -103,7 +112,7 @@ class AnalyticsController extends Controller
                 'eventParticipation' => $eventParticipation,
                 'skillsDistribution' => $skillsDistribution,
                 'trainingCompletion' => $trainingCompletion,
-                'lifegroupDistribution' => $lifegroupDistribution,
+                'lifeGroupDistribution' => $lifegroupDistribution,
                 'retentionMetrics' => $retentionMetrics,
                 'hourlyTrends' => $hourlyTrends,
             ],
@@ -121,14 +130,19 @@ class AnalyticsController extends Controller
         }
 
         $dateRange = $request->query('dateRange', 'all');
+        $departmentId = $request->query('departmentId');
         $startDate = $this->getStartDate($dateRange);
 
         $volunteers = Volunteer::query()
             ->with(['positions:position_id,name', 'attendances'])
+            ->when($departmentId, fn ($q) => $q->whereHas('positions', fn ($pq) => $pq->where('position_id', $departmentId)))
             ->get();
+
+        $volunteerIds = $volunteers->pluck('volunteer_id');
 
         $attendances = Attendance::query()
             ->where('status', 'approved')
+            ->whereIn('volunteer_id', $volunteerIds)
             ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate))
             ->get();
 
@@ -143,7 +157,10 @@ class AnalyticsController extends Controller
         $totalHoursServed = round((float) $attendances->sum('hours'), 1);
         $totalTasksCompleted = $attendances->count();
 
-        $positions = Position::query()->withCount('volunteers')->get();
+        $positions = Position::query()
+            ->when($departmentId, fn ($q) => $q->where('position_id', $departmentId))
+            ->withCount('volunteers')
+            ->get();
         $topPerformers = $this->getTopPerformers($volunteers, 10);
 
         $monthlyTrend = $this->getMonthlyTrend($startDate);
@@ -187,20 +204,28 @@ class AnalyticsController extends Controller
         }
 
         $dateRange = $request->query('dateRange', 'all');
+        $departmentId = $request->query('departmentId');
         $startDate = $this->getStartDate($dateRange);
 
         $volunteers = Volunteer::query()
             ->with(['positions:position_id,name', 'attendances'])
+            ->when($departmentId, fn ($q) => $q->whereHas('positions', fn ($pq) => $pq->where('position_id', $departmentId)))
             ->get();
+
+        $volunteerIds = $volunteers->pluck('volunteer_id');
 
         $attendances = Attendance::query()
             ->where('status', 'approved')
+            ->whereIn('volunteer_id', $volunteerIds)
             ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate))
             ->get();
 
-        $positions = Position::query()->withCount('volunteers')->get();
+        $positions = Position::query()
+            ->when($departmentId, fn ($q) => $q->where('position_id', $departmentId))
+            ->withCount('volunteers')
+            ->get();
         $topPerformers = $this->getTopPerformers($volunteers, 10);
-        $monthlyTrend = $this->getMonthlyTrend($startDate);
+        $monthlyTrend = $this->getMonthlyTrend($startDate, $departmentId);
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
@@ -226,7 +251,7 @@ class AnalyticsController extends Controller
         $sheet->setCellValue('B12', 'Count');
         $row = 13;
         foreach ($positions as $position) {
-            $sheet->setCellValue('A'.$row, $position->name);
+            $sheet->setCellValueExplicit('A'.$row, $this->spreadsheetText($position->name), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('B'.$row, $position->volunteers_count);
             $row++;
         }
@@ -241,10 +266,10 @@ class AnalyticsController extends Controller
         $sheet->setCellValue('E'.$row, 'Rating');
         $row++;
         foreach ($topPerformers as $performer) {
-            $sheet->setCellValue('A'.$row, $performer['name']);
-            $sheet->setCellValue('B'.$row, $performer['department']);
+            $sheet->setCellValueExplicit('A'.$row, $this->spreadsheetText($performer['name']), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('B'.$row, $this->spreadsheetText($performer['department']), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('C'.$row, $performer['hoursServed']);
-            $sheet->setCellValue('D'.$row, $performer['attendanceRate'].'%');
+            $sheet->setCellValueExplicit('D'.$row, $this->spreadsheetText($performer['attendanceRate'].'%'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('E'.$row, $performer['rating']);
             $row++;
         }
@@ -258,7 +283,7 @@ class AnalyticsController extends Controller
         $sheet->setCellValue('D'.$row, 'Tasks');
         $row++;
         foreach ($monthlyTrend as $trend) {
-            $sheet->setCellValue('A'.$row, $trend['month']);
+            $sheet->setCellValueExplicit('A'.$row, $this->spreadsheetText($trend['month']), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             $sheet->setCellValue('B'.$row, $trend['volunteers']);
             $sheet->setCellValue('C'.$row, $trend['hours']);
             $sheet->setCellValue('D'.$row, $trend['tasks']);
@@ -292,25 +317,35 @@ class AnalyticsController extends Controller
         };
     }
 
-    private function getMonthlyTrend(?string $dateRange): array
+    private function getMonthlyTrend(?string $dateRange, ?string $department = null): array
     {
         $months = collect();
         for ($i = 5; $i >= 0; $i--) {
             $months->push(Carbon::now()->subMonths($i));
         }
 
-        return $months->map(function ($month) {
+        return $months->map(function ($month) use ($department) {
             $start = $month->copy()->startOfMonth();
             $end = $month->copy()->endOfMonth();
 
-            $newVolunteers = Volunteer::query()
-                ->whereBetween('created_at', [$start, $end])
-                ->count();
+            $volunteerQuery = Volunteer::query()
+                ->whereBetween('created_at', [$start, $end]);
 
-            $attendances = Attendance::query()
+            if ($department) {
+                $volunteerQuery->whereHas('positions', fn ($q) => $q->where('name', $department));
+            }
+
+            $newVolunteers = $volunteerQuery->count();
+
+            $attendanceQuery = Attendance::query()
                 ->where('status', 'approved')
-                ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
-                ->get();
+                ->whereBetween('date', [$start->toDateString(), $end->toDateString()]);
+
+            if ($department) {
+                $attendanceQuery->whereHas('volunteer.positions', fn ($q) => $q->where('name', $department));
+            }
+
+            $attendances = $attendanceQuery->get();
 
             return [
                 'month' => $month->format('M'),
@@ -405,6 +440,7 @@ class AnalyticsController extends Controller
     private function getEventParticipation(?string $startDate): array
     {
         $rsvps = Rsvp::query()
+            ->with('responses')
             ->withCount('responses')
             ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate))
             ->get();
@@ -535,13 +571,14 @@ class AnalyticsController extends Controller
             ->get()
             ->groupBy(fn ($a) => $a->date?->format('N'));
 
-        $days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        $dayData = collect($days)->map(fn ($day, $index) => $index + 1)->map(function ($dayNum) use ($attendances) {
+        $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        $dayData = collect($days)->map(function ($day, $index) use ($attendances) {
+            $dayNum = $index + 1;
             $dayAttendances = $attendances->get($dayNum) ?? collect();
             $hours = $dayAttendances->sum('hours');
 
             return [
-                'day' => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][$dayNum % 7],
+                'day' => $day,
                 'hours' => round((float) $hours, 1),
                 'entries' => $dayAttendances->count(),
             ];
@@ -678,5 +715,12 @@ class AnalyticsController extends Controller
         ';
 
         return $html;
+    }
+
+    private function spreadsheetText(mixed $value): string
+    {
+        $text = (string) $value;
+
+        return preg_match('/^[=+\-@]/', $text) === 1 ? "'".$text : $text;
     }
 }
