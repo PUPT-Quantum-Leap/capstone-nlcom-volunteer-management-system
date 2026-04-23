@@ -870,7 +870,7 @@
                 <div class="request-form">
                   <div class="form-group">
                     <label>Select New Task</label>
-                    <select [(ngModel)]="selectedTask" [ngModelOptions]="{standalone: true}">
+                    <select [value]="selectedTask()" (change)="selectedTask.set($any($event.target).value)">
                       <option value="">Select a task...</option>
                       @for (task of availableTasks(); track task) {
                         <option [value]="task">{{ task }}</option>
@@ -880,7 +880,7 @@
 
                   <div class="form-group">
                     <label>Reason for Change</label>
-                    <textarea [(ngModel)]="changeTaskReason" [ngModelOptions]="{standalone: true}" rows="3" placeholder="Please explain why you want to change your task..."></textarea>
+                    <textarea [value]="changeTaskReason()" (input)="changeTaskReason.set($any($event.target).value)" rows="3" placeholder="Please explain why you want to change your task..."></textarea>
                   </div>
 
                   <!-- Status Display -->
