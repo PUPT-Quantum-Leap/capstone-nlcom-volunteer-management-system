@@ -332,7 +332,6 @@ class UserController extends Controller
 
         Log::info('User role changed', [
             'user_id' => $user->id,
-            'user_email' => $user->email,
             'old_role' => $oldRole,
             'new_role' => $newRole,
         ]);
@@ -360,7 +359,6 @@ class UserController extends Controller
 
         Log::info('Volunteer profile created for existing user', [
             'user_id' => $user->id,
-            'email' => $user->email,
         ]);
     }
 
@@ -381,7 +379,6 @@ class UserController extends Controller
 
         Log::info('Admin profile created for existing user', [
             'user_id' => $user->id,
-            'email' => $user->email,
         ]);
     }
 
@@ -394,6 +391,7 @@ class UserController extends Controller
 
         Coordinator::create([
             'email' => $user->email,
+            'user_id' => $user->id,
             'first_name' => $nameParts[0],
             'last_name' => $nameParts[1],
             'contact_number' => '00000000000',
@@ -401,7 +399,6 @@ class UserController extends Controller
 
         Log::info('Coordinator profile created for existing user', [
             'user_id' => $user->id,
-            'email' => $user->email,
         ]);
     }
 
