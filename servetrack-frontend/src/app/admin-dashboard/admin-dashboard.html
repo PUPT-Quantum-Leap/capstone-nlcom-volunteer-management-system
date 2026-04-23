@@ -1681,14 +1681,14 @@
                 </div>
                 @if (hasMoreSkills()) {
                   <div class="skills-pagination">
-                    <button type="button" class="pagination-btn" (click)="previousSkillsPage()" [disabled]="skillsPage() === 1">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button type="button" class="pagination-btn" (click)="previousSkillsPage()" [disabled]="skillsPage() === 1" aria-label="Previous page">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                     </button>
                     <span class="pagination-info">{{ skillsPage() }} / {{ totalSkillsPages() }}</span>
-                    <button type="button" class="pagination-btn" (click)="nextSkillsPage()" [disabled]="skillsPage() >= totalSkillsPages()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button type="button" class="pagination-btn" (click)="nextSkillsPage()" [disabled]="skillsPage() >= totalSkillsPages()" aria-label="Next page">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                     </button>
@@ -1768,14 +1768,14 @@
                 </div>
                 @if (hasMoreDepartments()) {
                   <div class="skills-pagination">
-                    <button type="button" class="pagination-btn" (click)="previousDepartmentsPage()" [disabled]="departmentsPage() === 1">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button type="button" class="pagination-btn" (click)="previousDepartmentsPage()" [disabled]="departmentsPage() === 1" aria-label="Previous page">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                     </button>
                     <span class="pagination-info">{{ departmentsPage() }} / {{ totalDepartmentsPages() }}</span>
-                    <button type="button" class="pagination-btn" (click)="nextDepartmentsPage()" [disabled]="departmentsPage() >= totalDepartmentsPages()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button type="button" class="pagination-btn" (click)="nextDepartmentsPage()" [disabled]="departmentsPage() >= totalDepartmentsPages()" aria-label="Next page">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                         <path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                     </button>
