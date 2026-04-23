@@ -1,5 +1,10 @@
 <?php
 
+use App\Models\User;
+use App\Models\Volunteer;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -11,8 +16,8 @@
 |
 */
 
-pest()->extend(Tests\TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
     ->in('Feature');
 
 /*
@@ -40,9 +45,6 @@ expect()->extend('toBeOne', function () {
 | global functions to help you to reduce the number of lines of code in your test files.
 |
 */
-
-use App\Models\User;
-use App\Models\Volunteer;
 
 function createVolunteerUser(array $userOverrides = [], array $volunteerOverrides = []): array
 {

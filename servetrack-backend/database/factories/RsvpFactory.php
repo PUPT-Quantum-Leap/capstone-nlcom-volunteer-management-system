@@ -17,6 +17,9 @@ class RsvpFactory extends Factory
             'cutoff_time' => fake()->randomElement(['8AM', '10AM', '12NN', '3PM', '5PM']),
             'status' => 'draft',
             'share_url' => null,
+            'slug' => function (array $attributes) {
+                return \App\Models\Rsvp::generateUniqueSlug($attributes['title']);
+            },
         ];
     }
 

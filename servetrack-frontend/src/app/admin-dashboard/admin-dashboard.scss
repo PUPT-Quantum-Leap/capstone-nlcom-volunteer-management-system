@@ -5262,11 +5262,147 @@ a:focus-visible {
     }
 
     // Fix trend indicator stroke-width consistency
-    .trend-indicator {
+.trend-indicator {
       svg {
         stroke-width: 2;
       }
     }
+  }
+}
+
+// Analytics Sections Grid
+.analytics-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.analytics-section-card {
+  background: var(--surface-primary);
+  border-radius: var(--radius-xl);
+  padding: 1.25rem;
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+
+  .section-header {
+    margin-bottom: 1rem;
+
+    h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin: 0 0 0.25rem;
+    }
+
+    p {
+      font-size: 0.8125rem;
+      color: var(--gray-500);
+      margin: 0;
+    }
+  }
+
+  .section-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  .section-stat {
+    text-align: center;
+    padding: 0.5rem;
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+
+    .stat-value {
+      display: block;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--primary-600);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--gray-500);
+    }
+  }
+
+  .skills-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .skill-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: var(--gray-50);
+    border-radius: var(--radius-md);
+
+    .skill-name {
+      font-size: 0.875rem;
+      color: var(--gray-700);
+    }
+
+    .skill-count {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--primary-600);
+    }
+  }
+
+  .skills-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--gray-100);
+  }
+
+  .pagination-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--surface-primary);
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all var(--transition-base);
+
+    &:hover:not(:disabled) {
+      background: var(--primary-50);
+      border-color: var(--primary-200);
+      color: var(--primary-600);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .pagination-info {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+  }
+
+  .empty-state {
+    font-size: 0.875rem;
+    color: var(--gray-400);
+    text-align: center;
+    padding: 1rem;
   }
 }
 

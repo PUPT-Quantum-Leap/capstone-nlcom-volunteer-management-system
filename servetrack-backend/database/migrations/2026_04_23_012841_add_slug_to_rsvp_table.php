@@ -6,8 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -36,7 +35,7 @@ return new class extends Migration
      */
     private function generateSlug(string $title, string $createdAt): string
     {
-        $date = \Carbon\Carbon::parse($createdAt)->format('Y-m');
+        $date = Carbon\Carbon::parse($createdAt)->format('Y-m');
         $slug = Str::slug($title).'-'.$date;
 
         return Str::lower($slug);

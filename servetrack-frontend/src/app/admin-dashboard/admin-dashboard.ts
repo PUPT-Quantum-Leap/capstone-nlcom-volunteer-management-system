@@ -243,6 +243,45 @@ export class AdminDashboard implements OnInit {
   analyticsLoading = signal(false);
   selectedReportType = signal<'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'>('volunteers');
   dateRangeFilter = signal<'all' | 'month' | 'quarter' | 'year'>('all');
+  selectedDepartmentFilter = signal<string | null>(null);
+  skillsPage = signal(1);
+  skillsPerPage = signal(3);
+  departmentsPage = signal(1);
+  departmentsPerPage = signal(3);
+
+  paginatedSkills = computed(() => {
+    const data = this.reportData()?.skillsDistribution?.skills ?? [];
+    const page = this.skillsPage();
+    const perPage = this.skillsPerPage();
+    const start = (page - 1) * perPage;
+    return data.slice(start, start + perPage);
+  });
+
+  totalSkillsPages = computed(() => {
+    const data = this.reportData()?.skillsDistribution?.skills ?? [];
+    return Math.ceil(data.length / this.skillsPerPage());
+  });
+
+  hasMoreSkills = computed(() => {
+    return (this.reportData()?.skillsDistribution?.skills ?? []).length > this.skillsPerPage();
+  });
+
+  paginatedDepartments = computed(() => {
+    const data = this.reportData()?.departmentBreakdown ?? [];
+    const page = this.departmentsPage();
+    const perPage = this.departmentsPerPage();
+    const start = (page - 1) * perPage;
+    return data.slice(start, start + perPage);
+  });
+
+  totalDepartmentsPages = computed(() => {
+    const data = this.reportData()?.departmentBreakdown ?? [];
+    return Math.ceil(data.length / this.departmentsPerPage());
+  });
+
+  hasMoreDepartments = computed(() => {
+    return (this.reportData()?.departmentBreakdown ?? []).length > this.departmentsPerPage();
+  });
 
 
   // RSVP creation loading state
@@ -713,6 +752,10 @@ export class AdminDashboard implements OnInit {
   setView(view: DashboardView): void {
     this.currentView.set(view);
     this.currentPage.set(1);
+    
+    if (view === 'analytics') {
+      this.loadAnalyticsData();
+    }
   }
 
   setSearchQuery(value: string): void {
@@ -2276,7 +2319,7 @@ export class AdminDashboard implements OnInit {
   // Analytics methods
   loadAnalyticsData(): void {
     this.analyticsLoading.set(true);
-    this.analyticsService.getReportData().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.analyticsService.getReportData(this.dateRangeFilter(), this.selectedDepartmentFilter() || undefined).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response) => {
         if (response.success && response.data) {
           this.reportData.set(response.data);
@@ -2296,11 +2339,54 @@ export class AdminDashboard implements OnInit {
 
   setDateRange(range: 'all' | 'month' | 'quarter' | 'year'): void {
     this.dateRangeFilter.set(range);
+    this.skillsPage.set(1);
+    this.departmentsPage.set(1);
+    this.loadAnalyticsData();
+  }
+
+  setDepartmentFilter(departmentName: string | null): void {
+    this.selectedDepartmentFilter.set(departmentName);
+    this.skillsPage.set(1);
+    this.departmentsPage.set(1);
+    this.loadAnalyticsData();
+  }
+
+  onDepartmentFilterChange(value: string): void {
+    this.setDepartmentFilter(value || null);
+  }
+
+  nextSkillsPage(): void {
+    if (this.skillsPage() < this.totalSkillsPages()) {
+      this.skillsPage.update(p => p + 1);
+    }
+  }
+
+  previousSkillsPage(): void {
+    if (this.skillsPage() > 1) {
+      this.skillsPage.update(p => p - 1);
+    }
+  }
+
+  nextDepartmentsPage(): void {
+    if (this.departmentsPage() < this.totalDepartmentsPages()) {
+      this.departmentsPage.update(p => p + 1);
+    }
+  }
+
+  previousDepartmentsPage(): void {
+    if (this.departmentsPage() > 1) {
+      this.departmentsPage.update(p => p - 1);
+    }
   }
 
   exportReport(format: 'pdf' | 'excel'): void {
     this.analyticsLoading.set(true);
-    this.analyticsService.exportReport(format).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    const dateRange = this.dateRangeFilter();
+    const exportObservable = format === 'pdf'
+      ? this.analyticsService.exportToPdf(dateRange)
+      : this.analyticsService.exportToExcel(dateRange);
+
+    exportObservable.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (blob) => {
         const timestamp = new Date().toISOString().split('T')[0];
         const filename = `servetrack-analytics-report-${timestamp}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;

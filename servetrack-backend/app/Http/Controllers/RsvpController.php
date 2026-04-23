@@ -84,6 +84,7 @@ class RsvpController extends Controller
                 'cutoff_day' => $request->input('cutoff_day'),
                 'cutoff_time' => $request->input('cutoff_time'),
                 'status' => $request->input('status', 'draft'),
+                'slug' => Rsvp::generateUniqueSlug($request->input('title')),
                 'share_url' => $request->input('share_url'),
             ]);
 
