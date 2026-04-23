@@ -635,7 +635,7 @@ class AnalyticsController extends Controller
         <body>
             <div class="header">
                 <h1>Volunteer Analytics Report</h1>
-                <p class="meta">Generated: '.date('Y-m-d H:i:s').' | Date Range: '.ucfirst($data['dateRange']).'</p>
+                <p class="meta">Generated: '.date('Y-m-d H:i:s').' | Date Range: '.htmlspecialchars(ucfirst((string) $data['dateRange']), ENT_QUOTES, 'UTF-8').'</p>
             </div>
 
             <h2>Overview</h2>
