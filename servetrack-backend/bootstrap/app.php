@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdvancedRateLimit;
+use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\NormalizeEmail;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\RoleMiddleware;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
+            'auth' => Authenticate::class,
             'guest' => RedirectIfAuthenticated::class,
             'security.audit' => SecurityAudit::class,
             'rate.limit' => AdvancedRateLimit::class,
