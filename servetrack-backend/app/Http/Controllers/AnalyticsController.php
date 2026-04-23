@@ -34,14 +34,10 @@ class AnalyticsController extends Controller
                 ->value('position_id');
         }
 
-        $startDate = $this->getStartDate($dateRange);
+        $startDateString = $this->getStartDate($dateRange);
+        $startDate = $startDateString ? Carbon::parse($startDateString) : null;
 
-        $volunteers = Volunteer::query()
-            ->with(['positions:position_id,name', 'attendances'])
-            ->when(
-                $resolvedDepartmentId,
-                fn ($q) => $q->whereHas(
-        $activeCutoff = Carbon::now()->copy()->subDays(30);
+        $activeCutoff = Carbon::now()->subDays(30);
         $attendanceStartDate = $startDate && $startDate->lt($activeCutoff)
             ? $startDate
             : $activeCutoff;
@@ -53,8 +49,13 @@ class AnalyticsController extends Controller
                     ->where('status', 'approved')
                     ->where('date', '>=', $attendanceStartDate),
             ])
-            ->when($department, fn ($q) => $q->whereHas('positions', fn ($pq) => $pq->where('name', $department)))
+            ->when(
+                $resolvedDepartmentId,
+                fn ($q) => $q->whereHas('positions', fn ($pq) => $pq->where('position_id', $resolvedDepartmentId))
+            )
             ->get();
+
+        $volunteerIds = $volunteers->pluck('volunteer_id');
 
         $attendances = $volunteers
             ->flatMap->attendances
@@ -76,14 +77,14 @@ class AnalyticsController extends Controller
 
         $totalAttendanceRecords = Attendance::query()
             ->whereIn('volunteer_id', $volunteerIds)
-            ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate))
+            ->when($startDateString, fn ($q) => $q->where('date', '>=', $startDateString))
             ->count();
         $averageAttendanceRate = $totalAttendanceRecords > 0
             ? (int) round(($totalTasksCompleted / $totalAttendanceRecords) * 100)
             : 0;
 
         $positions = Position::query()
-            ->when($department, fn ($q) => $q->where('name', $department))
+            ->when($resolvedDepartmentId, fn ($q) => $q->where('position_id', $resolvedDepartmentId))
             ->withCount('volunteers')
             ->get();
         $totalPositionVolunteers = $positions->sum('volunteers_count') ?: 1;
@@ -97,7 +98,12 @@ class AnalyticsController extends Controller
             ];
         })->filter(fn ($d) => $d['count'] > 0)->values();
 
-        $monthlyTrend = $this->getMonthlyTrend($startDate, $department);
+        $monthlyTrend = $this->getMonthlyTrend(
+            $startDateString,
+            $resolvedDepartmentId
+                ? Position::query()->where('position_id', $resolvedDepartmentId)->value('name')
+                : null
+        );
 
         $topPerformers = $this->getTopPerformers($volunteers, 10);
 

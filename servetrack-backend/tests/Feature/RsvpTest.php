@@ -686,7 +686,7 @@ describe('PUT /api/rsvp/{rsvpId}/response - Update RSVP Response', function (): 
             ->assertSuccessful();
 
         // Verify edit history
-        $response = \App\Models\RsvpResponse::query()
+        $response = RsvpResponse::query()
             ->where('volunteer_id', $volunteer->volunteer_id)
             ->where('rsvp_id', $rsvp->rsvp_id)
             ->first();
@@ -707,12 +707,12 @@ describe('GET /api/notifications/rsvp - Get RSVP Notifications', function (): vo
         $rsvp1 = Rsvp::factory()->active()->create();
         $rsvp2 = Rsvp::factory()->active()->create();
 
-        \App\Models\RsvpNotification::factory()->create([
+        App\Models\RsvpNotification::factory()->create([
             'volunteer_id' => $volunteer->volunteer_id,
             'rsvp_id' => $rsvp1->rsvp_id,
         ]);
 
-        \App\Models\RsvpNotification::factory()->create([
+        App\Models\RsvpNotification::factory()->create([
             'volunteer_id' => $volunteer->volunteer_id,
             'rsvp_id' => $rsvp2->rsvp_id,
         ]);
@@ -732,12 +732,12 @@ describe('GET /api/notifications/rsvp - Get RSVP Notifications', function (): vo
 
         $rsvp = Rsvp::factory()->active()->create();
 
-        \App\Models\RsvpNotification::factory()->create([
+        App\Models\RsvpNotification::factory()->create([
             'volunteer_id' => $volunteer1->volunteer_id,
             'rsvp_id' => $rsvp->rsvp_id,
         ]);
 
-        \App\Models\RsvpNotification::factory()->create([
+        App\Models\RsvpNotification::factory()->create([
             'volunteer_id' => $volunteer2->volunteer_id,
             'rsvp_id' => $rsvp->rsvp_id,
         ]);
@@ -759,7 +759,7 @@ describe('PATCH /api/notifications/{notificationId}/read - Mark Notification as 
         $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
         $rsvp = Rsvp::factory()->active()->create();
 
-        $notification = \App\Models\RsvpNotification::factory()->create([
+        $notification = App\Models\RsvpNotification::factory()->create([
             'volunteer_id' => $volunteer->volunteer_id,
             'rsvp_id' => $rsvp->rsvp_id,
             'read_at' => null,
@@ -775,7 +775,7 @@ describe('PATCH /api/notifications/{notificationId}/read - Mark Notification as 
         ]);
 
         // Verify read_at is set
-        $updated = \App\Models\RsvpNotification::find($notification->notification_id);
+        $updated = App\Models\RsvpNotification::find($notification->notification_id);
         expect($updated->read_at)->not->toBeNull();
     });
 
@@ -788,7 +788,7 @@ describe('PATCH /api/notifications/{notificationId}/read - Mark Notification as 
 
         $rsvp = Rsvp::factory()->active()->create();
 
-        $notification = \App\Models\RsvpNotification::factory()->create([
+        $notification = App\Models\RsvpNotification::factory()->create([
             'volunteer_id' => $volunteer1->volunteer_id,
             'rsvp_id' => $rsvp->rsvp_id,
         ]);
@@ -811,13 +811,13 @@ describe('PATCH /api/notifications/rsvp/read-all - Mark All Notifications as Rea
         $rsvp1 = Rsvp::factory()->active()->create();
         $rsvp2 = Rsvp::factory()->active()->create();
 
-        \App\Models\RsvpNotification::factory()->create([
+        App\Models\RsvpNotification::factory()->create([
             'volunteer_id' => $volunteer->volunteer_id,
             'rsvp_id' => $rsvp1->rsvp_id,
             'read_at' => null,
         ]);
 
-        \App\Models\RsvpNotification::factory()->create([
+        App\Models\RsvpNotification::factory()->create([
             'volunteer_id' => $volunteer->volunteer_id,
             'rsvp_id' => $rsvp2->rsvp_id,
             'read_at' => null,
@@ -828,7 +828,7 @@ describe('PATCH /api/notifications/rsvp/read-all - Mark All Notifications as Rea
             ->assertSuccessful();
 
         // Verify all are marked as read
-        $unreadCount = \App\Models\RsvpNotification::query()
+        $unreadCount = App\Models\RsvpNotification::query()
             ->where('volunteer_id', $volunteer->volunteer_id)
             ->whereNull('read_at')
             ->count();
@@ -845,13 +845,13 @@ describe('PATCH /api/notifications/rsvp/read-all - Mark All Notifications as Rea
 
         $rsvp = Rsvp::factory()->active()->create();
 
-        \App\Models\RsvpNotification::factory()->create([
+        App\Models\RsvpNotification::factory()->create([
             'volunteer_id' => $volunteer1->volunteer_id,
             'rsvp_id' => $rsvp->rsvp_id,
             'read_at' => null,
         ]);
 
-        \App\Models\RsvpNotification::factory()->create([
+        App\Models\RsvpNotification::factory()->create([
             'volunteer_id' => $volunteer2->volunteer_id,
             'rsvp_id' => $rsvp->rsvp_id,
             'read_at' => null,
@@ -862,12 +862,12 @@ describe('PATCH /api/notifications/rsvp/read-all - Mark All Notifications as Rea
             ->assertSuccessful();
 
         // Verify only user1's are marked as read
-        $user1Unread = \App\Models\RsvpNotification::query()
+        $user1Unread = App\Models\RsvpNotification::query()
             ->where('volunteer_id', $volunteer1->volunteer_id)
             ->whereNull('read_at')
             ->count();
 
-        $user2Unread = \App\Models\RsvpNotification::query()
+        $user2Unread = App\Models\RsvpNotification::query()
             ->where('volunteer_id', $volunteer2->volunteer_id)
             ->whereNull('read_at')
             ->count();
