@@ -10,9 +10,14 @@ use App\Models\Skill;
 use App\Models\Training;
 use App\Models\Volunteer;
 use Carbon\Carbon;
+use Dompdf\Dompdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class AnalyticsController extends Controller
 {
@@ -119,7 +124,7 @@ class AnalyticsController extends Controller
         ]);
     }
 
-    public function exportPdf(Request $request): \Illuminate\Http\Response
+    public function exportPdf(Request $request): Response
     {
         $role = $request->user()?->role;
         if ($role !== 'admin') {
@@ -180,7 +185,7 @@ class AnalyticsController extends Controller
             'dateRange' => $dateRange,
         ]);
 
-        $dompdf = new \Dompdf\Dompdf;
+        $dompdf = new Dompdf;
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
@@ -193,7 +198,7 @@ class AnalyticsController extends Controller
         ]);
     }
 
-    public function exportExcel(Request $request): \Illuminate\Http\Response
+    public function exportExcel(Request $request): Response
     {
         $role = $request->user()?->role;
         if ($role !== 'admin') {
@@ -227,7 +232,7 @@ class AnalyticsController extends Controller
         $topPerformers = $this->getTopPerformers($volunteers, 10);
         $monthlyTrend = $this->getMonthlyTrend($startDate, $departmentId);
 
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet;
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Overview');
 
@@ -251,7 +256,7 @@ class AnalyticsController extends Controller
         $sheet->setCellValue('B12', 'Count');
         $row = 13;
         foreach ($positions as $position) {
-            $sheet->setCellValueExplicit('A'.$row, $this->spreadsheetText($position->name), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('A'.$row, $this->spreadsheetText($position->name), DataType::TYPE_STRING);
             $sheet->setCellValue('B'.$row, $position->volunteers_count);
             $row++;
         }
@@ -266,10 +271,10 @@ class AnalyticsController extends Controller
         $sheet->setCellValue('E'.$row, 'Rating');
         $row++;
         foreach ($topPerformers as $performer) {
-            $sheet->setCellValueExplicit('A'.$row, $this->spreadsheetText($performer['name']), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-            $sheet->setCellValueExplicit('B'.$row, $this->spreadsheetText($performer['department']), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('A'.$row, $this->spreadsheetText($performer['name']), DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('B'.$row, $this->spreadsheetText($performer['department']), DataType::TYPE_STRING);
             $sheet->setCellValue('C'.$row, $performer['hoursServed']);
-            $sheet->setCellValueExplicit('D'.$row, $this->spreadsheetText($performer['attendanceRate'].'%'), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('D'.$row, $this->spreadsheetText($performer['attendanceRate'].'%'), DataType::TYPE_STRING);
             $sheet->setCellValue('E'.$row, $performer['rating']);
             $row++;
         }
@@ -283,7 +288,7 @@ class AnalyticsController extends Controller
         $sheet->setCellValue('D'.$row, 'Tasks');
         $row++;
         foreach ($monthlyTrend as $trend) {
-            $sheet->setCellValueExplicit('A'.$row, $this->spreadsheetText($trend['month']), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('A'.$row, $this->spreadsheetText($trend['month']), DataType::TYPE_STRING);
             $sheet->setCellValue('B'.$row, $trend['volunteers']);
             $sheet->setCellValue('C'.$row, $trend['hours']);
             $sheet->setCellValue('D'.$row, $trend['tasks']);
@@ -294,7 +299,7 @@ class AnalyticsController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer = new Xlsx($spreadsheet);
         $filename = 'volunteer-analytics-'.date('Y-m-d-H-i-s').'.xlsx';
 
         ob_start();

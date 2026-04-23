@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ProfileChangeLog;
 use App\Models\User;
 use App\Models\Volunteer;
 
@@ -22,7 +23,7 @@ describe('Profile Audit Logging', function (): void {
         $this->putJson('/api/volunteer/profile', $data)
             ->assertSuccessful();
 
-        $log = \App\Models\ProfileChangeLog::where('volunteer_id', $this->volunteer->volunteer_id)
+        $log = ProfileChangeLog::where('volunteer_id', $this->volunteer->volunteer_id)
             ->where('field_name', 'first_name')
             ->first();
 
@@ -38,13 +39,13 @@ describe('Profile Audit Logging', function (): void {
             ->assertSuccessful();
 
         // Clear any logs from first update
-        \App\Models\ProfileChangeLog::where('volunteer_id', $this->volunteer->volunteer_id)->delete();
+        ProfileChangeLog::where('volunteer_id', $this->volunteer->volunteer_id)->delete();
 
         // Second update with SAME data should not create new logs
         $this->putJson('/api/volunteer/profile', baseProfileData($this->volunteer))
             ->assertSuccessful();
 
-        $logCount = \App\Models\ProfileChangeLog::where('volunteer_id', $this->volunteer->volunteer_id)->count();
+        $logCount = ProfileChangeLog::where('volunteer_id', $this->volunteer->volunteer_id)->count();
 
         expect($logCount)->toBe(0);
     });
@@ -58,7 +59,7 @@ describe('Profile Audit Logging', function (): void {
         $this->putJson('/api/volunteer/profile', $data)
             ->assertSuccessful();
 
-        $logCount = \App\Models\ProfileChangeLog::where('volunteer_id', $this->volunteer->volunteer_id)->count();
+        $logCount = ProfileChangeLog::where('volunteer_id', $this->volunteer->volunteer_id)->count();
 
         expect($logCount)->toBeGreaterThanOrEqual(3); // first_name, last_name, email
     });
@@ -70,7 +71,7 @@ describe('Profile Audit Logging', function (): void {
         $this->putJson('/api/volunteer/profile', $data)
             ->assertSuccessful();
 
-        $log = \App\Models\ProfileChangeLog::where('volunteer_id', $this->volunteer->volunteer_id)->first();
+        $log = ProfileChangeLog::where('volunteer_id', $this->volunteer->volunteer_id)->first();
 
         expect($log->ip_address)->not->toBeNull();
     });

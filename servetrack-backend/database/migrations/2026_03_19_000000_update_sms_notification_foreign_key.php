@@ -67,7 +67,7 @@ return new class extends Migration
                 // Also rename the index name for consistency
                 DB::statement('DROP INDEX IF EXISTS idx_sn_poll_vote_id');
                 DB::statement('CREATE INDEX idx_sn_rsvp_response_id ON sms_notification(rsvp_response_id)');
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // If raw SQL fails, try the table recreation approach
                 $records = DB::table('sms_notification')->get()->toArray();
                 Schema::dropIfExists('sms_notification');
@@ -132,7 +132,7 @@ return new class extends Migration
                 DB::statement('ALTER TABLE sms_notification RENAME COLUMN rsvp_response_id TO poll_vote_id');
                 DB::statement('DROP INDEX IF EXISTS idx_sn_rsvp_response_id');
                 DB::statement('CREATE INDEX idx_sn_poll_vote_id ON sms_notification(poll_vote_id)');
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $records = DB::table('sms_notification')->get()->toArray();
                 Schema::dropIfExists('sms_notification');
                 Schema::create('sms_notification', function (Blueprint $table) {

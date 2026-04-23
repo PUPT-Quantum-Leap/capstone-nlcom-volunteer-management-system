@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Rsvp;
+use App\Models\RsvpResponse;
 use App\Models\TimeSlot;
 use App\Models\User;
 use App\Models\Volunteer;
@@ -354,7 +355,7 @@ describe('POST /api/rsvp/{id}/vote', function (): void {
 
         $otherUser = User::factory()->volunteer()->create();
         $otherVolunteer = Volunteer::factory()->create(['user_id' => $otherUser->id]);
-        \App\Models\RsvpResponse::query()->create([
+        RsvpResponse::query()->create([
             'volunteer_id' => $otherVolunteer->volunteer_id,
             'rsvp_id' => $rsvp->rsvp_id,
             'time_slot_id' => $timeSlot->time_slot_id,

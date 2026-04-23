@@ -11,8 +11,8 @@
 |
 */
 
-pest()->extend(Tests\TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
     ->in('Feature');
 
 /*
@@ -43,6 +43,8 @@ expect()->extend('toBeOne', function () {
 
 use App\Models\User;
 use App\Models\Volunteer;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 function createVolunteerUser(array $userOverrides = [], array $volunteerOverrides = []): array
 {

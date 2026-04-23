@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RsvpResponse extends Model
 {
@@ -39,22 +41,22 @@ class RsvpResponse extends Model
         ];
     }
 
-    public function volunteer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function volunteer(): BelongsTo
     {
         return $this->belongsTo(Volunteer::class, 'volunteer_id');
     }
 
-    public function rsvp(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function rsvp(): BelongsTo
     {
         return $this->belongsTo(Rsvp::class, 'rsvp_id');
     }
 
-    public function timeSlot(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function timeSlot(): BelongsTo
     {
         return $this->belongsTo(TimeSlot::class, 'time_slot_id');
     }
 
-    public function smsNotifications(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function smsNotifications(): HasMany
     {
         return $this->hasMany(SmsNotification::class, 'rsvp_response_id');
     }

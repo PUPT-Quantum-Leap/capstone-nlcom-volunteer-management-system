@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Rsvp extends Model
 {
@@ -33,13 +36,13 @@ class Rsvp extends Model
         ];
     }
 
-    public function shifts(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function shifts(): BelongsToMany
     {
         return $this->belongsToMany(TimeSlot::class, 'rsvp_shift', 'rsvp_id', 'time_slot_id')
             ->withPivot('time_slot', 'capacity');
     }
 
-    public function responses(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function responses(): HasMany
     {
         return $this->hasMany(RsvpResponse::class, 'rsvp_id');
     }
@@ -54,7 +57,7 @@ class Rsvp extends Model
         }
 
         try {
-            $cutoffDateTime = \Carbon\Carbon::parse($cutoffDay)->setTimeFromTimeString($cutoffTime);
+            $cutoffDateTime = Carbon::parse($cutoffDay)->setTimeFromTimeString($cutoffTime);
         } catch (\Throwable) {
             return false;
         }

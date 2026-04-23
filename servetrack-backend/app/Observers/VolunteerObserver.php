@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\ProfileChangeLog;
 use App\Models\Volunteer;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class VolunteerObserver
@@ -63,7 +64,7 @@ class VolunteerObserver
             return '';
         }
 
-        if ($value instanceof \Carbon\Carbon) {
+        if ($value instanceof Carbon) {
             return $value->format('Y-m-d');
         }
 

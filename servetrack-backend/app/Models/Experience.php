@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Experience extends Model
 {
@@ -19,7 +20,7 @@ class Experience extends Model
         'name',
     ];
 
-    public function volunteers(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function volunteers(): BelongsToMany
     {
         return $this->belongsToMany(Volunteer::class, 'volunteer_experience', 'experience_id', 'volunteer_id');
     }
