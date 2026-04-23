@@ -23,14 +23,6 @@ class AnalyticsController extends Controller
 {
     public function reports(Request $request): JsonResponse
     {
-        $role = $request->user()?->role;
-        if ($role !== 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Forbidden. Admin access only.',
-            ], 403);
-        }
-
         $dateRange = $request->query('dateRange', 'all');
         $departmentId = $request->query('departmentId');
         $legacyDepartment = $request->query('department');
