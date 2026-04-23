@@ -9,6 +9,8 @@ class Coordinator extends Model
 {
     use HasFactory;
 
+    protected $table = 'coordinator';
+
     protected $fillable = [
         'first_name',
         'last_name',
