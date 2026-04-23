@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Admin;
+use App\Models\Coordinator;
 use App\Models\User;
+use App\Models\Volunteer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 
@@ -138,18 +143,42 @@ class UserController extends Controller
         }
 
         try {
+            $oldRole = $user->role;
+            $newRole = $request->role;
+            $roleChanged = $oldRole !== $newRole;
+
+            DB::beginTransaction();
+
             $user->update([
                 'name' => $request->name,
                 'email' => $request->email,
-                'role' => $request->role,
+                'role' => $newRole,
             ]);
+
+            if ($roleChanged) {
+                $this->handleRoleChange($user, $oldRole, $newRole);
+            }
+
+            DB::commit();
+
+            $message = $roleChanged
+                ? 'User updated successfully with role change'
+                : 'User updated successfully';
 
             return response()->json([
                 'success' => true,
-                'message' => 'User updated successfully',
+                'message' => $message,
                 'data' => $user,
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('User update failed', [
+                'user_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update user',
@@ -276,5 +305,117 @@ class UserController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Handle role change and create appropriate profile.
+     */
+    private function handleRoleChange(User $user, string $oldRole, string $newRole): void
+    {
+        switch ($newRole) {
+            case 'volunteer':
+                if (! $user->volunteer) {
+                    $this->createVolunteerProfile($user);
+                }
+                break;
+            case 'admin':
+                if (! $user->admin) {
+                    $this->createAdminProfile($user);
+                }
+                break;
+            case 'coordinator':
+                if (! $user->coordinator) {
+                    $this->createCoordinatorProfile($user);
+                }
+                break;
+        }
+
+        Log::info('User role changed', [
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'old_role' => $oldRole,
+            'new_role' => $newRole,
+        ]);
+    }
+
+    /**
+     * Create volunteer profile for existing user.
+     */
+    private function createVolunteerProfile(User $user): void
+    {
+        $nameParts = $this->splitName($user->name);
+
+        Volunteer::create([
+            'first_name' => $nameParts[0],
+            'last_name' => $nameParts[1],
+            'email' => $user->email,
+            'user_id' => $user->id,
+            'facebook_name' => '',
+            'birthdate' => now()->subYears(18)->format('Y-m-d'),
+            'address' => 'Address to be updated',
+            'mobile_number' => '00000000000',
+            'educational_attainment' => 'To be specified',
+            'last_medical_examination' => now()->format('Y-m-d'),
+        ]);
+
+        Log::info('Volunteer profile created for existing user', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+        ]);
+    }
+
+    /**
+     * Create admin profile for existing user.
+     */
+    private function createAdminProfile(User $user): void
+    {
+        $nameParts = $this->splitName($user->name);
+
+        Admin::create([
+            'email' => $user->email,
+            'user_id' => $user->id,
+            'first_name' => $nameParts[0],
+            'last_name' => $nameParts[1],
+            'contact_number' => '00000000000',
+        ]);
+
+        Log::info('Admin profile created for existing user', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+        ]);
+    }
+
+    /**
+     * Create coordinator profile for existing user.
+     */
+    private function createCoordinatorProfile(User $user): void
+    {
+        $nameParts = $this->splitName($user->name);
+
+        Coordinator::create([
+            'email' => $user->email,
+            'first_name' => $nameParts[0],
+            'last_name' => $nameParts[1],
+            'contact_number' => '00000000000',
+        ]);
+
+        Log::info('Coordinator profile created for existing user', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+        ]);
+    }
+
+    /**
+     * Split user name into first and last name.
+     */
+    private function splitName(string $fullName): array
+    {
+        $cleanName = trim($fullName);
+        $nameParts = explode(' ', $cleanName, 2);
+
+        $firstName = $nameParts[0] ?? '';
+        $lastName = $nameParts[1] ?? '';
+
+        return [$firstName, $lastName];
     }
 }
