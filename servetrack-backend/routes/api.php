@@ -56,8 +56,15 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
 
     // RSVP — read + vote available to all authenticated users
     Route::get('/rsvp', [RsvpController::class, 'index']);
-    Route::get('/rsvp/{id}', [RsvpController::class, 'show']);
+    Route::get('/rsvp/{identifier}', [RsvpController::class, 'show'])->name('rsvp.show')->where('identifier', '[\d\w\-]+');
     Route::post('/rsvp/{id}/vote', [RsvpController::class, 'vote']);
+    Route::get('/rsvp/{rsvpId}/my-response', [RsvpController::class, 'getMyResponse']);
+    Route::put('/rsvp/{rsvpId}/response', [RsvpController::class, 'updateResponse']);
+
+    // RSVP Notifications — for volunteers
+    Route::get('/notifications/rsvp', [RsvpController::class, 'getNotifications']);
+    Route::patch('/notifications/{notificationId}/read', [RsvpController::class, 'markNotificationAsRead']);
+    Route::patch('/notifications/rsvp/read-all', [RsvpController::class, 'markAllNotificationsAsRead']);
 });
 
 // Admin-only routes — requires authentication AND admin role

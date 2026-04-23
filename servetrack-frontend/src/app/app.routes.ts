@@ -22,6 +22,7 @@ export const routes: Routes = [
   { path: 'admin-login', redirectTo: 'admin-auth', pathMatch: 'full' },
   { path: 'admin-signup', redirectTo: 'admin-auth?tab=signup', pathMatch: 'full' },
   { path: 'rsvp', component: RsvpComponent },
+  { path: 'rsvp/:slug', component: RsvpComponent },
   { path: 'incident-command-system', component: IncidentCommandSystemComponent },
   { path: 'volunteer-dashboard', component: VolunteerDashboard, canActivate: [authGuard] },
   { path: 'admin-dashboard', component: AdminDashboard, canActivate: [authGuard] },

@@ -23,36 +23,50 @@ class AnalyticsController extends Controller
 {
     public function reports(Request $request): JsonResponse
     {
-        $role = $request->user()?->role;
-        if ($role !== 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Forbidden. Admin access only.',
-            ], 403);
+        $dateRange = $request->query('dateRange', 'all');
+        $departmentId = $request->query('departmentId');
+        $legacyDepartment = $request->query('department');
+        $resolvedDepartmentId = $departmentId;
+
+        if (! $resolvedDepartmentId && $legacyDepartment) {
+            $resolvedDepartmentId = Position::query()
+                ->where('name', $legacyDepartment)
+                ->value('position_id');
         }
 
-        $dateRange = $request->query('dateRange', 'all');
-        $department = $request->query('department');
         $startDate = $this->getStartDate($dateRange);
 
         $volunteers = Volunteer::query()
             ->with(['positions:position_id,name', 'attendances'])
+            ->when(
+                $resolvedDepartmentId,
+                fn ($q) => $q->whereHas(
+        $activeCutoff = Carbon::now()->copy()->subDays(30);
+        $attendanceStartDate = $startDate && $startDate->lt($activeCutoff)
+            ? $startDate
+            : $activeCutoff;
+
+        $volunteers = Volunteer::query()
+            ->with([
+                'positions:position_id,name',
+                'attendances' => fn ($query) => $query
+                    ->where('status', 'approved')
+                    ->where('date', '>=', $attendanceStartDate),
+            ])
             ->when($department, fn ($q) => $q->whereHas('positions', fn ($pq) => $pq->where('name', $department)))
             ->get();
 
-        $volunteerIds = $volunteers->pluck('volunteer_id');
-
-        $attendances = Attendance::query()
-            ->where('status', 'approved')
-            ->whereIn('volunteer_id', $volunteerIds)
-            ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate))
-            ->get();
+        $attendances = $volunteers
+            ->flatMap->attendances
+            ->when($startDate, fn ($collection) => $collection->filter(
+                fn ($attendance) => $attendance->date && $attendance->date->gte($startDate)
+            ))
+            ->values();
 
         $totalVolunteers = $volunteers->count();
-        $activeCutoff = Carbon::now()->copy()->subDays(30);
         $activeVolunteers = $volunteers->filter(function ($v) use ($activeCutoff) {
             return $v->attendances->contains(function ($a) use ($activeCutoff) {
-                return $a->status === 'approved' && $a->date && $a->date->gte($activeCutoff);
+                return $a->date && $a->date->gte($activeCutoff);
             });
         })->count();
         $inactiveVolunteers = $totalVolunteers - $activeVolunteers;
@@ -168,7 +182,7 @@ class AnalyticsController extends Controller
             ->get();
         $topPerformers = $this->getTopPerformers($volunteers, 10);
 
-        $monthlyTrend = $this->getMonthlyTrend($startDate);
+        $monthlyTrend = $this->getMonthlyTrend($startDate, $departmentId);
 
         $html = $this->generatePdfHtml([
             'totalVolunteers' => $totalVolunteers,
@@ -229,8 +243,11 @@ class AnalyticsController extends Controller
             ->when($departmentId, fn ($q) => $q->where('position_id', $departmentId))
             ->withCount('volunteers')
             ->get();
+        $departmentName = $departmentId
+            ? Position::query()->where('position_id', $departmentId)->value('name')
+            : null;
         $topPerformers = $this->getTopPerformers($volunteers, 10);
-        $monthlyTrend = $this->getMonthlyTrend($startDate, $departmentId);
+        $monthlyTrend = $this->getMonthlyTrend($startDate, $departmentName);
 
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
@@ -322,11 +339,22 @@ class AnalyticsController extends Controller
         };
     }
 
-    private function getMonthlyTrend(?string $dateRange, ?string $department = null): array
+    private function getMonthlyTrend(?string $startDate, ?string $department = null): array
     {
         $months = collect();
-        for ($i = 5; $i >= 0; $i--) {
-            $months->push(Carbon::now()->subMonths($i));
+        $currentMonth = Carbon::now()->startOfMonth();
+
+        if ($startDate) {
+            $month = Carbon::parse($startDate)->startOfMonth();
+
+            while ($month->lte($currentMonth)) {
+                $months->push($month->copy());
+                $month->addMonth();
+            }
+        } else {
+            for ($i = 5; $i >= 0; $i--) {
+                $months->push(Carbon::now()->subMonths($i));
+            }
         }
 
         return $months->map(function ($month) use ($department) {
@@ -620,7 +648,7 @@ class AnalyticsController extends Controller
         <body>
             <div class="header">
                 <h1>Volunteer Analytics Report</h1>
-                <p class="meta">Generated: '.date('Y-m-d H:i:s').' | Date Range: '.ucfirst($data['dateRange']).'</p>
+                <p class="meta">Generated: '.date('Y-m-d H:i:s').' | Date Range: '.htmlspecialchars(ucfirst((string) $data['dateRange']), ENT_QUOTES, 'UTF-8').'</p>
             </div>
 
             <h2>Overview</h2>

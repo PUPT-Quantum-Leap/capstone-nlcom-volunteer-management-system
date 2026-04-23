@@ -25,6 +25,7 @@ class Rsvp extends Model
         'cutoff_time',
         'status',
         'share_url',
+        'slug',
     ];
 
     protected function casts(): array
@@ -106,5 +107,34 @@ class Rsvp extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Generate a unique slug from a title.
+     */
+    public static function generateUniqueSlug(string $title): string
+    {
+        $baseSlug = Str::slug($title).'-'.now()->format('Y-m');
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (self::where('slug', $slug)->exists()) {
+            $slug = $baseSlug.'-'.$counter;
+            $counter++;
+        }
+
+        return $slug;
+    }
+
+    /**
+     * Find RSVP by slug or numeric ID for backward compatibility.
+     */
+    public static function findBySlugOrId(string|int $identifier): ?self
+    {
+        if (is_numeric($identifier)) {
+            return self::where('rsvp_id', $identifier)->first();
+        }
+
+        return self::where('slug', $identifier)->first();
     }
 }
