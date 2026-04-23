@@ -183,7 +183,7 @@ class AnalyticsController extends Controller
             ->get();
         $topPerformers = $this->getTopPerformers($volunteers, 10);
 
-        $monthlyTrend = $this->getMonthlyTrend($startDate);
+        $monthlyTrend = $this->getMonthlyTrend($startDate, $departmentId);
 
         $html = $this->generatePdfHtml([
             'totalVolunteers' => $totalVolunteers,
