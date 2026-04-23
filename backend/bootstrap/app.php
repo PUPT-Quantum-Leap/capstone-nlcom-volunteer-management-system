@@ -30,6 +30,12 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->renderable(function (\Illuminate\Auth\AuthenticationException $e) {
+            if (request()->expectsJson()) {
+                return response()->json(['message' => 'Unauthenticated.'], 401);
+            }
+        });
+
         $exceptions->renderable(function (\Illuminate\Database\QueryException $e) {
             if (! app()->environment('local', 'testing')) {
                 return response()->json(['message' => 'A server error occurred.'], 500);
