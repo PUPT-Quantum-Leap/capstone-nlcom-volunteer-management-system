@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class RsvpResponse extends Model
 {
@@ -26,6 +28,10 @@ class RsvpResponse extends Model
         'checked_in_at',
         'checked_out_at',
         'attendance_status',
+        'edit_count',
+        'last_edited_at',
+        'initial_time_slot_id',
+        'edit_history',
     ];
 
     protected function casts(): array
@@ -35,26 +41,28 @@ class RsvpResponse extends Model
             'sms_sent' => 'boolean',
             'checked_in_at' => 'datetime',
             'checked_out_at' => 'datetime',
+            'last_edited_at' => 'datetime',
             'attendance_status' => 'string',
+            'edit_history' => 'array',
         ];
     }
 
-    public function volunteer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function volunteer(): BelongsTo
     {
         return $this->belongsTo(Volunteer::class, 'volunteer_id');
     }
 
-    public function rsvp(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function rsvp(): BelongsTo
     {
         return $this->belongsTo(Rsvp::class, 'rsvp_id');
     }
 
-    public function timeSlot(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function timeSlot(): BelongsTo
     {
         return $this->belongsTo(TimeSlot::class, 'time_slot_id');
     }
 
-    public function smsNotifications(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function smsNotifications(): HasMany
     {
         return $this->hasMany(SmsNotification::class, 'rsvp_response_id');
     }
@@ -77,5 +85,53 @@ class RsvpResponse extends Model
     {
         $this->attendance_status = 'no_show';
         $this->save();
+    }
+
+    /**
+     * Check if volunteer can edit their response.
+     * Can edit if: event is active, cutoff not passed, and edit_count < 3
+     */
+    public function canEdit(): bool
+    {
+        $rsvp = $this->rsvp;
+
+        // Must have status = 'active'
+        if ($rsvp->status !== 'active') {
+            return false;
+        }
+
+        // Cutoff must not be passed
+        if ($rsvp->isCutoffPassed()) {
+            return false;
+        }
+
+        // Must have edits remaining
+        return $this->edit_count < 3;
+    }
+
+    /**
+     * Get remaining edits for this response.
+     */
+    public function getRemainingEdits(): int
+    {
+        return 3 - $this->edit_count;
+    }
+
+    /**
+     * Record an edit to the response history.
+     */
+    public function recordEdit(int $oldTimeSlotId, int $newTimeSlotId): void
+    {
+        $history = $this->edit_history ?? [];
+
+        $history[] = [
+            'old_time_slot_id' => $oldTimeSlotId,
+            'new_time_slot_id' => $newTimeSlotId,
+            'edited_at' => now()->toIso8601String(),
+        ];
+
+        $this->edit_history = $history;
+        $this->edit_count++;
+        $this->last_edited_at = now();
     }
 }

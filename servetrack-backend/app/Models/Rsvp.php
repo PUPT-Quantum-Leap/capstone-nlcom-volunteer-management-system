@@ -2,8 +2,12 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Rsvp extends Model
 {
@@ -22,6 +26,7 @@ class Rsvp extends Model
         'cutoff_time',
         'status',
         'share_url',
+        'slug',
     ];
 
     protected function casts(): array
@@ -33,13 +38,13 @@ class Rsvp extends Model
         ];
     }
 
-    public function shifts(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function shifts(): BelongsToMany
     {
         return $this->belongsToMany(TimeSlot::class, 'rsvp_shift', 'rsvp_id', 'time_slot_id')
             ->withPivot('time_slot', 'capacity');
     }
 
-    public function responses(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function responses(): HasMany
     {
         return $this->hasMany(RsvpResponse::class, 'rsvp_id');
     }
@@ -54,7 +59,7 @@ class Rsvp extends Model
         }
 
         try {
-            $cutoffDateTime = \Carbon\Carbon::parse($cutoffDay)->setTimeFromTimeString($cutoffTime);
+            $cutoffDateTime = Carbon::parse($cutoffDay)->setTimeFromTimeString($cutoffTime);
         } catch (\Throwable) {
             return false;
         }
@@ -103,5 +108,34 @@ class Rsvp extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Generate a unique slug from a title.
+     */
+    public static function generateUniqueSlug(string $title): string
+    {
+        $baseSlug = Str::slug($title).'-'.now()->format('Y-m');
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (self::where('slug', $slug)->exists()) {
+            $slug = $baseSlug.'-'.$counter;
+            $counter++;
+        }
+
+        return $slug;
+    }
+
+    /**
+     * Find RSVP by slug or numeric ID for backward compatibility.
+     */
+    public static function findBySlugOrId(string|int $identifier): ?self
+    {
+        if (is_numeric($identifier)) {
+            return self::where('rsvp_id', $identifier)->first();
+        }
+
+        return self::where('slug', $identifier)->first();
     }
 }

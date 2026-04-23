@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BackupController;
@@ -55,13 +56,26 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
 
     // RSVP — read + vote available to all authenticated users
     Route::get('/rsvp', [RsvpController::class, 'index']);
-    Route::get('/rsvp/{id}', [RsvpController::class, 'show']);
+    Route::get('/rsvp/{identifier}', [RsvpController::class, 'show'])->name('rsvp.show')->where('identifier', '[\d\w\-]+');
     Route::post('/rsvp/{id}/vote', [RsvpController::class, 'vote']);
+    Route::get('/rsvp/{rsvpId}/my-response', [RsvpController::class, 'getMyResponse']);
+    Route::put('/rsvp/{rsvpId}/response', [RsvpController::class, 'updateResponse']);
+
+    // RSVP Notifications — for volunteers
+    Route::get('/notifications/rsvp', [RsvpController::class, 'getNotifications']);
+    Route::patch('/notifications/{notificationId}/read', [RsvpController::class, 'markNotificationAsRead']);
+    Route::patch('/notifications/rsvp/read-all', [RsvpController::class, 'markAllNotificationsAsRead']);
 });
 
 // Admin-only routes — requires authentication AND admin role
 Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): void {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
+
+    // Analytics & Reports
+    Route::get('/analytics/reports', [AnalyticsController::class, 'reports']);
+    Route::get('/analytics/export/pdf', [AnalyticsController::class, 'exportPdf']);
+    Route::get('/analytics/export/excel', [AnalyticsController::class, 'exportExcel']);
+
     Route::get('/volunteers', [VolunteerController::class, 'index']);
     Route::get('/volunteers/{id}', [VolunteerController::class, 'show']);
     Route::patch('/volunteers/{id}/soft-delete', [VolunteerController::class, 'softDelete']);

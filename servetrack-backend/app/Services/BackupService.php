@@ -191,7 +191,7 @@ class BackupService
                 throw new Exception('Database dump file is empty or missing');
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new Exception('Database dump creation failed: '.$e->getMessage());
         }
     }
@@ -316,7 +316,7 @@ class BackupService
                 }
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new Exception('Database restoration failed: '.$e->getMessage());
         }
     }

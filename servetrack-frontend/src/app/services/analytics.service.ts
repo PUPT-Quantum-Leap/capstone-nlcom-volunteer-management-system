@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, catchError, of, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface ReportData {
@@ -15,6 +15,12 @@ export interface ReportData {
   monthlyTrend: MonthlyStat[];
   topPerformers: TopPerformer[];
   recentActivity: ActivityItem[];
+  eventParticipation: EventParticipation;
+  skillsDistribution: SkillsDistribution;
+  trainingCompletion: TrainingCompletion;
+  lifeGroupDistribution: LifeGroupDistribution;
+  retentionMetrics: RetentionMetrics;
+  hourlyTrends: HourlyTrend[];
 }
 
 export interface DepartmentStat {
@@ -47,6 +53,75 @@ export interface ActivityItem {
   timestamp: string;
 }
 
+export interface EventParticipation {
+  totalEvents: number;
+  totalResponses: number;
+  confirmedCount: number;
+  activeEvents: number;
+  closedEvents: number;
+  responseRate: number;
+  events: EventStat[];
+}
+
+export interface EventStat {
+  id: number;
+  title: string;
+  date: string;
+  responses: number;
+  status: string;
+}
+
+export interface SkillsDistribution {
+  totalSkills: number;
+  volunteersWithSkills: number;
+  skills: SkillStat[];
+}
+
+export interface SkillStat {
+  name: string;
+  count: number;
+  percentage: number;
+}
+
+export interface TrainingCompletion {
+  totalTrainings: number;
+  volunteersWithTraining: number;
+  completionRate: number;
+  trainings: TrainingStat[];
+}
+
+export interface TrainingStat {
+  name: string;
+  count: number;
+  percentage: number;
+}
+
+export interface LifeGroupDistribution {
+  totalLifegroups: number;
+  totalInLifegroups: number;
+  leadersCount: number;
+  lifegroups: LifeGroupStat[];
+}
+
+export interface LifeGroupStat {
+  name: string;
+  count: number;
+}
+
+export interface RetentionMetrics {
+  totalVolunteers: number;
+  activeLast3Months: number;
+  activeLast6Months: number;
+  churnedCount: number;
+  retentionRate: number;
+}
+
+export interface HourlyTrend {
+  day: string;
+  hours: number;
+  entries: number;
+}
+
 export interface AnalyticsResponse {
   success: boolean;
   data: ReportData;
@@ -59,9 +134,18 @@ export class AnalyticsService {
   private http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/analytics`;
 
-  getReportData(): Observable<AnalyticsResponse> {
+  getReportData(
+    dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all',
+    department?: string
+  ): Observable<AnalyticsResponse> {
+    let params = new HttpParams().set('dateRange', dateRange);
+    if (department) {
+      params = params.set('department', department);
+    }
+    
     return this.http
       .get<AnalyticsResponse>(`${this.baseUrl}/reports`, {
+        params,
         withCredentials: true,
       })
       .pipe(
@@ -74,24 +158,79 @@ export class AnalyticsService {
       );
   }
 
-  exportReport(format: 'pdf' | 'excel'): Observable<Blob> {
+  exportToPdf(
+    dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all',
+    department?: string,
+  ): Observable<Blob> {
+    let params = new HttpParams().set('dateRange', dateRange);
+    if (department) {
+      params = params.set('department', department);
+    }
+
     return this.http
-      .get(`${this.baseUrl}/export/${format}`, {
+      .get(`${this.baseUrl}/export/pdf`, {
+        params,
         withCredentials: true,
         responseType: 'blob',
       })
       .pipe(
-        catchError(() => {
-          const mockData = this.generateMockExportData();
-          const blob = new Blob([mockData], {
-            type:
-              format === 'pdf'
-                ? 'application/pdf'
-                : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          });
-          return of(blob);
-        })
+        catchError((error) => throwError(() => error))
       );
+  }
+
+  exportToExcel(
+    dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all',
+    department?: string,
+  ): Observable<Blob> {
+    let params = new HttpParams().set('dateRange', dateRange);
+    if (department) {
+      params = params.set('department', department);
+    }
+
+    return this.http
+      .get(`${this.baseUrl}/export/excel`, {
+        params,
+        withCredentials: true,
+        responseType: 'blob',
+      })
+      .pipe(
+        catchError((error) => throwError(() => error))
+      );
+  }
+
+  downloadFile(blob: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  }
+
+exportPdf(dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all', department?: string): void {
+    this.exportToPdf(dateRange, department).subscribe({
+      next: (blob) => {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        this.downloadFile(blob, `volunteer-analytics-${timestamp}.pdf`);
+      },
+      error: (err) => {
+        console.error('PDF export failed:', err);
+      },
+    });
+  }
+
+  exportExcel(dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all', department?: string): void {
+    this.exportToExcel(dateRange, department).subscribe({
+      next: (blob) => {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        this.downloadFile(blob, `volunteer-analytics-${timestamp}.xlsx`);
+      },
+      error: (err) => {
+        console.error('Excel export failed:', err);
+      },
+    });
   }
 
   private getMockReportData(): ReportData {
@@ -163,55 +302,100 @@ export class AnalyticsService {
       recentActivity: [
         {
           id: 1,
-          type: 'registration',
+          type: 'registration' as const,
           description: 'New volunteer registered',
           volunteerName: 'Alice Brown',
           timestamp: new Date(Date.now() - 3600000).toISOString(),
         },
         {
           id: 2,
-          type: 'attendance',
+          type: 'attendance' as const,
           description: 'Marked present at Community Event',
           volunteerName: 'Bob Smith',
           timestamp: new Date(Date.now() - 7200000).toISOString(),
         },
         {
           id: 3,
-          type: 'task',
+          type: 'task' as const,
           description: 'Completed task: Equipment Inventory',
           volunteerName: 'Carol White',
           timestamp: new Date(Date.now() - 10800000).toISOString(),
         },
         {
           id: 4,
-          type: 'event',
+          type: 'event' as const,
           description: 'Participated in Disaster Drill',
           volunteerName: 'David Lee',
           timestamp: new Date(Date.now() - 14400000).toISOString(),
         },
         {
           id: 5,
-          type: 'registration',
+          type: 'registration' as const,
           description: 'New volunteer registered',
           volunteerName: 'Eve Martinez',
           timestamp: new Date(Date.now() - 18000000).toISOString(),
         },
       ],
+      eventParticipation: {
+        totalEvents: 45,
+        totalResponses: 320,
+        confirmedCount: 285,
+        activeEvents: 12,
+        closedEvents: 33,
+        responseRate: 7,
+        events: [
+          { id: 1, title: 'Community Cleanup', date: '2026-04-15', responses: 45, status: 'closed' },
+          { id: 2, title: 'Medical Mission', date: '2026-04-20', responses: 28, status: 'active' },
+        ],
+      },
+      skillsDistribution: {
+        totalSkills: 8,
+        volunteersWithSkills: 95,
+        skills: [
+          { name: 'First Aid', count: 45, percentage: 47 },
+          { name: 'CPR', count: 42, percentage: 44 },
+          { name: 'Driving', count: 38, percentage: 40 },
+          { name: 'Communication', count: 35, percentage: 37 },
+          { name: 'Logistics', count: 28, percentage: 29 },
+        ],
+      },
+      trainingCompletion: {
+        totalTrainings: 5,
+        volunteersWithTraining: 78,
+        completionRate: 50,
+        trainings: [
+          { name: 'Orientation', count: 156, percentage: 100 },
+          { name: 'Safety Protocols', count: 142, percentage: 91 },
+          { name: 'Emergency Response', count: 98, percentage: 63 },
+          { name: 'Leadership', count: 45, percentage: 29 },
+        ],
+      },
+      lifeGroupDistribution: {
+        totalLifegroups: 12,
+        totalInLifegroups: 85,
+        leadersCount: 12,
+        lifegroups: [
+          { name: 'North Cluster', count: 15 },
+          { name: 'South Cluster', count: 12 },
+          { name: 'East Cluster', count: 10 },
+        ],
+      },
+      retentionMetrics: {
+        totalVolunteers: 156,
+        activeLast3Months: 98,
+        activeLast6Months: 115,
+        churnedCount: 58,
+        retentionRate: 63,
+      },
+      hourlyTrends: [
+        { day: 'Sun', hours: 120, entries: 15 },
+        { day: 'Mon', hours: 85, entries: 12 },
+        { day: 'Tue', hours: 92, entries: 14 },
+        { day: 'Wed', hours: 78, entries: 11 },
+        { day: 'Thu', hours: 95, entries: 13 },
+        { day: 'Fri', hours: 110, entries: 16 },
+        { day: 'Sat', hours: 145, entries: 18 },
+      ],
     };
-  }
-
-  private generateMockExportData(): string {
-    return 'Mock export data for demonstration';
-  }
-
-  downloadFile(blob: Blob, filename: string): void {
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
   }
 }

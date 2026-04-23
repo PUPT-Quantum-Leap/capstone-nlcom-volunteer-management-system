@@ -1,5 +1,6 @@
 export interface Rsvp {
   id: number;
+  slug: string;
   title: string;
   date: string;
   eventLocation?: string;
@@ -20,6 +21,39 @@ export interface RsvpShift {
   responses: number;
   capacity: number;
   selected?: boolean;
+}
+
+export interface RsvpResponse {
+  id: number;
+  volunteerId: number;
+  rsvpId: number;
+  timeSlotId: number;
+  votedAt: string;
+  createdAt: string;
+  editCount: number;
+  remainingEdits: number;
+  lastEditedAt?: string;
+  editHistory: EditHistoryItem[];
+}
+
+export interface EditHistoryItem {
+  oldTimeSlotId: number;
+  newTimeSlotId: number;
+  editedAt: string;
+}
+
+export interface RsvpNotification {
+  id: number;
+  type: 'event_created' | 'event_updated' | 'reminder';
+  message: string;
+  rsvpId: number;
+  rsvpTitle: string;
+  rsvpDate: string;
+  rsvpSlug: string;
+  readAt: string | null;
+  isRead: boolean;
+  emailSent: boolean;
+  createdAt: string;
 }
 
 export interface CreateRsvpDto {
