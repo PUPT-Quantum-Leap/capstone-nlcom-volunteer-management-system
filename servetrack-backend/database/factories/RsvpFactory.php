@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Rsvp;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class RsvpFactory extends Factory
@@ -17,6 +18,9 @@ class RsvpFactory extends Factory
             'cutoff_time' => fake()->randomElement(['8AM', '10AM', '12NN', '3PM', '5PM']),
             'status' => 'draft',
             'share_url' => null,
+            'slug' => function (array $attributes) {
+                return Rsvp::generateUniqueSlug($attributes['title']);
+            },
         ];
     }
 

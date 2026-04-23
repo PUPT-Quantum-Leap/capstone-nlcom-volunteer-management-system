@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RsvpNotification extends Model
 {
@@ -32,12 +33,12 @@ class RsvpNotification extends Model
         ];
     }
 
-    public function volunteer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function volunteer(): BelongsTo
     {
         return $this->belongsTo(Volunteer::class, 'volunteer_id');
     }
 
-    public function rsvp(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function rsvp(): BelongsTo
     {
         return $this->belongsTo(Rsvp::class, 'rsvp_id');
     }

@@ -3,11 +3,12 @@
 namespace Database\Factories;
 
 use App\Models\Rsvp;
+use App\Models\RsvpNotification;
 use App\Models\Volunteer;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\RsvpNotification>
+ * @extends Factory<RsvpNotification>
  */
 class RsvpNotificationFactory extends Factory
 {

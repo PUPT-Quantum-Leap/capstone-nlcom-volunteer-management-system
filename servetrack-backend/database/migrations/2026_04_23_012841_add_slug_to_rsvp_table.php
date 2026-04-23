@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\Carbon;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,7 @@ return new class extends Migration
      */
     private function generateSlug(string $title, string $createdAt): string
     {
-        $date = \Carbon\Carbon::parse($createdAt)->format('Y-m');
+        $date = Carbon::parse($createdAt)->format('Y-m');
         $slug = Str::slug($title).'-'.$date;
 
         return Str::lower($slug);

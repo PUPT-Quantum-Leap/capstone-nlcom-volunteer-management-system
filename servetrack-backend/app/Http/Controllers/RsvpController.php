@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreRsvpRequest;
 use App\Http\Requests\UpdateRsvpRequest;
 use App\Http\Requests\UpdateRsvpResponseRequest;
+use App\Http\Resources\RsvpNotificationResource;
 use App\Http\Resources\RsvpResource;
 use App\Jobs\NotifyVolunteersOfNewRsvp;
 use App\Models\Rsvp;
+use App\Models\RsvpNotification;
 use App\Models\RsvpResponse;
 use App\Models\TimeSlot;
 use App\Services\FacebookService;
@@ -84,6 +86,7 @@ class RsvpController extends Controller
                 'cutoff_day' => $request->input('cutoff_day'),
                 'cutoff_time' => $request->input('cutoff_time'),
                 'status' => $request->input('status', 'draft'),
+                'slug' => Rsvp::generateUniqueSlug($request->input('title')),
                 'share_url' => $request->input('share_url'),
             ]);
 
@@ -562,12 +565,12 @@ class RsvpController extends Controller
             abort(403, 'Volunteer profile not found.');
         }
 
-        $notifications = \App\Models\RsvpNotification::query()
+        $notifications = RsvpNotification::query()
             ->where('volunteer_id', $volunteer->volunteer_id)
             ->latest('created_at')
             ->paginate(20);
 
-        return \App\Http\Resources\RsvpNotificationResource::collection($notifications);
+        return RsvpNotificationResource::collection($notifications);
     }
 
     /**
@@ -581,7 +584,7 @@ class RsvpController extends Controller
             return response()->json(['message' => 'Volunteer profile not found.'], 403);
         }
 
-        $notification = \App\Models\RsvpNotification::query()->find($notificationId);
+        $notification = RsvpNotification::query()->find($notificationId);
 
         if (! $notification) {
             return response()->json(['message' => 'Notification not found.'], 404);
@@ -607,7 +610,7 @@ class RsvpController extends Controller
             return response()->json(['message' => 'Volunteer profile not found.'], 403);
         }
 
-        \App\Models\RsvpNotification::query()
+        RsvpNotification::query()
             ->where('volunteer_id', $volunteer->volunteer_id)
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
