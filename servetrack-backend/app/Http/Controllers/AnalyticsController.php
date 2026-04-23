@@ -32,12 +32,27 @@ class AnalyticsController extends Controller
         }
 
         $dateRange = $request->query('dateRange', 'all');
-        $department = $request->query('department');
+        $departmentId = $request->query('departmentId');
+        $legacyDepartment = $request->query('department');
+        $resolvedDepartmentId = $departmentId;
+
+        if (! $resolvedDepartmentId && $legacyDepartment) {
+            $resolvedDepartmentId = Position::query()
+                ->where('name', $legacyDepartment)
+                ->value('position_id');
+        }
+
         $startDate = $this->getStartDate($dateRange);
 
         $volunteers = Volunteer::query()
             ->with(['positions:position_id,name', 'attendances'])
-            ->when($department, fn ($q) => $q->whereHas('positions', fn ($pq) => $pq->where('name', $department)))
+            ->when(
+                $resolvedDepartmentId,
+                fn ($q) => $q->whereHas(
+                    'positions',
+                    fn ($pq) => $pq->where('position_id', $resolvedDepartmentId)
+                )
+            )
             ->get();
 
         $volunteerIds = $volunteers->pluck('volunteer_id');
