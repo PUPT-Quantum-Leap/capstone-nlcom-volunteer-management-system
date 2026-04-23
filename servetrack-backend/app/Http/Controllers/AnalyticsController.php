@@ -344,11 +344,22 @@ class AnalyticsController extends Controller
         };
     }
 
-    private function getMonthlyTrend(?string $dateRange, ?string $department = null): array
+    private function getMonthlyTrend(?string $startDate, ?string $department = null): array
     {
         $months = collect();
-        for ($i = 5; $i >= 0; $i--) {
-            $months->push(Carbon::now()->subMonths($i));
+        $currentMonth = Carbon::now()->startOfMonth();
+
+        if ($startDate) {
+            $month = Carbon::parse($startDate)->startOfMonth();
+
+            while ($month->lte($currentMonth)) {
+                $months->push($month->copy());
+                $month->addMonth();
+            }
+        } else {
+            for ($i = 5; $i >= 0; $i--) {
+                $months->push(Carbon::now()->subMonths($i));
+            }
         }
 
         return $months->map(function ($month) use ($department) {
