@@ -49,25 +49,32 @@ class AnalyticsController extends Controller
             ->when(
                 $resolvedDepartmentId,
                 fn ($q) => $q->whereHas(
-                    'positions',
-                    fn ($pq) => $pq->where('position_id', $resolvedDepartmentId)
-                )
-            )
+        $activeCutoff = Carbon::now()->copy()->subDays(30);
+        $attendanceStartDate = $startDate && $startDate->lt($activeCutoff)
+            ? $startDate
+            : $activeCutoff;
+
+        $volunteers = Volunteer::query()
+            ->with([
+                'positions:position_id,name',
+                'attendances' => fn ($query) => $query
+                    ->where('status', 'approved')
+                    ->where('date', '>=', $attendanceStartDate),
+            ])
+            ->when($department, fn ($q) => $q->whereHas('positions', fn ($pq) => $pq->where('name', $department)))
             ->get();
 
-        $volunteerIds = $volunteers->pluck('volunteer_id');
-
-        $attendances = Attendance::query()
-            ->where('status', 'approved')
-            ->whereIn('volunteer_id', $volunteerIds)
-            ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate))
-            ->get();
+        $attendances = $volunteers
+            ->flatMap->attendances
+            ->when($startDate, fn ($collection) => $collection->filter(
+                fn ($attendance) => $attendance->date && $attendance->date->gte($startDate)
+            ))
+            ->values();
 
         $totalVolunteers = $volunteers->count();
-        $activeCutoff = Carbon::now()->copy()->subDays(30);
         $activeVolunteers = $volunteers->filter(function ($v) use ($activeCutoff) {
             return $v->attendances->contains(function ($a) use ($activeCutoff) {
-                return $a->status === 'approved' && $a->date && $a->date->gte($activeCutoff);
+                return $a->date && $a->date->gte($activeCutoff);
             });
         })->count();
         $inactiveVolunteers = $totalVolunteers - $activeVolunteers;
