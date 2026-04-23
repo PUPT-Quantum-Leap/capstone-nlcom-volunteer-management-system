@@ -1432,7 +1432,7 @@
         }
 
         @case ('analytics') {
-          <section class="module-container analytics-layout">
+<section class="module-container analytics-layout">
             <header class="module-header">
               <div class="header-content">
                 <h2>Analytics & Reports</h2>
@@ -1486,6 +1486,16 @@
                   <option value="year">This Year</option>
                 </select>
               </div>
+              <div class="filter-group">
+                <label for="department-filter">Department</label>
+                <select id="department-filter" class="filter-select" 
+                  (change)="onDepartmentFilterChange($any($event.target).value)" aria-label="Department filter">
+                  <option value="">All Departments</option>
+                  @for (dept of reportData()?.departmentBreakdown ?? []; track dept.name) {
+                    <option [value]="dept.name">{{ dept.name }}</option>
+                  }
+                </select>
+              </div>
             </div>
 
             <div class="stats-grid analytics-stats">
@@ -1503,12 +1513,6 @@
                   <div class="value">{{ reportData()?.totalVolunteers ?? 0 }}</div>
                   <div class="meta">
                     <span>Registered members</span>
-                    <span class="trend-indicator up">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                      +12%
-                    </span>
                   </div>
                 </div>
               </article>
@@ -1525,12 +1529,6 @@
                   <div class="value">{{ reportData()?.activeVolunteers ?? 0 }}</div>
                   <div class="meta">
                     <span>Currently engaged</span>
-                    <span class="trend-indicator up">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                      +5.4%
-                    </span>
                   </div>
                 </div>
               </article>
@@ -1547,12 +1545,6 @@
                   <div class="value">{{ reportData()?.totalHoursServed ?? 0 }}</div>
                   <div class="meta">
                     <span>Hours served</span>
-                    <span class="trend-indicator down">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M12 5v14M5 12l7 7 7-7" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                      -0.8%
-                    </span>
                   </div>
                 </div>
               </article>
@@ -1571,14 +1563,6 @@
                   <div class="meter" role="progressbar"
                     [attr.aria-valuenow]="reportData()?.averageAttendanceRate ?? 0" aria-valuemin="0" aria-valuemax="100">
                     <div class="fill" [style.width.%]="reportData()?.averageAttendanceRate ?? 0"></div>
-                  </div>
-                  <div class="meta" style="margin-top: 0.75rem;">
-                    <span class="trend-indicator up">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <path d="M12 19V5M5 12l7-7 7 7" stroke-linecap="round" stroke-linejoin="round"/>
-                      </svg>
-                      +2.1%
-                    </span>
                   </div>
                 </div>
               </article>
@@ -1608,6 +1592,108 @@
                   <div class="value">{{ reportData()?.averageRating ?? 0 }}</div>
                   <div class="meta">Out of 5.0</div>
                 </div>
+              </article>
+            </div>
+
+            <!-- New Analytics Sections -->
+            <div class="analytics-sections-grid">
+              <article class="analytics-section-card">
+                <div class="section-header">
+                  <h3>Event Participation</h3>
+                  <p>RSVP and event response metrics</p>
+                </div>
+                <div class="section-stats">
+                  <div class="section-stat">
+                    <span class="stat-value">{{ reportData()?.eventParticipation?.totalEvents ?? 0 }}</span>
+                    <span class="stat-label">Total Events</span>
+                  </div>
+                  <div class="section-stat">
+                    <span class="stat-value">{{ reportData()?.eventParticipation?.totalResponses ?? 0 }}</span>
+                    <span class="stat-label">Responses</span>
+                  </div>
+                  <div class="section-stat">
+                    <span class="stat-value">{{ reportData()?.eventParticipation?.activeEvents ?? 0 }}</span>
+                    <span class="stat-label">Active</span>
+                  </div>
+                  <div class="section-stat">
+                    <span class="stat-value">{{ reportData()?.eventParticipation?.confirmedCount ?? 0 }}</span>
+                    <span class="stat-label">Checked In</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="analytics-section-card">
+                <div class="section-header">
+                  <h3>Training Completion</h3>
+                  <p>Training progress across volunteers</p>
+                </div>
+                <div class="section-stats">
+                  <div class="section-stat">
+                    <span class="stat-value">{{ reportData()?.trainingCompletion?.totalTrainings ?? 0 }}</span>
+                    <span class="stat-label">Trainings</span>
+                  </div>
+                  <div class="section-stat">
+                    <span class="stat-value">{{ reportData()?.trainingCompletion?.volunteersWithTraining ?? 0 }}</span>
+                    <span class="stat-label">Completed</span>
+                  </div>
+                  <div class="section-stat">
+                    <span class="stat-value">{{ reportData()?.trainingCompletion?.completionRate ?? 0 }}%</span>
+                    <span class="stat-label">Rate</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="analytics-section-card">
+                <div class="section-header">
+                  <h3>Retention Metrics</h3>
+                  <p>Volunteer retention over time</p>
+                </div>
+                <div class="section-stats">
+                  <div class="section-stat">
+                    <span class="stat-value">{{ reportData()?.retentionMetrics?.retentionRate ?? 0 }}%</span>
+                    <span class="stat-label">Retention Rate</span>
+                  </div>
+                  <div class="section-stat">
+                    <span class="stat-value">{{ reportData()?.retentionMetrics?.activeLast3Months ?? 0 }}</span>
+                    <span class="stat-label">Active (3mo)</span>
+                  </div>
+                  <div class="section-stat">
+                    <span class="stat-value">{{ reportData()?.retentionMetrics?.churnedCount ?? 0 }}</span>
+                    <span class="stat-label">Churned</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="analytics-section-card">
+                <div class="section-header">
+                  <h3>Skills Distribution</h3>
+                  <p>Top skills in volunteer pool</p>
+                </div>
+                <div class="skills-list">
+                  @for (skill of paginatedSkills(); track skill.name) {
+                    <div class="skill-item">
+                      <span class="skill-name">{{ skill.name }}</span>
+                      <span class="skill-count">{{ skill.count }}</span>
+                    </div>
+                  } @empty {
+                    <p class="empty-state">No skills data available</p>
+                  }
+                </div>
+                @if (hasMoreSkills()) {
+                  <div class="skills-pagination">
+                    <button type="button" class="pagination-btn" (click)="previousSkillsPage()" [disabled]="skillsPage() === 1">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <span class="pagination-info">{{ skillsPage() }} / {{ totalSkillsPages() }}</span>
+                    <button type="button" class="pagination-btn" (click)="nextSkillsPage()" [disabled]="skillsPage() >= totalSkillsPages()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                }
               </article>
             </div>
 
@@ -1642,24 +1728,21 @@
                     <circle cx="270" cy="80" r="4.5" class="chart-point" />
                     <circle cx="320" cy="50" r="4.5" class="chart-point" />
                     <g font-size="10" fill="#94a3b8" text-anchor="middle" font-weight="600">
-                      <text x="70" y="185">Jan</text>
-                      <text x="120" y="185">Feb</text>
-                      <text x="170" y="185">Mar</text>
-                      <text x="220" y="185">Apr</text>
-                      <text x="270" y="185">May</text>
-                      <text x="320" y="185">Jun</text>
+                      @for (trend of reportData()?.monthlyTrend ?? []; track trend.month) {
+                        <text [attr.x]="70 + ($index * 50)" y="185">{{ trend.month }}</text>
+                      }
                     </g>
                   </svg>
                 </div>
               </article>
 
-              <article class="analytics-chart-card">
+<article class="analytics-chart-card">
                 <div class="chart-header">
                   <h3>Department Breakdown</h3>
                   <p>Volunteer distribution by department</p>
                 </div>
                 <div class="department-list">
-                  @for (dept of reportData()?.departmentBreakdown ?? []; track dept.name) {
+                  @for (dept of paginatedDepartments(); track dept.name) {
                     <div class="department-item">
                       <div class="department-info">
                         <span class="department-name">{{ dept.name }}</span>
@@ -1683,6 +1766,21 @@
                     </div>
                   }
                 </div>
+                @if (hasMoreDepartments()) {
+                  <div class="skills-pagination">
+                    <button type="button" class="pagination-btn" (click)="previousDepartmentsPage()" [disabled]="departmentsPage() === 1">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                    <span class="pagination-info">{{ departmentsPage() }} / {{ totalDepartmentsPages() }}</span>
+                    <button type="button" class="pagination-btn" (click)="nextDepartmentsPage()" [disabled]="departmentsPage() >= totalDepartmentsPages()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                }
               </article>
             </div>
           </section>
