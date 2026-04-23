@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, of } from 'rxjs';
+import { Observable, catchError, of, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface ReportData {
@@ -136,11 +136,11 @@ export class AnalyticsService {
 
   getReportData(
     dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all',
-    departmentId?: number
+    department?: string
   ): Observable<AnalyticsResponse> {
     let params = new HttpParams().set('dateRange', dateRange);
-    if (departmentId) {
-      params = params.set('departmentId', departmentId.toString());
+    if (department) {
+      params = params.set('department', department);
     }
     
     return this.http
@@ -158,9 +158,15 @@ export class AnalyticsService {
       );
   }
 
-  exportToPdf(dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all'): Observable<Blob> {
-    const params = new HttpParams().set('dateRange', dateRange);
-    
+  exportToPdf(
+    dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all',
+    department?: string,
+  ): Observable<Blob> {
+    let params = new HttpParams().set('dateRange', dateRange);
+    if (department) {
+      params = params.set('department', department);
+    }
+
     return this.http
       .get(`${this.baseUrl}/export/pdf`, {
         params,
@@ -168,16 +174,19 @@ export class AnalyticsService {
         responseType: 'blob',
       })
       .pipe(
-        catchError(() => {
-          const blob = new Blob(['PDF export requires backend connection'], { type: 'application/pdf' });
-          return of(blob);
-        })
+        catchError((error) => throwError(() => error))
       );
   }
 
-  exportToExcel(dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all'): Observable<Blob> {
-    const params = new HttpParams().set('dateRange', dateRange);
-    
+  exportToExcel(
+    dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all',
+    department?: string,
+  ): Observable<Blob> {
+    let params = new HttpParams().set('dateRange', dateRange);
+    if (department) {
+      params = params.set('department', department);
+    }
+
     return this.http
       .get(`${this.baseUrl}/export/excel`, {
         params,
@@ -185,13 +194,7 @@ export class AnalyticsService {
         responseType: 'blob',
       })
       .pipe(
-        catchError(() => {
-          const mockData = 'Excel export requires backend connection';
-          const blob = new Blob([mockData], {
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          });
-          return of(blob);
-        })
+        catchError((error) => throwError(() => error))
       );
   }
 
@@ -206,8 +209,8 @@ export class AnalyticsService {
     window.URL.revokeObjectURL(url);
   }
 
-  exportPdf(dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all'): void {
-    this.exportToPdf(dateRange).subscribe({
+exportPdf(dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all', department?: string): void {
+    this.exportToPdf(dateRange, department).subscribe({
       next: (blob) => {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
         this.downloadFile(blob, `volunteer-analytics-${timestamp}.pdf`);
@@ -218,8 +221,8 @@ export class AnalyticsService {
     });
   }
 
-exportExcel(dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all'): void {
-    this.exportToExcel(dateRange).subscribe({
+  exportExcel(dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all', department?: string): void {
+    this.exportToExcel(dateRange, department).subscribe({
       next: (blob) => {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
         this.downloadFile(blob, `volunteer-analytics-${timestamp}.xlsx`);
