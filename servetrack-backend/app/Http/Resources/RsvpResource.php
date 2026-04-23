@@ -34,9 +34,9 @@ class RsvpResource extends JsonResource
 
                     return [
                         'id' => $shift->time_slot_id,
-                        'text' => $shift->text,
-                        'timeSlot' => $shift->pivot->time_slot,
-                        'capacity' => $shift->pivot->capacity,
+                        'text' => $shift->text ?? 'Unknown Time Slot',
+                        'timeSlot' => $shift->pivot?->time_slot ?? 'Unknown Time Slot',
+                        'capacity' => $shift->pivot?->capacity ?? 0,
                         'responses' => $responseCount,
                     ];
                 });

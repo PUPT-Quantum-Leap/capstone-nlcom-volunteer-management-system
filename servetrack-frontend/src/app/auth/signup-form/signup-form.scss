@@ -469,6 +469,37 @@ $success: #059669;
   }
 }
 
+.btn-primary {
+  background: $primary;
+  color: $white;
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: $primary-dark;
+  }
+}
+
+.btn-outline {
+  background: transparent;
+  color: $text-dark;
+  border: 2px solid $border;
+  padding: 0.875rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $gray-100;
+    border-color: $text-muted;
+  }
+}
+
 .popup-error {
   border-top: 5px solid $error;
 
