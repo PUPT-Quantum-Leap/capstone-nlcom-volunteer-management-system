@@ -170,8 +170,9 @@ export class SignupForm {
           if (response.success) {
             // Show success modal
             this.showSuccessModal.set(true);
-            
+
             setTimeout(() => {
+              this.closeSuccessModal();
               this.router.navigate(['/volunteer-dashboard']);
             }, 3000);
           } else {
