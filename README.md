@@ -1,4 +1,4 @@
-# ServeTrack - Volunteer Management System
+<h1 align="center">ServeTrack - Volunteer Management System</h1>
 
 [![CI](https://img.shields.io/badge/CI-Passing-green?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/actions/workflows/ci.yml)
 [![Security](https://img.shields.io/badge/Security-Secure-blue?style=flat-square&logo=gitleaks&logoColor=white)](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/actions/workflows/gitleaks.yml)
