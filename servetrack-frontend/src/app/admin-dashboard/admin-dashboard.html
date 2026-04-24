@@ -492,9 +492,8 @@
                     <th scope="col">Facebook</th>
                     <th scope="col">Phone</th>
                     <th scope="col">Dept</th>
-                    <th scope="col">Status</th>
                     <th scope="col">Joined</th>
-                    <th scope="col" style="text-align: right;">Actions</th>
+                    <th scope="col" style="text-align: center;">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -514,12 +513,6 @@
                       <td>{{ volunteer.facebookName || '—' }}</td>
                       <td>{{ volunteer.phone }}</td>
                       <td>{{ volunteer.department }}</td>
-                      <td>
-                        <span class="status-badge" [class.status-active]="volunteer.status === 'active'"
-                          [class.status-inactive]="volunteer.status === 'inactive'">
-                          {{ volunteer.status === 'active' ? 'Active' : 'Inactive' }}
-                        </span>
-                      </td>
                       <td>{{ volunteer.joined_date | date: 'MMM d, yyyy' }}</td>
                       <td class="actions-cell">
                         <div class="action-buttons">
@@ -557,7 +550,7 @@
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="7">
+                      <td colspan="6">
                         <p class="empty-state">No volunteer records found.</p>
                       </td>
                     </tr>
@@ -693,11 +686,16 @@
                       <td>{{ record.checkOutTime || '—' }}</td>
                       <td>{{ record.duration || '—' }}</td>
                       <td>
-                        <span class="status-badge" [class.status-active]="record.status === 'present'"
-                          [class.status-inactive]="record.status === 'absent'"
-                          [class.status-warning]="record.status === 'late'">
-                          {{ record.status | titlecase }}
-                        </span>
+                        <div class="status-dropdown-wrapper">
+                          <select class="status-badge-select"
+                            [class.status-present]="record.status === 'present'"
+                            [class.status-absent]="record.status === 'absent'"
+                            [value]="record.status"
+                            (change)="updateAttendanceStatus(record.id, $any($event.target).value)">
+                            <option value="present">Present</option>
+                            <option value="absent">Absent</option>
+                          </select>
+                        </div>
                       </td>
                       <td class="actions-cell">
                         <div class="action-buttons">
@@ -940,6 +938,112 @@
                 </section>
               </div>
             }
+
+            <!-- Attendance Details Modal -->
+            @if (showAttendanceDetailsModal()) {
+              <div class="modal-backdrop" (click)="closeAttendanceDetailsModal()">
+                <section class="modal-card attendance-details-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
+                  aria-labelledby="attendance-details-title">
+                  <header class="modal-header">
+                    <div class="modal-title-wrapper">
+                      <div class="modal-icon">
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4m-4 0V9a2 2 0 1 1 4 0v2m-4 0a2 2 0 1 0 4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </div>
+                      <h3 id="attendance-details-title">Attendance History</h3>
+                    </div>
+                    <button type="button" class="modal-close-btn" (click)="closeAttendanceDetailsModal()" aria-label="Close">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                    </button>
+                  </header>
+
+                  <div class="modal-body">
+                    @if (selectedAttendanceRecord(); as record) {
+                      <div class="attendance-details-content">
+                        <!-- Volunteer Profile Header -->
+                        <div class="detail-section volunteer-profile">
+                          <div class="volunteer-avatar-lg">{{ record.volunteerName.charAt(0) }}</div>
+                          <div class="volunteer-profile-info">
+                            <h4 class="volunteer-name">{{ record.volunteerName }}</h4>
+                            <span class="volunteer-email">{{ record.email }}</span>
+                            <span class="volunteer-dept">{{ record.department }}</span>
+                          </div>
+                        </div>
+
+                        <!-- Attendance Summary Stats -->
+                        <div class="attendance-summary-stats">
+                          <div class="stat-box present-stat">
+                            <span class="stat-number">12</span>
+                            <span class="stat-label">Present</span>
+                          </div>
+                          <div class="stat-box absent-stat">
+                            <span class="stat-number">2</span>
+                            <span class="stat-label">Absent</span>
+                          </div>
+                          <div class="stat-box total-stat">
+                            <span class="stat-number">14</span>
+                            <span class="stat-label">Total Events</span>
+                          </div>
+                        </div>
+
+                        <!-- Attendance History Table -->
+                        <div class="attendance-history-section">
+                          <h5>Event Attendance History</h5>
+                          <div class="attendance-table-wrapper">
+                            <table class="attendance-history-table">
+                              <thead>
+                                <tr>
+                                  <th>Date</th>
+                                  <th>Event</th>
+                                  <th>Status</th>
+                                  <th>Tasks</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td>Apr 20, 2026</td>
+                                  <td>Mobile Kitchen Relief</td>
+                                  <td><span class="status-badge status-active">Present</span></td>
+                                  <td>Food preparation, Distribution</td>
+                                </tr>
+                                <tr>
+                                  <td>Apr 18, 2026</td>
+                                  <td>Community Outreach</td>
+                                  <td><span class="status-badge status-active">Present</span></td>
+                                  <td>Registration, Coordination</td>
+                                </tr>
+                                <tr>
+                                  <td>Apr 15, 2026</td>
+                                  <td>Emergency Response Training</td>
+                                  <td><span class="status-badge status-active">Present</span></td>
+                                  <td>Training participation</td>
+                                </tr>
+                                <tr>
+                                  <td>Apr 12, 2026</td>
+                                  <td>Fundraising Event</td>
+                                  <td><span class="status-badge status-inactive">Absent</span></td>
+                                  <td>—</td>
+                                </tr>
+                                <tr>
+                                  <td>Apr 10, 2026</td>
+                                  <td>Disaster Relief Operation</td>
+                                  <td><span class="status-badge status-active">Present</span></td>
+                                  <td>Supply packing, Logistics</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    }
+                  </div>
+
+                </section>
+              </div>
+            }
           </section>
         }
 
@@ -999,23 +1103,6 @@
                         }
                       </button>
                     </th>
-                    <th scope="col">
-                      <button type="button" class="sort-btn" (click)="sortBy('tasks')">
-                        Tasks Done
-                        @if (sortField() === 'tasks') {
-                          <span class="sort-indicator" aria-hidden="true">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
-                        }
-                      </button>
-                    </th>
-                    <th scope="col">
-                      <button type="button" class="sort-btn" (click)="sortBy('rating')">
-                        Rating
-                        @if (sortField() === 'rating') {
-                          <span class="sort-indicator" aria-hidden="true">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
-                        }
-                      </button>
-                    </th>
-                    <th scope="col">Performance</th>
                     <th scope="col">Last Activity</th>
                   </tr>
                 </thead>
@@ -1034,22 +1121,12 @@
                           </div>
                         </td>
                         <td>{{ metric.hoursServed }}h</td>
-                        <td>{{ metric.tasksCompleted }}</td>
-                        <td class="rating-cell">
-                          <span class="rating-stars" aria-hidden="true">{{ getRatingStars(metric.rating) }}</span>
-                          <span class="rating-value">{{ metric.rating }}</span>
-                        </td>
-                        <td>
-                          <span class="performance-badge" [class]="getPerformanceLevelClass(metric.attendanceRate)">
-                            {{ getPerformanceLevel(metric.attendanceRate) }}
-                          </span>
-                        </td>
                         <td class="last-activity">{{ metric.lastActivity | date: 'MMM d, yyyy' }}</td>
                       </tr>
                     }
                   } @else {
                     <tr class="empty-state-row">
-                      <td colspan="7">
+                      <td colspan="4">
                         <div class="empty-state">
                           <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                             <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
@@ -1496,103 +1573,6 @@
                   }
                 </select>
               </div>
-            </div>
-
-            <div class="stats-grid analytics-stats">
-              <article class="stat-card">
-                <div class="stat-icon total-icon">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="stat-content">
-                  <div class="label">Total Volunteers</div>
-                  <div class="value">{{ reportData()?.totalVolunteers ?? 0 }}</div>
-                  <div class="meta">
-                    <span>Registered members</span>
-                  </div>
-                </div>
-              </article>
-
-              <article class="stat-card">
-                <div class="stat-icon active-icon">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="stat-content">
-                  <div class="label">Active Volunteers</div>
-                  <div class="value">{{ reportData()?.activeVolunteers ?? 0 }}</div>
-                  <div class="meta">
-                    <span>Currently engaged</span>
-                  </div>
-                </div>
-              </article>
-
-              <article class="stat-card">
-                <div class="stat-icon hours-icon">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                    <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="stat-content">
-                  <div class="label">Total Hours</div>
-                  <div class="value">{{ reportData()?.totalHoursServed ?? 0 }}</div>
-                  <div class="meta">
-                    <span>Hours served</span>
-                  </div>
-                </div>
-              </article>
-
-              <article class="stat-card">
-                <div class="stat-icon attendance-icon">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M22 11l-4 4-2-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="stat-content">
-                  <div class="label">Avg Attendance</div>
-                  <div class="value">{{ reportData()?.averageAttendanceRate ?? 0 }}%</div>
-                  <div class="meter" role="progressbar"
-                    [attr.aria-valuenow]="reportData()?.averageAttendanceRate ?? 0" aria-valuemin="0" aria-valuemax="100">
-                    <div class="fill" [style.width.%]="reportData()?.averageAttendanceRate ?? 0"></div>
-                  </div>
-                </div>
-              </article>
-
-              <article class="stat-card">
-                <div class="stat-icon tasks-icon">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M9 11l3 3L22 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="stat-content">
-                  <div class="label">Tasks Done</div>
-                  <div class="value">{{ reportData()?.totalTasksCompleted ?? 0 }}</div>
-                  <div class="meta">Total tasks</div>
-                </div>
-              </article>
-
-              <article class="stat-card">
-                <div class="stat-icon rating-icon">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="stat-content">
-                  <div class="label">Avg Rating</div>
-                  <div class="value">{{ reportData()?.averageRating ?? 0 }}</div>
-                  <div class="meta">Out of 5.0</div>
-                </div>
-              </article>
             </div>
 
             <!-- New Analytics Sections -->
