@@ -1,7 +1,7 @@
 <h1 align="center">ServeTrack - Volunteer Management System</h1>
 
 <div align="center">
-[![CI](https://img.shields.io/badge/CI-Passing-green?style=flat-square&logo=githubactions&logoColor=white)](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/badge/CI-Passing-green?style=flat-square&logo=github-actions&logoColor=white)](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/actions/workflows/ci.yml)
 [![Security](https://img.shields.io/badge/Security-Secure-blue?style=flat-square&logo=gitleaks&logoColor=white)](https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system/actions/workflows/gitleaks.yml)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-8892BF?style=flat-square&logo=php&logoColor=white)](https://www.php.net/)
 [![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com/)
