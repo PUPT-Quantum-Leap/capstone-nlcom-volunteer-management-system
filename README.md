@@ -20,7 +20,7 @@ A volunteer management system for NLCOM (New Life Community Care Foundation) to 
 
 ## Repository Stats
 
-![Star History](https://api.star-history.com/svg?repos=PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system&type=Date)
+![Commit Activity Graph](https://github-readme-activity-graph.vercel.app/graph?username=PUPT-Quantum-Leap&repo=capstone-nlcom-volunteer-management-system&theme=github-light)
 
 ---
 
