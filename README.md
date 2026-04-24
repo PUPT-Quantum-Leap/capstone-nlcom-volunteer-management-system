@@ -18,6 +18,10 @@ A volunteer management system for NLCOM (New Life Community Care Foundation) to 
 - `servetrack-frontend/` – Angular 21 SPA
 - `servetrack-backend/` – Laravel 12 API
 
+## Repository Stats
+
+![Star History](https://api.star-history.com/svg?repos=PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system&type=Date)
+
 ---
 
 <div align="center">
