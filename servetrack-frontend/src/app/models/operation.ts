@@ -32,7 +32,6 @@ export type DashboardView =
   | 'ics'
   | 'users'
   | 'analytics'
-  | 'events'
   | 'sms'
   | 'backup';
 
