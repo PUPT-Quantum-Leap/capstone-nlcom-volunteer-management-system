@@ -1763,6 +1763,202 @@
                 }
               </article>
             </div>
+
+            <div class="nlcom-section">
+              <div class="nlcom-header">
+                <div class="nlcom-title-area">
+                  <h3>NLCOM x Metro World Child Feeding Operation</h3>
+                  <p class="nlcom-date">{{ nlcomOperation.date }}</p>
+                </div>
+                <div class="nlcom-tabs">
+                  <button type="button" class="nlcom-tab" [class.active]="nlcomChartView() === 'overview'" (click)="nlcomChartView.set('overview')">Overview</button>
+                  <button type="button" class="nlcom-tab" [class.active]="nlcomChartView() === 'teams'" (click)="nlcomChartView.set('teams')">Teams</button>
+                  <button type="button" class="nlcom-tab" [class.active]="nlcomChartView() === 'sites'" (click)="nlcomChartView.set('sites')">Sites</button>
+                  <button type="button" class="nlcom-tab" [class.active]="nlcomChartView() === 'timeline'" (click)="nlcomChartView.set('timeline')">Timeline</button>
+                </div>
+              </div>
+
+              @switch (nlcomChartView()) {
+                @case ('overview') {
+                  <div class="nlcom-overview">
+                    <div class="nlcom-hero-stat">
+                      <span class="hero-number">{{ nlcomOperation.totalPax | number }}</span>
+                      <span class="hero-label">Total Beneficiaries</span>
+                    </div>
+                    <div class="nlcom-stats-row">
+                      <div class="nlcom-stat-card">
+                        <span class="stat-num">{{ nlcomOperation.teams.length }}</span>
+                        <span class="stat-lbl">Teams Deployed</span>
+                      </div>
+                      <div class="nlcom-stat-card">
+                        <span class="stat-num">{{ nlcomOperation.allSites.length }}</span>
+                        <span class="stat-lbl">Feeding Sites</span>
+                      </div>
+                      <div class="nlcom-stat-card">
+                        <span class="stat-num">{{ getAmTeamsCount() }}</span>
+                        <span class="stat-lbl">AM Teams</span>
+                      </div>
+                      <div class="nlcom-stat-card">
+                        <span class="stat-num">{{ getPmTeamsCount() }}</span>
+                        <span class="stat-lbl">PM Teams</span>
+                      </div>
+                    </div>
+                    <div class="nlcom-pie-chart-area">
+                      <svg viewBox="0 0 400 300" class="pie-chart-svg">
+                        <defs>
+                          <linearGradient id="pieGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#3b82f6"/>
+                            <stop offset="100%" stop-color="#1d4ed8"/>
+                          </linearGradient>
+                          <linearGradient id="pieGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#10b981"/>
+                            <stop offset="100%" stop-color="#047857"/>
+                          </linearGradient>
+                          <linearGradient id="pieGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#f59e0b"/>
+                            <stop offset="100%" stop-color="#d97706"/>
+                          </linearGradient>
+                          <linearGradient id="pieGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#8b5cf6"/>
+                            <stop offset="100%" stop-color="#6d28d9"/>
+                          </linearGradient>
+                          <linearGradient id="pieGrad5" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ec4899"/>
+                            <stop offset="100%" stop-color="#be185d"/>
+                          </linearGradient>
+                          <linearGradient id="pieGrad6" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#06b6d4"/>
+                            <stop offset="100%" stop-color="#0e7490"/>
+                          </linearGradient>
+                        </defs>
+                        <g transform="translate(150, 150)">
+                          <path [attr.d]="getPieSlice(0, 400)" fill="url(#pieGrad1)" class="pie-slice"/>
+                          <path [attr.d]="getPieSlice(400, 770)" fill="url(#pieGrad2)" class="pie-slice"/>
+                          <path [attr.d]="getPieSlice(770, 1370)" fill="url(#pieGrad3)" class="pie-slice"/>
+                          <path [attr.d]="getPieSlice(1370, 1970)" fill="url(#pieGrad4)" class="pie-slice"/>
+                          <path [attr.d]="getPieSlice(1970, 2190)" fill="url(#pieGrad5)" class="pie-slice"/>
+                          <path [attr.d]="getPieSlice(2190, 2390)" fill="url(#pieGrad6)" class="pie-slice"/>
+                          <circle cx="0" cy="0" r="55" fill="white"/>
+                          <text x="0" y="3" text-anchor="middle" fill="#1e293b" font-weight="bold" font-size="18">6</text>
+                          <text x="0" y="20" text-anchor="middle" fill="#64748b" font-size="12">Teams</text>
+                        </g>
+                      </svg>
+                      <div class="pie-legend">
+                        @for (team of nlcomOperation.teams; track team.name; let i = $index) {
+                          <div class="legend-item">
+                            <span class="legend-color" [style.background]="getTeamColor(i)"></span>
+                            <span class="legend-label">{{ team.name }}</span>
+                            <span class="legend-value">{{ team.totalPax }} pax</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                @case ('teams') {
+                  <div class="nlcom-teams-grid">
+                    @for (team of nlcomOperation.teams; track team.name; let i = $index) {
+                      <div class="team-card" [style.border-left-color]="getTeamColor(i)">
+                        <div class="team-card-header">
+                          <span class="team-name">{{ team.name }}</span>
+                          <span class="team-base">{{ team.baseLocation }}</span>
+                        </div>
+                        <div class="team-meta">
+                          <span class="departure-time">Departure: {{ team.departureTime }}</span>
+                        </div>
+                        <div class="team-bar-container">
+                          <div class="team-bar" [style.width.%]="(team.totalPax / nlcomOperation.totalPax) * 100" [style.background]="getTeamColor(i)"></div>
+                          <span class="team-bar-label">{{ team.totalPax }} pax</span>
+                        </div>
+                        <div class="team-sites">
+                          <span class="sites-label">Sites: {{ team.sites.length }}</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                }
+
+                @case ('sites') {
+                  <div class="nlcom-sites-table">
+                    <table class="nlcom-data-table">
+                      <thead>
+                        <tr>
+                          <th>Site No</th>
+                          <th>Location</th>
+                          <th>Team</th>
+                          <th>Time</th>
+                          <th>Pax</th>
+                          <th>Details</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (site of nlcomOperation.allSites; track site.siteNo) {
+                          <tr>
+                            <td><span class="site-badge">{{ site.siteNo }}</span></td>
+                            <td class="location-cell">{{ site.location }}</td>
+                            <td><span class="team-tag" [style.background]="getTeamColorByName(site.team)">{{ site.team }}</span></td>
+                            <td class="time-cell">{{ site.time }}</td>
+                            <td class="pax-cell">{{ site.pax }}</td>
+                            <td class="details-cell">{{ site.details }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+
+                @case ('timeline') {
+                  <div class="nlcom-timeline">
+                    <div class="timeline-container">
+                      <div class="timeline-track"></div>
+                      <div class="am-section">
+                        <div class="timeline-section-label">Morning Operations (AM)</div>
+                        <div class="timeline-items">
+                          @for (team of nlcomOperation.teams.filter(t => t.departureTime.includes('am')); track team.name) {
+                            <div class="timeline-team">
+                              <div class="timeline-team-header">
+                                <span class="timeline-team-name">{{ team.name }}</span>
+                                <span class="timeline-departure">Departs {{ team.departureTime }}</span>
+                              </div>
+                              @for (site of team.sites; track site.siteNo) {
+                                <div class="timeline-site" [style.border-left-color]="getTeamColorByName(team.name)">
+                                  <span class="timeline-site-num">S{{ site.siteNo }}</span>
+                                  <span class="timeline-site-name">{{ site.location }}</span>
+                                  <span class="timeline-site-time">{{ site.time }}</span>
+                                  <span class="timeline-site-pax">{{ site.pax }} pax</span>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                      <div class="pm-section">
+                        <div class="timeline-section-label">Afternoon Operations (PM)</div>
+                        <div class="timeline-items">
+                          @for (team of nlcomOperation.teams.filter(t => t.departureTime.includes('pm')); track team.name) {
+                            <div class="timeline-team">
+                              <div class="timeline-team-header">
+                                <span class="timeline-team-name">{{ team.name }}</span>
+                                <span class="timeline-departure">Departs {{ team.departureTime }}</span>
+                              </div>
+                              @for (site of team.sites; track site.siteNo) {
+                                <div class="timeline-site" [style.border-left-color]="getTeamColorByName(team.name)">
+                                  <span class="timeline-site-num">S{{ site.siteNo }}</span>
+                                  <span class="timeline-site-name">{{ site.location }}</span>
+                                  <span class="timeline-site-time">{{ site.time }}</span>
+                                  <span class="timeline-site-pax">{{ site.pax }} pax</span>
+                                </div>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              }
+            </div>
           </section>
         }
 
