@@ -51,7 +51,7 @@ export class AdminDashboard implements OnInit {
   readonly defaultPhoto = '/assets/nlcom.png';
   readonly Math = Math;
 
-  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'events' | 'sms' | 'backup'>('overview');
+  currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'sms' | 'backup'>('overview');
   currentUser = computed(() => this.authService.currentUser());
   pageTitle = computed(() => {
     switch (this.currentView()) {
@@ -844,7 +844,7 @@ export class AdminDashboard implements OnInit {
     }
 
     if (query.includes('event')) {
-      this.setView('events');
+      this.setView('rsvps');
       return;
     }
 
