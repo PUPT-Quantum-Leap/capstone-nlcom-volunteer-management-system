@@ -29,50 +29,7 @@ import { RsvpService } from '../services/rsvp.service';
 import { User } from '../models/user';
 import { UserService } from '../services/user.service';
 import { AnalyticsService, ReportData } from '../services/analytics.service';
-
-interface EventModuleCard {
-  label: string;
-  value: number;
-  helper: string;
-}
-
-interface BackupRecord {
-  id: number;
-  name: string;
-  file_path: string;
-  size_bytes: number;
-  type: 'automatic' | 'manual';
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  description: string | null;
-  completed_at: string | null;
-  error_message: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface AttendanceRecord {
-  id: number;
-  volunteerName: string;
-  email: string;
-  department: string;
-  checkInTime: string | null;
-  checkOutTime: string | null;
-  duration: string | null;
-  status: 'present' | 'absent';
-}
-
-type DashboardView =
-  | 'overview'
-  | 'volunteers'
-  | 'attendance'
-  | 'performance'
-  | 'rsvps'
-  | 'ics'
-  | 'users'
-  | 'analytics'
-  | 'events'
-  | 'sms'
-  | 'backup';
+import { NLCOMOperation, DashboardView, EventModuleCard, BackupRecord, AttendanceRecord } from '../models/operation';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -307,6 +264,89 @@ export class AdminDashboard implements OnInit {
   backupActionLoading = signal(false);
   scheduledBackupEnabled = signal(false);
   scheduledBackupFrequency = signal<'daily' | 'weekly' | 'monthly'>('weekly');
+
+  readonly nlcomOperation: NLCOMOperation = {
+    date: 'November 22, 2025',
+    totalPax: 2390,
+    teams: [
+      {
+        name: 'TEAM ALPHA',
+        baseLocation: 'NL Las Piñas',
+        departureTime: '7:30am',
+        totalPax: 400,
+        sites: [
+          { siteNo: 1, location: 'Golden Acres (Talon 1)', time: '8:00am-9:30am', pax: 100, team: 'TEAM ALPHA', baseLocation: 'NL Las Piñas', details: 'Drop off GA team before VP, wait after feeding' },
+          { siteNo: 2, location: 'Villa Pangarap (Talon 5)', time: '8:00am-9:30am', pax: 150, team: 'TEAM ALPHA', baseLocation: 'NL Las Piñas', details: 'Park in VP, pick up GA team, go to Annex' },
+          { siteNo: 3, location: 'Annex (Talon 5)', time: '9:00am-12:00nn', pax: 150, team: 'TEAM ALPHA', baseLocation: 'NL Las Piñas', details: 'Proceed after 2 sites before heading back' },
+        ],
+      },
+      {
+        name: 'TEAM BRAVO',
+        baseLocation: 'Tondo AM',
+        departureTime: '7:30am',
+        totalPax: 370,
+        sites: [
+          { siteNo: 4, location: 'Market 3', time: '8:30am-10:00am', pax: 200, team: 'TEAM BRAVO', baseLocation: 'Tondo AM', details: 'Proceed to M3 until feeding' },
+          { siteNo: 5, location: 'NBBN', time: '11:00am-12:30pm', pax: 170, team: 'TEAM BRAVO', baseLocation: 'Tondo AM', details: 'Proceed to second site before heading back' },
+        ],
+      },
+      {
+        name: 'TEAM CHARLIE',
+        baseLocation: 'GIAWH AM',
+        departureTime: '8:30am',
+        totalPax: 600,
+        sites: [
+          { siteNo: 6, location: 'Masville', time: '9:00am-12:00nn', pax: 350, team: 'TEAM CHARLIE', baseLocation: 'GIAWH AM', details: 'Whole team to Masville' },
+          { siteNo: 7, location: 'Banai', time: '9:00am-10:30am', pax: 250, team: 'TEAM CHARLIE', baseLocation: 'GIAWH AM', details: 'Whole team to Banai' },
+        ],
+      },
+      {
+        name: 'TEAM DELTA',
+        baseLocation: 'GIAWH PM',
+        departureTime: '2:00pm',
+        totalPax: 600,
+        sites: [
+          { siteNo: 8, location: 'Sitio Pagkakaisa Zone', time: '2:00pm-3:30pm', pax: 300, team: 'TEAM DELTA', baseLocation: 'GIAWH PM', details: 'Transport food via pedicab' },
+          { siteNo: 9, location: 'Sucat Highway', time: '3:30pm-4:30pm', pax: 300, team: 'TEAM DELTA', baseLocation: 'GIAWH PM', details: 'Proceed to Sucat Highway' },
+        ],
+      },
+      {
+        name: 'TEAM ECHO',
+        baseLocation: 'Tondo PM',
+        departureTime: '2:00pm',
+        totalPax: 220,
+        sites: [
+          { siteNo: 10, location: 'Delpan', time: '3:30pm-4:30pm', pax: 220, team: 'TEAM ECHO', baseLocation: 'Tondo PM', details: 'Whole team to Delpan' },
+        ],
+      },
+      {
+        name: 'TEAM FOXTROT',
+        baseLocation: 'NL Muntinlupa',
+        departureTime: '2:00pm',
+        totalPax: 200,
+        sites: [
+          { siteNo: 11, location: 'Paraiso (Alabang)', time: '2:00pm-4:00pm', pax: 100, team: 'TEAM FOXTROT', baseLocation: 'NL Muntinlupa', details: 'Drop off Paraiso team before Sunrise' },
+          { siteNo: 12, location: 'Sunrise (Bayanan)', time: '2:00pm-4:00pm', pax: 100, team: 'TEAM FOXTROT', baseLocation: 'NL Muntinlupa', details: 'Park at Sunrise, pick up Paraiso team after' },
+        ],
+      },
+    ],
+    allSites: [
+      { siteNo: 1, location: 'Golden Acres (Talon 1)', time: '8:00am-9:30am', pax: 100, team: 'TEAM ALPHA', baseLocation: 'NL Las Piñas', details: 'Drop off GA team before VP, wait after feeding' },
+      { siteNo: 2, location: 'Villa Pangarap (Talon 5)', time: '8:00am-9:30am', pax: 150, team: 'TEAM ALPHA', baseLocation: 'NL Las Piñas', details: 'Park in VP, pick up GA team, go to Annex' },
+      { siteNo: 3, location: 'Annex (Talon 5)', time: '9:00am-12:00nn', pax: 150, team: 'TEAM ALPHA', baseLocation: 'NL Las Piñas', details: 'Proceed after 2 sites before heading back' },
+      { siteNo: 4, location: 'Market 3', time: '8:30am-10:00am', pax: 200, team: 'TEAM BRAVO', baseLocation: 'Tondo AM', details: 'Proceed to M3 until feeding' },
+      { siteNo: 5, location: 'NBBN', time: '11:00am-12:30pm', pax: 170, team: 'TEAM BRAVO', baseLocation: 'Tondo AM', details: 'Proceed to second site before heading back' },
+      { siteNo: 6, location: 'Masville', time: '9:00am-12:00nn', pax: 350, team: 'TEAM CHARLIE', baseLocation: 'GIAWH AM', details: 'Whole team to Masville' },
+      { siteNo: 7, location: 'Banai', time: '9:00am-10:30am', pax: 250, team: 'TEAM CHARLIE', baseLocation: 'GIAWH AM', details: 'Whole team to Banai' },
+      { siteNo: 8, location: 'Sitio Pagkakaisa Zone', time: '2:00pm-3:30pm', pax: 300, team: 'TEAM DELTA', baseLocation: 'GIAWH PM', details: 'Transport food via pedicab' },
+      { siteNo: 9, location: 'Sucat Highway', time: '3:30pm-4:30pm', pax: 300, team: 'TEAM DELTA', baseLocation: 'GIAWH PM', details: 'Proceed to Sucat Highway' },
+      { siteNo: 10, location: 'Delpan', time: '3:30pm-4:30pm', pax: 220, team: 'TEAM ECHO', baseLocation: 'Tondo PM', details: 'Whole team to Delpan' },
+      { siteNo: 11, location: 'Paraiso (Alabang)', time: '2:00pm-4:00pm', pax: 100, team: 'TEAM FOXTROT', baseLocation: 'NL Muntinlupa', details: 'Drop off Paraiso team before Sunrise' },
+      { siteNo: 12, location: 'Sunrise (Bayanan)', time: '2:00pm-4:00pm', pax: 100, team: 'TEAM FOXTROT', baseLocation: 'NL Muntinlupa', details: 'Park at Sunrise, pick up Paraiso team after' },
+    ],
+  };
+
+  nlcomChartView = signal<'overview' | 'teams' | 'sites' | 'timeline'>('overview');
   
   // Confirmation dialog state
   showConfirmationDialog = signal(false);
@@ -2348,6 +2388,39 @@ export class AdminDashboard implements OnInit {
         this.analyticsLoading.set(false);
       }
     });
+  }
+
+  private teamColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+  getTeamColor(index: number): string {
+    return this.teamColors[index % this.teamColors.length];
+  }
+
+  getTeamColorByName(teamName: string): string {
+    const teamIndex = this.nlcomOperation.teams.findIndex(t => t.name === teamName);
+    return this.teamColors[teamIndex % this.teamColors.length];
+  }
+
+  getAmTeamsCount(): number {
+    return this.nlcomOperation.teams.filter(t => t.departureTime.includes('am')).length;
+  }
+
+  getPmTeamsCount(): number {
+    return this.nlcomOperation.teams.filter(t => t.departureTime.includes('pm')).length;
+  }
+
+  getPieSlice(startAngle: number, endAngle: number): string {
+    const cx = 0, cy = 0, r = 100;
+    const start = (startAngle / 2390) * 360;
+    const end = (endAngle / 2390) * 360;
+    const startRad = (start - 90) * Math.PI / 180;
+    const endRad = (end - 90) * Math.PI / 180;
+    const x1 = cx + r * Math.cos(startRad);
+    const y1 = cy + r * Math.sin(startRad);
+    const x2 = cx + r * Math.cos(endRad);
+    const y2 = cy + r * Math.sin(endRad);
+    const largeArc = (end - start) > 180 ? 1 : 0;
+    return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
   }
 
   setReportType(type: 'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'): void {
