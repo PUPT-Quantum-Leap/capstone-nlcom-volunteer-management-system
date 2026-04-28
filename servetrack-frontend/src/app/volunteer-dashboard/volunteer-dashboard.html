@@ -17,44 +17,44 @@
     <nav class="sidebar-nav">
       <ul>
         <li>
-          <button type="button" [class.active]="currentView() === 'overview'" (click)="setView('overview')">
+          <a routerLink="overview" routerLinkActive="active" class="nav-link">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
             </svg>
             <span class="nav-text">Dashboard</span>
-          </button>
+          </a>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'profile'" (click)="setView('profile')">
+          <a routerLink="profile" routerLinkActive="active" class="nav-link">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
             <span class="nav-text">My Profile</span>
-          </button>
+          </a>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'schedule'" (click)="setView('schedule')">
+          <a routerLink="schedule" routerLinkActive="active" class="nav-link">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
             <span class="nav-text">Attendance Log</span>
-          </button>
+          </a>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'polls'" (click)="setView('polls')">
+          <a routerLink="polls" routerLinkActive="active" class="nav-link">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
             <span class="nav-text">Community Polls</span>
-          </button>
+          </a>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'request-changes'" (click)="setView('request-changes')">
+          <a routerLink="request-changes" routerLinkActive="active" class="nav-link">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
             <span class="nav-text">Request Changes</span>
-          </button>
+          </a>
         </li>
       </ul>
     </nav>
@@ -98,44 +98,44 @@
     <nav class="sidebar-nav">
       <ul>
         <li>
-          <button type="button" [class.active]="currentView() === 'overview'" (click)="setView('overview'); closeMobileSidebar()">
+          <a routerLink="overview" routerLinkActive="active" class="nav-link" (click)="closeMobileSidebar()">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
             </svg>
             <span class="nav-text">Dashboard</span>
-          </button>
+          </a>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'profile'" (click)="setView('profile'); closeMobileSidebar()">
+          <a routerLink="profile" routerLinkActive="active" class="nav-link" (click)="closeMobileSidebar()">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
             <span class="nav-text">My Profile</span>
-          </button>
+          </a>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'schedule'" (click)="setView('schedule'); closeMobileSidebar()">
+          <a routerLink="schedule" routerLinkActive="active" class="nav-link" (click)="closeMobileSidebar()">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
             <span class="nav-text">Attendance Log</span>
-          </button>
+          </a>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'polls'" (click)="setView('polls'); closeMobileSidebar()">
+          <a routerLink="polls" routerLinkActive="active" class="nav-link" (click)="closeMobileSidebar()">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
             </svg>
             <span class="nav-text">Community Polls</span>
-          </button>
+          </a>
         </li>
         <li>
-          <button type="button" [class.active]="currentView() === 'request-changes'" (click)="setView('request-changes'); closeMobileSidebar()">
+          <a routerLink="request-changes" routerLinkActive="active" class="nav-link" (click)="closeMobileSidebar()">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
             <span class="nav-text">Request Changes</span>
-          </button>
+          </a>
         </li>
       </ul>
     </nav>
@@ -151,15 +151,7 @@
             <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
           </svg>
         </button>
-        <h1 class="page-title">
-          @switch (currentView()) {
-            @case ('overview') { Dashboard }
-            @case ('profile') { My Profile }
-            @case ('schedule') { Attendance Log }
-            @case ('polls') { Community Polls }
-            @case ('request-changes') { Request Changes }
-          }
-        </h1>
+        <h1 class="page-title">Dashboard</h1>
       </div>
 
       <div class="top-bar-right">
@@ -206,794 +198,8 @@
       </section>
     }
 
-    <main class="dashboard-content">
-      @switch (currentView()) {
-        @case ('overview') {
-          <section class="overview-layout">
-            <article class="dashboard-clock-card">
-              <div class="clock-display">
-                <div class="clock-time-large">{{ currentTimeFormatted() }}</div>
-                <div class="clock-date-large">{{ currentDateFormatted() }}</div>
-              </div>
-            </article>
-
-            <div class="stats-grid">
-              <article class="stat-card">
-                <div class="stat-header">
-                  <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                  </svg>
-                  <div class="label">Attendance Goal</div>
-                </div>
-                <div class="value">{{ attendanceTotalHours() }} / {{ attendanceGoalHours() }} hrs</div>
-                <div class="meter">
-                  <div class="fill" [style.width.%]="attendanceRate()"></div>
-                </div>
-                <div class="meta">{{ attendanceRate() }}% of monthly goal reached</div>
-              </article>
-
-              <article class="stat-card">
-                <div class="stat-header">
-                  <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                  </svg>
-                  <div class="label">Current Location</div>
-                </div>
-                <div class="value">{{ locationAssigned() }}</div>
-                <div class="meta">Your active deployment area</div>
-              </article>
-
-              <article class="stat-card">
-                <div class="stat-header">
-                  <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/>
-                  </svg>
-                  <div class="label">Assigned Task</div>
-                </div>
-                <div class="value">{{ taskAssigned() }}</div>
-                <div class="meta">Your primary responsibility</div>
-              </article>
-
-              <article class="stat-card">
-                <div class="stat-header">
-                  <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14l2 2 4-4"/>
-                  </svg>
-                  <div class="label">Assignment Poll Status</div>
-                </div>
-                <div class="value">
-                  @if (hasSubmittedVote()) { Voted } 
-                  @else if (activePoll()) { Action Required } 
-                  @else { No Active Polls }
-                </div>
-                <div class="meta">Vote on assignments & availability</div>
-              </article>
-            </div>
-
-            <div class="quick-actions">
-              <button type="button" class="action-card" (click)="setView('profile')">
-                <div class="action-header">
-                  <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                  </svg>
-                  <h3>Update Profile</h3>
-                </div>
-                <p>Keep your contact information and preferences up to date.</p>
-              </button>
-              <button type="button" class="action-card" (click)="setView('polls')">
-                <div class="action-header">
-                  <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14l2 2 4-4"/>
-                  </svg>
-                  <h3>Vote on Assignments</h3>
-                </div>
-                <p>Express your preferences for assignments and availability.</p>
-              </button>
-              <button type="button" class="action-card" (click)="setView('schedule')">
-                <div class="action-header">
-                  <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
-                  <h3>View Schedule</h3>
-                </div>
-                <p>Check your upcoming shifts and service assignments.</p>
-              </button>
-            </div>
-          </section>
-        }
-
-        @case ('profile') {
-          <section class="profile-section">
-            <!-- Profile Header Card -->
-            <article class="profile-header-card">
-              <div class="profile-avatar-section">
-                <img [src]="profilePreviewUrl()" alt="Profile" class="profile-avatar" />
-                <div class="profile-meta">
-                  <h3>{{ profileForm.get('firstName')?.value || 'Your Name' }} {{ profileForm.get('lastName')?.value || '' }}</h3>
-                  <p>Volunteer Member</p>
-                </div>
-              </div>
-              <div class="profile-stats">
-                <div class="stat">
-                  <span class="stat-value">{{ profileCompletion() }}%</span>
-                  <span class="stat-label">Complete</span>
-                </div>
-              </div>
-            </article>
-
-            <form [formGroup]="profileForm" class="profile-accordion">
-              <!-- Personal Details Accordion -->
-              <div class="accordion-item">
-                <button type="button" class="accordion-trigger" (click)="toggleSection('personal')">
-                  <div class="accordion-header">
-                    <svg class="accordion-icon" [class.expanded]="expandedSection() === 'personal'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M19 12H5M12 19V5"/>
-                    </svg>
-                    <span>Personal Details</span>
-                  </div>
-                  @if (expandedSection() === 'personal') {
-                    <span class="badge-count">6 fields</span>
-                  }
-                </button>
-                
-                @if (expandedSection() === 'personal') {
-                  <div class="accordion-content">
-                    <div class="form-columns">
-                      <div class="form-group">
-                        <label>First Name</label>
-                        <input type="text" formControlName="firstName" placeholder="First Name" />
-                      </div>
-                      <div class="form-group">
-                        <label>Last Name</label>
-                        <input type="text" formControlName="lastName" placeholder="Last Name" />
-                      </div>
-                      <div class="form-group">
-                        <label>Email Address</label>
-                        <input type="email" formControlName="email" placeholder="email@example.com" />
-                      </div>
-                      <div class="form-group">
-                        <label>Mobile Number</label>
-                        <input type="text" formControlName="mobileNumber" placeholder="09xxxxxxxxx" />
-                      </div>
-                      <div class="form-group">
-                        <label>Birthdate</label>
-                        <input type="date" formControlName="birthdate" />
-                      </div>
-                      <div class="form-group">
-                        <label>Facebook Name</label>
-                        <input type="text" formControlName="facebookName" placeholder="FB Profile Name" />
-                      </div>
-                    </div>
-                    @if (isEditMode()) {
-                      <div class="upload-section">
-                        <label class="primary-btn compact" for="photo-upload">Upload Photo</label>
-                        <input id="photo-upload" type="file" (change)="onPhotoSelected($event)" accept="image/*" style="display: none;" />
-                      </div>
-                    }
-                  </div>
-                }
-              </div>
-
-              <!-- Service & Skills Accordion -->
-              <div class="accordion-item">
-                <button type="button" class="accordion-trigger" (click)="toggleSection('service')">
-                  <div class="accordion-header">
-                    <svg class="accordion-icon" [class.expanded]="expandedSection() === 'service'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M19 12H5M12 19V5"/>
-                    </svg>
-                    <span>Service & Skills</span>
-                  </div>
-                  @if (expandedSection() === 'service') {
-                    <span class="badge-count">5 fields</span>
-                  }
-                </button>
-                
-                @if (expandedSection() === 'service') {
-                  <div class="accordion-content">
-                    <div class="form-columns">
-                      <div class="form-group full">
-                        <label>Complete Address</label>
-                        <input type="text" formControlName="completeAddress" placeholder="Your full address" />
-                      </div>
-                      <div class="form-group">
-                        <label>Educational Attainment</label>
-                        <select formControlName="educationalAttainment">
-                          <option value="">Select Level</option>
-                          <option value="Elementary">Elementary</option>
-                          <option value="High School">High School</option>
-                          <option value="College">College</option>
-                          <option value="Post-Graduate">Post-Graduate</option>
-                        </select>
-                      </div>
-                      <div class="form-group">
-                        <label>Availability</label>
-                        <select formControlName="availability">
-                          <option value="">Select Availability</option>
-                          <option value="weekdays">Weekdays</option>
-                          <option value="weekends">Weekends</option>
-                          <option value="flexible">Flexible</option>
-                          <option value="on-call">On-call</option>
-                        </select>
-                      </div>
-                      <div class="form-group">
-                        <label>Volunteer Preference</label>
-                        <select formControlName="volunteerPreference" (change)="onVolunteerPreferenceChange($event)">
-                          <option value="">Select Preference</option>
-                          <option value="sidewalk-sunday-school">Teaching & Education</option>
-                          <option value="mobile-kitchen">Mobile Kitchen</option>
-                          <option value="relief-operations">Relief Operations</option>
-                          <option value="safety-emergency">Safety & Emergency</option>
-                          <option value="medical-operations">Medical Operations</option>
-                          <option value="wherever-needed">Wherever needed</option>
-                          <option value="other">Other</option>
-                        </select>
-                      </div>
-                      @if (showOtherPreference()) {
-                        <div class="form-group full">
-                          <label>Specify Other Preference</label>
-                          <input type="text" formControlName="otherPreference" placeholder="Please specify" />
-                        </div>
-                      }
-                      <div class="form-group full">
-                        <label>Training & Experience</label>
-                        <textarea formControlName="trainingExperience" placeholder="Describe relevant experience" rows="2"></textarea>
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
-
-              <!-- Emergency Contact Accordion -->
-              <div class="accordion-item">
-                <button type="button" class="accordion-trigger" (click)="toggleSection('emergency')">
-                  <div class="accordion-header">
-                    <svg class="accordion-icon" [class.expanded]="expandedSection() === 'emergency'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M19 12H5M12 19V5"/>
-                    </svg>
-                    <span>Emergency Contact</span>
-                  </div>
-                  @if (expandedSection() === 'emergency') {
-                    <span class="badge-count">3 fields</span>
-                  }
-                </button>
-                
-                @if (expandedSection() === 'emergency') {
-                  <div class="accordion-content">
-                    <div class="form-columns">
-                      <div class="form-group">
-                        <label>Contact Name</label>
-                        <input type="text" formControlName="emergencyContactName" placeholder="Full Name" />
-                      </div>
-                      <div class="form-group">
-                        <label>Relationship</label>
-                        <input type="text" formControlName="emergencyContactRelationship" placeholder="e.g. Parent, Spouse" />
-                      </div>
-                      <div class="form-group">
-                        <label>Contact Number</label>
-                        <input type="text" formControlName="emergencyContactNumber" placeholder="09xxxxxxxxx" />
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
-            </form>
-
-            <!-- Action Buttons -->
-            <div class="profile-actions">
-              @if (isEditMode()) {
-                <button type="button" class="outline-btn" (click)="toggleEditMode()">Cancel</button>
-                <button type="button" class="primary-btn" (click)="saveProfile()" [disabled]="profileForm.invalid">Save Changes</button>
-              } @else {
-                <button type="button" class="primary-btn" (click)="toggleEditMode()">Edit Profile</button>
-              }
-            </div>
-          </section>
-        }
-
-        @case ('schedule') {
-          <section class="attendance-section">
-            <article class="panel">
-              <div class="panel-header">
-                <h2>Attendance History</h2>
-                <div class="panel-actions">
-                  <select [value]="attendancePeriod()" (change)="onPeriodChange($event)" class="outline-btn" style="padding: 0.5rem;">
-                    <option value="all">All Time</option>
-                    <option value="monthly">This Month</option>
-                    <option value="weekly">This Week</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Task / Event</th>
-                      <th>Location</th>
-                      <th>Hours</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (item of attendanceItems(); track item.attendance_id) {
-                      <tr>
-                        <td>{{ item.date | date:'mediumDate' }}</td>
-                        <td>{{ item.description || 'Shift log entry' }}</td>
-                        <td>{{ item.location || 'N/A' }}</td>
-                        <td>{{ item.hours }} hrs</td>
-                        <td>
-                          <span class="status-badge" [class.completed]="item.status === 'approved'" [class.pending]="item.status === 'pending'" [class.rejected]="item.status === 'rejected'">
-                            {{ item.status | titlecase }}
-                          </span>
-                        </td>
-                      </tr>
-                    } @empty {
-                      <tr>
-                        <td colspan="5">
-                          <div class="empty-state">
-                            <p>No attendance records found for this period.</p>
-                          </div>
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            </article>
-          </section>
-        }
-
-        @case ('polls') {
-          <section class="poll-section">
-            <!-- Poll Tabs -->
-            <div class="poll-tabs">
-              <button type="button" class="tab-btn" [class.active]="pollTab() === 'active'" (click)="setPollTab('active')">
-                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-                Active Poll
-                @if (activePoll(); as poll) {
-                  <span class="tab-badge">1</span>
-                }
-              </button>
-              <button type="button" class="tab-btn" [class.active]="pollTab() === 'past'" (click)="setPollTab('past')">
-                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
-                </svg>
-                Past Polls
-                <span class="tab-badge">{{ pastPolls().length }}</span>
-              </button>
-            </div>
-
-            <!-- Active Poll Tab -->
-            @if (pollTab() === 'active') {
-              @if (activePoll(); as poll) {
-                <article class="panel poll-card">
-                  <div class="poll-header">
-                    <div class="poll-status-badge" [class.active]="poll.status === 'active'">
-                      {{ poll.status === 'active' ? 'Open for Voting' : poll.status | titlecase }}
-                    </div>
-                    <h2 class="poll-question">{{ poll.title }}</h2>
-                    <p class="poll-description">{{ poll.description }}</p>
-                    <div class="poll-meta-bar">
-                      <span class="poll-meta-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                        </svg>
-                        Event Date: {{ poll.date | date:'mediumDate' }}
-                      </span>
-                      <span class="poll-meta-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
-                        {{ getTotalVotes(poll) }} volunteers voted
-                      </span>
-                    </div>
-
-                    <!-- Closing Date Reminder -->
-                    <div class="closing-reminder" [class.urgent]="getDaysUntilClosing(poll.cutOffDay, poll.date).includes('today') || getDaysUntilClosing(poll.cutOffDay, poll.date).includes('tomorrow')">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                      </svg>
-                      <span>
-                        <strong>Voting closes:</strong> {{ poll.cutOffDay || poll.date | date:'mediumDate' }}
-                        <span class="days-left">({{ getDaysUntilClosing(poll.cutOffDay, poll.date) }})</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  @if (poll.status !== 'active') {
-                    <div class="poll-status-message">
-                      <div class="status-icon closed">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                        </svg>
-                      </div>
-                      <p>This poll is currently <strong>{{ poll.status }}</strong>.</p>
-                      <span class="status-hint">Check back later for new community updates.</span>
-                    </div>
-                  } @else if (!hasSubmittedVote()) {
-                    <div class="poll-voting-area">
-                      <p class="poll-prompt">Select your preferred option:</p>
-                      <div class="poll-options">
-                        @for (option of poll.options; track option.id) {
-                          <label class="poll-option" [class.active]="selectedOptionId() === option.id" [class.disabled]="isOptionFull(option)">
-                            <div class="option-radio">
-                              <input type="radio" [name]="'poll-' + poll.id" [value]="option.id" (change)="selectedOptionId.set(option.id)" [disabled]="isOptionFull(option)" />
-                              <span class="radio-indicator"></span>
-                            </div>
-                            <div class="option-content">
-                              <span class="option-label">{{ option.timeSlot }}</span>
-                              <span class="option-meta">
-                                @if (isOptionFull(option)) {
-                                  <span class="full-badge">Full</span>
-                                } @else {
-                                  <span class="spots-left">{{ option.capacity - option.votes }} spots left</span>
-                                }
-                              </span>
-                            </div>
-                            <div class="option-vote-count">
-                              <span class="vote-number">{{ option.votes }}</span>
-                              <span class="vote-label">votes</span>
-                            </div>
-                            <div class="option-fill-bar" [style.width.%]="(option.votes / option.capacity) * 100"></div>
-                          </label>
-                        }
-                      </div>
-                      <div class="poll-actions">
-                        <button type="button" class="primary-btn vote-btn" (click)="submitPollVote()" [disabled]="!selectedOptionId() || isLoading()">
-                          @if (isLoading()) {
-                            <span class="btn-spinner"></span>
-                            Submitting...
-                          } @else {
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                            </svg>
-                            Submit Vote
-                          }
-                        </button>
-                      </div>
-                      @if (pollError()) {
-                        <div class="poll-error">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                          </svg>
-                          {{ pollError() }}
-                        </div>
-                      }
-                    </div>
-                  } @else {
-                    <div class="poll-results">
-                      <div class="results-header">
-                        <div class="results-icon">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                          </svg>
-                        </div>
-                        <div class="results-info">
-                          <h3>Thank you for voting!</h3>
-                          <p>Your response has been recorded.</p>
-                        </div>
-                      </div>
-                      <div class="results-list">
-                        @for (option of poll.options; track option.id) {
-                          <div class="result-item" [class.most-voted]="option.votes === getMostVotedOption(poll)?.votes && option.votes > 0">
-                            <div class="result-info">
-                              <span class="result-label">{{ option.timeSlot }}</span>
-                              <div class="result-stats">
-                                <span class="result-votes">{{ option.votes }} votes</span>
-                                <span class="result-percentage">{{ getVotePercentage(option, poll) }}%</span>
-                              </div>
-                            </div>
-                            <div class="result-bar-container">
-                              <div class="result-bar" [style.width.%]="getVotePercentage(option, poll)"></div>
-                            </div>
-                            @if (option.votes === getMostVotedOption(poll)?.votes && option.votes > 0) {
-                              <div class="most-voted-badge">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                                </svg>
-                                Most Popular
-                              </div>
-                            }
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  }
-                </article>
-              } @else {
-                <div class="empty-state poll-empty">
-                  <div class="empty-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                    </svg>
-                  </div>
-                  <h3>No Active Polls</h3>
-                  <p>There are no active community polls at this time. Check the Past Polls tab to see previous voting results.</p>
-                </div>
-              }
-            }
-
-            <!-- Past Polls Tab -->
-            @if (pollTab() === 'past') {
-              @if (selectedPastPoll(); as selectedPoll) {
-                <!-- Past Poll Detail View -->
-                <article class="panel poll-card past-poll-detail">
-                  <button type="button" class="back-btn" (click)="closePastPollDetail()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
-                    </svg>
-                    Back to Past Polls
-                  </button>
-
-                  <div class="poll-header">
-                    <div class="poll-status-badge closed">Closed</div>
-                    <h2 class="poll-question">{{ selectedPoll.title }}</h2>
-                    <p class="poll-description">{{ selectedPoll.description }}</p>
-                    <div class="poll-meta-bar">
-                      <span class="poll-meta-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                        </svg>
-                        Event Date: {{ selectedPoll.date | date:'mediumDate' }}
-                      </span>
-                      <span class="poll-meta-item">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
-                        {{ getTotalVotes(selectedPoll) }} total votes
-                      </span>
-                    </div>
-                  </div>
-
-                  @if (hasUserVotedOnPoll(selectedPoll.id)) {
-                    <div class="user-vote-indicator">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                      </svg>
-                      <span>You participated in this poll</span>
-                    </div>
-                  }
-
-                  <div class="poll-results final-results">
-                    <h3 class="results-title">Voting Summary</h3>
-                    <p class="results-subtitle">Volunteer availability preferences for this event</p>
-                    <div class="results-list">
-                      @for (option of selectedPoll.options; track option.id) {
-                        <div class="result-item" [class.user-choice]="hasUserVotedOnPoll(selectedPoll.id) && option.id === 4">
-                          <div class="result-info">
-                            <span class="result-label">{{ option.timeSlot }}</span>
-                            <div class="result-stats">
-                              <span class="result-votes">{{ option.votes }} volunteers</span>
-                              <span class="result-percentage">{{ getVotePercentage(option, selectedPoll) }}%</span>
-                            </div>
-                          </div>
-                          <div class="result-bar-container">
-                            <div class="result-bar" [style.width.%]="getVotePercentage(option, selectedPoll)"></div>
-                          </div>
-                          @if (hasUserVotedOnPoll(selectedPoll.id) && option.id === 4) {
-                            <div class="user-choice-badge">Your Selection</div>
-                          }
-                        </div>
-                      }
-                    </div>
-                  </div>
-                </article>
-              } @else {
-                <!-- Past Polls List -->
-                <div class="past-polls-list">
-                  @for (poll of pastPolls(); track poll.id) {
-                    <article class="panel past-poll-card" (click)="selectPastPoll(poll)">
-                      <div class="past-poll-header">
-                        <div class="past-poll-status">Closed</div>
-                        <h3 class="past-poll-title">{{ poll.title }}</h3>
-                        <p class="past-poll-date">{{ poll.date | date:'mediumDate' }}</p>
-                      </div>
-                      <div class="past-poll-summary">
-                        <div class="summary-item">
-                          <span class="summary-value">{{ getTotalVotes(poll) }}</span>
-                          <span class="summary-label">Volunteers</span>
-                        </div>
-                        <div class="summary-item">
-                          <span class="summary-value">{{ poll.options.length }}</span>
-                          <span class="summary-label">Time Slots</span>
-                        </div>
-                        <div class="summary-item popular-preview">
-                          <span class="summary-value">{{ getMostVotedOption(poll)?.votes || 0 }}</span>
-                          <span class="summary-label">Top Choice</span>
-                        </div>
-                      </div>
-                      <div class="past-poll-popular">
-                        <span class="popular-label">Most volunteers chose:</span>
-                        <span class="popular-value">{{ getMostVotedOption(poll)?.timeSlot || 'No votes' }}</span>
-                      </div>
-                      @if (hasUserVotedOnPoll(poll.id)) {
-                        <div class="participated-badge">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                          </svg>
-                          You Voted
-                        </div>
-                      }
-                      <div class="view-details-hint">
-                        <span>Click to view details</span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <polyline points="9 18 15 12 9 6"/>
-                        </svg>
-                      </div>
-                    </article>
-                  } @empty {
-                    <div class="empty-state poll-empty">
-                      <div class="empty-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
-                        </svg>
-                      </div>
-                      <h3>No Past Polls</h3>
-                      <p>There are no past polls to display at this time.</p>
-                    </div>
-                  }
-                </div>
-              }
-            }
-          </section>
-        }
-
-        @case ('request-changes') {
-          <section class="request-changes-section">
-            <!-- Request Tabs -->
-            <div class="request-tabs">
-              <button type="button" class="tab-btn" [class.active]="requestTab() === 'change-task'" (click)="setRequestTab('change-task')">
-                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-                </svg>
-                Change Task
-              </button>
-              <button type="button" class="tab-btn" [class.active]="requestTab() === 'close-poll'" (click)="setRequestTab('close-poll')">
-                <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                </svg>
-                Close Poll / Not Attending
-              </button>
-            </div>
-
-            <!-- Change Task Form -->
-            @if (requestTab() === 'change-task') {
-              <article class="panel request-card">
-                <div class="request-header">
-                  <h2>Request Task Change</h2>
-                  <p>Submit a request to change your assigned task or volunteer role.</p>
-                </div>
-
-                <div class="request-form">
-                  <div class="form-group">
-                    <label>Select New Task</label>
-                    <select [value]="selectedTask()" (change)="selectedTask.set($any($event.target).value)">
-                      <option value="">Select a task...</option>
-                      @for (task of availableTasks(); track task) {
-                        <option [value]="task">{{ task }}</option>
-                      }
-                    </select>
-                  </div>
-
-                  <div class="form-group">
-                    <label>Reason for Change</label>
-                    <textarea [value]="changeTaskReason()" (input)="changeTaskReason.set($any($event.target).value)" rows="3" placeholder="Please explain why you want to change your task..."></textarea>
-                  </div>
-
-                  <!-- Status Display -->
-                  @if (changeTaskStatus() !== 'pending' || changeTaskResponseReason()) {
-                    <div class="status-display" [class.approved]="changeTaskStatus() === 'approved'" [class.rejected]="changeTaskStatus() === 'rejected'">
-                      <div class="status-header">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          @if (changeTaskStatus() === 'approved') {
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                          } @else if (changeTaskStatus() === 'rejected') {
-                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                          } @else {
-                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                          }
-                        </svg>
-                        <span class="status-label">{{ changeTaskStatus() | titlecase }}</span>
-                      </div>
-                      @if (changeTaskResponseReason()) {
-                        <p class="status-reason">{{ changeTaskResponseReason() }}</p>
-                      }
-                    </div>
-                  }
-
-                  <div class="request-actions">
-                    <button type="button" class="outline-btn" (click)="resetChangeTaskForm()">Reset</button>
-                    <button type="button" class="primary-btn" (click)="submitChangeTaskRequest()" [disabled]="!selectedTask() || !changeTaskReason() || isLoading()">
-                      @if (isLoading()) {
-                        <span class="btn-spinner"></span>
-                        Submitting...
-                      } @else {
-                        Submit Request
-                      }
-                    </button>
-                  </div>
-                </div>
-              </article>
-            }
-
-            <!-- Close Poll / Not Attending Form -->
-            @if (requestTab() === 'close-poll') {
-              <article class="panel request-card">
-                <div class="request-header">
-                  <h2>Change Attendance or Withdraw</h2>
-                  <p>Request to change your selected time or notify that you cannot attend.</p>
-                </div>
-
-                <div class="request-form">
-                  <div class="form-group">
-                    <label>What would you like to do?</label>
-                    <div class="radio-group">
-                      <label class="radio-option" [class.active]="closePollAction() === 'change-time'">
-                        <input type="radio" name="closePollAction" value="change-time" (change)="closePollAction.set('change-time')" [checked]="closePollAction() === 'change-time'" />
-                        <span class="radio-indicator"></span>
-                        <span>Change to a different time slot</span>
-                      </label>
-                      <label class="radio-option" [class.active]="closePollAction() === 'not-attending'">
-                        <input type="radio" name="closePollAction" value="not-attending" (change)="closePollAction.set('not-attending')" [checked]="closePollAction() === 'not-attending'" />
-                        <span class="radio-indicator"></span>
-                        <span>I cannot attend anymore</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  @if (closePollAction() === 'change-time') {
-                    <div class="form-group">
-                      <label>Preferred New Time</label>
-                      <input type="text" [(ngModel)]="closePollNewTime" [ngModelOptions]="{standalone: true}" placeholder="e.g., Saturday Morning 9:00 AM" />
-                    </div>
-                  }
-
-                  <div class="form-group">
-                    <label>Reason</label>
-                    <textarea [(ngModel)]="closePollReason" [ngModelOptions]="{standalone: true}" rows="3" placeholder="Please explain your reason..."></textarea>
-                  </div>
-
-                  <!-- Status Display -->
-                  @if (closePollStatus() !== 'pending' || closePollResponseReason()) {
-                    <div class="status-display" [class.approved]="closePollStatus() === 'approved'" [class.rejected]="closePollStatus() === 'rejected'">
-                      <div class="status-header">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          @if (closePollStatus() === 'approved') {
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                          } @else if (closePollStatus() === 'rejected') {
-                            <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                          } @else {
-                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                          }
-                        </svg>
-                        <span class="status-label">{{ closePollStatus() | titlecase }}</span>
-                      </div>
-                      @if (closePollResponseReason()) {
-                        <p class="status-reason">{{ closePollResponseReason() }}</p>
-                      }
-                    </div>
-                  }
-
-                  <div class="request-actions">
-                    <button type="button" class="outline-btn" (click)="resetClosePollForm()">Reset</button>
-                    <button type="button" class="primary-btn" (click)="submitClosePollRequest()" [disabled]="!closePollReason() || (closePollAction() === 'change-time' && !closePollNewTime()) || isLoading()">
-                      @if (isLoading()) {
-                        <span class="btn-spinner"></span>
-                        Submitting...
-                      } @else {
-                        Submit Request
-                      }
-                    </button>
-                  </div>
-                </div>
-              </article>
-            }
-          </section>
-        }
-      }
+<main class="dashboard-content">
+      <router-outlet></router-outlet>
     </main>
   </div>
 </div>

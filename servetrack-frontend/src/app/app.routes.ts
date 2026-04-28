@@ -7,6 +7,11 @@ import { Signup } from './auth/signup/signup';
 import { SignupForm } from './auth/signup-form/signup-form';
 import { AdminAuthPage } from './auth/admin-auth-page/admin-auth-page';
 import { VolunteerDashboard } from './volunteer-dashboard/volunteer-dashboard';
+import { DashboardOverview } from './volunteer-dashboard/pages/dashboard-overview/dashboard-overview';
+import { Profile } from './volunteer-dashboard/pages/profile/profile';
+import { Schedule } from './volunteer-dashboard/pages/schedule/schedule';
+import { Polls } from './volunteer-dashboard/pages/polls/polls';
+import { RequestChanges } from './volunteer-dashboard/pages/request-changes/request-changes';
 import { AdminDashboard } from './admin-dashboard/admin-dashboard';
 import { NotFound } from './not-found/not-found';
 import { IncidentCommandSystemComponent } from './incident-command-system/incident-command-system';
@@ -24,7 +29,19 @@ export const routes: Routes = [
   { path: 'rsvp', component: RsvpComponent },
   { path: 'rsvp/:slug', component: RsvpComponent },
   { path: 'incident-command-system', component: IncidentCommandSystemComponent },
-  { path: 'volunteer-dashboard', component: VolunteerDashboard, canActivate: [authGuard] },
+  {
+    path: 'volunteer-dashboard',
+    component: VolunteerDashboard,
+    canActivate: [authGuard],
+    children: [
+      { path: '', redirectTo: 'overview', pathMatch: 'full' },
+      { path: 'overview', component: DashboardOverview },
+      { path: 'profile', component: Profile },
+      { path: 'schedule', component: Schedule },
+      { path: 'polls', component: Polls },
+      { path: 'request-changes', component: RequestChanges },
+    ],
+  },
   { path: 'admin-dashboard', component: AdminDashboard, canActivate: [authGuard] },
   {
     path: 'terms-of-service',

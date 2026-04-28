@@ -8,7 +8,7 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
   passwordMatchValidator,
   passwordStrengthValidator,
@@ -43,7 +43,7 @@ interface Poll {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, FormsModule, DatePipe, TitleCasePipe],
+  imports: [ReactiveFormsModule, FormsModule, DatePipe, TitleCasePipe, RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './volunteer-dashboard.html',
   styleUrl: './volunteer-dashboard.scss',
 })
@@ -58,7 +58,6 @@ export class VolunteerDashboard implements OnInit {
   readonly defaultPhoto = '/assets/volunteer1.png';
 
   // ── Navigation State (Fixed menu close issue) ────────────────────────────
-  currentView = signal<'overview' | 'profile' | 'schedule' | 'request-changes' | 'polls'>('overview');
   userName = signal(this.authService.currentUser()?.name || 'Volunteer');
   sidebarCollapsed = signal(false);
   mobileSidebarOpen = signal(false);
@@ -518,11 +517,6 @@ export class VolunteerDashboard implements OnInit {
     }
   }
 
-  setView(view: 'overview' | 'profile' | 'schedule' | 'request-changes' | 'polls'): void {
-    this.currentView.set(view);
-    // Removed auto-closing per user request - sidebar stays open
-  }
-
   onOverlayClick(): void {
     this.mobileSidebarOpen.set(false);
   }
@@ -546,21 +540,21 @@ export class VolunteerDashboard implements OnInit {
     }
 
     if (query.includes('profile') || query.includes('name') || query.includes('signup')) {
-      this.setView('profile');
+      this.router.navigate(['/volunteer-dashboard/profile']);
       return;
     }
 
     if (query.includes('schedule') || query.includes('attendance') || query.includes('task')) {
-      this.setView('schedule');
+      this.router.navigate(['/volunteer-dashboard/schedule']);
       return;
     }
 
     if (query.includes('request') || query.includes('change')) {
-      this.setView('request-changes');
+      this.router.navigate(['/volunteer-dashboard/request-changes']);
       return;
     }
 
-    this.setView('overview');
+    this.router.navigate(['/volunteer-dashboard/overview']);
   }
 
   toggleNotifications(): void {
