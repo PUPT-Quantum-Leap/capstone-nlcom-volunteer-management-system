@@ -1915,7 +1915,7 @@
                       <div class="am-section">
                         <div class="timeline-section-label">Morning Operations (AM)</div>
                         <div class="timeline-items">
-                          @for (team of nlcomOperation.teams.filter(t => t.departureTime.includes('am')); track team.name) {
+                          @for (team of getAmTeams(); track team.name) {
                             <div class="timeline-team">
                               <div class="timeline-team-header">
                                 <span class="timeline-team-name">{{ team.name }}</span>
@@ -1936,7 +1936,7 @@
                       <div class="pm-section">
                         <div class="timeline-section-label">Afternoon Operations (PM)</div>
                         <div class="timeline-items">
-                          @for (team of nlcomOperation.teams.filter(t => t.departureTime.includes('pm')); track team.name) {
+                          @for (team of getPmTeams(); track team.name) {
                             <div class="timeline-team">
                               <div class="timeline-team-header">
                                 <span class="timeline-team-name">{{ team.name }}</span>

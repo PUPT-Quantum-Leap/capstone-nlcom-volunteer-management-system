@@ -2409,6 +2409,14 @@ export class AdminDashboard implements OnInit {
     return this.nlcomOperation.teams.filter(t => t.departureTime.includes('pm')).length;
   }
 
+  getAmTeams(): any[] {
+    return this.nlcomOperation.teams.filter(t => t.departureTime.includes('am'));
+  }
+
+  getPmTeams(): any[] {
+    return this.nlcomOperation.teams.filter(t => t.departureTime.includes('pm'));
+  }
+
   getPieSlice(startAngle: number, endAngle: number): string {
     const cx = 0, cy = 0, r = 100;
     const start = (startAngle / 2390) * 360;
