@@ -266,12 +266,12 @@ export class AdminDashboard implements OnInit {
   scheduledBackupFrequency = signal<'daily' | 'weekly' | 'monthly'>('weekly');
 
   amTeams = computed(() =>
-    this.nlcomOperation.teams.filter(t => t.departureTime.includes('am'))
+    this.nlcomOperation.teams.filter(t => t.departureTime.toLowerCase().includes('am'))
   );
 
-  pmTeams = computed(() =>
-    this.nlcomOperation.teams.filter(t => t.departureTime.includes('pm'))
-  );
+    pmTeams = computed(() =>
+      this.nlcomOperation.teams.filter(t => t.departureTime.toLowerCase().includes('pm'))
+    );
 
   readonly nlcomOperation: NLCOMOperation = {
     date: 'November 22, 2025',
