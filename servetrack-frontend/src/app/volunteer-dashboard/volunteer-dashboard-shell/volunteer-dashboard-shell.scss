@@ -100,7 +100,7 @@
   display: flex;
 }
 
-// Sidebar - refined with subtle depth
+// Sidebar - Modern Glassmorphism (matching admin dashboard)
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
@@ -110,17 +110,23 @@
   border-right: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
-  z-index: 40;
+  z-index: 50;
   transition: width var(--transition-slow);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.02);
 
   &.collapsed {
     width: var(--sidebar-collapsed-width);
 
     .logo-text,
+    .menu-label,
     .nav-text,
     .user-info {
-      opacity: 0;
-      visibility: hidden;
+      display: none;
+    }
+
+    .logo-area {
+      justify-content: center;
+      padding: 0.5rem;
     }
 
     .sidebar-nav button {
@@ -180,7 +186,7 @@
 
 .sidebar-nav {
   flex: 1;
-  padding: 1rem 0.75rem;
+  padding: 1.25rem 0.75rem;
   overflow-y: auto;
 
   ul {
@@ -188,6 +194,20 @@
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+  }
+
+  .menu-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.5rem 1rem;
+    margin-top: 0.5rem;
+    
+    &:first-child {
+      margin-top: 0;
+    }
   }
 
   button {
@@ -206,17 +226,30 @@
     transition: all var(--transition-fast);
     white-space: nowrap;
 
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+      opacity: 0.7;
+      transition: opacity var(--transition-fast);
+    }
+
     &:hover {
       background: var(--gray-100);
       color: var(--gray-900);
+      
+      .nav-icon {
+        opacity: 1;
+      }
     }
 
     &.active {
-      background: var(--primary-50);
-      color: var(--primary-600);
-
+      background: var(--sidebar-active-bg);
+      color: var(--sidebar-active-text);
+      font-weight: 600;
+      
       .nav-icon {
-        color: var(--primary-500);
+        opacity: 1;
+        color: var(--sidebar-active-text);
       }
     }
   }
@@ -235,8 +268,9 @@
 }
 
 .sidebar-footer {
-  padding: 1rem 0.75rem;
+  padding: 1.25rem;
   border-top: 1px solid var(--sidebar-border);
+  background: rgba(249, 250, 251, 0.5);
 }
 
 .user-brief {
