@@ -829,9 +829,14 @@ class VolunteerController extends Controller
         ];
 
         if ($preference === 'other' && ! empty($otherPreference)) {
+            // Original: 'other' key with custom text in otherPreference
             $positionName = $otherPreference;
         } elseif (isset($preferenceMap[$preference])) {
+            // Map key to display name
             $positionName = $preferenceMap[$preference];
+        } elseif (! in_array($preference, array_keys($preferenceMap)) && $preference !== 'other') {
+            // Custom value sent directly (not a key, not 'other') - treat as custom position
+            $positionName = $preference;
         }
 
         $position = Position::firstOrCreate(['name' => $positionName]);

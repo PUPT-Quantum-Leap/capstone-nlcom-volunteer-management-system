@@ -93,7 +93,7 @@
 
 // Profile Header Card
 .profile-header-card {
-  background: var(--white);
+  background: var(--surface-primary);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-xl);
   padding: 1.5rem;
@@ -207,7 +207,7 @@
 }
 
 .accordion-item {
-  background: var(--white);
+  background: var(--surface-primary);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-xl);
   overflow: hidden;
@@ -295,7 +295,7 @@
     border-radius: var(--radius-md);
     font-size: 0.875rem;
     color: var(--gray-900);
-    background: var(--white);
+    background: var(--surface-primary);
     transition: all var(--transition-fast);
 
     &:focus {
@@ -318,8 +318,175 @@
 
 .error-text {
   font-size: 0.75rem;
-  color: var(--danger);
+  color: var(--danger-500);
   margin-top: 0.25rem;
+}
+
+// Form Section Divider & Header
+.form-section-divider {
+  grid-column: span 3;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gray-300), transparent);
+  margin: 1.5rem 0 0.5rem;
+}
+
+.form-section-header {
+  grid-column: span 3;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 0.75rem;
+
+  svg {
+    width: 18px;
+    height: 18px;
+    color: var(--primary-500);
+  }
+}
+
+// Form Row for side-by-side fields
+.form-row {
+  grid-column: span 3;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
+
+  &.lifegroup-row {
+    align-items: flex-start;
+  }
+}
+
+// Radio Group
+.radio-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  background: var(--surface-primary);
+
+  input[type='radio'] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .radio-indicator {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--gray-400);
+    border-radius: 50%;
+    position: relative;
+    transition: all var(--transition-fast);
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      width: 8px;
+      height: 8px;
+      background: var(--primary-500);
+      border-radius: 50%;
+      transition: transform var(--transition-fast);
+    }
+  }
+
+  &:hover {
+    border-color: var(--primary-400);
+    background: var(--primary-50);
+  }
+
+  &.active {
+    border-color: var(--primary-500);
+    background: var(--primary-50);
+    color: var(--primary-700);
+
+    .radio-indicator {
+      border-color: var(--primary-500);
+
+      &::after {
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+  }
+}
+
+// Compact radio group
+.radio-group.compact {
+  .radio-option {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+}
+
+// Lifegroup specific styling
+.lifegroup-leader-field {
+  animation: slideDown 0.2s ease;
+}
+
+.lifegroup-leader-toggle {
+  grid-column: span 3;
+  max-width: 300px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 1024px) {
+  .form-section-divider,
+  .form-section-header,
+  .form-row,
+  .lifegroup-leader-toggle {
+    grid-column: span 2;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr 1.5fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .form-section-divider,
+  .form-section-header,
+  .form-row,
+  .lifegroup-leader-toggle {
+    grid-column: span 1;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .lifegroup-leader-toggle {
+    max-width: 100%;
+  }
 }
 
 // Buttons - Complete modern styles
@@ -371,7 +538,7 @@
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   border: 1px solid var(--gray-300);
-  background: var(--white);
+  background: var(--surface-primary);
   color: var(--gray-700);
   font-size: 0.875rem;
   font-weight: 600;

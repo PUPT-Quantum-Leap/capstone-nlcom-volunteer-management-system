@@ -122,6 +122,7 @@ export class ProfileComponent implements OnInit {
       savedData.training_experience,
       savedData.skills_hobbies,
       savedData.classes_training,
+      savedData.lifegroups?.length ? true : false,
     ];
 
     let completedRequired = 0;
@@ -142,6 +143,17 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProfile();
+
+    // Dynamic validation: lifegroupLeaderName required when partOfLifegroup is 'yes'
+    this.profileForm.get('partOfLifegroup')?.valueChanges.subscribe((value) => {
+      const leaderNameControl = this.profileForm.get('lifegroupLeaderName');
+      if (value === 'yes') {
+        leaderNameControl?.setValidators([Validators.required]);
+      } else {
+        leaderNameControl?.clearValidators();
+      }
+      leaderNameControl?.updateValueAndValidity();
+    });
   }
 
   private loadProfile(): void {
@@ -167,15 +179,30 @@ export class ProfileComponent implements OnInit {
       // Update task info
     }
 
-    const positionName = data.positions?.[0]?.name ?? '';
-    const positionKey = this.getPositionKey(positionName);
-
-    const availabilityName = data.availabilities?.[0]?.name ?? '';
+    const positionKey = this.getPositionKey(data.positions?.[0]?.name || '');
+    const availabilityName = data.availabilities?.[0]?.name || '';
     const otherAvailability = data.availabilities?.[0]?.pivot?.custom_description ?? '';
     const availabilityKey = this.getAvailabilityKey(availabilityName);
 
     const isPartLifegroup = data.lifegroups?.length ? 'yes' : 'no';
     const isLeader = data.lifegroups?.[0]?.pivot?.is_leader ? 'yes' : 'no';
+    const lifegroupName = data.lifegroups?.[0]?.name ?? '';
+
+    console.log('[Profile] Applying profile data:', {
+      lifegroups: data.lifegroups,
+      isPartLifegroup,
+      isLeader,
+      lifegroupName,
+    });
+
+    // Update lifegroupLeaderName validation based on loaded data
+    const leaderNameControl = this.profileForm.get('lifegroupLeaderName');
+    if (isPartLifegroup === 'yes') {
+      leaderNameControl?.setValidators([Validators.required]);
+    } else {
+      leaderNameControl?.clearValidators();
+    }
+    leaderNameControl?.updateValueAndValidity({ emitEvent: false });
 
     this.profileForm.patchValue({
       firstName: data.first_name,
@@ -194,6 +221,7 @@ export class ProfileComponent implements OnInit {
       availability: availabilityKey,
       otherAvailability: otherAvailability,
       partOfLifegroup: isPartLifegroup,
+      lifegroupLeaderName: lifegroupName,
       leadingLifegroup: isLeader,
       emergencyContactName: data.emergency_contact?.name ?? '',
       emergencyContactNumber: data.emergency_contact?.phone_number ?? '',
@@ -250,6 +278,7 @@ export class ProfileComponent implements OnInit {
           availability: availabilityKey,
           otherAvailability: savedData.availabilities?.[0]?.pivot?.custom_description ?? '',
           partOfLifegroup: savedData.lifegroups?.length ? 'yes' : 'no',
+          lifegroupLeaderName: savedData.lifegroups?.[0]?.name ?? '',
           leadingLifegroup: savedData.lifegroups?.[0]?.pivot?.is_leader ? 'yes' : 'no',
           emergencyContactName: savedData.emergency_contact?.name ?? '',
           emergencyContactNumber: savedData.emergency_contact?.phone_number ?? '',
@@ -353,11 +382,24 @@ export class ProfileComponent implements OnInit {
     this.volunteerService.updateProfile(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response) => {
         if (response.success && response.data) {
+          // Update saved data first
+          this.savedProfileData.set(response.data);
+
+          // Apply to form while still enabled
           this.applyProfileResponse(response.data);
+
+          // Exit edit mode and disable form
           this.isEditMode.set(false);
           this.profileForm.disable();
+
+          // Show success message
           this.showProfileSuccess.set(true);
           this.profileSuccessMessage.set('Profile updated successfully!');
+
+          // Auto-hide success message after 3 seconds
+          setTimeout(() => {
+            this.showProfileSuccess.set(false);
+          }, 3000);
         } else {
           this.showProfileError.set(true);
           this.profileErrorMessage.set(response.message || 'Failed to update profile. Please try again.');
