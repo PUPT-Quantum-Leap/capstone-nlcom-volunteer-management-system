@@ -6,7 +6,12 @@ import { FacebookOAuthCallbackComponent } from './auth/facebook-oauth-callback/f
 import { Signup } from './auth/signup/signup';
 import { SignupForm } from './auth/signup-form/signup-form';
 import { AdminAuthPage } from './auth/admin-auth-page/admin-auth-page';
-import { VolunteerDashboard } from './volunteer-dashboard/volunteer-dashboard';
+import { VolunteerDashboardShell } from './volunteer-dashboard/volunteer-dashboard-shell/volunteer-dashboard-shell';
+import { OverviewComponent } from './volunteer-dashboard/overview/overview';
+import { ProfileComponent } from './volunteer-dashboard/profile/profile';
+import { AttendanceComponent } from './volunteer-dashboard/attendance/attendance';
+import { PollsComponent } from './volunteer-dashboard/polls/polls';
+import { RequestsComponent } from './volunteer-dashboard/requests/requests';
 import { AdminDashboard } from './admin-dashboard/admin-dashboard';
 import { NotFound } from './not-found/not-found';
 import { IncidentCommandSystemComponent } from './incident-command-system/incident-command-system';
@@ -24,7 +29,19 @@ export const routes: Routes = [
   { path: 'rsvp', component: RsvpComponent },
   { path: 'rsvp/:slug', component: RsvpComponent },
   { path: 'incident-command-system', component: IncidentCommandSystemComponent },
-  { path: 'volunteer-dashboard', component: VolunteerDashboard, canActivate: [authGuard] },
+  {
+    path: 'volunteer-dashboard',
+    component: VolunteerDashboardShell,
+    canActivate: [authGuard],
+    children: [
+      { path: '', redirectTo: 'overview', pathMatch: 'full' },
+      { path: 'overview', component: OverviewComponent },
+      { path: 'profile', component: ProfileComponent },
+      { path: 'attendance', component: AttendanceComponent },
+      { path: 'polls', component: PollsComponent },
+      { path: 'requests', component: RequestsComponent },
+    ],
+  },
   { path: 'admin-dashboard', component: AdminDashboard, canActivate: [authGuard] },
   {
     path: 'terms-of-service',

@@ -1,0 +1,82 @@
+<section class="attendance-section">
+  <!-- Main Attendance Panel -->
+  <article class="panel">
+    <div class="panel-header">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Attendance History
+      </h2>
+      <div class="panel-actions">
+        <div class="search-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" class="search-input" placeholder="Search records..." (input)="onSearchInput($event)" />
+        </div>
+        <select [value]="attendancePeriod()" (change)="onPeriodChange($event)" class="period-select">
+          <option value="monthly">This Month</option>
+          <option value="weekly">This Week</option>
+          <option value="daily">Today</option>
+          <option value="all">All Time</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-container">
+      @if (isLoading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading attendance records...</p>
+        </div>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Task / Event</th>
+              <th>Location</th>
+              <th>Hours</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of filteredItems(); track item.attendance_id) {
+              <tr>
+                <td>{{ item.date | date:'MMM d, y' }}</td>
+                <td>{{ item.description || 'Shift log entry' }}</td>
+                <td>{{ item.location || 'N/A' }}</td>
+                <td>
+                  <span class="hours-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    {{ item.hours }} hrs
+                  </span>
+                </td>
+                <td>
+                  <span class="status-badge" [class]="getAttendanceStatusClass(item.status)">
+                    {{ item.status | titlecase }}
+                  </span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state">
+                    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <h3>No Records Found</h3>
+                    <p>No attendance records found for this period. Try adjusting your filters.</p>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </article>
+</section>
