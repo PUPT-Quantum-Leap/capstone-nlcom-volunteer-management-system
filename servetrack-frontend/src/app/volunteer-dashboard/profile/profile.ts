@@ -349,10 +349,11 @@ export class ProfileComponent implements OnInit {
 
     const formValue = this.profileForm.getRawValue();
     const volunteerPreferenceKey = formValue.volunteerPreference ?? '';
-    const volunteerPreferenceName = volunteerPreferenceKey === 'other'
-      ? this.sanitizer.sanitizeInput(formValue.otherPreference ?? '', 'both')
-      : this.getPositionName(volunteerPreferenceKey);
     const availabilityName = this.getAvailabilityName(formValue.availability ?? '');
+
+    // Build payload with proper handling of 'other' preference
+    const isOtherPreference = volunteerPreferenceKey === 'other';
+    const sanitizedOtherPreference = this.sanitizer.sanitizeInput(formValue.otherPreference ?? '', 'both');
 
     const payload = {
       firstName: this.sanitizer.sanitizeInput(formValue.firstName ?? '', 'both'),
@@ -367,8 +368,10 @@ export class ProfileComponent implements OnInit {
       trainingExperience: this.sanitizer.sanitizeInput(formValue.trainingExperience ?? '', 'both'),
       skillsHobbies: this.sanitizer.sanitizeInput(formValue.skillsHobbies ?? '', 'both'),
       classesTraining: this.sanitizer.sanitizeInput(formValue.classesTraining ?? '', 'both'),
-      volunteerPreference: volunteerPreferenceName,
-      otherPreference: this.sanitizer.sanitizeInput(formValue.otherPreference ?? '', 'both'),
+      // Send 'other' key when Other is selected, otherwise send the key (backend accepts both)
+      volunteerPreference: volunteerPreferenceKey,
+      // Only send otherPreference when volunteerPreference is 'other'
+      otherPreference: isOtherPreference ? sanitizedOtherPreference : null,
       availability: availabilityName,
       otherAvailability: this.sanitizer.sanitizeInput(formValue.otherAvailability ?? '', 'both'),
       partOfLifegroup: formValue.partOfLifegroup ?? 'no',
