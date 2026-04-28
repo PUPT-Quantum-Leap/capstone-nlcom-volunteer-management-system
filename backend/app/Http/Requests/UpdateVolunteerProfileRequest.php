@@ -52,6 +52,7 @@ class UpdateVolunteerProfileRequest extends FormRequest
                 'required',
                 'string',
                 Rule::in([
+                    // Keys (frontend form values)
                     'sidewalk-sunday-school',
                     'mobile-kitchen',
                     'relief-operations',
@@ -69,6 +70,23 @@ class UpdateVolunteerProfileRequest extends FormRequest
                     'wherever-needed',
                     'dont-know',
                     'other',
+                    // Human-readable names (display values from frontend)
+                    'Metro Sidewalk Sunday School (Teaching & Education)',
+                    'Mobile Kitchen Operations',
+                    'Relief Operations',
+                    'Safety and Emergency Response',
+                    'Medical Operations',
+                    'Psychological First Aid',
+                    'Transportation & Logistics Team',
+                    'Purchasing Team',
+                    'Individual & Corporate Partnerships',
+                    'Digital Marketing & Promotions',
+                    'Creatives (Video / Photos)',
+                    'Healing',
+                    'Real Estate & Sports',
+                    'Anything kitchen-related',
+                    'Wherever is needed',
+                    'Don\'t know yet',
                 ]),
             ],
             'otherPreference' => [
@@ -82,6 +100,7 @@ class UpdateVolunteerProfileRequest extends FormRequest
             'otherAvailability' => ['nullable', 'string'],
             'partOfLifegroup' => ['required', 'string', 'in:yes,no'],
             'lifegroupLeaderName' => [
+                'nullable',
                 'required_if:partOfLifegroup,yes',
                 'string',
                 'max:100',
