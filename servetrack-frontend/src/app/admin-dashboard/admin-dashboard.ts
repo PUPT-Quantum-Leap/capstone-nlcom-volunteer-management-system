@@ -2409,12 +2409,12 @@ export class AdminDashboard implements OnInit {
     return this.nlcomOperation.teams.filter(t => t.departureTime.includes('pm')).length;
   }
 
-  getAmTeams(): any[] {
-    return this.nlcomOperation.teams.filter(t => t.departureTime.includes('am'));
+  getAmTeams(): NLCOMOperation['teams'] {
+    return this.nlcomOperation.teams.filter(t => t.departureTime.toLowerCase().includes('am'));
   }
 
-  getPmTeams(): any[] {
-    return this.nlcomOperation.teams.filter(t => t.departureTime.includes('pm'));
+  getPmTeams(): NLCOMOperation['teams'] {
+    return this.nlcomOperation.teams.filter(t => t.departureTime.toLowerCase().includes('pm'));
   }
 
   getPieSlice(startAngle: number, endAngle: number): string {
