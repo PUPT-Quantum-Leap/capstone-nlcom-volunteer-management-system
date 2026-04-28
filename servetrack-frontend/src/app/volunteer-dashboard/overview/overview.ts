@@ -64,7 +64,7 @@ export class OverviewComponent implements OnInit {
     }).format(date);
   });
 
-  private timeUpdateInterval: any;
+  private timeUpdateInterval: ReturnType<typeof setInterval> | null = null;
 
   // ── Attendance Stats ───────────────────────────────────────────────────
   attendanceTotalHours = signal(0);
@@ -104,21 +104,33 @@ export class OverviewComponent implements OnInit {
   }
 
   private loadAttendanceStats(): void {
-    this.volunteerService.getAttendanceStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
-      if (response.success && response.data) {
-        const stats = response.data;
-        this.attendanceTotalHours.set(stats.monthly.hours);
+    this.volunteerService.getAttendanceStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const stats = response.data;
+          this.attendanceTotalHours.set(stats.monthly.hours);
+        }
+      },
+      error: (error) => {
+        console.error('[OverviewComponent] Failed to load attendance stats:', error);
+        this.attendanceTotalHours.set(0);
       }
     });
   }
 
   private loadProfile(): void {
-    this.volunteerService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
-      if (response.success && response.data) {
-        const data = response.data;
-        if (data.positions?.length) {
-          this.taskAssigned.set(data.positions.map((p) => p.name).join(', '));
+    this.volunteerService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const data = response.data;
+          if (data.positions?.length) {
+            this.taskAssigned.set(data.positions.map((p) => p.name).join(', '));
+          }
         }
+      },
+      error: (error) => {
+        console.error('[OverviewComponent] Failed to load profile:', error);
+        this.taskAssigned.set('—');
       }
     });
   }
@@ -126,10 +138,10 @@ export class OverviewComponent implements OnInit {
   private loadSamplePoll(): void {
     this.activePoll.set({
       id: 1,
-      title: 'March 2026 Outreach Assignment Preferences',
+      title: 'May 2026 Outreach Assignment Preferences',
       description: 'Select your preferred time slot for the upcoming community outreach event.',
-      date: '2026-03-15',
-      cutOffDay: '2026-03-10',
+      date: '2026-05-15',
+      cutOffDay: '2026-05-10',
       status: 'active',
       options: [
         { id: 1, timeSlot: 'Morning Shift (6:00 AM - 12:00 PM)', votes: 12, capacity: 20 },

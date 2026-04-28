@@ -3,12 +3,11 @@ import {
   Component,
   signal,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { TitleCasePipe } from '@angular/common';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, TitleCasePipe],
+  imports: [TitleCasePipe],
   templateUrl: './requests.html',
   styleUrl: './requests.scss',
 })
@@ -92,5 +91,26 @@ export class RequestsComponent {
     this.closePollReason.set('');
     this.closePollStatus.set('pending');
     this.closePollResponseReason.set('');
+  }
+
+  // ── Input Handlers ───────────────────────────────────────────────────────
+  onTaskSelect(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.selectedTask.set(select.value);
+  }
+
+  onTaskReasonInput(event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+    this.changeTaskReason.set(textarea.value);
+  }
+
+  onClosePollNewTimeInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.closePollNewTime.set(input.value);
+  }
+
+  onClosePollReasonInput(event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+    this.closePollReason.set(textarea.value);
   }
 }

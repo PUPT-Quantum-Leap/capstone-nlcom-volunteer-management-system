@@ -40,7 +40,7 @@
       <div class="request-form">
         <div class="form-group">
           <label>Select New Task</label>
-          <select [ngModel]="selectedTask()" (ngModelChange)="selectedTask.set($event)">
+          <select [value]="selectedTask()" (change)="onTaskSelect($event)">
             <option value="">Select a task...</option>
             @for (task of availableTasks(); track task) {
               <option [value]="task">{{ task }}</option>
@@ -50,7 +50,7 @@
 
         <div class="form-group">
           <label>Reason for Change</label>
-          <textarea [ngModel]="changeTaskReason()" (ngModelChange)="changeTaskReason.set($event)" rows="3" placeholder="Please explain why you want to change your task..."></textarea>
+          <textarea [value]="changeTaskReason()" (input)="onTaskReasonInput($event)" rows="3" placeholder="Please explain why you want to change your task..."></textarea>
         </div>
 
         <!-- Status Display -->
@@ -117,13 +117,13 @@
         @if (closePollAction() === 'change-time') {
           <div class="form-group">
             <label>Preferred New Time</label>
-            <input type="text" [(ngModel)]="closePollNewTime" placeholder="e.g., Saturday Morning 9:00 AM" />
+            <input type="text" [value]="closePollNewTime()" (input)="onClosePollNewTimeInput($event)" placeholder="e.g., Saturday Morning 9:00 AM" />
           </div>
         }
 
         <div class="form-group">
           <label>Reason</label>
-          <textarea [(ngModel)]="closePollReason" rows="3" placeholder="Please explain your reason..."></textarea>
+          <textarea [value]="closePollReason()" (input)="onClosePollReasonInput($event)" rows="3" placeholder="Please explain your reason..."></textarea>
         </div>
 
         <!-- Status Display -->

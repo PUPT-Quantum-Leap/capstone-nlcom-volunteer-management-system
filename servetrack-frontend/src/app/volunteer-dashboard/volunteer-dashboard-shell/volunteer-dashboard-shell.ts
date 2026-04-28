@@ -15,6 +15,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NotificationItem } from '../../models/notification-item';
 
 @Component({
+  selector: 'app-volunteer-dashboard-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, NgTemplateOutlet],
   templateUrl: './volunteer-dashboard-shell.html',
@@ -58,7 +59,7 @@ export class VolunteerDashboardShell implements OnInit {
     }).format(date);
   });
 
-  private timeUpdateInterval: any;
+  private timeUpdateInterval: ReturnType<typeof setInterval> | null = null;
 
   showNotifications = signal(false);
   showLogoutModal = signal(false);
@@ -94,10 +95,18 @@ export class VolunteerDashboardShell implements OnInit {
       this.isMobile.set(window.innerWidth <= 860);
     };
     checkMobile();
-    let timeout: any;
-    window.addEventListener('resize', () => {
-      clearTimeout(timeout);
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+
+    const handleResize = () => {
+      if (timeout) clearTimeout(timeout);
       timeout = setTimeout(checkMobile, 100);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    this.destroyRef.onDestroy(() => {
+      window.removeEventListener('resize', handleResize);
+      if (timeout) clearTimeout(timeout);
     });
   }
 

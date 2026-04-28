@@ -68,6 +68,7 @@ export class ProfileComponent implements OnInit {
     'Anything kitchen-related': 'kitchen-related',
     'Wherever is needed': 'wherever-needed',
     "Don't know yet": 'dont-know',
+    'Other': 'other',
   };
 
   profileForm = this.fb.group(
@@ -144,10 +145,17 @@ export class ProfileComponent implements OnInit {
   }
 
   private loadProfile(): void {
-    this.volunteerService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
-      if (response.success && response.data) {
-        this.applyProfileResponse(response.data);
-        this.profileForm.disable();
+    this.volunteerService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.applyProfileResponse(response.data);
+          this.profileForm.disable();
+        }
+      },
+      error: (error) => {
+        console.error('[ProfileComponent] Failed to load profile:', error);
+        this.showProfileError.set(true);
+        this.profileErrorMessage.set('Failed to load profile. Please try again later.');
       }
     });
   }
@@ -247,6 +255,9 @@ export class ProfileComponent implements OnInit {
           emergencyContactNumber: savedData.emergency_contact?.phone_number ?? '',
           emergencyContactRelationship: savedData.emergency_contact?.relationship ?? '',
         });
+        // Reset UI-only state to match saved data
+        this.showOtherPreference.set(positionKey === 'other');
+        this.profilePreviewUrl.set(savedData.photo_url ?? this.defaultPhoto);
       }
       this.profileForm.markAsPristine();
     }
@@ -308,7 +319,10 @@ export class ProfileComponent implements OnInit {
     this.isLoading.set(true);
 
     const formValue = this.profileForm.getRawValue();
-    const volunteerPreferenceName = this.getPositionName(formValue.volunteerPreference ?? '');
+    const volunteerPreferenceKey = formValue.volunteerPreference ?? '';
+    const volunteerPreferenceName = volunteerPreferenceKey === 'other'
+      ? this.sanitizer.sanitizeInput(formValue.otherPreference ?? '', 'both')
+      : this.getPositionName(volunteerPreferenceKey);
     const availabilityName = this.getAvailabilityName(formValue.availability ?? '');
 
     const payload = {
@@ -336,18 +350,26 @@ export class ProfileComponent implements OnInit {
       emergencyContactRelationship: this.sanitizer.sanitizeInput(formValue.emergencyContactRelationship ?? '', 'both'),
     };
 
-    this.volunteerService.updateProfile(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
-      if (response.success && response.data) {
-        this.applyProfileResponse(response.data);
-        this.isEditMode.set(false);
-        this.profileForm.disable();
-        this.showProfileSuccess.set(true);
-        this.profileSuccessMessage.set('Profile updated successfully!');
-      } else {
+    this.volunteerService.updateProfile(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.applyProfileResponse(response.data);
+          this.isEditMode.set(false);
+          this.profileForm.disable();
+          this.showProfileSuccess.set(true);
+          this.profileSuccessMessage.set('Profile updated successfully!');
+        } else {
+          this.showProfileError.set(true);
+          this.profileErrorMessage.set(response.message || 'Failed to update profile. Please try again.');
+        }
+        this.isLoading.set(false);
+      },
+      error: (error) => {
+        console.error('[ProfileComponent] Save profile error:', error);
         this.showProfileError.set(true);
-        this.profileErrorMessage.set(response.message || 'Failed to update profile. Please try again.');
+        this.profileErrorMessage.set(error?.error?.message || 'An error occurred while saving. Please try again.');
+        this.isLoading.set(false);
       }
-      this.isLoading.set(false);
     });
   }
 
@@ -426,6 +448,7 @@ export class ProfileComponent implements OnInit {
       'kitchen-related': 'Anything kitchen-related',
       'wherever-needed': 'Wherever is needed',
       'dont-know': "Don't know yet",
+      'other': 'Other',
     };
     return reverseMap[positionKey] || positionKey;
   }

@@ -224,7 +224,7 @@
             <p class="results-subtitle">Volunteer availability preferences for this event</p>
             <div class="results-list">
               @for (option of selectedPoll.options; track option.id) {
-                <div class="result-item" [class.user-choice]="hasUserVotedOnPoll(selectedPoll.id) && option.id === 4">
+                <div class="result-item" [class.user-choice]="hasUserVotedOnPoll(selectedPoll.id) && option.id === getUserSelectedOption(selectedPoll.id)">
                   <div class="result-info">
                     <span class="result-label">{{ option.timeSlot }}</span>
                     <div class="result-stats">
@@ -235,7 +235,7 @@
                   <div class="result-bar-container">
                     <div class="result-bar" [style.width.%]="getVotePercentage(option, selectedPoll)"></div>
                   </div>
-                  @if (hasUserVotedOnPoll(selectedPoll.id) && option.id === 4) {
+                  @if (hasUserVotedOnPoll(selectedPoll.id) && option.id === getUserSelectedOption(selectedPoll.id)) {
                     <div class="user-choice-badge">Your Selection</div>
                   }
                 </div>

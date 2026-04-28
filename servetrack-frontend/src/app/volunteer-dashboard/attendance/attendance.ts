@@ -14,6 +14,7 @@ import { finalize } from 'rxjs';
 import { Attendance, AttendancePeriod } from '../../models/attendance';
 
 @Component({
+  selector: 'app-attendance',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe, TitleCasePipe],
   templateUrl: './attendance.html',

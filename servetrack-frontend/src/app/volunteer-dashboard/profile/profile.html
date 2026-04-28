@@ -103,7 +103,7 @@
           <span>Service & Skills</span>
         </div>
         @if (expandedSection() === 'service') {
-          <span class="badge-count">5 fields</span>
+          <span class="badge-count">7 fields</span>
         }
       </button>
 
@@ -169,6 +169,14 @@
             <div class="form-group full">
               <label>Training & Experience</label>
               <textarea formControlName="trainingExperience" placeholder="Describe relevant experience" rows="2"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>Skills & Hobbies</label>
+              <textarea formControlName="skillsHobbies" placeholder="List your skills and hobbies" rows="2"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>Classes & Training Attended</label>
+              <textarea formControlName="classesTraining" placeholder="List classes or training you've attended" rows="2"></textarea>
             </div>
           </div>
         </div>

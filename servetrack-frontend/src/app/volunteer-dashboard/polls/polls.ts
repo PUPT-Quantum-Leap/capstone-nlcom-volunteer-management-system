@@ -49,6 +49,8 @@ export class PollsComponent implements OnInit {
   selectedOptionId = signal<number | null>(null);
   isLoading = signal(false);
   pollError = signal<string | null>(null);
+  // Map of pollId -> selected optionId to track user's actual votes
+  userVotes = signal<Map<number, number>>(new Map([[2, 4]]));
 
   ngOnInit(): void {
     this.loadSamplePolls();
@@ -58,10 +60,10 @@ export class PollsComponent implements OnInit {
     // Sample active poll
     this.activePoll.set({
       id: 1,
-      title: 'March 2026 Outreach Assignment Preferences',
+      title: 'May 2026 Outreach Assignment Preferences',
       description: 'Select your preferred time slot for the upcoming community outreach event.',
-      date: '2026-03-15',
-      cutOffDay: '2026-03-10',
+      date: '2026-05-15',
+      cutOffDay: '2026-05-10',
       status: 'active',
       options: [
         { id: 1, timeSlot: 'Morning Shift (6:00 AM - 12:00 PM)', votes: 12, capacity: 20 },
@@ -74,10 +76,10 @@ export class PollsComponent implements OnInit {
     this.pastPolls.set([
       {
         id: 2,
-        title: 'February 2026 Relief Operation Schedule',
+        title: 'April 2026 Relief Operation Schedule',
         description: 'Preferred schedule for the disaster relief operation.',
-        date: '2026-02-20',
-        cutOffDay: '2026-02-15',
+        date: '2026-04-20',
+        cutOffDay: '2026-04-15',
         status: 'closed',
         options: [
           { id: 4, timeSlot: 'Weekday Morning', votes: 25, capacity: 30 },
@@ -87,10 +89,10 @@ export class PollsComponent implements OnInit {
       },
       {
         id: 3,
-        title: 'January 2026 Medical Mission Schedule',
+        title: 'March 2026 Medical Mission Schedule',
         description: 'Select your availability for the medical mission.',
-        date: '2026-01-18',
-        cutOffDay: '2026-01-12',
+        date: '2026-03-18',
+        cutOffDay: '2026-03-12',
         status: 'closed',
         options: [
           { id: 7, timeSlot: 'Day 1 - Morning', votes: 18, capacity: 25 },
@@ -163,8 +165,11 @@ export class PollsComponent implements OnInit {
   }
 
   hasUserVotedOnPoll(pollId: number): boolean {
-    // Mock function - in real implementation, this would check against user votes
-    return pollId === 2;
+    return this.userVotes().has(pollId);
+  }
+
+  getUserSelectedOption(pollId: number): number | null {
+    return this.userVotes().get(pollId) ?? null;
   }
 
   getDaysUntilClosing(cutOffDay: string | undefined, date: string | undefined): string {
