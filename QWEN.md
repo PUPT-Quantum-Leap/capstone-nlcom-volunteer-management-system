@@ -203,7 +203,7 @@ capstone-nlcom-volunteer-management-system/
 ├── AGENTS.md                        # Development guidelines
 ├── PRD.md                           # Product Requirements Document
 ├── README.md                        # Project overview
-└── fullstack.ps1         # PowerShell startup script
+└── servestack.ps1       # PowerShell startup script
 ```
 
 ---
