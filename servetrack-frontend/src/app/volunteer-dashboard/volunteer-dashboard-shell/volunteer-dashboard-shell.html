@@ -3,6 +3,7 @@
   <ng-template #sidebarNav>
     <nav class="sidebar-nav" aria-label="Main navigation">
       <ul role="list">
+        <li class="menu-label" aria-hidden="true">Dashboard</li>
         <li>
           <button type="button" [class.active]="isActive('overview')"
             (click)="navigateTo('overview'); closeMobileSidebar()">
@@ -14,6 +15,7 @@
             <span class="nav-text">Dashboard</span>
           </button>
         </li>
+        <li class="menu-label" aria-hidden="true">Personal</li>
         <li>
           <button type="button" [class.active]="isActive('profile')"
             (click)="navigateTo('profile'); closeMobileSidebar()">
@@ -36,6 +38,8 @@
             <span class="nav-text">Attendance Log</span>
           </button>
         </li>
+        
+        <li class="menu-label" aria-hidden="true">Community</li>
         <li>
           <button type="button" [class.active]="isActive('polls')"
             (click)="navigateTo('polls'); closeMobileSidebar()">
