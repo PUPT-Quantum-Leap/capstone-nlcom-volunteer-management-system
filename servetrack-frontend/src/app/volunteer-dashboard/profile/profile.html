@@ -1,0 +1,294 @@
+<section class="profile-section">
+  <!-- Profile Header Card -->
+  <article class="profile-header-card">
+    <div class="profile-avatar-section">
+      <div class="avatar-wrapper">
+        <img [src]="profilePreviewUrl()" alt="Profile" class="profile-avatar" />
+        @if (isEditMode()) {
+          <label class="upload-overlay" for="photo-upload">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            <span>Change Photo</span>
+          </label>
+          <input id="photo-upload" type="file" (change)="onPhotoSelected($event)" accept="image/*" style="display: none;" />
+        }
+      </div>
+      <div class="profile-meta">
+        <h3>{{ profileForm.get('firstName')?.value || 'Your Name' }} {{ profileForm.get('lastName')?.value || '' }}</h3>
+        <p>Volunteer Member</p>
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="stat">
+        <span class="stat-value">{{ profileCompletion() }}%</span>
+        <span class="stat-label">Complete</span>
+      </div>
+    </div>
+  </article>
+
+  <form [formGroup]="profileForm" class="profile-accordion">
+    <!-- Personal Details Accordion -->
+    <div class="accordion-item">
+      <button type="button" class="accordion-trigger" (click)="toggleSection('personal')">
+        <div class="accordion-header">
+          <svg class="accordion-icon" [class.expanded]="expandedSection() === 'personal'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19V5"/>
+          </svg>
+          <span>Personal Details</span>
+        </div>
+        @if (expandedSection() === 'personal') {
+          <span class="badge-count">6 fields</span>
+        }
+      </button>
+
+      @if (expandedSection() === 'personal') {
+        <div class="accordion-content">
+          <div class="form-columns">
+            <div class="form-group">
+              <label>First Name</label>
+              <input type="text" formControlName="firstName" placeholder="First Name" />
+              @if (controlHasError('firstName')) {
+                <span class="error-text">{{ getControlError('firstName') }}</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>Last Name</label>
+              <input type="text" formControlName="lastName" placeholder="Last Name" />
+              @if (controlHasError('lastName')) {
+                <span class="error-text">{{ getControlError('lastName') }}</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" formControlName="email" placeholder="email@example.com" />
+              @if (controlHasError('email')) {
+                <span class="error-text">{{ getControlError('email') }}</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>Mobile Number</label>
+              <input type="text" formControlName="mobileNumber" placeholder="09xxxxxxxxx" />
+              @if (controlHasError('mobileNumber')) {
+                <span class="error-text">{{ getControlError('mobileNumber') }}</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>Birthdate</label>
+              <input type="date" formControlName="birthdate" />
+              @if (controlHasError('birthdate')) {
+                <span class="error-text">{{ getControlError('birthdate') }}</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>Facebook Name</label>
+              <input type="text" formControlName="facebookName" placeholder="FB Profile Name" />
+              @if (controlHasError('facebookName')) {
+                <span class="error-text">{{ getControlError('facebookName') }}</span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Service & Skills Accordion -->
+    <div class="accordion-item">
+      <button type="button" class="accordion-trigger" (click)="toggleSection('service')">
+        <div class="accordion-header">
+          <svg class="accordion-icon" [class.expanded]="expandedSection() === 'service'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19V5"/>
+          </svg>
+          <span>Service & Skills</span>
+        </div>
+        @if (expandedSection() === 'service') {
+          <span class="badge-count">5 fields</span>
+        }
+      </button>
+
+      @if (expandedSection() === 'service') {
+        <div class="accordion-content">
+          <div class="form-columns">
+            <div class="form-group full">
+              <label>Complete Address</label>
+              <input type="text" formControlName="completeAddress" placeholder="Your full address" />
+              @if (controlHasError('completeAddress')) {
+                <span class="error-text">{{ getControlError('completeAddress') }}</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>Educational Attainment</label>
+              <select formControlName="educationalAttainment">
+                <option value="">Select Level</option>
+                <option value="Elementary">Elementary</option>
+                <option value="High School">High School</option>
+                <option value="College">College</option>
+                <option value="Post-Graduate">Post-Graduate</option>
+              </select>
+              @if (controlHasError('educationalAttainment')) {
+                <span class="error-text">{{ getControlError('educationalAttainment') }}</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>Availability</label>
+              <select formControlName="availability">
+                <option value="">Select Availability</option>
+                <option value="anytime">Anytime / On Call</option>
+                <option value="weekends-only">Weekends Only</option>
+                <option value="weekdays-only">Weekdays Only</option>
+                <option value="weekdays-weekends">Weekdays & Weekends</option>
+                <option value="others">Others</option>
+              </select>
+              @if (controlHasError('availability')) {
+                <span class="error-text">{{ getControlError('availability') }}</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>Volunteer Preference</label>
+              <select formControlName="volunteerPreference" (change)="onVolunteerPreferenceChange($event)">
+                <option value="">Select Preference</option>
+                <option value="sidewalk-sunday-school">Teaching & Education</option>
+                <option value="mobile-kitchen">Mobile Kitchen</option>
+                <option value="relief-operations">Relief Operations</option>
+                <option value="safety-emergency">Safety & Emergency</option>
+                <option value="medical-operations">Medical Operations</option>
+                <option value="wherever-needed">Wherever needed</option>
+                <option value="other">Other</option>
+              </select>
+              @if (controlHasError('volunteerPreference')) {
+                <span class="error-text">{{ getControlError('volunteerPreference') }}</span>
+              }
+            </div>
+            @if (showOtherPreference()) {
+              <div class="form-group full">
+                <label>Specify Other Preference</label>
+                <input type="text" formControlName="otherPreference" placeholder="Please specify" />
+              </div>
+            }
+            <div class="form-group full">
+              <label>Training & Experience</label>
+              <textarea formControlName="trainingExperience" placeholder="Describe relevant experience" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Emergency Contact Accordion -->
+    <div class="accordion-item">
+      <button type="button" class="accordion-trigger" (click)="toggleSection('emergency')">
+        <div class="accordion-header">
+          <svg class="accordion-icon" [class.expanded]="expandedSection() === 'emergency'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19V5"/>
+          </svg>
+          <span>Emergency Contact</span>
+        </div>
+        @if (expandedSection() === 'emergency') {
+          <span class="badge-count">3 fields</span>
+        }
+      </button>
+
+      @if (expandedSection() === 'emergency') {
+        <div class="accordion-content">
+          <div class="form-columns">
+            <div class="form-group">
+              <label>Contact Name</label>
+              <input type="text" formControlName="emergencyContactName" placeholder="Full Name" />
+              @if (controlHasError('emergencyContactName')) {
+                <span class="error-text">{{ getControlError('emergencyContactName') }}</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>Relationship</label>
+              <input type="text" formControlName="emergencyContactRelationship" placeholder="e.g. Parent, Spouse" />
+              @if (controlHasError('emergencyContactRelationship')) {
+                <span class="error-text">{{ getControlError('emergencyContactRelationship') }}</span>
+              }
+            </div>
+            <div class="form-group">
+              <label>Contact Number</label>
+              <input type="text" formControlName="emergencyContactNumber" placeholder="09xxxxxxxxx" />
+              @if (controlHasError('emergencyContactNumber')) {
+                <span class="error-text">{{ getControlError('emergencyContactNumber') }}</span>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </form>
+
+  <!-- Action Buttons -->
+  <div class="profile-actions">
+    @if (isEditMode()) {
+      <button type="button" class="outline-btn" (click)="toggleEditMode()">Cancel</button>
+      <button type="button" class="primary-btn" (click)="saveProfile()" [disabled]="profileForm.invalid || isLoading()">
+        @if (isLoading()) {
+          <span class="btn-spinner"></span>
+          Saving...
+        } @else {
+          Save Changes
+        }
+      </button>
+    } @else {
+      <button type="button" class="primary-btn" (click)="toggleEditMode()">Edit Profile</button>
+    }
+  </div>
+</section>
+
+<!-- Save Confirmation Modal -->
+@if (showSaveConfirmModal()) {
+  <div class="modal-backdrop">
+    <div class="modal-card confirm">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+      </div>
+      <h3>Save Changes?</h3>
+      <p>Are you sure you want to update your profile information?</p>
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeSaveConfirmModal()">Cancel</button>
+        <button type="button" class="primary-btn" (click)="confirmSaveProfile()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Error Modal -->
+@if (showProfileError()) {
+  <div class="modal-backdrop">
+    <div class="modal-card error">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+      </div>
+      <h3>Error</h3>
+      <p>{{ profileErrorMessage() }}</p>
+      <div class="modal-actions">
+        <button type="button" class="primary-btn" (click)="closeProfileError()">OK</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Success Modal -->
+@if (showProfileSuccess()) {
+  <div class="modal-backdrop">
+    <div class="modal-card success">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <h3>Success!</h3>
+      <p>{{ profileSuccessMessage() }}</p>
+      <div class="modal-actions">
+        <button type="button" class="primary-btn" (click)="closeProfileSuccess()">OK</button>
+      </div>
+    </div>
+  </div>
+}

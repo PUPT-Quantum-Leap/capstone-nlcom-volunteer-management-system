@@ -1,0 +1,305 @@
+<section class="poll-section">
+  <!-- Main Container Panel -->
+  <article class="main-container">
+    <!-- Panel Header -->
+    <div class="container-header">
+      <h2>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        Community Polls
+      </h2>
+      <p>Vote on assignments and view past community decisions</p>
+    </div>
+
+    <!-- Poll Tabs -->
+    <div class="poll-tabs">
+      <button type="button" class="tab-btn" [class.active]="pollTab() === 'active'" (click)="setPollTab('active')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Active Poll
+        @if (activePoll(); as poll) {
+          <span class="tab-badge">1</span>
+        }
+      </button>
+      <button type="button" class="tab-btn" [class.active]="pollTab() === 'past'" (click)="setPollTab('past')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+        </svg>
+        Past Polls
+        <span class="tab-badge">{{ pastPolls().length }}</span>
+      </button>
+    </div>
+
+  <!-- Active Poll Tab -->
+  @if (pollTab() === 'active') {
+    @if (activePoll(); as poll) {
+      <article class="panel poll-card">
+        <div class="poll-header">
+          <div class="poll-status-badge" [class.active]="poll.status === 'active'">
+            {{ poll.status === 'active' ? 'Open for Voting' : poll.status | titlecase }}
+          </div>
+          <h2 class="poll-question">{{ poll.title }}</h2>
+          <p class="poll-description">{{ poll.description }}</p>
+          <div class="poll-meta-bar">
+            <span class="poll-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              Event Date: {{ poll.date | date:'mediumDate' }}
+            </span>
+            <span class="poll-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              {{ getTotalVotes(poll) }} volunteers voted
+            </span>
+          </div>
+
+          <!-- Closing Date Reminder -->
+          <div class="closing-reminder" [class.urgent]="getDaysUntilClosing(poll.cutOffDay, poll.date).includes('today') || getDaysUntilClosing(poll.cutOffDay, poll.date).includes('tomorrow')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>
+              <strong>Voting closes:</strong> {{ poll.cutOffDay || poll.date | date:'mediumDate' }}
+              <span class="days-left">({{ getDaysUntilClosing(poll.cutOffDay, poll.date) }})</span>
+            </span>
+          </div>
+        </div>
+
+        @if (poll.status !== 'active') {
+          <div class="poll-status-message">
+            <div class="status-icon closed">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+            </div>
+            <p>This poll is currently <strong>{{ poll.status }}</strong>.</p>
+            <span class="status-hint">Check back later for new community updates.</span>
+          </div>
+        } @else if (!hasSubmittedVote()) {
+          <div class="poll-voting-area">
+            <p class="poll-prompt">Select your preferred option:</p>
+            <div class="poll-options">
+              @for (option of poll.options; track option.id) {
+                <label class="poll-option" [class.active]="selectedOptionId() === option.id" [class.disabled]="isOptionFull(option)">
+                  <div class="option-radio">
+                    <input type="radio" [name]="'poll-' + poll.id" [value]="option.id" (change)="selectedOptionId.set(option.id)" [disabled]="isOptionFull(option)" />
+                    <span class="radio-indicator"></span>
+                  </div>
+                  <div class="option-content">
+                    <span class="option-label">{{ option.timeSlot }}</span>
+                    <span class="option-meta">
+                      @if (isOptionFull(option)) {
+                        <span class="full-badge">Full</span>
+                      } @else {
+                        <span class="spots-left">{{ option.capacity - option.votes }} spots left</span>
+                      }
+                    </span>
+                  </div>
+                  <div class="option-vote-count">
+                    <span class="vote-number">{{ option.votes }}</span>
+                    <span class="vote-label">votes</span>
+                  </div>
+                  <div class="option-fill-bar" [style.width.%]="(option.votes / option.capacity) * 100"></div>
+                </label>
+              }
+            </div>
+            <div class="poll-actions">
+              <button type="button" class="primary-btn vote-btn" (click)="submitPollVote()" [disabled]="!selectedOptionId() || isLoading()">
+                @if (isLoading()) {
+                  <span class="btn-spinner"></span>
+                  Submitting...
+                } @else {
+                  Submit Vote
+                }
+              </button>
+            </div>
+            @if (pollError()) {
+              <div class="poll-error">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                {{ pollError() }}
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="poll-results">
+            <div class="results-header">
+              <div class="results-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
+              <div class="results-info">
+                <h3>Thank you for voting!</h3>
+                <p>Your response has been recorded.</p>
+              </div>
+            </div>
+            <div class="results-list">
+              @for (option of poll.options; track option.id) {
+                <div class="result-item" [class.most-voted]="option.votes === getMostVotedOption(poll)?.votes && option.votes > 0">
+                  <div class="result-info">
+                    <span class="result-label">{{ option.timeSlot }}</span>
+                    <div class="result-stats">
+                      <span class="result-votes">{{ option.votes }} votes</span>
+                      <span class="result-percentage">{{ getVotePercentage(option, poll) }}%</span>
+                    </div>
+                  </div>
+                  <div class="result-bar-container">
+                    <div class="result-bar" [style.width.%]="getVotePercentage(option, poll)"></div>
+                  </div>
+                  @if (option.votes === getMostVotedOption(poll)?.votes && option.votes > 0) {
+                    <div class="most-voted-badge">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                      </svg>
+                      Most Popular
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </article>
+    } @else {
+      <div class="empty-state poll-empty">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <h3>No Active Polls</h3>
+        <p>There are no active community polls at this time. Check the Past Polls tab to see previous voting results.</p>
+      </div>
+    }
+  }
+
+  <!-- Past Polls Tab -->
+  @if (pollTab() === 'past') {
+    @if (selectedPastPoll(); as selectedPoll) {
+      <!-- Past Poll Detail View -->
+      <article class="panel poll-card past-poll-detail">
+        <button type="button" class="back-btn" (click)="closePastPollDetail()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back to Past Polls
+        </button>
+
+        <div class="poll-header">
+          <div class="poll-status-badge closed">Closed</div>
+          <h2 class="poll-question">{{ selectedPoll.title }}</h2>
+          <p class="poll-description">{{ selectedPoll.description }}</p>
+          <div class="poll-meta-bar">
+            <span class="poll-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              Event Date: {{ selectedPoll.date | date:'mediumDate' }}
+            </span>
+            <span class="poll-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              {{ getTotalVotes(selectedPoll) }} total votes
+            </span>
+          </div>
+
+          @if (hasUserVotedOnPoll(selectedPoll.id)) {
+            <div class="user-vote-indicator">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span>You participated in this poll</span>
+            </div>
+          }
+
+          <div class="poll-results final-results">
+            <h3 class="results-title">Voting Summary</h3>
+            <p class="results-subtitle">Volunteer availability preferences for this event</p>
+            <div class="results-list">
+              @for (option of selectedPoll.options; track option.id) {
+                <div class="result-item" [class.user-choice]="hasUserVotedOnPoll(selectedPoll.id) && option.id === 4">
+                  <div class="result-info">
+                    <span class="result-label">{{ option.timeSlot }}</span>
+                    <div class="result-stats">
+                      <span class="result-votes">{{ option.votes }} volunteers</span>
+                      <span class="result-percentage">{{ getVotePercentage(option, selectedPoll) }}%</span>
+                    </div>
+                  </div>
+                  <div class="result-bar-container">
+                    <div class="result-bar" [style.width.%]="getVotePercentage(option, selectedPoll)"></div>
+                  </div>
+                  @if (hasUserVotedOnPoll(selectedPoll.id) && option.id === 4) {
+                    <div class="user-choice-badge">Your Selection</div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </article>
+    } @else {
+      <!-- Past Polls List -->
+      <div class="past-polls-list">
+        @for (poll of pastPolls(); track poll.id) {
+          <article class="panel past-poll-card" (click)="selectPastPoll(poll)">
+            <div class="past-poll-header">
+              <div class="past-poll-status">Closed</div>
+              <h3 class="past-poll-title">{{ poll.title }}</h3>
+              <p class="past-poll-date">{{ poll.date | date:'mediumDate' }}</p>
+            </div>
+            <div class="past-poll-summary">
+              <div class="summary-item">
+                <span class="summary-value">{{ getTotalVotes(poll) }}</span>
+                <span class="summary-label">Volunteers</span>
+              </div>
+              <div class="summary-item">
+                <span class="summary-value">{{ poll.options.length }}</span>
+                <span class="summary-label">Time Slots</span>
+              </div>
+              <div class="summary-item popular-preview">
+                <span class="summary-value">{{ getMostVotedOption(poll)?.votes || 0 }}</span>
+                <span class="summary-label">Top Choice</span>
+              </div>
+            </div>
+            <div class="past-poll-popular">
+              <span class="popular-label">Most volunteers chose:</span>
+              <span class="popular-value">{{ getMostVotedOption(poll)?.timeSlot || 'No votes' }}</span>
+            </div>
+            @if (hasUserVotedOnPoll(poll.id)) {
+              <div class="participated-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                You Voted
+              </div>
+            }
+            <div class="view-details-hint">
+              <span>Click to view details</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </div>
+          </article>
+        } @empty {
+          <div class="empty-state poll-empty">
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+              </svg>
+            </div>
+            <h3>No Past Polls</h3>
+            <p>There are no past polls to display at this time.</p>
+          </div>
+        }
+      </div>
+    }
+  }
+  </article>
+</section>
