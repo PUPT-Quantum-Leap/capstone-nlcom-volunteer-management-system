@@ -7,7 +7,7 @@ import {
   signal,
   DestroyRef,
 } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet, NgOptimizedImage } from '@angular/common';
 import { Router, RouterOutlet, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { VolunteerService } from '../../services/volunteer.service';
@@ -17,7 +17,7 @@ import { NotificationItem } from '../../models/notification-item';
 @Component({
   selector: 'app-volunteer-dashboard-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, NgTemplateOutlet],
+  imports: [RouterOutlet, NgTemplateOutlet, NgOptimizedImage],
   templateUrl: './volunteer-dashboard-shell.html',
   styleUrl: './volunteer-dashboard-shell.scss',
 })

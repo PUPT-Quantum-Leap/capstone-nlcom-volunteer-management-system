@@ -18,7 +18,7 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { forkJoin } from 'rxjs';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
@@ -34,7 +34,7 @@ import { NLCOMOperation, DashboardView, EventModuleCard, BackupRecord, Attendanc
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule, NgOptimizedImage],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })
