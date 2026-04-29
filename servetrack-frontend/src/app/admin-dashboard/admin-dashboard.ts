@@ -48,7 +48,7 @@ export class AdminDashboard implements OnInit {
   private userService = inject(UserService);
   private analyticsService = inject(AnalyticsService);
 
-  readonly defaultPhoto = '/assets/nlcom.png';
+  readonly defaultPhoto = '/assets/person.svg';
   readonly Math = Math;
 
   currentView = signal<'overview' | 'volunteers' | 'attendance' | 'performance' | 'rsvps' | 'ics' | 'users' | 'analytics' | 'sms' | 'backup'>('overview');

@@ -296,6 +296,11 @@
   object-fit: cover;
   border: 2px solid white;
   box-shadow: var(--shadow-sm);
+
+  &.svg {
+    background: var(--primary);
+    padding: 4px;
+  }
 }
 
 .user-info {

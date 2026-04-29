@@ -33,7 +33,7 @@ export class ProfileComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(InputSanitizerService);
 
-  readonly defaultPhoto = '/assets/volunteer1.png';
+  readonly defaultPhoto = '/assets/person.svg';
 
   // ── Profile State ───────────────────────────────────────────────────────
   isEditMode = signal(false);

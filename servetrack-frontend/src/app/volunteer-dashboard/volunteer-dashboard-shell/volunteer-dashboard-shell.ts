@@ -28,7 +28,7 @@ export class VolunteerDashboardShell implements OnInit {
   private volunteerService = inject(VolunteerService);
   private destroyRef = inject(DestroyRef);
 
-  readonly defaultPhoto = '/assets/volunteer1.png';
+  readonly defaultPhoto = '/assets/person.svg';
 
   // ── Navigation State ───────────────────────────────────────────────────
   userName = signal(this.authService.currentUser()?.name || 'Volunteer');
