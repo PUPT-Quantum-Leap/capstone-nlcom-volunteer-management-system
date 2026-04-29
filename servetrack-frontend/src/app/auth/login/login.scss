@@ -429,6 +429,28 @@ $error-light: #fee2e2;
   }
 }
 
+// Success message styles
+.success-message {
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 0.875rem 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-left: 4px solid #16a34a;
+  animation: slideDown 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .success-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+}
+
 // Popup Modal Styles
 .popup-overlay {
   position: fixed;

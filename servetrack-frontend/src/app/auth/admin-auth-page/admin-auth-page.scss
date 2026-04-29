@@ -138,6 +138,21 @@ $success:     #059669;
     color: $error;
     border-left: 4px solid $error;
   }
+
+  &.alert-success {
+    background: #dcfce7;
+    color: #16a34a;
+    border-left: 4px solid #16a34a;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .alert-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+  }
 }
 
 // ── Form ───────────────────────────────────────────────────────────────────
