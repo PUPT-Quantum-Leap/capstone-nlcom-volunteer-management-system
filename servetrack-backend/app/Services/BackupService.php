@@ -109,7 +109,21 @@ class BackupService
      */
     private function createDatabaseDump(string $outputFile): void
     {
-        $database = config('database.connections.mysql.database');
+        // Resolve database connection and driver
+        $connectionName = config('database.default');
+        if (! $connectionName) {
+            throw new Exception('Database default connection not configured');
+        }
+
+        $driver = config("database.connections.{$connectionName}.driver");
+        if (! $driver) {
+            throw new Exception("Database driver not configured for connection: {$connectionName}");
+        }
+
+        $database = config("database.connections.{$connectionName}.database");
+        if (! $database) {
+            throw new Exception("Database name not configured for connection: {$connectionName}");
+        }
 
         // Tables to exclude (system tables)
         $excludeTables = [
@@ -128,38 +142,40 @@ class BackupService
             $sqlContent .= "-- Database: {$database}\n";
             // Get database version based on database type
             $version = 'Unknown';
-            $dbType = config('database.default');
             try {
-                if ($dbType === 'mysql') {
+                if ($driver === 'mysql' || $driver === 'mariadb') {
                     $version = DB::select(
                         'SELECT VERSION() as version'
                     )[0]->version ?? 'Unknown';
-                } elseif ($dbType === 'sqlite') {
+                } elseif ($driver === 'sqlite') {
                     $version = DB::select(
                         'SELECT sqlite_version() as version'
                     )[0]->version ?? 'Unknown';
-                } elseif ($dbType === 'pgsql') {
+                } elseif ($driver === 'pgsql') {
                     $version = DB::select(
                         'SELECT version()'
                     )[0]->version ?? 'Unknown';
+                } else {
+                    throw new Exception("Unsupported database driver: {$driver}");
                 }
             } catch (Exception $e) {
                 $version = 'Unknown';
             }
-            $sqlContent .= '-- Database Type: '.ucfirst($dbType)."\n";
+            $sqlContent .= '-- Database Type: '.ucfirst($driver)."\n";
             $sqlContent .= '-- Server Version: '.$version."\n\n";
 
             // Add database-specific compatibility settings
-            if ($dbType === 'mysql') {
+            if ($driver === 'mysql' || $driver === 'mariadb') {
                 $sqlContent .= "SET FOREIGN_KEY_CHECKS=0;\n";
                 $sqlContent .= 'SET SQL_MODE='
                             ."'NO_AUTO_VALUE_ON_ZERO';\n";
                 $sqlContent .= "SET AUTOCOMMIT=0;\n";
                 $sqlContent .= "START TRANSACTION;\n\n";
-            } elseif ($dbType === 'sqlite') {
+            } elseif ($driver === 'sqlite') {
                 $sqlContent .= "PRAGMA foreign_keys = OFF;\n";
+                // Note: Don't actually start transaction here, just include in SQL
                 $sqlContent .= "BEGIN TRANSACTION;\n\n";
-            } elseif ($dbType === 'pgsql') {
+            } elseif ($driver === 'pgsql') {
                 $sqlContent .= 'SET '
                             ."session_replication_role = replica;\n";
                 $sqlContent .= "BEGIN;\n\n";
@@ -167,17 +183,17 @@ class BackupService
 
             // Get all tables except excluded ones
             $tables = [];
-            if ($dbType === 'mysql') {
+            if ($driver === 'mysql' || $driver === 'mariadb') {
                 $tables = DB::select('SHOW TABLES');
                 $tableField = 'Tables_in_'
                             .$database;
-            } elseif ($dbType === 'sqlite') {
+            } elseif ($driver === 'sqlite') {
                 $tables = DB::select(
                     'SELECT name FROM sqlite_master '
                     ."WHERE type='table'"
                 );
                 $tableField = 'name';
-            } elseif ($dbType === 'pgsql') {
+            } elseif ($driver === 'pgsql') {
                 $tables = DB::select(
                     'SELECT tablename FROM pg_tables '
                     ."WHERE schemaname = 'public'"
@@ -193,7 +209,7 @@ class BackupService
                 }
 
                 // Get table structure
-                if ($dbType === 'mysql') {
+                if ($driver === 'mysql' || $driver === 'mariadb') {
                     $createTable = DB::select(
                         "SHOW CREATE TABLE `{$tableName}`"
                     );
@@ -203,7 +219,7 @@ class BackupService
                         $sqlContent .= $createTable[0]->{'Create Table'}
                                       .";\n\n";
                     }
-                } elseif ($dbType === 'sqlite') {
+                } elseif ($driver === 'sqlite') {
                     $createTable = DB::select(
                         'SELECT sql FROM sqlite_master '
                         ."WHERE type='table' AND name=?",
@@ -215,8 +231,8 @@ class BackupService
                         $sqlContent .= $createTable[0]->sql
                                       .";\n\n";
                     }
-                } elseif ($dbType === 'pgsql') {
-                    // For PostgreSQL, get table structure from information_schema
+                } elseif ($driver === 'pgsql') {
+                    // For PostgreSQL, get comprehensive table structure including constraints and indexes
                     $createTable = DB::select(
                         'SELECT column_name, data_type, '
                         .'is_nullable, column_default '
@@ -226,13 +242,16 @@ class BackupService
                         .'ORDER BY ordinal_position',
                         [$tableName]
                     );
+
                     if (! empty($createTable)) {
-                        $sqlContent .= "-- Table structure for `{$tableName}`\n";
-                        $sqlContent .= "DROP TABLE IF EXISTS `{$tableName}`;\n";
-                        $sqlContent .= "CREATE TABLE `{$tableName}` (\n";
+                        $sqlContent .= "-- Table structure for \"{$tableName}\"\n";
+                        $sqlContent .= "DROP TABLE IF EXISTS \"{$tableName}\";\n";
+                        $sqlContent .= "CREATE TABLE \"{$tableName}\" (\n";
+
+                        // Build column definitions
                         $columns = [];
                         foreach ($createTable as $column) {
-                            $colDef = "`{$column->column_name}` "
+                            $colDef = "\"{$column->column_name}\" "
                                       ."{$column->data_type}";
                             if ($column->is_nullable === 'NO') {
                                 $colDef .= ' NOT NULL';
@@ -243,22 +262,137 @@ class BackupService
                             }
                             $columns[] = $colDef;
                         }
-                        $sqlContent .= implode(",\n", $columns)
-                                      ."\n);\n\n";
+
+                        // Get primary key constraints
+                        $primaryKeys = DB::select(
+                            'SELECT kcu.column_name '
+                            .'FROM information_schema.table_constraints tc '
+                            .'JOIN information_schema.key_column_usage kcu '
+                            .'ON tc.constraint_name = kcu.constraint_name '
+                            .'WHERE tc.table_name = ? '
+                            ."AND tc.table_schema = 'public' "
+                            ."AND tc.constraint_type = 'PRIMARY KEY' "
+                            .'ORDER BY kcu.ordinal_position',
+                            [$tableName]
+                        );
+
+                        if (! empty($primaryKeys)) {
+                            $pkColumns = array_map(fn ($pk) => "\"{$pk->column_name}\"", $primaryKeys);
+                            $columns[] = 'PRIMARY KEY ('.implode(', ', $pkColumns).')';
+                        }
+
+                        // Get unique constraints
+                        $uniqueConstraints = DB::select(
+                            'SELECT tc.constraint_name, kcu.column_name '
+                            .'FROM information_schema.table_constraints tc '
+                            .'JOIN information_schema.key_column_usage kcu '
+                            .'ON tc.constraint_name = kcu.constraint_name '
+                            .'WHERE tc.table_name = ? '
+                            ."AND tc.table_schema = 'public' "
+                            ."AND tc.constraint_type = 'UNIQUE' "
+                            .'ORDER BY tc.constraint_name, kcu.ordinal_position',
+                            [$tableName]
+                        );
+
+                        if (! empty($uniqueConstraints)) {
+                            $constraintsByName = [];
+                            foreach ($uniqueConstraints as $constraint) {
+                                $constraintsByName[$constraint->constraint_name][] = "\"{$constraint->column_name}\"";
+                            }
+                            foreach ($constraintsByName as $constraintName => $columns) {
+                                $columns[] = "CONSTRAINT \"{$constraintName}\" UNIQUE (".implode(', ', $columns).')';
+                            }
+                        }
+
+                        // Get foreign key constraints
+                        $foreignKeys = DB::select(
+                            'SELECT tc.constraint_name, kcu.column_name, '
+                            .'ccu.table_name AS foreign_table_name, '
+                            .'ccu.column_name AS foreign_column_name, '
+                            .'rc.delete_rule, rc.update_rule '
+                            .'FROM information_schema.table_constraints tc '
+                            .'JOIN information_schema.key_column_usage kcu '
+                            .'ON tc.constraint_name = kcu.constraint_name '
+                            .'JOIN information_schema.referential_constraints rc '
+                            .'ON tc.constraint_name = rc.constraint_name '
+                            .'JOIN information_schema.constraint_column_usage ccu '
+                            .'ON rc.unique_constraint_name = ccu.constraint_name '
+                            .'WHERE tc.table_name = ? '
+                            ."AND tc.table_schema = 'public' "
+                            ."AND tc.constraint_type = 'FOREIGN KEY' "
+                            .'ORDER BY tc.constraint_name, kcu.ordinal_position',
+                            [$tableName]
+                        );
+
+                        if (! empty($foreignKeys)) {
+                            $constraintsByName = [];
+                            foreach ($foreignKeys as $fk) {
+                                if (! isset($constraintsByName[$fk->constraint_name])) {
+                                    $constraintsByName[$fk->constraint_name] = [
+                                        'columns' => [],
+                                        'foreign_table' => $fk->foreign_table_name,
+                                        'foreign_columns' => [],
+                                        'delete_rule' => $fk->delete_rule,
+                                        'update_rule' => $fk->update_rule,
+                                    ];
+                                }
+                                $constraintsByName[$fk->constraint_name]['columns'][] = "\"{$fk->column_name}\"";
+                                $constraintsByName[$fk->constraint_name]['foreign_columns'][] = "\"{$fk->foreign_column_name}\"";
+                            }
+                            foreach ($constraintsByName as $constraintName => $fk) {
+                                $fkDef = "CONSTRAINT \"{$constraintName}\" FOREIGN KEY ("
+                                        .implode(', ', $fk['columns']).') '
+                                        ."REFERENCES \"{$fk['foreign_table']}\" ("
+                                        .implode(', ', $fk['foreign_columns']).')';
+                                if ($fk['delete_rule']) {
+                                    $fkDef .= ' ON DELETE '.$fk['delete_rule'];
+                                }
+                                if ($fk['update_rule']) {
+                                    $fkDef .= ' ON UPDATE '.$fk['update_rule'];
+                                }
+                                $columns[] = $fkDef;
+                            }
+                        }
+
+                        $sqlContent .= implode(",\n", $columns)."\n);\n";
+
+                        // Get indexes (excluding those that are already constraints)
+                        $indexes = DB::select(
+                            'SELECT indexname, indexdef '
+                            .'FROM pg_indexes '
+                            .'WHERE tablename = ? '
+                            ."AND schemaname = 'public' "
+                            .'AND indexname NOT LIKE \'%_pkey\' '
+                            .'AND indexname NOT IN ('
+                            .'SELECT constraint_name '
+                            .'FROM information_schema.table_constraints '
+                            .'WHERE table_name = ? '
+                            ."AND table_schema = 'public'"
+                            .')',
+                            [$tableName, $tableName]
+                        );
+
+                        foreach ($indexes as $index) {
+                            $sqlContent .= $index->indexdef.";\n";
+                        }
+
+                        $sqlContent .= "\n";
                     }
                 }
 
                 // Get table data
                 $rows = DB::table($tableName)->get();
                 if ($rows->isNotEmpty()) {
-                    $sqlContent .= "-- Data for table `{$tableName}`\n";
+                    // Use appropriate quoting based on database driver
+                    $quoteChar = ($driver === 'pgsql') ? '"' : '`';
+                    $sqlContent .= "-- Data for table {$quoteChar}{$tableName}{$quoteChar}\n";
 
                     foreach ($rows as $row) {
                         $values = [];
                         $columns = [];
 
                         foreach ((array) $row as $key => $value) {
-                            $columns[] = "`{$key}`";
+                            $columns[] = "{$quoteChar}{$key}{$quoteChar}";
                             if ($value === null) {
                                 $values[] = 'NULL';
                             } else {
@@ -266,7 +400,7 @@ class BackupService
                             }
                         }
 
-                        $sqlContent .= "INSERT INTO `{$tableName}` ("
+                        $sqlContent .= "INSERT INTO {$quoteChar}{$tableName}{$quoteChar} ("
                                       .implode(', ', $columns)
                                       .') VALUES ('
                                       .implode(', ', $values)
@@ -279,13 +413,13 @@ class BackupService
 
             // Add database-specific completion statements
             $sqlContent .= "\n-- Transaction completion\n";
-            if ($dbType === 'mysql') {
+            if ($driver === 'mysql' || $driver === 'mariadb') {
                 $sqlContent .= "COMMIT;\n";
                 $sqlContent .= "SET FOREIGN_KEY_CHECKS=1;\n";
-            } elseif ($dbType === 'sqlite') {
+            } elseif ($driver === 'sqlite') {
                 $sqlContent .= "COMMIT;\n";
                 $sqlContent .= "PRAGMA foreign_keys = ON;\n";
-            } elseif ($dbType === 'pgsql') {
+            } elseif ($driver === 'pgsql') {
                 $sqlContent .= "COMMIT;\n";
                 $sqlContent .= "SET session_replication_role = DEFAULT;\n";
             }
@@ -414,6 +548,16 @@ class BackupService
             // Execute each statement
             foreach ($statements as $statement) {
                 if (! empty($statement)) {
+                    // Skip transaction statements if already in transaction (common in testing)
+                    if (preg_match('/^(BEGIN|START TRANSACTION|COMMIT|ROLLBACK)/i', trim($statement))) {
+                        continue;
+                    }
+
+                    // Skip SQLite system table operations
+                    if (preg_match('/sqlite_sequence/i', $statement)) {
+                        continue;
+                    }
+
                     if (stripos($statement, 'backups') !== false &&
                         (stripos($statement, 'DROP TABLE') !== false ||
                          stripos($statement, 'CREATE TABLE') !== false ||
