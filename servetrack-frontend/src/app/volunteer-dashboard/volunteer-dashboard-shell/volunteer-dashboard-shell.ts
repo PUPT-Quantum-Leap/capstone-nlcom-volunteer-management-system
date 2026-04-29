@@ -32,7 +32,7 @@ export class VolunteerDashboardShell implements OnInit {
 
   // ── Navigation State ───────────────────────────────────────────────────
   userName = signal(this.authService.currentUser()?.name || 'Volunteer');
-  sidebarCollapsed = signal(false);
+  sidebarCollapsed = signal(this.getStoredSidebarState());
   mobileSidebarOpen = signal(false);
   isMobile = signal(false);
   isLoading = signal(false);
@@ -124,7 +124,30 @@ export class VolunteerDashboardShell implements OnInit {
     if (this.isMobile()) {
       this.mobileSidebarOpen.update((v) => !v);
     } else {
-      this.sidebarCollapsed.update((v) => !v);
+      const newState = !this.sidebarCollapsed();
+      this.sidebarCollapsed.set(newState);
+      this.saveSidebarState(newState);
+    }
+  }
+
+  private getStoredSidebarState(): boolean {
+    if (typeof window !== 'undefined' &&
+        window.localStorage) {
+      const stored = localStorage.getItem(
+        'volunteer-sidebar-collapsed'
+      );
+      return stored === 'true';
+    }
+    return false;
+  }
+
+  private saveSidebarState(collapsed: boolean): void {
+    if (typeof window !== 'undefined' &&
+        window.localStorage) {
+      localStorage.setItem(
+        'volunteer-sidebar-collapsed',
+        collapsed.toString()
+      );
     }
   }
 

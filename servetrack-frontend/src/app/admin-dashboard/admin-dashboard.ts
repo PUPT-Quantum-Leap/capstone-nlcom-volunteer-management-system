@@ -79,7 +79,7 @@ export class AdminDashboard implements OnInit {
         return 'Admin Dashboard';
     }
   });
-  sidebarCollapsed = signal(false);
+  sidebarCollapsed = signal(this.getStoredSidebarState());
   mobileSidebarOpen = signal(false);
   isLoading = signal(false);
 
@@ -786,7 +786,30 @@ export class AdminDashboard implements OnInit {
   }
 
   toggleSidebar(): void {
-    this.sidebarCollapsed.update((v) => !v);
+    const newState = !this.sidebarCollapsed();
+    this.sidebarCollapsed.set(newState);
+    this.saveSidebarState(newState);
+  }
+
+  private getStoredSidebarState(): boolean {
+    if (typeof window !== 'undefined' &&
+        window.localStorage) {
+      const stored = localStorage.getItem(
+        'admin-sidebar-collapsed'
+      );
+      return stored === 'true';
+    }
+    return false;
+  }
+
+  private saveSidebarState(collapsed: boolean): void {
+    if (typeof window !== 'undefined' &&
+        window.localStorage) {
+      localStorage.setItem(
+        'admin-sidebar-collapsed',
+        collapsed.toString()
+      );
+    }
   }
 
   toggleMobileSidebar(): void {
