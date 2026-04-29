@@ -24,7 +24,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          model: openrouter/z-ai/glm-4.5-air:free
+          model: openrouter/openai/gpt-oss-120b:free
           use_github_token: true
           prompt: |
             Review this pull request for our Angular 21 + Laravel 12 monorepo:
