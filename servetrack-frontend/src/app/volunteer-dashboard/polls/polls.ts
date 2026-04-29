@@ -4,11 +4,12 @@ import {
   inject,
   OnInit,
   signal,
+  computed,
   DestroyRef,
 } from '@angular/core';
 import { DatePipe, TitleCasePipe } from '@angular/common';
 import { RsvpService } from '../../services/rsvp.service';
-import { Rsvp } from '../../models/rsvp';
+import { Rsvp, UserVote } from '../../models/rsvp';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface PollOption {
@@ -28,6 +29,9 @@ interface Poll {
   status: 'draft' | 'active' | 'closed';
   options: PollOption[];
   totalResponses?: number;
+  userVote?: UserVote | null;
+  canEditVote?: boolean;
+  remainingEdits?: number;
 }
 
 @Component({
@@ -40,7 +44,6 @@ export class PollsComponent implements OnInit {
   private rsvpService = inject(RsvpService);
   private destroyRef = inject(DestroyRef);
 
-  // ── Poll State ──────────────────────────────────────────────────────────
   pollTab = signal<'active' | 'past'>('active');
   activePoll = signal<Poll | null>(null);
   pastPolls = signal<Poll[]>([]);
@@ -48,10 +51,17 @@ export class PollsComponent implements OnInit {
   isLoading = signal(true);
   pollError = signal<string | null>(null);
 
-  // ── Voting State ─────────────────────────────────────────────────────────
   hasSubmittedVote = signal(false);
   selectedOptionId = signal<number | null>(null);
-  userVotes = signal<Map<number, number>>(new Map());
+  userVotes = signal<Map<number, UserVote>>(new Map());
+
+  isVoting = signal(false);
+  voteError = signal<string | null>(null);
+  isEditMode = signal(false);
+
+  userVote = computed(() => this.activePoll()?.userVote ?? null);
+  canEdit = computed(() => this.activePoll()?.canEditVote ?? false);
+  remainingEdits = computed(() => this.activePoll()?.remainingEdits ?? 0);
 
   ngOnInit(): void {
     this.loadRsvpEvents();
@@ -67,11 +77,21 @@ export class PollsComponent implements OnInit {
       .subscribe({
         next: (response) => {
           const rsvps: Rsvp[] = response.data;
-          const activeRsvps = rsvps.filter((r) => r.status === 'active');
-          const pastRsvps = rsvps.filter((r) => r.status === 'closed');
+          const activeRsvps = rsvps.filter((r: Rsvp) => r.status === 'active');
+          const pastRsvps = rsvps.filter((r: Rsvp) => r.status === 'closed');
 
-          this.activePoll.set(activeRsvps.length > 0 ? this.mapRsvpToPoll(activeRsvps[0]) : null);
-          this.pastPolls.set(pastRsvps.map((r) => this.mapRsvpToPoll(r)));
+          const activePoll = activeRsvps.length > 0 ? this.mapRsvpToPoll(activeRsvps[0]) : null;
+          this.activePoll.set(activePoll);
+
+          if (activePoll?.userVote) {
+            const votes = new Map(this.userVotes());
+            votes.set(activePoll.id, activePoll.userVote);
+            this.userVotes.set(votes);
+            this.hasSubmittedVote.set(true);
+            this.selectedOptionId.set(activePoll.userVote.timeSlotId);
+          }
+
+          this.pastPolls.set(pastRsvps.map((r: Rsvp) => this.mapRsvpToPoll(r)));
           this.isLoading.set(false);
         },
         error: () => {
@@ -97,6 +117,9 @@ export class PollsComponent implements OnInit {
         capacity: shift.capacity,
         votes: shift.responses,
       })),
+      userVote: rsvp.userVote,
+      canEditVote: rsvp.canEditVote,
+      remainingEdits: rsvp.remainingEdits,
     };
   }
 
@@ -117,19 +140,66 @@ export class PollsComponent implements OnInit {
     return option.votes >= option.capacity;
   }
 
+  selectOption(optionId: number): void {
+    if (this.hasSubmittedVote() && !this.isEditMode()) return;
+    this.selectedOptionId.set(optionId);
+    this.voteError.set(null);
+  }
+
   submitPollVote(): void {
     const poll = this.activePoll();
     const optionId = this.selectedOptionId();
     if (!poll || optionId === null) return;
 
-    this.isLoading.set(true);
-    this.pollError.set(null);
+    this.isVoting.set(true);
+    this.voteError.set(null);
 
-    // Simulate API call
-    setTimeout(() => {
-      this.hasSubmittedVote.set(true);
-      this.isLoading.set(false);
-    }, 1000);
+    const isEditing = this.hasSubmittedVote() && this.isEditMode();
+    const apiCall = isEditing
+      ? this.rsvpService.updateRsvpResponse(poll.id, optionId)
+      : this.rsvpService.vote(poll.id, optionId);
+
+    apiCall.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response: { message: string; remaining_edits?: number }) => {
+        this.hasSubmittedVote.set(true);
+        this.isVoting.set(false);
+        this.isEditMode.set(false);
+
+        if (isEditing && response.remaining_edits !== undefined) {
+          const remainingEdits = response.remaining_edits as number;
+          this.activePoll.update((p) => {
+            if (!p) return p;
+            return {
+              ...p,
+              remainingEdits,
+              canEditVote: remainingEdits > 0,
+              userVote: p.userVote ? { ...p.userVote, remainingEdits } : undefined,
+            };
+          });
+        }
+
+        this.loadRsvpEvents();
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.voteError.set(err?.error?.message ?? 'Failed to submit vote. Please try again.');
+        this.isVoting.set(false);
+      },
+    });
+  }
+
+  enterEditMode(): void {
+    if (!this.canEdit()) return;
+    this.isEditMode.set(true);
+    this.selectedOptionId.set(null);
+    this.voteError.set(null);
+  }
+
+  cancelEditMode(): void {
+    this.isEditMode.set(false);
+    const userVote = this.userVote();
+    if (userVote) {
+      this.selectedOptionId.set(userVote.timeSlotId);
+    }
   }
 
   getVotePercentage(option: PollOption, poll: Poll): number {
@@ -152,7 +222,7 @@ export class PollsComponent implements OnInit {
   }
 
   getUserSelectedOption(pollId: number): number | null {
-    return this.userVotes().get(pollId) ?? null;
+    return this.userVotes().get(pollId)?.timeSlotId ?? null;
   }
 
   getDaysUntilClosing(cutOffDay: string | undefined, date: string | undefined): string {
@@ -166,5 +236,13 @@ export class PollsComponent implements OnInit {
     if (diffDays === 0) return 'Closes today';
     if (diffDays === 1) return 'Closes tomorrow';
     return `${diffDays} days left to vote`;
+  }
+
+  getSelectedOptionTimeSlot(): string {
+    const poll = this.activePoll();
+    const optionId = this.selectedOptionId();
+    if (!poll || optionId === null) return '';
+    const option = poll.options.find((o) => o.id === optionId);
+    return option?.timeSlot ?? '';
   }
 }
