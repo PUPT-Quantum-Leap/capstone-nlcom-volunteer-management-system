@@ -27,8 +27,8 @@ return new class extends Migration {
                 ->onDelete('cascade')
                 ->onUpdate('cascade');
 
-            $table->index('volunteer_id');
-            $table->index('team_id');
+            // Add composite unique constraint to prevent duplicate volunteer-team pairs
+            $table->unique(['volunteer_id', 'team_id'], 'volunteer_team_unique');
         });
     }
 
