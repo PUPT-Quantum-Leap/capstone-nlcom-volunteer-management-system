@@ -7,9 +7,9 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { DatePipe, TitleCasePipe } from '@angular/common';
-import { VolunteerService } from '../../services/volunteer.service';
+import { RsvpService } from '../../services/rsvp.service';
+import { Rsvp } from '../../models/rsvp';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
 
 interface PollOption {
   id: number;
@@ -20,12 +20,14 @@ interface PollOption {
 
 interface Poll {
   id: number;
+  slug: string;
   title: string;
   description?: string;
   date?: string;
   cutOffDay?: string;
   status: 'draft' | 'active' | 'closed';
   options: PollOption[];
+  totalResponses?: number;
 }
 
 @Component({
@@ -35,7 +37,7 @@ interface Poll {
   styleUrl: './polls.scss',
 })
 export class PollsComponent implements OnInit {
-  private volunteerService = inject(VolunteerService);
+  private rsvpService = inject(RsvpService);
   private destroyRef = inject(DestroyRef);
 
   // ── Poll State ──────────────────────────────────────────────────────────
@@ -43,78 +45,59 @@ export class PollsComponent implements OnInit {
   activePoll = signal<Poll | null>(null);
   pastPolls = signal<Poll[]>([]);
   selectedPastPoll = signal<Poll | null>(null);
+  isLoading = signal(true);
+  pollError = signal<string | null>(null);
 
   // ── Voting State ─────────────────────────────────────────────────────────
   hasSubmittedVote = signal(false);
   selectedOptionId = signal<number | null>(null);
-  isLoading = signal(false);
-  pollError = signal<string | null>(null);
-  // Map of pollId -> selected optionId to track user's actual votes
-  userVotes = signal<Map<number, number>>(new Map([[2, 4]]));
+  userVotes = signal<Map<number, number>>(new Map());
 
   ngOnInit(): void {
-    this.loadSamplePolls();
+    this.loadRsvpEvents();
   }
 
-  private loadSamplePolls(): void {
-    // Sample active poll
-    this.activePoll.set({
-      id: 1,
-      title: 'May 2026 Outreach Assignment Preferences',
-      description: 'Select your preferred time slot for the upcoming community outreach event.',
-      date: '2026-05-15',
-      cutOffDay: '2026-05-10',
-      status: 'active',
-      options: [
-        { id: 1, timeSlot: 'Morning Shift (6:00 AM - 12:00 PM)', votes: 12, capacity: 20 },
-        { id: 2, timeSlot: 'Afternoon Shift (12:00 PM - 6:00 PM)', votes: 8, capacity: 15 },
-        { id: 3, timeSlot: 'Evening Shift (6:00 PM - 10:00 PM)', votes: 5, capacity: 10 },
-      ],
-    });
+  private loadRsvpEvents(): void {
+    this.isLoading.set(true);
+    this.pollError.set(null);
 
-    // Sample past polls
-    this.pastPolls.set([
-      {
-        id: 2,
-        title: 'April 2026 Relief Operation Schedule',
-        description: 'Preferred schedule for the disaster relief operation.',
-        date: '2026-04-20',
-        cutOffDay: '2026-04-15',
-        status: 'closed',
-        options: [
-          { id: 4, timeSlot: 'Weekday Morning', votes: 25, capacity: 30 },
-          { id: 5, timeSlot: 'Weekend Full Day', votes: 35, capacity: 40 },
-          { id: 6, timeSlot: 'Weekday Evening', votes: 15, capacity: 20 },
-        ],
-      },
-      {
-        id: 3,
-        title: 'March 2026 Medical Mission Schedule',
-        description: 'Select your availability for the medical mission.',
-        date: '2026-03-18',
-        cutOffDay: '2026-03-12',
-        status: 'closed',
-        options: [
-          { id: 7, timeSlot: 'Day 1 - Morning', votes: 18, capacity: 25 },
-          { id: 8, timeSlot: 'Day 1 - Afternoon', votes: 12, capacity: 20 },
-          { id: 9, timeSlot: 'Day 2 - Morning', votes: 20, capacity: 25 },
-          { id: 10, timeSlot: 'Day 2 - Afternoon', votes: 15, capacity: 20 },
-        ],
-      },
-      {
-        id: 4,
-        title: 'December 2025 Christmas Outreach',
-        description: 'Volunteer shifts for the annual Christmas outreach event.',
-        date: '2025-12-20',
-        cutOffDay: '2025-12-15',
-        status: 'closed',
-        options: [
-          { id: 11, timeSlot: 'Gift Distribution - Morning', votes: 30, capacity: 35 },
-          { id: 12, timeSlot: 'Food Preparation', votes: 20, capacity: 25 },
-          { id: 13, timeSlot: 'Entertainment & Activities', votes: 15, capacity: 20 },
-        ],
-      },
-    ]);
+    this.rsvpService
+      .getRsvps()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          const rsvps: Rsvp[] = response.data;
+          const activeRsvps = rsvps.filter((r) => r.status === 'active');
+          const pastRsvps = rsvps.filter((r) => r.status === 'closed');
+
+          this.activePoll.set(activeRsvps.length > 0 ? this.mapRsvpToPoll(activeRsvps[0]) : null);
+          this.pastPolls.set(pastRsvps.map((r) => this.mapRsvpToPoll(r)));
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.pollError.set('Failed to load RSVP events. Please try again later.');
+          this.isLoading.set(false);
+        },
+      });
+  }
+
+  private mapRsvpToPoll(rsvp: Rsvp): Poll {
+    return {
+      id: rsvp.id,
+      slug: rsvp.slug,
+      title: rsvp.title,
+      description: rsvp.description,
+      date: rsvp.date,
+      cutOffDay: rsvp.cutOffDay,
+      status: rsvp.status,
+      totalResponses: rsvp.totalResponses,
+      options: rsvp.shifts.map((shift) => ({
+        id: shift.id,
+        timeSlot: shift.timeSlot,
+        capacity: shift.capacity,
+        votes: shift.responses,
+      })),
+    };
   }
 
   setPollTab(tab: 'active' | 'past'): void {
