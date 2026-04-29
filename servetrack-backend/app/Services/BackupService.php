@@ -123,20 +123,67 @@ class BackupService
 
         try {
             $sqlContent = "-- ServeTrack Database Backup\n";
-            $sqlContent .= '-- Generated on: '.now()->toDateTimeString()."\n";
+            $sqlContent .= '-- Generated on: '
+                        .now()->toDateTimeString()."\n";
             $sqlContent .= "-- Database: {$database}\n";
-            $sqlContent .= "-- MySQL/MariaDB Compatible\n";
-            $sqlContent .= '-- Server Version: '.DB::select('SELECT VERSION() as version')[0]->version."\n\n";
+            // Get database version based on database type
+            $version = 'Unknown';
+            $dbType = config('database.default');
+            try {
+                if ($dbType === 'mysql') {
+                    $version = DB::select(
+                        'SELECT VERSION() as version'
+                    )[0]->version ?? 'Unknown';
+                } elseif ($dbType === 'sqlite') {
+                    $version = DB::select(
+                        'SELECT sqlite_version() as version'
+                    )[0]->version ?? 'Unknown';
+                } elseif ($dbType === 'pgsql') {
+                    $version = DB::select(
+                        'SELECT version()'
+                    )[0]->version ?? 'Unknown';
+                }
+            } catch (Exception $e) {
+                $version = 'Unknown';
+            }
+            $sqlContent .= '-- Database Type: '.ucfirst($dbType)."\n";
+            $sqlContent .= '-- Server Version: '.$version."\n\n";
 
-            // Add MySQL/MariaDB compatibility settings
-            $sqlContent .= "SET FOREIGN_KEY_CHECKS=0;\n";
-            $sqlContent .= "SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO';\n";
-            $sqlContent .= "SET AUTOCOMMIT=0;\n";
-            $sqlContent .= "START TRANSACTION;\n\n";
+            // Add database-specific compatibility settings
+            if ($dbType === 'mysql') {
+                $sqlContent .= "SET FOREIGN_KEY_CHECKS=0;\n";
+                $sqlContent .= 'SET SQL_MODE='
+                            ."'NO_AUTO_VALUE_ON_ZERO';\n";
+                $sqlContent .= "SET AUTOCOMMIT=0;\n";
+                $sqlContent .= "START TRANSACTION;\n\n";
+            } elseif ($dbType === 'sqlite') {
+                $sqlContent .= "PRAGMA foreign_keys = OFF;\n";
+                $sqlContent .= "BEGIN TRANSACTION;\n\n";
+            } elseif ($dbType === 'pgsql') {
+                $sqlContent .= 'SET '
+                            ."session_replication_role = replica;\n";
+                $sqlContent .= "BEGIN;\n\n";
+            }
 
             // Get all tables except excluded ones
-            $tables = DB::select('SHOW TABLES');
-            $tableField = 'Tables_in_'.$database;
+            $tables = [];
+            if ($dbType === 'mysql') {
+                $tables = DB::select('SHOW TABLES');
+                $tableField = 'Tables_in_'
+                            .$database;
+            } elseif ($dbType === 'sqlite') {
+                $tables = DB::select(
+                    'SELECT name FROM sqlite_master '
+                    ."WHERE type='table'"
+                );
+                $tableField = 'name';
+            } elseif ($dbType === 'pgsql') {
+                $tables = DB::select(
+                    'SELECT tablename FROM pg_tables '
+                    ."WHERE schemaname = 'public'"
+                );
+                $tableField = 'tablename';
+            }
 
             foreach ($tables as $table) {
                 $tableName = $table->$tableField;
@@ -146,11 +193,59 @@ class BackupService
                 }
 
                 // Get table structure
-                $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`");
-                if (! empty($createTable)) {
-                    $sqlContent .= "-- Table structure for `{$tableName}`\n";
-                    $sqlContent .= "DROP TABLE IF EXISTS `{$tableName}`;\n";
-                    $sqlContent .= $createTable[0]->{'Create Table'}.";\n\n";
+                if ($dbType === 'mysql') {
+                    $createTable = DB::select(
+                        "SHOW CREATE TABLE `{$tableName}`"
+                    );
+                    if (! empty($createTable)) {
+                        $sqlContent .= "-- Table structure for `{$tableName}`\n";
+                        $sqlContent .= "DROP TABLE IF EXISTS `{$tableName}`;\n";
+                        $sqlContent .= $createTable[0]->{'Create Table'}
+                                      .";\n\n";
+                    }
+                } elseif ($dbType === 'sqlite') {
+                    $createTable = DB::select(
+                        'SELECT sql FROM sqlite_master '
+                        ."WHERE type='table' AND name=?",
+                        [$tableName]
+                    );
+                    if (! empty($createTable) && ! empty($createTable[0]->sql)) {
+                        $sqlContent .= "-- Table structure for `{$tableName}`\n";
+                        $sqlContent .= "DROP TABLE IF EXISTS `{$tableName}`;\n";
+                        $sqlContent .= $createTable[0]->sql
+                                      .";\n\n";
+                    }
+                } elseif ($dbType === 'pgsql') {
+                    // For PostgreSQL, get table structure from information_schema
+                    $createTable = DB::select(
+                        'SELECT column_name, data_type, '
+                        .'is_nullable, column_default '
+                        .'FROM information_schema.columns '
+                        .'WHERE table_name = ? '
+                        ."AND table_schema = 'public' "
+                        .'ORDER BY ordinal_position',
+                        [$tableName]
+                    );
+                    if (! empty($createTable)) {
+                        $sqlContent .= "-- Table structure for `{$tableName}`\n";
+                        $sqlContent .= "DROP TABLE IF EXISTS `{$tableName}`;\n";
+                        $sqlContent .= "CREATE TABLE `{$tableName}` (\n";
+                        $columns = [];
+                        foreach ($createTable as $column) {
+                            $colDef = "`{$column->column_name}` "
+                                      ."{$column->data_type}";
+                            if ($column->is_nullable === 'NO') {
+                                $colDef .= ' NOT NULL';
+                            }
+                            if ($column->column_default) {
+                                $colDef .= ' DEFAULT '
+                                          .$column->column_default;
+                            }
+                            $columns[] = $colDef;
+                        }
+                        $sqlContent .= implode(",\n", $columns)
+                                      ."\n);\n\n";
+                    }
                 }
 
                 // Get table data
@@ -171,18 +266,30 @@ class BackupService
                             }
                         }
 
-                        $sqlContent .= "INSERT INTO `{$tableName}` (".implode(', ', $columns).') VALUES ('.implode(', ', $values).");\n";
+                        $sqlContent .= "INSERT INTO `{$tableName}` ("
+                                      .implode(', ', $columns)
+                                      .') VALUES ('
+                                      .implode(', ', $values)
+                                      .");\n";
                     }
 
                     $sqlContent .= "\n";
                 }
             }
 
-            // Add MySQL/MariaDB completion statements
+            // Add database-specific completion statements
             $sqlContent .= "\n-- Transaction completion\n";
-            $sqlContent .= "COMMIT;\n";
-            $sqlContent .= "SET FOREIGN_KEY_CHECKS=1;\n\n";
-            $sqlContent .= "-- Backup completed successfully\n";
+            if ($dbType === 'mysql') {
+                $sqlContent .= "COMMIT;\n";
+                $sqlContent .= "SET FOREIGN_KEY_CHECKS=1;\n";
+            } elseif ($dbType === 'sqlite') {
+                $sqlContent .= "COMMIT;\n";
+                $sqlContent .= "PRAGMA foreign_keys = ON;\n";
+            } elseif ($dbType === 'pgsql') {
+                $sqlContent .= "COMMIT;\n";
+                $sqlContent .= "SET session_replication_role = DEFAULT;\n";
+            }
+            $sqlContent .= "\n-- Backup completed successfully\n";
 
             // Write to file
             file_put_contents($outputFile, $sqlContent);
@@ -192,7 +299,10 @@ class BackupService
             }
 
         } catch (Exception $e) {
-            throw new Exception('Database dump creation failed: '.$e->getMessage());
+            throw new Exception(
+                'Database dump creation failed: '
+                .$e->getMessage()
+            );
         }
     }
 
