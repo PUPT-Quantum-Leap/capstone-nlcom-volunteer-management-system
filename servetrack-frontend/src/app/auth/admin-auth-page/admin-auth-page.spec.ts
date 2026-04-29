@@ -288,14 +288,14 @@ describe('AdminAuthPage Component', () => {
       });
     });
 
-    it('should navigate to /admin-dashboard on successful login', async () => {
+    it('should show success flash and auto-redirect on successful login', async () => {
       component.loginForm.setValue({ email: 'test@example.com', password: 'password123', rememberMe: false });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
       mockAuthService.adminLogin$.mockReturnValue(of({ success: true }));
 
       await component.onLoginSubmit();
 
-      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/admin-dashboard');
+      expect(component.isLoginSuccess()).toBe(true);
     });
 
     it('should set loginError from response.message on failed login', async () => {
@@ -333,14 +333,16 @@ describe('AdminAuthPage Component', () => {
       expect(component.loginError()).toBe('An unexpected error occurred. Please try again.');
     });
 
-    it('should reset isLoginLoading to false after success', async () => {
+    it('should maintain isLoginLoading during success flash then reset after redirect', async () => {
       component.loginForm.setValue({ email: 'test@example.com', password: 'password123', rememberMe: false });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
       mockAuthService.adminLogin$.mockReturnValue(of({ success: true }));
 
       await component.onLoginSubmit();
 
-      expect(component.isLoginLoading()).toBe(false);
+      // isLoginLoading stays true during success flash
+      expect(component.isLoginLoading()).toBe(true);
+      expect(component.isLoginSuccess()).toBe(true);
     });
 
     it('should reset isLoginLoading to false after failure', async () => {

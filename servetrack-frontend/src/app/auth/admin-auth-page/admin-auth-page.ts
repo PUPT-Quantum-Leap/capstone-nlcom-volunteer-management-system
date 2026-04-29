@@ -49,6 +49,7 @@ export class AdminAuthPage implements OnInit, OnDestroy {
   signupError = signal<string | null>(null);
   isLoginLoading = signal(false);
   isSignupLoading = signal(false);
+  isLoginSuccess = signal(false);
 
   // ─── Password visibility ─────────────────────────────────────────────────
   showLoginPassword = signal(false);
@@ -282,13 +283,24 @@ export class AdminAuthPage implements OnInit, OnDestroy {
       const response = await firstValueFrom(this.authService.adminLogin$(credentials));
 
       if (response.success) {
-        await this.router.navigateByUrl('/admin-dashboard');
+        // Show success flash and auto-redirect
+        this.isLoginSuccess.set(true);
+        setTimeout(async () => {
+          try {
+            await this.router.navigateByUrl('/admin-dashboard');
+          } catch {
+            this.loginError.set('Redirect failed. Please try again.');
+          } finally {
+            this.isLoginLoading.set(false);
+          }
+        }, 1200);
+        return;
       } else {
         this.loginError.set(response.message || 'Invalid email or password');
+        this.isLoginLoading.set(false);
       }
     } catch {
       this.loginError.set('An unexpected error occurred. Please try again.');
-    } finally {
       this.isLoginLoading.set(false);
     }
   }

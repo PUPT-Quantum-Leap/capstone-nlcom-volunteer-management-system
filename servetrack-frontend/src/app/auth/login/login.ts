@@ -27,14 +27,13 @@ export class Login implements OnInit, OnDestroy {
 
   // State signals
   isLoading = signal(false);
+  isSuccess = signal(false);  // Success flash state
   errorMessage = signal<string | null>(null);
   registrationSuccessMessage = signal<string | null>(null);
   showPassword = signal(false);
 
   // Popup signal
   showPopup = signal(false);
-  showLoginSuccessModal = signal(false);
-  loginSuccessMessage = signal<string | null>(null);
   isAdminLoginPage = signal(false);
   private loginRedirectPath: '/volunteer-dashboard' | '/admin-dashboard' = '/volunteer-dashboard';
   private queryParamsSubscription?: Subscription;
@@ -46,22 +45,6 @@ export class Login implements OnInit, OnDestroy {
 
   closePopup() {
     this.showPopup.set(false);
-  }
-
-  closeLoginSuccessModal(): void {
-    this.showLoginSuccessModal.set(false);
-  }
-
-  async continueAfterSuccessfulLogin(): Promise<void> {
-    this.closeLoginSuccessModal();
-    try {
-      const navigated = await this.router.navigateByUrl(this.loginRedirectPath);
-      if (!navigated) {
-        this.errorMessage.set('Login succeeded, but dashboard navigation failed. Please try again.');
-      }
-    } catch {
-      this.errorMessage.set('Login succeeded, but dashboard navigation failed. Please try again.');
-    }
   }
 
   // Password visibility methods
@@ -163,26 +146,34 @@ export class Login implements OnInit, OnDestroy {
 
         if (userType === 'admin' && !this.isAdminLoginPage()) {
           this.errorMessage.set('ERROR');
-          this.showLoginSuccessModal.set(false);
           await firstValueFrom(this.authService.logout$());
+          this.isLoading.set(false);
           return;
         }
 
-        if (userType === 'admin') {
-          this.loginRedirectPath = '/admin-dashboard';
-          this.loginSuccessMessage.set('Login successful. Redirecting to admin dashboard.');
-        } else {
-          this.loginRedirectPath = '/volunteer-dashboard';
-          this.loginSuccessMessage.set('Login successful. Redirecting to volunteer dashboard.');
-        }
+        // Set redirect path
+        this.loginRedirectPath = userType === 'admin' ? '/admin-dashboard' : '/volunteer-dashboard';
 
-        this.showLoginSuccessModal.set(true);
+        // Show success flash and auto-redirect
+        this.isSuccess.set(true);
+
+        // Auto-redirect after short delay
+        setTimeout(async () => {
+          try {
+            await this.router.navigateByUrl(this.loginRedirectPath);
+          } catch {
+            this.errorMessage.set('Redirect failed. Please try again.');
+          } finally {
+            this.isLoading.set(false);
+          }
+        }, 1200);
+        return;
       } else {
         this.errorMessage.set(response.message || 'Invalid email or password');
+        this.isLoading.set(false);
       }
     } catch (error) {
       this.errorMessage.set('An unexpected error occurred. Please try again.');
-    } finally {
       this.isLoading.set(false);
     }
   }
