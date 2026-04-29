@@ -821,6 +821,11 @@
   border: 2px solid var(--surface-primary);
   box-shadow: var(--shadow-sm);
   flex-shrink: 0;
+
+  &.svg {
+    background: var(--primary);
+    padding: 4px;
+  }
 }
 
 .user-info {

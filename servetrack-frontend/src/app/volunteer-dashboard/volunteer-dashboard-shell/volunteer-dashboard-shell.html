@@ -81,7 +81,7 @@
 
     <div class="sidebar-footer">
       <div class="user-brief">
-        <img [src]="profilePreviewUrl()" alt="User" class="avatar-sm" />
+        <img [src]="profilePreviewUrl()" alt="User" class="avatar-sm" [class.svg]="profilePreviewUrl().endsWith('.svg')" />
         <div class="user-info">
           <p class="name">{{ userName() }}</p>
           <p class="role">Volunteer</p>

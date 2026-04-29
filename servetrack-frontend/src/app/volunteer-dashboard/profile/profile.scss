@@ -115,6 +115,11 @@
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid var(--gray-200);
+
+  &.svg {
+    background: var(--primary);
+    padding: 12px;
+  }
 }
 
 // Avatar wrapper with upload overlay

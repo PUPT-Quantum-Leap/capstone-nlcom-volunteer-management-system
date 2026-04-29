@@ -3,7 +3,7 @@
   <article class="profile-header-card">
     <div class="profile-avatar-section">
       <div class="avatar-wrapper">
-        <img [src]="profilePreviewUrl()" alt="Profile" class="profile-avatar" />
+        <img [src]="profilePreviewUrl()" alt="Profile" class="profile-avatar" [class.svg]="profilePreviewUrl().endsWith('.svg')" />
         @if (isEditMode()) {
           <label class="upload-overlay" for="photo-upload">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
