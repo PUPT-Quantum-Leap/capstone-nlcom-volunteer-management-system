@@ -54,7 +54,8 @@ export class AttendanceManagement {
   // Photo upload
   photoUploadProcessing = signal(false);
   photoUploadPreview = signal<string | null>(null);
-
+  detectedVolunteersFromPhoto = signal<DetectedVolunteer[]>([]);
+ 
   // Assignment
   availableVolunteersForAssignment = signal<VolunteerUser[]>([]);
   selectedVolunteersForAssignment = signal<number[]>([]);
@@ -253,6 +254,37 @@ export class AttendanceManagement {
     this.photoUploadProcessing.set(false);
     this.closePhotoUploadModal();
     this.showSnackbar.emit({ message: 'Photo uploaded successfully. It will be archived after 5 days.', type: 'success' });
+  }
+
+  async processPhotoOCR(): Promise<void> {
+    if (!this.photoUploadPreview()) return;
+    
+    this.photoUploadProcessing.set(true);
+    // Simulate OCR processing
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Mock detected volunteers
+    this.detectedVolunteersFromPhoto.set([
+      { name: 'Agnes Felix', confidence: 0.98 },
+      { name: 'Robbie Panaligan', confidence: 0.95 },
+      { name: 'Natasya Angelina Lim', confidence: 0.92 }
+    ]);
+    
+    this.photoUploadProcessing.set(false);
+    this.showSnackbar.emit({ message: 'Photo processed. Detected 3 volunteers.', type: 'success' });
+  }
+
+  markDetectedVolunteersAsPresent(): void {
+    const detectedNames = this.detectedVolunteersFromPhoto().map(v => v.name);
+    
+    this.attendanceRecords.update(records => 
+      records.map(r => 
+        detectedNames.includes(r.volunteerName) ? { ...r, status: 'present' } : r
+      )
+    );
+    
+    this.detectedVolunteersFromPhoto.set([]);
+    this.showSnackbar.emit({ message: 'Detected volunteers marked as present', type: 'success' });
   }
 
   // Assignment modal

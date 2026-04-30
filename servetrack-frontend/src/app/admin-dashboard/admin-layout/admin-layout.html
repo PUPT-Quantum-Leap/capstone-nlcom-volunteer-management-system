@@ -144,9 +144,9 @@
     <ng-container *ngTemplateOutlet="sidebarNav"></ng-container>
 
     <div class="sidebar-footer">
-      <div class="user-brief">
-        <img [ngSrc]="defaultPhoto" width="32" height="32" alt="Admin" class="avatar-sm"
-          [class.svg]="defaultPhoto.endsWith('.svg')" />
+      <div class="user-brief" (click)="openProfileModal()" role="button" tabindex="0" (keydown.enter)="openProfileModal()" aria-label="Edit Profile">
+        <img [src]="$any(currentUser())?.profile_photo_url || defaultPhoto" width="32" height="32" alt="Admin" class="avatar-sm"
+          [class.svg]="($any(currentUser())?.profile_photo_url || defaultPhoto).endsWith('.svg')" />
         <div class="user-info">
           <p class="name">{{ currentUser()?.name || 'Admin User' }}</p>
           <p class="role">{{ currentUser()?.role || 'System Administrator' }}</p>
@@ -179,9 +179,9 @@
     <ng-container *ngTemplateOutlet="sidebarNav"></ng-container>
 
     <div class="sidebar-footer">
-      <div class="user-brief">
-        <img [ngSrc]="defaultPhoto" width="32" height="32" alt="Admin" class="avatar-sm"
-          [class.svg]="defaultPhoto.endsWith('.svg')" />
+      <div class="user-brief" (click)="openProfileModal()" role="button" tabindex="0" (keydown.enter)="openProfileModal()" aria-label="Edit Profile">
+        <img [src]="$any(currentUser())?.profile_photo_url || defaultPhoto" width="32" height="32" alt="Admin" class="avatar-sm"
+          [class.svg]="($any(currentUser())?.profile_photo_url || defaultPhoto).endsWith('.svg')" />
         <div class="user-info">
           <p class="name">{{ currentUser()?.name || 'Admin User' }}</p>
           <p class="role">{{ currentUser()?.role || 'System Administrator' }}</p>
@@ -250,3 +250,109 @@
     </main>
   </div>
 </div>
+
+<!-- Admin Profile Edit Modal -->
+@if (showProfileModal()) {
+<div class="modal-backdrop" (click)="closeProfileModal()">
+  <div class="modal-card modal-md" (click)="$event.stopPropagation()">
+    <div class="modal-header header-primary">
+      <div class="modal-title-wrapper">
+        <div class="modal-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+        <h3>Edit Profile</h3>
+      </div>
+      <button type="button" class="modal-close-btn" (click)="closeProfileModal()" aria-label="Close modal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <form (submit)="$event.preventDefault(); saveProfile()" class="modal-form">
+      <div class="modal-body">
+        <p>Update your personal information and profile picture below.</p>
+
+        <!-- Profile Photo Upload -->
+        <div class="profile-photo-upload">
+          <div class="photo-preview-wrapper">
+            <img [src]="profileFormData().profile_photo_url || defaultPhoto" alt="Profile Preview" class="photo-preview"
+              [class.svg]="(profileFormData().profile_photo_url || defaultPhoto).endsWith('.svg')" />
+            <label for="photo_input" class="photo-edit-overlay">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+              <span>Change Photo</span>
+            </label>
+            <input type="file" id="photo_input" (change)="onPhotoSelected($event)" accept="image/*" hidden />
+          </div>
+          <div class="photo-instructions">
+            <p class="photo-hint">Click the icon to upload a new photo. JPG, PNG or WEBP recommended.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="profile_first_name">First Name</label>
+            <input type="text" id="profile_first_name" [value]="profileFormData().first_name"
+              (input)="updateProfileField('first_name', firstName.value)" #firstName placeholder="Enter first name"
+              required [class.invalid]="profileErrors()['first_name']" />
+            @if (profileErrors()['first_name']) {
+            <span class="error-text">{{ profileErrors()['first_name'][0] }}</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="profile_last_name">Last Name</label>
+            <input type="text" id="profile_last_name" [value]="profileFormData().last_name"
+              (input)="updateProfileField('last_name', lastName.value)" #lastName placeholder="Enter last name" required
+              [class.invalid]="profileErrors()['last_name']" />
+            @if (profileErrors()['last_name']) {
+            <span class="error-text">{{ profileErrors()['last_name'][0] }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="profile_email">Email Address</label>
+          <input type="email" id="profile_email" [value]="profileFormData().email"
+            (input)="updateProfileField('email', email.value)" #email placeholder="Enter email address" required
+            [class.invalid]="profileErrors()['email']" />
+          @if (profileErrors()['email']) {
+          <span class="error-text">{{ profileErrors()['email'][0] }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="profile_contact">Contact Number</label>
+          <input type="text" id="profile_contact" [value]="profileFormData().contact_number"
+            (input)="updateProfileField('contact_number', contact.value)" #contact placeholder="Enter contact number"
+            [class.invalid]="profileErrors()['contact_number']" />
+          @if (profileErrors()['contact_number']) {
+          <span class="error-text">{{ profileErrors()['contact_number'][0] }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="secondary-btn" (click)="closeProfileModal()">Cancel</button>
+        <button type="submit" class="primary-btn" [disabled]="isSavingProfile()">
+          @if (isSavingProfile()) {
+          <span class="spinner"></span> Saving...
+          } @else {
+          Save Changes
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+}

@@ -45,7 +45,7 @@ export class UserManagementComponent {
   readonly editingUser = signal<User | null>(null);
   readonly showEditUserModal = signal(false);
   readonly editFormData = signal<{ name: string; email: string; role: string }>({ name: '', email: '', role: '' });
-  readonly inviteMode = signal<'email' | 'link'>('email');
+  readonly inviteMode = signal<'email' | 'link' | 'direct'>('email');
   readonly inviteEmail = signal('');
   readonly inviteLink = signal('');
   readonly isCreatingInvite = signal(false);

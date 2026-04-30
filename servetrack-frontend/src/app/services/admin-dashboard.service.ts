@@ -410,5 +410,56 @@ export class AdminDashboardService {
       })
     );
   }
+
+  // Admin Profile management
+  getAdminProfile(): Observable<ApiResponse<{
+    id: number;
+    name: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    contact_number: string | null;
+    profile_photo_url: string | null;
+  }>> {
+    return this.http.get<ApiResponse<{
+      id: number;
+      name: string;
+      email: string;
+      first_name: string;
+      last_name: string;
+      contact_number: string | null;
+      profile_photo_url: string | null;
+    }>>(`${environment.apiUrl}/admin/profile`, { withCredentials: true }).pipe(
+      catchError((error) => {
+        console.error('Error fetching admin profile:', error);
+        return of({
+          success: false,
+          message: 'Failed to fetch admin profile',
+          data: {} as any,
+        });
+      })
+    );
+  }
+
+  updateAdminProfile(data: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    contact_number?: string | null;
+    profile_photo?: string | null;
+  }): Observable<ApiResponse<any>> {
+    return this.http.put<ApiResponse<any>>(`${environment.apiUrl}/admin/profile`, data, {
+      withCredentials: true,
+    }).pipe(
+      catchError((error) => {
+        console.error('Error updating admin profile:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Failed to update profile',
+          data: error.error?.errors,
+        });
+      })
+    );
+  }
 }
 

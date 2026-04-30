@@ -132,6 +132,11 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::get('/backups/schedule', [BackupController::class, 'getSchedule']);
     Route::put('/backups/schedule', [BackupController::class, 'updateSchedule']);
 
+    // Admin profile routes
+    Route::get('/admin/profile', [AdminController::class, 'profile']);
+    Route::put('/admin/profile', [AdminController::class, 'updateProfile'])
+        ->middleware('throttle:profile-update');
+
     // SMS configuration status check
     Route::get('/sms/config-status', [SmsController::class, 'configStatus']);
 });

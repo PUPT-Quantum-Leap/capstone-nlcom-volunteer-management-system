@@ -810,31 +810,169 @@
   background: var(--gray-50);
 }
 
+.modal-form {
+  display: contents;
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+
+    @media (max-width: 640px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .profile-photo-upload {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--gray-100);
+
+    .photo-preview-wrapper {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: var(--gray-100);
+      border: 3px solid white;
+      box-shadow: var(--shadow-md);
+
+      .photo-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+
+        &.svg {
+          padding: 1.5rem;
+          opacity: 0.5;
+        }
+      }
+
+      .photo-edit-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        opacity: 0;
+        transition: opacity var(--transition-base);
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 600;
+        gap: 0.25rem;
+
+        svg {
+          width: 20px;
+          height: 20px;
+        }
+
+        &:hover {
+          opacity: 1;
+        }
+      }
+    }
+
+    .photo-instructions {
+      text-align: center;
+
+      .photo-hint {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        margin: 0;
+      }
+    }
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--gray-700);
+      margin-bottom: 0.375rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      font-size: 0.9375rem;
+      color: var(--gray-900);
+      transition: all var(--transition-base);
+
+      &:focus {
+        outline: none;
+        border-color: var(--primary-500);
+        box-shadow: 0 0 0 3px var(--primary-50);
+      }
+
+      &.invalid {
+        border-color: var(--danger-500);
+        &:focus {
+          box-shadow: 0 0 0 3px var(--danger-50);
+        }
+      }
+    }
+
+    .error-text {
+      display: block;
+      margin-top: 0.25rem;
+      font-size: 0.75rem;
+      color: var(--danger-600);
+    }
+  }
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 // Standardized Button Components for Modals
-.primary-btn, .danger-btn, .warning-btn, .success-btn {
+.primary-btn, .danger-btn, .warning-btn, .success-btn, .secondary-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  border: none;
   border-radius: var(--radius-md);
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
   transition: all var(--transition-base);
+  border: 1px solid transparent;
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
 
-  &:hover {
+  &:hover:not(:disabled) {
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
   }
 
-  &:active {
+  &:active:not(:disabled) {
     transform: translateY(0);
   }
 }
@@ -842,23 +980,38 @@
 .primary-btn {
   background: var(--primary-600);
   color: white;
-  &:hover { background: var(--primary-700); }
+  border-color: var(--primary-700);
+  &:hover:not(:disabled) { background: var(--primary-700); }
 }
 
 .danger-btn {
   background: var(--danger-500);
   color: white;
-  &:hover { background: var(--danger-600); }
+  border-color: var(--danger-600);
+  &:hover:not(:disabled) { background: var(--danger-600); }
 }
 
 .warning-btn {
   background: var(--warning-500);
   color: white;
-  &:hover { background: var(--warning-600); }
+  border-color: var(--warning-600);
+  &:hover:not(:disabled) { background: var(--warning-600); }
 }
 
 .success-btn {
   background: var(--success-500);
   color: white;
-  &:hover { background: var(--success-600); }
+  border-color: var(--success-600);
+  &:hover:not(:disabled) { background: var(--success-600); }
 }
+
+.secondary-btn {
+  background: white;
+  color: var(--gray-700);
+  border-color: var(--gray-200);
+  &:hover:not(:disabled) {
+    background: var(--gray-50);
+    border-color: var(--gray-300);
+  }
+}
+

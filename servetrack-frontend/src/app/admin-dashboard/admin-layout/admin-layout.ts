@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { AdminDashboardService } from '../../services/admin-dashboard.service';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -24,12 +25,13 @@ export class AdminLayout implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
+  private adminService = inject(AdminDashboardService);
   private destroyRef = inject(DestroyRef);
-
+ 
   readonly defaultPhoto = '/assets/person.svg';
-
+ 
   currentUser = computed(() => this.authService.currentUser());
-
+ 
   sidebarCollapsed = signal(this.getStoredSidebarState());
   mobileSidebarOpen = signal(false);
   isMobile = signal(false);
@@ -38,6 +40,19 @@ export class AdminLayout implements OnInit {
   showAiSidebar = signal(false);
   searchQuery = signal('');
   currentUrl = signal(this.router.url);
+ 
+  // Profile Edit Signals
+  showProfileModal = signal(false);
+  isSavingProfile = signal(false);
+  profileFormData = signal({
+    first_name: '',
+    last_name: '',
+    email: '',
+    contact_number: '',
+    profile_photo: null as string | null,
+    profile_photo_url: null as string | null,
+  });
+  profileErrors = signal<Record<string, string[]>>({});
 
   notificationCount = computed(() => {
     // TODO: Replace with actual notification count from service
@@ -166,6 +181,100 @@ export class AdminLayout implements OnInit {
     } finally {
       await this.router.navigate(['/login']);
     }
+  }
+
+  // Profile Modal Methods
+  openProfileModal(): void {
+    this.profileErrors.set({});
+    this.adminService.getAdminProfile().subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.profileFormData.set({
+            first_name: response.data.first_name,
+            last_name: response.data.last_name,
+            email: response.data.email,
+            contact_number: response.data.contact_number || '',
+            profile_photo: null,
+            profile_photo_url: response.data.profile_photo_url,
+          });
+          this.showProfileModal.set(true);
+        }
+      },
+      error: () => {
+        // Fallback to current user if service fails
+        const user = this.currentUser();
+        if (user) {
+          const names = (user.name || 'Admin User').split(' ');
+          this.profileFormData.set({
+            first_name: names[0],
+            last_name: names.slice(1).join(' '),
+            email: user.email || '',
+            contact_number: '',
+            profile_photo: null,
+            profile_photo_url: user.profile_photo_url || null,
+          });
+          this.showProfileModal.set(true);
+        }
+      },
+    });
+  }
+
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      this.profileFormData.update(current => ({
+        ...current,
+        profile_photo: base64,
+        profile_photo_url: base64
+      }));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  closeProfileModal(): void {
+    this.showProfileModal.set(false);
+    this.profileErrors.set({});
+  }
+
+  updateProfileField(field: string, value: string): void {
+    this.profileFormData.update((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  saveProfile(): void {
+    this.isSavingProfile.set(true);
+    this.profileErrors.set({});
+
+    this.adminService.updateAdminProfile(this.profileFormData()).subscribe({
+      next: (response: any) => {
+        this.isSavingProfile.set(false);
+        if (response.success) {
+          // Update local user state
+          if (response.data) {
+            this.authService.currentUser.set(response.data);
+          }
+          this.closeProfileModal();
+        } else if (response.data) {
+          // Validation errors
+          this.profileErrors.set(response.data);
+        }
+      },
+      error: () => {
+        this.isSavingProfile.set(false);
+      },
+    });
   }
 
   setSearchQuery(query: string): void {

@@ -18,6 +18,7 @@ class Admin extends Model
         'password',
         'email',
         'contact_number',
+        'profile_photo',
         'user_id',
     ];
 
