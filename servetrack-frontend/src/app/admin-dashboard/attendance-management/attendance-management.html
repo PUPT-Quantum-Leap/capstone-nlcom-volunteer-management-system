@@ -380,7 +380,7 @@
 
       <div class="modal-body">
         <div class="photo-upload-instructions">
-          <p>Upload a photo containing volunteer names. The system will detect and mark their attendance automatically.</p>
+          <p>Upload a photo containing volunteer names.</p>
         </div>
 
         <div class="photo-upload-area">
@@ -392,60 +392,27 @@
                 <line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
               <p>Click to upload or drag and drop</p>
-              <span class="upload-hint">Supports: JPG, PNG, WEBP (Max 10MB)</span>
-              <input type="file" accept="image/*" (change)="onPhotoSelected($event)" class="file-input" />
+              <input type="file" accept="image/*" (change)="onPhotoSelected($event)" />
             </div>
           } @else {
-            <div class="photo-preview-container">
-              <img [src]="photoUploadPreview()" alt="Uploaded photo preview" class="photo-preview" />
-              <button type="button" class="remove-photo-btn" (click)="photoUploadPreview.set(null); detectedVolunteersFromPhoto.set([]);">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M18 6L6 18M6 6L18 18" />
+            <div class="preview-container">
+              <img [src]="photoUploadPreview()" alt="Uploaded photo" />
+              <button type="button" class="remove-photo-btn" (click)="photoUploadPreview.set(null)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
-                Remove Photo
               </button>
             </div>
           }
         </div>
-
-        @if (photoUploadProcessing()) {
-          <div class="ocr-processing">
-            <div class="processing-spinner"></div>
-            <p>Analyzing photo for volunteer names...</p>
-          </div>
-        }
-
-        @if (detectedVolunteersFromPhoto().length > 0 && !photoUploadProcessing()) {
-          <div class="detected-volunteers">
-            <h4>Detected Volunteers ({{ detectedVolunteersFromPhoto().length }})</h4>
-            <ul class="detected-list">
-              @for (detected of detectedVolunteersFromPhoto(); track detected.name) {
-                <li class="detected-item">
-                  <span class="detected-name">{{ detected.name }}</span>
-                  <span class="detected-confidence">{{ detected.confidence }}% match</span>
-                </li>
-              }
-            </ul>
-          </div>
-        }
       </div>
 
       <div class="modal-footer">
         <button type="button" class="outline-btn" (click)="closePhotoUploadModal()">Cancel</button>
-        @if (detectedVolunteersFromPhoto().length > 0) {
-          <button type="button" class="primary-btn" (click)="markDetectedVolunteersAsPresent()">
-            Mark {{ detectedVolunteersFromPhoto().length }} as Present
-          </button>
-        } @else {
-          <button type="button" class="primary-btn" (click)="processPhotoOCR()" [disabled]="!photoUploadPreview() || photoUploadProcessing()">
-            @if (photoUploadProcessing()) {
-              <span class="loading-spinner" aria-hidden="true"></span>
-              Processing...
-            } @else {
-              Detect Names
-            }
-          </button>
-        }
+        <button type="button" class="primary-btn" (click)="uploadPhoto()" [disabled]="photoUploadProcessing() || !photoUploadPreview()">
+          @if (photoUploadProcessing()) { Uploading... } @else { Upload Photo }
+        </button>
       </div>
     </section>
   </div>

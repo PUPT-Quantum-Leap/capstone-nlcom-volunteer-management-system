@@ -54,7 +54,6 @@ export class AttendanceManagement {
   // Photo upload
   photoUploadProcessing = signal(false);
   photoUploadPreview = signal<string | null>(null);
-  detectedVolunteersFromPhoto = signal<DetectedVolunteer[]>([]);
 
   // Assignment
   availableVolunteersForAssignment = signal<VolunteerUser[]>([]);
@@ -207,14 +206,12 @@ export class AttendanceManagement {
   openPhotoUploadModal(): void {
     this.showPhotoUploadModal.set(true);
     this.photoUploadPreview.set(null);
-    this.detectedVolunteersFromPhoto.set([]);
     this.photoUploadProcessing.set(false);
   }
 
   closePhotoUploadModal(): void {
     this.showPhotoUploadModal.set(false);
     this.photoUploadPreview.set(null);
-    this.detectedVolunteersFromPhoto.set([]);
     this.photoUploadProcessing.set(false);
   }
 
@@ -241,7 +238,7 @@ export class AttendanceManagement {
     reader.readAsDataURL(file);
   }
 
-  async processPhotoOCR(): Promise<void> {
+  async uploadPhoto(): Promise<void> {
     if (!this.photoUploadPreview()) {
       this.showSnackbar.emit({ message: 'Please upload a photo first', type: 'error' });
       return;
@@ -249,51 +246,13 @@ export class AttendanceManagement {
 
     this.photoUploadProcessing.set(true);
 
-    // Simulate OCR processing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // TODO: Implement actual API call to upload photo
+    // For now, simulate upload
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // Mock detected volunteers
-    const mockDetected: DetectedVolunteer[] = [
-      { name: 'Agnes Felix', confidence: 95 },
-      { name: 'Robbie Panaligan', confidence: 88 },
-      { name: 'Natasya Angelina Lim', confidence: 92 },
-      { name: 'Lea Therese Chua', confidence: 85 },
-    ];
-
-    this.detectedVolunteersFromPhoto.set(mockDetected);
     this.photoUploadProcessing.set(false);
-    this.showSnackbar.emit({ message: `Detected ${mockDetected.length} volunteers from photo`, type: 'success' });
-  }
-
-  markDetectedVolunteersAsPresent(): void {
-    const detected = this.detectedVolunteersFromPhoto();
-    const currentTime = new Date().toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
-
-    this.attendanceRecords.update((records) =>
-      records.map((record) => {
-        const detectedVolunteer = detected.find(
-          (d) =>
-            record.volunteerName.toLowerCase().includes(d.name.toLowerCase()) ||
-            d.name.toLowerCase().includes(record.volunteerName.toLowerCase()),
-        );
-
-        if (detectedVolunteer && record.status !== 'present') {
-          return {
-            ...record,
-            checkInTime: currentTime,
-            status: 'present',
-          };
-        }
-        return record;
-      }),
-    );
-
     this.closePhotoUploadModal();
-    this.showSnackbar.emit({ message: 'Attendance updated based on photo detection', type: 'success' });
+    this.showSnackbar.emit({ message: 'Photo uploaded successfully. It will be archived after 5 days.', type: 'success' });
   }
 
   // Assignment modal

@@ -409,6 +409,47 @@
   </div>
 }
 
+<!-- Invite Success Popup -->
+@if (showInviteSuccess()) {
+  <div class="modal-backdrop" (click)="closeEditUserModal()">
+    <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header header-success">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
+          <h3>Invite Created Successfully!</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeEditUserModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="invite-success-content">
+          <p class="invite-link-text">{{ inviteLink() }}</p>
+          <button type="button" class="copy-link-btn" (click)="copyInviteLink()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            Copy Link
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="primary-btn" (click)="closeEditUserModal()">Done</button>
+      </div>
+    </div>
+  </div>
+}
+
 <!-- View User Details Modal -->
 @if (showViewUserModal()) {
   <div class="modal-backdrop" (click)="closeViewUserModal()">

@@ -300,6 +300,7 @@ export class UserManagementComponent {
           this.inviteLink.set(response.data.invite_link);
           this.showInviteSuccess.set(true);
           this.isCreatingInvite.set(false);
+          this.showEditUserModal.set(false);
           this.showSnackbar.emit({ message: 'Invite created successfully', type: 'success' });
         },
         error: (error: Error) => {

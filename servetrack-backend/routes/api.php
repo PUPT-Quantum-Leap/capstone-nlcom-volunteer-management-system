@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BackupController;
@@ -99,6 +100,12 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::post('/invites', [InviteController::class, 'store']);
     Route::get('/invites', [InviteController::class, 'index']);
     Route::delete('/invites/{id}', [InviteController::class, 'destroy']);
+
+    // Attendance photo management — upload, list, delete (admin only)
+    Route::post('/attendance-photos', [AttendancePhotoController::class, 'store']);
+    Route::get('/attendance-photos', [AttendancePhotoController::class, 'index']);
+    Route::post('/attendance-photos/archive-old', [AttendancePhotoController::class, 'archiveOldPhotos']);
+    Route::delete('/attendance-photos/{id}', [AttendancePhotoController::class, 'destroy']);
 
     // RSVP management — full CRUD + status toggle (admin only)
     Route::post('/rsvp', [RsvpController::class, 'store']);
