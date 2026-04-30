@@ -15,6 +15,15 @@
       </div>
     }
 
+    @if (isSuccess()) {
+      <div class="success-message" role="status">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="success-icon">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>Login successful! Redirecting to dashboard...</span>
+      </div>
+    }
+
     <form class="auth-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
       <div class="form-group">
         <label for="email" class="form-label">Email Address</label>
@@ -167,21 +176,6 @@
       </div>
     </div>
   }
-  @if (showLoginSuccessModal()) {
-    <div class="popup-overlay" (click)="$event.stopPropagation()">
-      <div class="popup-modal" (click)="$event.stopPropagation()">
-        <button class="popup-close" (click)="closeLoginSuccessModal()">X</button>
-        <div class="popup-content">
-          <h3 class="popup-title">Login Successful</h3>
-          <p class="popup-message">{{ loginSuccessMessage() }}</p>
-          <div class="popup-actions">
-            <button class="btn btn-primary" (click)="continueAfterSuccessfulLogin()">
-              Continue
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  }
+  
 </div>
 

@@ -164,7 +164,7 @@ describe('Login Component', () => {
         rememberMe: false,
       });
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login$.mockReturnValue(of({ success: true }));
+      mockAuthService.login$.mockReturnValue(of({ success: false, message: 'Invalid credentials' }));
       await component.onSubmit();
       expect(component.isLoading()).toBe(false);
       expect(mockAuthService.login$).toHaveBeenCalledWith({
@@ -173,7 +173,7 @@ describe('Login Component', () => {
       });
     });
 
-    it('should show success modal on successful login', async () => {
+    it('should show success flash on successful login and auto-redirect', async () => {
       component.loginForm.setValue({
         email: 'test@example.com',
         password: 'password123',
@@ -182,24 +182,8 @@ describe('Login Component', () => {
       Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
       mockAuthService.login$.mockReturnValue(of({ success: true }));
       await component.onSubmit();
-      expect(component.showLoginSuccessModal()).toBe(true);
-      expect(mockRouter.navigateByUrl).not.toHaveBeenCalled();
+      expect(component.isSuccess()).toBe(true);
       expect(component.errorMessage()).toBeNull();
-    });
-
-    it('should navigate to volunteer dashboard when continue is clicked after successful login', async () => {
-      component.loginForm.setValue({
-        email: 'test@example.com',
-        password: 'password123',
-        rememberMe: false,
-      });
-      Object.defineProperty(component.loginForm, 'invalid', { get: () => false });
-      mockAuthService.login$.mockReturnValue(of({ success: true }));
-
-      await component.onSubmit();
-      await component.continueAfterSuccessfulLogin();
-
-      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/volunteer-dashboard');
     });
 
     it('should set errorMessage on failed login', async () => {
@@ -249,7 +233,7 @@ describe('Login Component', () => {
       await component.onSubmit();
 
       expect(component.errorMessage()).toBe('ERROR');
-      expect(component.showLoginSuccessModal()).toBe(false);
+      expect(component.isSuccess()).toBe(false);
       expect(mockAuthService.logout$).toHaveBeenCalled();
     });
 

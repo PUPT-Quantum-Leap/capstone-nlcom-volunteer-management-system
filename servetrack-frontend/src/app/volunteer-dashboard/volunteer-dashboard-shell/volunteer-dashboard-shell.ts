@@ -7,7 +7,7 @@ import {
   signal,
   DestroyRef,
 } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet, NgOptimizedImage } from '@angular/common';
 import { Router, RouterOutlet, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { VolunteerService } from '../../services/volunteer.service';
@@ -17,7 +17,7 @@ import { NotificationItem } from '../../models/notification-item';
 @Component({
   selector: 'app-volunteer-dashboard-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, NgTemplateOutlet],
+  imports: [RouterOutlet, NgTemplateOutlet, NgOptimizedImage],
   templateUrl: './volunteer-dashboard-shell.html',
   styleUrl: './volunteer-dashboard-shell.scss',
 })
@@ -28,11 +28,11 @@ export class VolunteerDashboardShell implements OnInit {
   private volunteerService = inject(VolunteerService);
   private destroyRef = inject(DestroyRef);
 
-  readonly defaultPhoto = '/assets/volunteer1.png';
+  readonly defaultPhoto = '/assets/person.svg';
 
   // ── Navigation State ───────────────────────────────────────────────────
   userName = signal(this.authService.currentUser()?.name || 'Volunteer');
-  sidebarCollapsed = signal(false);
+  sidebarCollapsed = signal(this.getStoredSidebarState());
   mobileSidebarOpen = signal(false);
   isMobile = signal(false);
   isLoading = signal(false);
@@ -124,7 +124,30 @@ export class VolunteerDashboardShell implements OnInit {
     if (this.isMobile()) {
       this.mobileSidebarOpen.update((v) => !v);
     } else {
-      this.sidebarCollapsed.update((v) => !v);
+      const newState = !this.sidebarCollapsed();
+      this.sidebarCollapsed.set(newState);
+      this.saveSidebarState(newState);
+    }
+  }
+
+  private getStoredSidebarState(): boolean {
+    if (typeof window !== 'undefined' &&
+        window.localStorage) {
+      const stored = localStorage.getItem(
+        'volunteer-sidebar-collapsed'
+      );
+      return stored === 'true';
+    }
+    return false;
+  }
+
+  private saveSidebarState(collapsed: boolean): void {
+    if (typeof window !== 'undefined' &&
+        window.localStorage) {
+      localStorage.setItem(
+        'volunteer-sidebar-collapsed',
+        collapsed.toString()
+      );
     }
   }
 

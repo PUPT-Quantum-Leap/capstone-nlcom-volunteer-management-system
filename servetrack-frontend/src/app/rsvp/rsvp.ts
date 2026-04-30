@@ -42,8 +42,12 @@ export class RsvpComponent implements OnInit {
   hasSelectedShift = computed(() => this.selectedShiftId() !== null);
   remainingEdits = computed(() => this.rsvpResponse()?.remainingEdits ?? 0);
   hasEditsRemaining = computed(() => this.remainingEdits() > 0);
+  isClosed = computed(() => {
+    const rsvp = this.rsvp();
+    return rsvp?.status !== 'active' || rsvp?.isCutoffPassed;
+  });
   canEditResponse = computed(
-    () => this.hasSubmittedRsvp() && this.hasEditsRemaining() && this.rsvp()?.status === 'active',
+    () => this.hasSubmittedRsvp() && this.hasEditsRemaining() && !this.isClosed(),
   );
 
   ngOnInit(): void {
@@ -271,5 +275,35 @@ export class RsvpComponent implements OnInit {
     }
     const shift = rsvp.shifts.find((s) => s.id === editShiftId);
     return shift ? shift.timeSlot : 'Unknown';
+  }
+
+  /**
+   * Get the reason why the RSVP is closed ('manual' for status-based, 'cutoff' for time-based).
+   */
+  getClosureReason(): 'manual' | 'cutoff' | null {
+    const rsvp = this.rsvp();
+    if (rsvp?.status === 'closed' || rsvp?.status === 'draft') {
+      return 'manual';
+    }
+    if (rsvp?.isCutoffPassed) {
+      return 'cutoff';
+    }
+    return null;
+  }
+
+  /**
+   * Get the appropriate closure message based on the reason for closure.
+   */
+  getClosureMessage(): string {
+    const reason = this.getClosureReason();
+    const rsvp = this.rsvp();
+
+    if (reason === 'cutoff') {
+      return 'This RSVP has closed and is no longer accepting responses.';
+    }
+    if (reason === 'manual') {
+      return `This RSVP is ${rsvp?.status} and no longer accepting responses.`;
+    }
+    return '';
   }
 }

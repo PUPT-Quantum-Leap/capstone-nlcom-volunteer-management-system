@@ -4,12 +4,13 @@ import {
   inject,
   OnInit,
   signal,
+  computed,
   DestroyRef,
 } from '@angular/core';
 import { DatePipe, TitleCasePipe } from '@angular/common';
-import { VolunteerService } from '../../services/volunteer.service';
+import { RsvpService } from '../../services/rsvp.service';
+import { Rsvp, UserVote } from '../../models/rsvp';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
 
 interface PollOption {
   id: number;
@@ -20,12 +21,17 @@ interface PollOption {
 
 interface Poll {
   id: number;
+  slug: string;
   title: string;
   description?: string;
   date?: string;
   cutOffDay?: string;
   status: 'draft' | 'active' | 'closed';
   options: PollOption[];
+  totalResponses?: number;
+  userVote?: UserVote | null;
+  canEditVote?: boolean;
+  remainingEdits?: number;
 }
 
 @Component({
@@ -35,86 +41,86 @@ interface Poll {
   styleUrl: './polls.scss',
 })
 export class PollsComponent implements OnInit {
-  private volunteerService = inject(VolunteerService);
+  private rsvpService = inject(RsvpService);
   private destroyRef = inject(DestroyRef);
 
-  // ── Poll State ──────────────────────────────────────────────────────────
   pollTab = signal<'active' | 'past'>('active');
   activePoll = signal<Poll | null>(null);
   pastPolls = signal<Poll[]>([]);
   selectedPastPoll = signal<Poll | null>(null);
+  isLoading = signal(true);
+  pollError = signal<string | null>(null);
 
-  // ── Voting State ─────────────────────────────────────────────────────────
   hasSubmittedVote = signal(false);
   selectedOptionId = signal<number | null>(null);
-  isLoading = signal(false);
-  pollError = signal<string | null>(null);
-  // Map of pollId -> selected optionId to track user's actual votes
-  userVotes = signal<Map<number, number>>(new Map([[2, 4]]));
+  userVotes = signal<Map<number, UserVote>>(new Map());
+
+  isVoting = signal(false);
+  voteError = signal<string | null>(null);
+  isEditMode = signal(false);
+
+  userVote = computed(() => this.activePoll()?.userVote ?? null);
+  canEdit = computed(() => this.activePoll()?.canEditVote ?? false);
+  remainingEdits = computed(() => this.activePoll()?.remainingEdits ?? 0);
 
   ngOnInit(): void {
-    this.loadSamplePolls();
+    this.loadRsvpEvents();
   }
 
-  private loadSamplePolls(): void {
-    // Sample active poll
-    this.activePoll.set({
-      id: 1,
-      title: 'May 2026 Outreach Assignment Preferences',
-      description: 'Select your preferred time slot for the upcoming community outreach event.',
-      date: '2026-05-15',
-      cutOffDay: '2026-05-10',
-      status: 'active',
-      options: [
-        { id: 1, timeSlot: 'Morning Shift (6:00 AM - 12:00 PM)', votes: 12, capacity: 20 },
-        { id: 2, timeSlot: 'Afternoon Shift (12:00 PM - 6:00 PM)', votes: 8, capacity: 15 },
-        { id: 3, timeSlot: 'Evening Shift (6:00 PM - 10:00 PM)', votes: 5, capacity: 10 },
-      ],
-    });
+  private loadRsvpEvents(): void {
+    this.isLoading.set(true);
+    this.pollError.set(null);
 
-    // Sample past polls
-    this.pastPolls.set([
-      {
-        id: 2,
-        title: 'April 2026 Relief Operation Schedule',
-        description: 'Preferred schedule for the disaster relief operation.',
-        date: '2026-04-20',
-        cutOffDay: '2026-04-15',
-        status: 'closed',
-        options: [
-          { id: 4, timeSlot: 'Weekday Morning', votes: 25, capacity: 30 },
-          { id: 5, timeSlot: 'Weekend Full Day', votes: 35, capacity: 40 },
-          { id: 6, timeSlot: 'Weekday Evening', votes: 15, capacity: 20 },
-        ],
-      },
-      {
-        id: 3,
-        title: 'March 2026 Medical Mission Schedule',
-        description: 'Select your availability for the medical mission.',
-        date: '2026-03-18',
-        cutOffDay: '2026-03-12',
-        status: 'closed',
-        options: [
-          { id: 7, timeSlot: 'Day 1 - Morning', votes: 18, capacity: 25 },
-          { id: 8, timeSlot: 'Day 1 - Afternoon', votes: 12, capacity: 20 },
-          { id: 9, timeSlot: 'Day 2 - Morning', votes: 20, capacity: 25 },
-          { id: 10, timeSlot: 'Day 2 - Afternoon', votes: 15, capacity: 20 },
-        ],
-      },
-      {
-        id: 4,
-        title: 'December 2025 Christmas Outreach',
-        description: 'Volunteer shifts for the annual Christmas outreach event.',
-        date: '2025-12-20',
-        cutOffDay: '2025-12-15',
-        status: 'closed',
-        options: [
-          { id: 11, timeSlot: 'Gift Distribution - Morning', votes: 30, capacity: 35 },
-          { id: 12, timeSlot: 'Food Preparation', votes: 20, capacity: 25 },
-          { id: 13, timeSlot: 'Entertainment & Activities', votes: 15, capacity: 20 },
-        ],
-      },
-    ]);
+    this.rsvpService
+      .getRsvps()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          const rsvps: Rsvp[] = response.data;
+          const activeRsvps = rsvps.filter((r: Rsvp) => r.status === 'active');
+          const pastRsvps = rsvps.filter((r: Rsvp) => r.status === 'closed');
+
+          const activePoll = activeRsvps.length > 0 ? this.mapRsvpToPoll(activeRsvps[0]) : null;
+          this.activePoll.set(activePoll);
+
+          if (activePoll?.userVote) {
+            const votes = new Map(this.userVotes());
+            votes.set(activePoll.id, activePoll.userVote);
+            this.userVotes.set(votes);
+            this.hasSubmittedVote.set(true);
+            this.selectedOptionId.set(activePoll.userVote.timeSlotId);
+          }
+
+          this.pastPolls.set(pastRsvps.map((r: Rsvp) => this.mapRsvpToPoll(r)));
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.pollError.set('Failed to load RSVP events. Please try again later.');
+          this.isLoading.set(false);
+        },
+      });
+  }
+
+  private mapRsvpToPoll(rsvp: Rsvp): Poll {
+    return {
+      id: rsvp.id,
+      slug: rsvp.slug,
+      title: rsvp.title,
+      description: rsvp.description,
+      date: rsvp.date,
+      cutOffDay: rsvp.cutOffDay,
+      status: rsvp.status,
+      totalResponses: rsvp.totalResponses,
+      options: rsvp.shifts.map((shift) => ({
+        id: shift.id,
+        timeSlot: shift.timeSlot,
+        capacity: shift.capacity,
+        votes: shift.responses,
+      })),
+      userVote: rsvp.userVote,
+      canEditVote: rsvp.canEditVote,
+      remainingEdits: rsvp.remainingEdits,
+    };
   }
 
   setPollTab(tab: 'active' | 'past'): void {
@@ -134,19 +140,66 @@ export class PollsComponent implements OnInit {
     return option.votes >= option.capacity;
   }
 
+  selectOption(optionId: number): void {
+    if (this.hasSubmittedVote() && !this.isEditMode()) return;
+    this.selectedOptionId.set(optionId);
+    this.voteError.set(null);
+  }
+
   submitPollVote(): void {
     const poll = this.activePoll();
     const optionId = this.selectedOptionId();
     if (!poll || optionId === null) return;
 
-    this.isLoading.set(true);
-    this.pollError.set(null);
+    this.isVoting.set(true);
+    this.voteError.set(null);
 
-    // Simulate API call
-    setTimeout(() => {
-      this.hasSubmittedVote.set(true);
-      this.isLoading.set(false);
-    }, 1000);
+    const isEditing = this.hasSubmittedVote() && this.isEditMode();
+    const apiCall = isEditing
+      ? this.rsvpService.updateRsvpResponse(poll.id, optionId)
+      : this.rsvpService.vote(poll.id, optionId);
+
+    apiCall.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response: { message: string; remaining_edits?: number }) => {
+        this.hasSubmittedVote.set(true);
+        this.isVoting.set(false);
+        this.isEditMode.set(false);
+
+        if (isEditing && response.remaining_edits !== undefined) {
+          const remainingEdits = response.remaining_edits as number;
+          this.activePoll.update((p) => {
+            if (!p) return p;
+            return {
+              ...p,
+              remainingEdits,
+              canEditVote: remainingEdits > 0,
+              userVote: p.userVote ? { ...p.userVote, remainingEdits } : undefined,
+            };
+          });
+        }
+
+        this.loadRsvpEvents();
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.voteError.set(err?.error?.message ?? 'Failed to submit vote. Please try again.');
+        this.isVoting.set(false);
+      },
+    });
+  }
+
+  enterEditMode(): void {
+    if (!this.canEdit()) return;
+    this.isEditMode.set(true);
+    this.selectedOptionId.set(null);
+    this.voteError.set(null);
+  }
+
+  cancelEditMode(): void {
+    this.isEditMode.set(false);
+    const userVote = this.userVote();
+    if (userVote) {
+      this.selectedOptionId.set(userVote.timeSlotId);
+    }
   }
 
   getVotePercentage(option: PollOption, poll: Poll): number {
@@ -169,7 +222,7 @@ export class PollsComponent implements OnInit {
   }
 
   getUserSelectedOption(pollId: number): number | null {
-    return this.userVotes().get(pollId) ?? null;
+    return this.userVotes().get(pollId)?.timeSlotId ?? null;
   }
 
   getDaysUntilClosing(cutOffDay: string | undefined, date: string | undefined): string {
@@ -183,5 +236,13 @@ export class PollsComponent implements OnInit {
     if (diffDays === 0) return 'Closes today';
     if (diffDays === 1) return 'Closes tomorrow';
     return `${diffDays} days left to vote`;
+  }
+
+  getSelectedOptionTimeSlot(): string {
+    const poll = this.activePoll();
+    const optionId = this.selectedOptionId();
+    if (!poll || optionId === null) return '';
+    const option = poll.options.find((o) => o.id === optionId);
+    return option?.timeSlot ?? '';
   }
 }

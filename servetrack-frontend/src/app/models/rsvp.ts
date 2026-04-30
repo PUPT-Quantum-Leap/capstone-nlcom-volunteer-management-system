@@ -9,9 +9,20 @@ export interface Rsvp {
   cutOffTime: string;
   description: string;
   status: 'active' | 'closed' | 'draft';
+  isCutoffPassed: boolean;
   totalResponses: number;
   createdAt: string;
   shifts: RsvpShift[];
+  userVote?: UserVote | null;
+  canEditVote?: boolean;
+  remainingEdits?: number;
+}
+
+export interface UserVote {
+  timeSlotId: number;
+  votedAt: string;
+  editCount: number;
+  remainingEdits: number;
 }
 
 export interface RsvpShift {

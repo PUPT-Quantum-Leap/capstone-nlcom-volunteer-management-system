@@ -28,7 +28,7 @@ Route::post('/volunteer/register', [VolunteerController::class, 'register'])
 
 // Admin registration - public signup with registration rate limit + email normalization
 Route::post('/admin/register', [AdminController::class, 'register'])
-    ->middleware(['api', 'guest', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration']);
+    ->middleware(['api', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration']);
 
 // Coordinator registration - public signup with registration rate limit + email normalization
 Route::post('/coordinator/register', [CoordinatorController::class, 'register'])
@@ -80,6 +80,7 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::get('/volunteers/{id}', [VolunteerController::class, 'show']);
     Route::patch('/volunteers/{id}/soft-delete', [VolunteerController::class, 'softDelete']);
     Route::patch('/volunteers/{id}/restore', [VolunteerController::class, 'restore']);
+    Route::delete('/volunteers/{id}', [VolunteerController::class, 'destroy']);
     Route::get('/admin/volunteers/{id}/change-history', [VolunteerController::class, 'changeHistory']);
 
     // User management — CRUD for users (admin only)
