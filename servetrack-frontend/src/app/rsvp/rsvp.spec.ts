@@ -43,9 +43,15 @@ describe('RsvpComponent - Closed State Logic', () => {
       return rsvp?.status !== 'active' || rsvp?.isCutoffPassed;
     });
     
+    // Add remainingEdits as a computed signal
+    component.remainingEdits = computed(() => component.rsvpResponse()?.remainingEdits ?? 0);
+    
+    // Add hasEditsRemaining computed signal
+    component.hasEditsRemaining = computed(() => component.remainingEdits() > 0);
+    
     // Add the canEditResponse computed signal
     component.canEditResponse = computed(
-      () => component.hasSubmittedRsvp() && (component.remainingEdits() > 0) && !component.isClosed(),
+      () => component.hasSubmittedRsvp() && component.hasEditsRemaining() && !component.isClosed(),
     );
   });
 
