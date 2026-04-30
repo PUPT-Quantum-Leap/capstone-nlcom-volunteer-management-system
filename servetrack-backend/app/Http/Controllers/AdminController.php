@@ -168,14 +168,14 @@ class AdminController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Registration failed. Please contact your administrator.',
+                'message' => 'Invite code not configured',
             ], 422);
         }
 
         if ($request->input('inviteCode') !== $inviteCode) {
             return response()->json([
                 'success' => false,
-                'message' => 'Registration failed. Please contact your administrator.',
+                'message' => 'Invalid invite code',
             ], 422);
         }
 
@@ -185,7 +185,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Registration failed. Please contact your administrator.',
+                'message' => 'Allowed domains not configured',
             ], 422);
         }
 
@@ -198,7 +198,7 @@ class AdminController extends Controller
         if (! in_array($emailDomain, $allowedDomains, true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Registration failed. Please contact your administrator.',
+                'message' => 'Email domain not allowed',
             ], 422);
         }
 
