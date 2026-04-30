@@ -90,6 +90,55 @@ $white: #ffffff;
   }
 }
 
+// Closed RSVP Alert
+.rsvp-alert {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border-left: 4px solid;
+
+  strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1.1em;
+  }
+
+  p {
+    color: inherit;
+    line-height: 1.6;
+    margin: 0;
+
+    &.rsvp-alert__detail {
+      margin-top: 0.5rem;
+      font-size: 0.9em;
+      opacity: 0.8;
+    }
+  }
+
+  &--closed {
+    background-color: #fee2e2;
+    border-color: #dc2626;
+    color: #991b1b;
+
+    strong {
+      color: #dc2626;
+    }
+  }
+}
+
+// Screen Reader Only Content
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 // RSVP Shifts
 .rsvp-shifts {
   display: flex;

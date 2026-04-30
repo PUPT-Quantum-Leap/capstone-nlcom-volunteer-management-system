@@ -9,6 +9,7 @@ export interface Rsvp {
   cutOffTime: string;
   description: string;
   status: 'active' | 'closed' | 'draft';
+  isCutoffPassed: boolean;
   totalResponses: number;
   createdAt: string;
   shifts: RsvpShift[];
