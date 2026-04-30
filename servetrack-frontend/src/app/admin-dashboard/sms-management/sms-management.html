@@ -1,0 +1,127 @@
+<section class="module-container">
+  <header class="module-header">
+    <div class="header-content">
+      <h2>SMS Notifications</h2>
+      <p>Prepare messages with templates and queue targeted broadcasts</p>
+    </div>
+  </header>
+
+  @if (smsConfigured() === false) {
+    <div class="status-banner error">
+      <strong>SMS Not Configured:</strong> {{ smsConfigMessage() }}
+    </div>
+  }
+
+  @if (smsConfigured() === true) {
+    <div class="status-banner success">
+      <strong>SMS Ready:</strong> {{ smsConfigMessage() }}
+    </div>
+  }
+
+  @if (feedbackMessage()) {
+    <div class="status-banner" [class.success]="feedbackType() === 'success'" [class.error]="feedbackType() === 'error'">
+      {{ feedbackMessage() }}
+    </div>
+  }
+
+  <section class="sms-layout">
+    <article class="sms-panel sms-panel-compose">
+      <header class="sms-panel-header">
+        <h3>Compose Message</h3>
+      </header>
+
+      <div class="compose-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sms-audience">Audience</label>
+            <select #audienceSelect id="sms-audience" class="form-input" [value]="smsAudience()"
+              (change)="setSmsAudience($any(audienceSelect.value))">
+              <option value="active">Active volunteers</option>
+              <option value="all">All records</option>
+              <option value="new">New users (last 30 days)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="sms-template">Template</label>
+            <select #templateSelect id="sms-template" class="form-input" [value]="selectedSmsTemplate()"
+              (change)="applySmsTemplate(templateSelect.value)">
+              <option value="">Start from scratch</option>
+              @for (template of smsTemplates; track template.name) {
+                <option [value]="template.message">{{ template.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="sms-message">Message</label>
+          <textarea #messageInput id="sms-message" class="form-textarea sms-message-input" rows="5" [value]="smsMessage()"
+            (input)="updateSmsMessage(messageInput.value)" placeholder="Type your broadcast message here..."></textarea>
+          <div class="sms-footer-row">
+            <span>Recipients: <strong>{{ smsRecipientsCount() }}</strong></span>
+            <span>Characters: <strong>{{ smsCharacterCount() }}</strong></span>
+          </div>
+        </div>
+
+        <div class="sms-actions">
+          <button type="button" class="primary-btn" [disabled]="smsSending() || smsConfigured() === false" (click)="sendSmsBroadcast()">
+            @if (smsSending()) {
+              Sending...
+            } @else if (smsConfigured() === false) {
+              SMS Not Configured
+            } @else {
+              Queue Broadcast
+            }
+          </button>
+        </div>
+      </div>
+    </article>
+
+    <div class="sms-sidebar">
+      <article class="sms-panel sms-panel-auto">
+        <header class="sms-panel-header">
+          <h3>Auto Cutoff SMS</h3>
+          <span class="badge" [class.badge-active]="autoSmsEnabled()" [class.badge-inactive]="!autoSmsEnabled()">
+            {{ autoSmsEnabled() ? 'ON' : 'OFF' }}
+          </span>
+        </header>
+
+        <div class="auto-sms-content">
+          <div class="auto-sms-toggle">
+            <label class="toggle-label">
+              <input #autoToggle type="checkbox" [checked]="autoSmsEnabled()" (change)="setAutoSmsEnabled(autoToggle.checked)" />
+              <span class="toggle-text">Auto-send reminders</span>
+            </label>
+          </div>
+
+          <div class="auto-sms-settings" [class.disabled]="!autoSmsEnabled()">
+            <label>Send before cutoff</label>
+            <div class="time-selector">
+              <select #hoursSelect class="form-input" [value]="autoSmsHoursBefore()"
+                (change)="setAutoSmsHoursBefore(+$any(hoursSelect.value))" [disabled]="!autoSmsEnabled()">
+                <option value="6">6 hours</option>
+                <option value="12">12 hours</option>
+                <option value="24">24 hours</option>
+                <option value="48">48 hours</option>
+                <option value="72">72 hours</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="auto-sms-status">
+            <div class="status-item">
+              <span class="status-label">Upcoming cutoffs</span>
+              <span class="status-badge">{{ autoSmsCutoffRecipients().length }}</span>
+            </div>
+          </div>
+
+          <button type="button" class="primary-btn" [disabled]="!autoSmsEnabled() || autoSmsCutoffRecipients().length === 0"
+            (click)="sendAutomaticCutoffReminders()">
+            Send Reminders Now
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

@@ -1,0 +1,363 @@
+<section class="module-container">
+  <header class="module-header">
+    <div class="header-content">
+      <h2>Attendance Management</h2>
+      <p>Track volunteer check-ins, attendance history, and participation</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="outline-btn" [class.active]="attendanceView() === 'daily'" (click)="setAttendanceView('daily')">Daily</button>
+      <button type="button" class="outline-btn" [class.active]="attendanceView() === 'history'" (click)="setAttendanceView('history')">History</button>
+      <button type="button" class="outline-btn" [class.active]="attendanceView() === 'reports'" (click)="setAttendanceView('reports')">Reports</button>
+      <div class="attendance-actions">
+        <button type="button" class="outline-btn photo-upload-btn" (click)="openPhotoUploadModal()">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Upload Photo
+        </button>
+      </div>
+      <div class="export-actions">
+        <button type="button" class="export-btn export-pdf" (click)="exportAttendanceToPDF()">
+          <span class="export-icon">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M13 3V9H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 13H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 17H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="export-text">Export PDF</span>
+        </button>
+        <button type="button" class="export-btn export-excel" (click)="exportAttendanceToExcel()">
+          <span class="export-icon">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M13 3V9H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M9 17L11 15L9 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 15H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="export-text">Export Excel</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="filters-bar">
+    <div class="search-wrapper">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" />
+        <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <input type="text" placeholder="Search volunteers..." [value]="attendanceSearchQuery()"
+        (input)="setAttendanceSearchQuery(attendanceSearchInput.value)" #attendanceSearchInput
+        aria-label="Search attendance records" />
+    </div>
+    <input type="date" class="filter-date-input" [value]="attendanceDateFilter()"
+      (change)="setAttendanceDateFilter(dateInput.value)" #dateInput aria-label="Filter by date" />
+  </div>
+
+  <div class="table-container attendance-table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">Volunteer</th>
+          <th scope="col">Department</th>
+          <th scope="col">Check-in Time</th>
+          <th scope="col">Check-out Time</th>
+          <th scope="col">Duration</th>
+          <th scope="col">Status</th>
+          <th scope="col" style="text-align: right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (record of paginatedAttendance(); track record.id) {
+          <tr>
+            <td>
+              <div class="volunteer-info-cell">
+                <div class="volunteer-avatar" aria-hidden="true">
+                  {{ record.volunteerName.charAt(0) }}
+                </div>
+                <div class="volunteer-details">
+                  <span class="volunteer-name">{{ record.volunteerName }}</span>
+                  <span class="volunteer-meta">{{ record.email }}</span>
+                </div>
+              </div>
+            </td>
+            <td>{{ record.department }}</td>
+            <td>{{ record.checkInTime || '—' }}</td>
+            <td>{{ record.checkOutTime || '—' }}</td>
+            <td>{{ record.duration || '—' }}</td>
+            <td>
+              <div class="status-dropdown-wrapper">
+                <select class="status-badge-select"
+                  [class.status-present]="record.status === 'present'"
+                  [class.status-absent]="record.status === 'absent'"
+                  [value]="record.status"
+                  (change)="updateAttendanceStatus(record.id, $any($event.target).value)">
+                  <option value="present">Present</option>
+                  <option value="absent">Absent</option>
+                </select>
+              </div>
+            </td>
+            <td class="actions-cell">
+              <div class="action-buttons">
+                <button type="button" class="icon-btn icon-btn-info"
+                  (click)="viewAttendanceDetails(record)" title="View Details">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M2 12C2 12 5 5 12 5C19 5 22 12 22 12C22 12 19 19 12 19C5 19 2 12 2 12Z"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="7">
+              <div class="empty-state-container">
+                <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                  <path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                </svg>
+                <p class="empty-state">No attendance records found for this date.</p>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination-container">
+    <div class="pagination-info">
+      @if (paginatedAttendance().length > 0) {
+        Showing <strong>{{ (attendancePage() - 1) * attendancePerPage() + 1 }}</strong> to
+        <strong>{{ Math.min(attendancePage() * attendancePerPage(), filteredAttendance().length) }}</strong>
+        of <strong>{{ filteredAttendance().length }}</strong> records
+      } @else {
+        No records found
+      }
+    </div>
+    @if (attendanceTotalPages() > 1) {
+      <nav class="pagination-controls" aria-label="Attendance pages">
+        <button type="button" class="pagination-btn" [disabled]="attendancePage() === 1"
+          (click)="previousAttendancePage()">Previous</button>
+        <div class="pagination-numbers">
+          @for (page of getAttendancePageNumbers(); track page) {
+            @if (page === -1) {
+              <span class="pagination-ellipsis">…</span>
+            } @else {
+              <button type="button" class="pagination-number" [class.active]="attendancePage() === page"
+                (click)="goToAttendancePage(page)" [attr.aria-current]="attendancePage() === page ? 'page' : null">
+                {{ page }}
+              </button>
+            }
+          }
+        </div>
+        <button type="button" class="pagination-btn" [disabled]="attendancePage() === attendanceTotalPages()"
+          (click)="nextAttendancePage()">Next</button>
+      </nav>
+    }
+  </div>
+</section>
+
+<!-- Photo Upload Modal -->
+@if (showPhotoUploadModal()) {
+  <div class="modal-backdrop" (click)="closePhotoUploadModal()">
+    <section class="modal-card photo-upload-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
+      aria-labelledby="photo-upload-title">
+      <header class="modal-header">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon modal-icon-primary">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 id="photo-upload-title">Upload Attendance Photo</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closePhotoUploadModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="modal-body">
+        <div class="photo-upload-instructions">
+          <p>Upload a photo containing volunteer names. The system will detect and mark their attendance automatically.</p>
+        </div>
+
+        <div class="photo-upload-area">
+          @if (!photoUploadPreview()) {
+            <div class="upload-placeholder">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <p>Click to upload or drag and drop</p>
+              <span class="upload-hint">Supports: JPG, PNG, WEBP (Max 10MB)</span>
+              <input type="file" accept="image/*" (change)="onPhotoSelected($event)" class="file-input" />
+            </div>
+          } @else {
+            <div class="photo-preview-container">
+              <img [src]="photoUploadPreview()" alt="Uploaded photo preview" class="photo-preview" />
+              <button type="button" class="remove-photo-btn" (click)="photoUploadPreview.set(null); detectedVolunteersFromPhoto.set([]);">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Remove Photo
+              </button>
+            </div>
+          }
+        </div>
+
+        @if (photoUploadProcessing()) {
+          <div class="ocr-processing">
+            <div class="processing-spinner"></div>
+            <p>Analyzing photo for volunteer names...</p>
+          </div>
+        }
+
+        @if (detectedVolunteersFromPhoto().length > 0 && !photoUploadProcessing()) {
+          <div class="detected-volunteers">
+            <h4>Detected Volunteers ({{ detectedVolunteersFromPhoto().length }})</h4>
+            <ul class="detected-list">
+              @for (detected of detectedVolunteersFromPhoto(); track detected.name) {
+                <li class="detected-item">
+                  <span class="detected-name">{{ detected.name }}</span>
+                  <span class="detected-confidence">{{ detected.confidence }}% match</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" (click)="closePhotoUploadModal()">Cancel</button>
+        @if (detectedVolunteersFromPhoto().length > 0) {
+          <button type="button" class="primary-btn" (click)="markDetectedVolunteersAsPresent()">
+            Mark {{ detectedVolunteersFromPhoto().length }} as Present
+          </button>
+        } @else {
+          <button type="button" class="primary-btn" (click)="processPhotoOCR()" [disabled]="!photoUploadPreview() || photoUploadProcessing()">
+            @if (photoUploadProcessing()) {
+              <span class="loading-spinner" aria-hidden="true"></span>
+              Processing...
+            } @else {
+              Detect Names
+            }
+          </button>
+        }
+      </div>
+    </section>
+  </div>
+}
+
+<!-- Attendance Details Modal -->
+@if (showAttendanceDetailsModal()) {
+  <div class="modal-backdrop" (click)="closeAttendanceDetailsModal()">
+    <section class="modal-card attendance-details-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
+      aria-labelledby="attendance-details-title">
+      <header class="modal-header">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon modal-icon-info">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4m-4 0V9a2 2 0 1 1 4 0v2m-4 0a2 2 0 1 0 4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 id="attendance-details-title">Attendance History</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeAttendanceDetailsModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="modal-body">
+        @if (selectedAttendanceRecord(); as record) {
+          <div class="attendance-details-content">
+            <div class="detail-section volunteer-profile">
+              <div class="volunteer-avatar-lg">{{ record.volunteerName.charAt(0) }}</div>
+              <div class="volunteer-profile-info">
+                <h4 class="volunteer-name">{{ record.volunteerName }}</h4>
+                <span class="volunteer-email">{{ record.email }}</span>
+                <span class="volunteer-dept">{{ record.department }}</span>
+              </div>
+            </div>
+
+            <div class="attendance-summary-stats">
+              <div class="stat-box present-stat">
+                <span class="stat-number">12</span>
+                <span class="stat-label">Present</span>
+              </div>
+              <div class="stat-box absent-stat">
+                <span class="stat-number">2</span>
+                <span class="stat-label">Absent</span>
+              </div>
+              <div class="stat-box total-stat">
+                <span class="stat-number">14</span>
+                <span class="stat-label">Total Events</span>
+              </div>
+            </div>
+
+            <div class="attendance-history-section">
+              <h5>Event Attendance History</h5>
+              <div class="attendance-table-wrapper">
+                <table class="attendance-history-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Event</th>
+                      <th>Status</th>
+                      <th>Tasks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Apr 20, 2026</td>
+                      <td>Mobile Kitchen Relief</td>
+                      <td><span class="status-badge status-active">Present</span></td>
+                      <td>Food preparation, Distribution</td>
+                    </tr>
+                    <tr>
+                      <td>Apr 18, 2026</td>
+                      <td>Community Outreach</td>
+                      <td><span class="status-badge status-active">Present</span></td>
+                      <td>Registration, Coordination</td>
+                    </tr>
+                    <tr>
+                      <td>Apr 15, 2026</td>
+                      <td>Emergency Response Training</td>
+                      <td><span class="status-badge status-active">Present</span></td>
+                      <td>Training participation</td>
+                    </tr>
+                    <tr>
+                      <td>Apr 12, 2026</td>
+                      <td>Fundraising Event</td>
+                      <td><span class="status-badge status-inactive">Absent</span></td>
+                      <td>—</td>
+                    </tr>
+                    <tr>
+                      <td>Apr 10, 2026</td>
+                      <td>Disaster Relief Operation</td>
+                      <td><span class="status-badge status-active">Present</span></td>
+                      <td>Supply packing, Logistics</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+}

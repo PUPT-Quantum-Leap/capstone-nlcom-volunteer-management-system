@@ -362,7 +362,7 @@ export class AdminDashboardService {
     frequency: 'daily' | 'weekly' | 'monthly'
   ): Observable<ApiResponse<void>> {
     const body = { enabled, frequency };
-    
+
     return this.http.put<ApiResponse<void>>(
       `${environment.apiUrl}/backups/schedule`,
       body,
@@ -376,6 +376,22 @@ export class AdminDashboardService {
           success: false,
           message: 'Failed to update scheduled backup settings',
         } as ApiResponse<void>);
+      })
+    );
+  }
+
+  // SMS configuration check
+  getSmsConfigStatus(): Observable<{ configured: boolean; message?: string }> {
+    return this.http.get<{ configured: boolean; message?: string }>(
+      `${environment.apiUrl}/sms/config-status`,
+      { withCredentials: true }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error fetching SMS config status:', error);
+        return of({
+          configured: false,
+          message: 'Unable to verify SMS configuration',
+        });
       })
     );
   }

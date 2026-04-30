@@ -8,6 +8,7 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\FacebookWebhookController;
 use App\Http\Controllers\RsvpController;
+use App\Http\Controllers\SmsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VolunteerController;
 use Illuminate\Http\Request;
@@ -113,4 +114,7 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     // Scheduled backup settings
     Route::get('/backups/schedule', [BackupController::class, 'getSchedule']);
     Route::put('/backups/schedule', [BackupController::class, 'updateSchedule']);
+
+    // SMS configuration status check
+    Route::get('/sms/config-status', [SmsController::class, 'configStatus']);
 });

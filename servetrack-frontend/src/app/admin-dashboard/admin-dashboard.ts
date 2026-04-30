@@ -30,11 +30,12 @@ import { User } from '../models/user';
 import { UserService } from '../services/user.service';
 import { AnalyticsService, ReportData } from '../services/analytics.service';
 import { NLCOMOperation, DashboardView, EventModuleCard, BackupRecord, AttendanceRecord } from '../models/operation';
+import { BackupRecoveryComponent } from './backup-recovery/backup-recovery';
 
 @Component({
   selector: 'app-admin-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, CommonModule, NgOptimizedImage],
+  imports: [ReactiveFormsModule, CommonModule, NgOptimizedImage, BackupRecoveryComponent],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.scss',
 })

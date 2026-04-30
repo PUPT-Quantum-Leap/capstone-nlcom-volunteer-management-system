@@ -1,0 +1,225 @@
+<section class="module-container analytics-layout">
+  <header class="module-header">
+    <div class="header-content">
+      <h2>Analytics & Reports</h2>
+      <p>Comprehensive insights into volunteer performance and system metrics</p>
+    </div>
+    <div class="header-actions export-actions">
+      <button type="button" class="export-btn export-pdf" (click)="exportReport('pdf')" [disabled]="analyticsLoading()">
+        <span class="export-text">Export PDF</span>
+      </button>
+      <button type="button" class="export-btn export-excel" (click)="exportReport('excel')" [disabled]="analyticsLoading()">
+        <span class="export-text">Export Excel</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="filters-bar analytics-filters">
+    <div class="filter-group">
+      <label for="report-type">Report Type</label>
+      <select #reportTypeSelect id="report-type" class="filter-select" [value]="selectedReportType()"
+        (change)="setReportType($any(reportTypeSelect.value))">
+        <option value="volunteers">Volunteer Overview</option>
+        <option value="attendance">Attendance Analysis</option>
+        <option value="performance">Performance Metrics</option>
+        <option value="department">Department Breakdown</option>
+        <option value="trends">Monthly Trends</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="date-range">Date Range</label>
+      <select #dateRangeSelect id="date-range" class="filter-select" [value]="dateRangeFilter()"
+        (change)="setDateRange($any(dateRangeSelect.value))">
+        <option value="all">All Time</option>
+        <option value="month">This Month</option>
+        <option value="quarter">This Quarter</option>
+        <option value="year">This Year</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="department-filter">Department</label>
+      <select #departmentSelect id="department-filter" class="filter-select"
+        (change)="onDepartmentFilterChange(departmentSelect.value)">
+        <option value="">All Departments</option>
+        @for (department of reportData()?.departmentBreakdown ?? []; track department.name) {
+          <option [value]="department.name">{{ department.name }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="analytics-sections-grid">
+    <article class="analytics-section-card">
+      <div class="section-header">
+        <h3>Event Participation</h3>
+        <p>RSVP and event response metrics</p>
+      </div>
+      <div class="section-stats">
+        <div class="section-stat">
+          <span class="stat-value">{{ reportData()?.eventParticipation?.totalEvents ?? 0 }}</span>
+          <span class="stat-label">Total Events</span>
+        </div>
+        <div class="section-stat">
+          <span class="stat-value">{{ reportData()?.eventParticipation?.totalResponses ?? 0 }}</span>
+          <span class="stat-label">Responses</span>
+        </div>
+        <div class="section-stat">
+          <span class="stat-value">{{ reportData()?.eventParticipation?.activeEvents ?? 0 }}</span>
+          <span class="stat-label">Active</span>
+        </div>
+        <div class="section-stat">
+          <span class="stat-value">{{ reportData()?.eventParticipation?.confirmedCount ?? 0 }}</span>
+          <span class="stat-label">Checked In</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="analytics-section-card">
+      <div class="section-header">
+        <h3>Training Completion</h3>
+        <p>Training progress across volunteers</p>
+      </div>
+      <div class="section-stats">
+        <div class="section-stat">
+          <span class="stat-value">{{ reportData()?.trainingCompletion?.totalTrainings ?? 0 }}</span>
+          <span class="stat-label">Trainings</span>
+        </div>
+        <div class="section-stat">
+          <span class="stat-value">{{ reportData()?.trainingCompletion?.volunteersWithTraining ?? 0 }}</span>
+          <span class="stat-label">Completed</span>
+        </div>
+        <div class="section-stat">
+          <span class="stat-value">{{ reportData()?.trainingCompletion?.completionRate ?? 0 }}%</span>
+          <span class="stat-label">Rate</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="analytics-section-card">
+      <div class="section-header">
+        <h3>Retention Metrics</h3>
+        <p>Volunteer retention over time</p>
+      </div>
+      <div class="section-stats">
+        <div class="section-stat">
+          <span class="stat-value">{{ reportData()?.retentionMetrics?.retentionRate ?? 0 }}%</span>
+          <span class="stat-label">Retention Rate</span>
+        </div>
+        <div class="section-stat">
+          <span class="stat-value">{{ reportData()?.retentionMetrics?.activeLast3Months ?? 0 }}</span>
+          <span class="stat-label">Active (3mo)</span>
+        </div>
+        <div class="section-stat">
+          <span class="stat-value">{{ reportData()?.retentionMetrics?.churnedCount ?? 0 }}</span>
+          <span class="stat-label">Churned</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="analytics-section-card">
+      <div class="section-header">
+        <h3>Skills Distribution</h3>
+        <p>Top skills in volunteer pool</p>
+      </div>
+      <div class="skills-list">
+        @for (skill of paginatedSkills(); track skill.name) {
+          <div class="skill-item">
+            <span class="skill-name">{{ skill.name }}</span>
+            <span class="skill-count">{{ skill.count }}</span>
+          </div>
+        } @empty {
+          <p class="empty-state">No skills data available</p>
+        }
+      </div>
+      @if (hasMoreSkills()) {
+        <div class="skills-pagination">
+          <button type="button" class="pagination-btn" (click)="previousSkillsPage()" [disabled]="skillsPage() === 1">
+            Previous
+          </button>
+          <span class="pagination-info">{{ skillsPage() }} / {{ totalSkillsPages() }}</span>
+          <button type="button" class="pagination-btn" (click)="nextSkillsPage()" [disabled]="skillsPage() >= totalSkillsPages()">
+            Next
+          </button>
+        </div>
+      }
+    </article>
+  </div>
+
+  <div class="analytics-charts-grid">
+    <article class="analytics-chart-card">
+      <div class="chart-header">
+        <h3>Monthly Trends</h3>
+        <p>Volunteer activity over time</p>
+      </div>
+      <div class="chart-placeholder">
+        <svg viewBox="0 0 400 200" class="chart-svg" aria-label="Monthly volunteer activity trend chart" role="img">
+          <defs>
+            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2" />
+              <stop offset="100%" stop-color="#3b82f6" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <g class="chart-grid">
+            <line x1="40" y1="20" x2="360" y2="20" class="chart-grid-line" />
+            <line x1="40" y1="55" x2="360" y2="55" class="chart-grid-line" />
+            <line x1="40" y1="90" x2="360" y2="90" class="chart-grid-line" />
+            <line x1="40" y1="125" x2="360" y2="125" class="chart-grid-line" />
+            <line x1="40" y1="160" x2="360" y2="160" class="chart-grid-line" />
+          </g>
+          <path d="M70,130 L120,110 L170,90 L220,70 L270,80 L320,50 L320,160 L70,160 Z" fill="url(#chartGradient)" />
+          <polyline points="70,130 120,110 170,90 220,70 270,80 320,50" class="chart-line" />
+          <circle cx="70" cy="130" r="4.5" class="chart-point" />
+          <circle cx="120" cy="110" r="4.5" class="chart-point" />
+          <circle cx="170" cy="90" r="4.5" class="chart-point" />
+          <circle cx="220" cy="70" r="4.5" class="chart-point" />
+          <circle cx="270" cy="80" r="4.5" class="chart-point" />
+          <circle cx="320" cy="50" r="4.5" class="chart-point" />
+          <g font-size="10" fill="#94a3b8" text-anchor="middle" font-weight="600">
+            @for (trend of reportData()?.monthlyTrend ?? []; track trend.month) {
+              <text [attr.x]="70 + ($index * 50)" y="185">{{ trend.month }}</text>
+            }
+          </g>
+        </svg>
+      </div>
+    </article>
+
+    <article class="analytics-chart-card">
+      <div class="chart-header">
+        <h3>Department Breakdown</h3>
+        <p>Volunteer distribution by department</p>
+      </div>
+      <div class="department-list">
+        @for (department of paginatedDepartments(); track department.name) {
+          <div class="department-item">
+            <div class="department-info">
+              <span class="department-name">{{ department.name }}</span>
+              <span class="department-count">{{ department.count }} volunteers</span>
+            </div>
+            <div class="department-bar" role="progressbar" [attr.aria-valuenow]="department.percentage"
+              aria-valuemin="0" aria-valuemax="100">
+              <div class="department-fill" [style.width.%]="department.percentage"></div>
+            </div>
+            <span class="department-percentage">{{ department.percentage }}%</span>
+          </div>
+        } @empty {
+          <div class="empty-chart-state">
+            <p>No department data available.</p>
+          </div>
+        }
+      </div>
+      @if (hasMoreDepartments()) {
+        <div class="skills-pagination">
+          <button type="button" class="pagination-btn" (click)="previousDepartmentsPage()" [disabled]="departmentsPage() === 1">
+            Previous
+          </button>
+          <span class="pagination-info">{{ departmentsPage() }} / {{ totalDepartmentsPages() }}</span>
+          <button type="button" class="pagination-btn" (click)="nextDepartmentsPage()" [disabled]="departmentsPage() >= totalDepartmentsPages()">
+            Next
+          </button>
+        </div>
+      }
+    </article>
+  </div>
+</section>

@@ -1,0 +1,161 @@
+<section class="module-container">
+  <header class="module-header">
+    <div class="header-content">
+      <h2>User Management</h2>
+      <p>Manage system users, roles, and permissions</p>
+    </div>
+  </header>
+
+  <div class="filters-bar">
+    <div class="search-wrapper">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" />
+        <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      <input
+        #userSearchInput
+        type="text"
+        placeholder="Search users by name or email..."
+        [value]="userSearchQuery()"
+        (input)="setUserSearchQuery(userSearchInput.value)"
+        aria-label="Search users" />
+    </div>
+
+    <select #roleSelect class="filter-select" [value]="userRoleFilter()" (change)="setUserRoleFilter(roleSelect.value)"
+      aria-label="Filter by role">
+      <option value="">All Roles</option>
+      <option value="admin">Admin</option>
+      <option value="coordinator">Coordinator</option>
+      <option value="volunteer">Volunteer</option>
+    </select>
+  </div>
+
+  <div class="table-container users-table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">User</th>
+          <th scope="col">Role</th>
+          <th scope="col">Joined Date</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (isLoading()) {
+          <tr>
+            <td colspan="4">
+              <p class="empty-state">Loading users...</p>
+            </td>
+          </tr>
+        } @else {
+          @for (user of paginatedUsers(); track user.id) {
+            <tr>
+              <td>
+                <div class="user-info-cell">
+                  <div class="user-avatar" [class]="'avatar-' + user.role" aria-hidden="true">
+                    {{ user.name.charAt(0) }}
+                  </div>
+                  <div class="user-details">
+                    <span class="user-name">{{ user.name }}</span>
+                    <span class="user-email">{{ user.email }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="role-badge" [class]="'role-' + user.role">{{ user.role }}</span>
+              </td>
+              <td>{{ user.created_at | date: 'MMM d, yyyy' }}</td>
+              <td class="actions-cell">
+                <div class="action-buttons">
+                  <button type="button" class="icon-btn icon-btn-danger" (click)="confirmDeleteUser(user.id)"
+                    [attr.aria-label]="'Archive ' + user.name" title="Archive">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                      <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4">
+                <p class="empty-state">No user records found.</p>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination-container">
+    <div class="pagination-info">
+      @if (filteredUsers().length > 0) {
+        Showing <strong>{{ (currentPage() - 1) * usersPerPage() + 1 }}</strong> to
+        <strong>{{ Math.min(currentPage() * usersPerPage(), filteredUsers().length) }}</strong>
+        of <strong>{{ filteredUsers().length }}</strong> user(s)
+      } @else {
+        No users found
+      }
+    </div>
+
+    @if (usersTotalPages() > 1) {
+      <nav class="pagination-controls" aria-label="User list pages">
+        <button type="button" class="pagination-btn" [disabled]="currentPage() === 1" (click)="previousPage()">
+          Previous
+        </button>
+        <div class="pagination-numbers">
+          @for (page of getPageNumbers(); track $index) {
+            @if (page === -1) {
+              <span class="pagination-ellipsis">...</span>
+            } @else {
+              <button type="button" class="pagination-number" [class.active]="currentPage() === page"
+                (click)="goToPage(page)" [attr.aria-current]="currentPage() === page ? 'page' : null">
+                {{ page }}
+              </button>
+            }
+          }
+        </div>
+        <button type="button" class="pagination-btn" [disabled]="currentPage() === usersTotalPages()" (click)="nextPage()">
+          Next
+        </button>
+      </nav>
+    }
+  </div>
+</section>
+
+@if (showDeleteUserModal()) {
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon modal-icon-danger">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <h3>Archive User</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeDeleteUserModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m18 6-12 12" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p>This user will be archived and removed from the active list.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" (click)="closeDeleteUserModal()">Cancel</button>
+        <button type="button" class="danger-btn" (click)="deleteUser()">Archive</button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,114 @@
+<section class="module-container performance-layout">
+  <header class="module-header">
+    <div class="header-content">
+      <h2>Volunteer Performance</h2>
+      <p>Overall performance metrics and detailed volunteer statistics</p>
+    </div>
+  </header>
+
+  @if (topPerformer()) {
+    <section class="top-performer-simple" aria-label="Top performer">
+      <div class="top-performer-content">
+        <div class="top-performer-avatar">{{ topPerformer()?.volunteerName?.charAt(0) }}</div>
+        <div class="top-performer-info">
+          <h3 class="top-performer-name">{{ topPerformer()?.volunteerName }}</h3>
+          <span class="top-performer-hours">{{ topPerformer()?.hoursServed }} hours served</span>
+        </div>
+        <div class="top-performer-badge">Top Performer</div>
+      </div>
+    </section>
+  }
+
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th scope="col">
+            <button type="button" class="sort-btn" (click)="sortBy('name')">
+              Volunteer Name
+              @if (sortField() === 'name') {
+                <span class="sort-indicator" aria-hidden="true">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+              }
+            </button>
+          </th>
+          <th scope="col">
+            <button type="button" class="sort-btn" (click)="sortBy('attendance')">
+              Attendance
+              @if (sortField() === 'attendance') {
+                <span class="sort-indicator" aria-hidden="true">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+              }
+            </button>
+          </th>
+          <th scope="col">
+            <button type="button" class="sort-btn" (click)="sortBy('hours')">
+              Hours Served
+              @if (sortField() === 'hours') {
+                <span class="sort-indicator" aria-hidden="true">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
+              }
+            </button>
+          </th>
+          <th scope="col">Last Activity</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (sortedPerformanceMetrics().length > 0) {
+          @for (metric of paginatedPerformanceMetrics(); track metric.id) {
+            <tr>
+              <td class="volunteer-name">{{ metric.volunteerName }}</td>
+              <td>
+                <div class="attendance-cell">
+                  <span class="attendance-value">{{ metric.attendanceRate }}%</span>
+                  <div class="mini-progress" role="progressbar" [attr.aria-valuenow]="metric.attendanceRate"
+                    aria-valuemin="0" aria-valuemax="100">
+                    <div class="mini-progress-fill" [style.width.%]="metric.attendanceRate"></div>
+                  </div>
+                </div>
+              </td>
+              <td>{{ metric.hoursServed }}h</td>
+              <td class="last-activity">{{ metric.lastActivity | date: 'MMM d, yyyy' }}</td>
+            </tr>
+          }
+        } @else {
+          <tr class="empty-state-row">
+            <td colspan="4">
+              <div class="empty-state">
+                <p class="empty-state-title">No performance data yet</p>
+                <p class="empty-state-text">Volunteer performance metrics will appear here once activities are recorded.</p>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination-container">
+    <div class="pagination-info">
+      @if (sortedPerformanceMetrics().length > 0) {
+        Showing <strong>{{ (performancePage() - 1) * performancePerPage() + 1 }}</strong> to
+        <strong>{{ Math.min(performancePage() * performancePerPage(), sortedPerformanceMetrics().length) }}</strong>
+        of <strong>{{ sortedPerformanceMetrics().length }}</strong> records
+      } @else {
+        No records found
+      }
+    </div>
+    @if (performanceTotalPages() > 1) {
+      <nav class="pagination-controls" aria-label="Performance pages">
+        <button type="button" class="pagination-btn" [disabled]="performancePage() === 1" (click)="previousPerformancePage()">Previous</button>
+        <div class="pagination-numbers">
+          @for (page of getPerformancePageNumbers(); track $index) {
+            @if (page === -1) {
+              <span class="pagination-ellipsis">...</span>
+            } @else {
+              <button type="button" class="pagination-number" [class.active]="performancePage() === page"
+                (click)="goToPerformancePage(page)" [attr.aria-current]="performancePage() === page ? 'page' : null">
+                {{ page }}
+              </button>
+            }
+          }
+        </div>
+        <button type="button" class="pagination-btn" [disabled]="performancePage() === performanceTotalPages()" (click)="nextPerformancePage()">Next</button>
+      </nav>
+    }
+  </div>
+</section>
