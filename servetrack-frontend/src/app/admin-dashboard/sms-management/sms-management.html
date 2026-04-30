@@ -12,13 +12,6 @@
         <h2 class="report-title">Prepare Messages & Broadcasts</h2>
       </div>
     </div>
-    <div class="report-header-right">
-      @if (smsConfigured() === false) {
-        <span class="status-badge status-error">SMS Not Configured</span>
-      } @else {
-        <span class="status-badge status-success">SMS Ready</span>
-      }
-    </div>
   </header>
 
   <!-- Status Banner -->
@@ -78,14 +71,12 @@
         </div>
 
         <div class="sms-actions">
-          <button type="button" class="action-btn" [disabled]="smsSending() || smsConfigured() === false" (click)="sendSmsBroadcast()">
+          <button type="button" class="action-btn" [disabled]="smsSending()" (click)="sendSmsBroadcast()">
             @if (smsSending()) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
               </svg>
               Sending...
-            } @else if (smsConfigured() === false) {
-              SMS Not Configured
             } @else {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <line x1="22" y1="2" x2="11" y2="13"/>
@@ -98,7 +89,6 @@
       </div>
     </article>
 
-    <div class="sms-sidebar">
       <article class="sms-panel sms-panel-auto">
         <header class="sms-panel-header">
           <div class="panel-icon">
@@ -153,6 +143,5 @@
           </button>
         </div>
       </article>
-    </div>
   </section>
 </section>

@@ -217,7 +217,7 @@
 // SMS Layout
 .sms-layout {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
 
   @media (max-width: 1024px) {
@@ -231,6 +231,8 @@
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .sms-panel-header {
@@ -292,6 +294,9 @@
 // Compose Form
 .compose-form {
   padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .form-row {
@@ -410,6 +415,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  flex: 1;
 }
 
 .auto-sms-toggle {
