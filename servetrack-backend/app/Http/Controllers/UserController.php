@@ -201,14 +201,30 @@ class UserController extends Controller
             ], 404);
         }
 
+        DB::beginTransaction();
         try {
+            // Cascade force delete to associated volunteer
+            if ($user->volunteer) {
+                $user->volunteer->forceDelete();
+            }
+
             $user->forceDelete();
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'User deleted successfully',
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('User force delete failed', [
+                'user_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete user',
@@ -231,14 +247,38 @@ class UserController extends Controller
             ], 404);
         }
 
-        if (! $user->trashed()) {
-            $user->delete();
-        }
+        DB::beginTransaction();
+        try {
+            if (! $user->trashed()) {
+                $user->delete();
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User archived successfully',
-        ]);
+            // Cascade soft delete to associated volunteer
+            if ($user->volunteer
+                && ! $user->volunteer->trashed()) {
+                $user->volunteer->delete();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User archived successfully',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('User soft delete failed', [
+                'user_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to archive user',
+            ], 500);
+        }
     }
 
     /**
@@ -255,12 +295,38 @@ class UserController extends Controller
             ], 404);
         }
 
-        $user->restore();
+        DB::beginTransaction();
+        try {
+            $user->restore();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User restored successfully',
-        ]);
+            // Cascade restore to associated volunteer (load with trashed)
+            $volunteer = Volunteer::withTrashed()
+                ->where('user_id', $user->id)
+                ->first();
+            if ($volunteer && $volunteer->trashed()) {
+                $volunteer->restore();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User restored successfully',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('User restore failed', [
+                'user_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore user',
+            ], 500);
+        }
     }
 
     /**
