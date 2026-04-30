@@ -359,21 +359,21 @@
 <!-- Photo Upload Modal -->
 @if (showPhotoUploadModal()) {
   <div class="modal-backdrop" (click)="closePhotoUploadModal()">
-    <section class="modal-card photo-upload-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
+    <section class="modal-card modal-lg" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
       aria-labelledby="photo-upload-title">
-      <header class="modal-header">
+      <header class="modal-header header-primary">
         <div class="modal-title-wrapper">
-          <div class="modal-icon modal-icon-primary">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
             </svg>
           </div>
           <h3 id="photo-upload-title">Upload Attendance Photo</h3>
         </div>
         <button type="button" class="modal-close-btn" (click)="closePhotoUploadModal()" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" />
           </svg>
         </button>
       </header>
@@ -386,10 +386,10 @@
         <div class="photo-upload-area">
           @if (!photoUploadPreview()) {
             <div class="upload-placeholder">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
               <p>Click to upload or drag and drop</p>
               <span class="upload-hint">Supports: JPG, PNG, WEBP (Max 10MB)</span>
@@ -399,8 +399,8 @@
             <div class="photo-preview-container">
               <img [src]="photoUploadPreview()" alt="Uploaded photo preview" class="photo-preview" />
               <button type="button" class="remove-photo-btn" (click)="photoUploadPreview.set(null); detectedVolunteersFromPhoto.set([]);">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 6L6 18M6 6L18 18" />
                 </svg>
                 Remove Photo
               </button>
@@ -454,20 +454,20 @@
 <!-- Attendance Details Modal -->
 @if (showAttendanceDetailsModal()) {
   <div class="modal-backdrop" (click)="closeAttendanceDetailsModal()">
-    <section class="modal-card attendance-details-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
+    <section class="modal-card modal-lg" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
       aria-labelledby="attendance-details-title">
-      <header class="modal-header">
+      <header class="modal-header header-info">
         <div class="modal-title-wrapper">
-          <div class="modal-icon modal-icon-info">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4m-4 0V9a2 2 0 1 1 4 0v2m-4 0a2 2 0 1 0 4 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4m-4 0V9a2 2 0 1 1 4 0v2m-4 0a2 2 0 1 0 4 0"/>
             </svg>
           </div>
           <h3 id="attendance-details-title">Attendance History</h3>
         </div>
         <button type="button" class="modal-close-btn" (click)="closeAttendanceDetailsModal()" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" />
           </svg>
         </button>
       </header>
@@ -548,6 +548,10 @@
             </div>
           </div>
         }
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" (click)="closeAttendanceDetailsModal()">Close</button>
       </div>
     </section>
   </div>

@@ -311,11 +311,11 @@
 
 @if (showRsvpModal()) {
   <div class="modal-backdrop" (click)="closeRsvpModal()">
-    <section class="modal-card rsvp-modal" (click)="$event.stopPropagation()" role="dialog"
+    <section class="modal-card modal-lg" (click)="$event.stopPropagation()" role="dialog"
       aria-modal="true" [attr.aria-labelledby]="editingRsvp() ? 'edit-rsvp-title' : 'create-rsvp-title'">
-      <div class="modal-header">
+      <div class="modal-header" [class.header-warning]="editingRsvp()" [class.header-primary]="!editingRsvp()">
         <div class="modal-title-wrapper">
-          <div class="modal-icon" [class.modal-icon-warning]="editingRsvp()" [class.modal-icon-primary]="!editingRsvp()">
+          <div class="modal-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               @if (editingRsvp()) {
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -351,6 +351,11 @@
                 <input id="rsvp-location" type="text" formControlName="eventLocation" placeholder="e.g., NLCOM Main Hall" class="form-input" />
               </div>
 
+              <div class="form-group full-width">
+                <label for="rsvp-description">Description *</label>
+                <textarea id="rsvp-description" formControlName="description" placeholder="Describe the purpose of this RSVP..." class="form-input" rows="3"></textarea>
+              </div>
+
               <div class="form-group">
                 <label for="rsvp-date">Event Date *</label>
                 <input id="rsvp-date" type="date" formControlName="date" class="form-input" />
@@ -366,17 +371,12 @@
                 <input id="rsvp-cutoff-time" type="time" formControlName="cutOffTime" class="form-input" />
               </div>
             </div>
-
-            <div class="form-group full-width">
-              <label for="rsvp-description">Description *</label>
-              <textarea id="rsvp-description" formControlName="description" placeholder="Describe the purpose of this RSVP..." class="form-textarea" rows="3"></textarea>
-            </div>
           </div>
 
-          <div class="form-section">
+          <div class="form-section shifts-section">
             <div class="section-header">
               <div class="section-title-wrapper">
-                <h4 class="section-title">Shifts</h4>
+                <h4 class="section-title">Available Shifts</h4>
                 <span class="section-subtitle">Configure time slots and capacity</span>
               </div>
               <button type="button" class="add-shift-btn" (click)="addRsvpShift()">Add Shift</button>
@@ -426,11 +426,11 @@
 
 @if (showShareRsvpModal() && sharingRsvp()) {
   <div class="modal-backdrop" (click)="closeShareRsvpModal()">
-    <section class="modal-card" (click)="$event.stopPropagation()" role="dialog"
+    <section class="modal-card modal-md" (click)="$event.stopPropagation()" role="dialog"
       aria-modal="true" aria-labelledby="share-rsvp-title">
-      <div class="modal-header">
+      <div class="modal-header header-success">
         <div class="modal-title-wrapper">
-          <div class="modal-icon modal-icon-success">
+          <div class="modal-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="18" cy="5" r="3"/>
               <circle cx="6" cy="12" r="3"/>
@@ -455,24 +455,27 @@
           <button type="button" class="primary-btn" (click)="copyShareLink()">Copy Link</button>
         </div>
       </div>
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" (click)="closeShareRsvpModal()">Close</button>
+      </div>
     </section>
   </div>
 }
 
 @if (showDeleteRsvpModal()) {
   <div class="modal-backdrop" (click)="closeDeleteRsvpModal()">
-    <section class="modal-card" (click)="$event.stopPropagation()" role="dialog"
+    <section class="modal-card modal-sm" (click)="$event.stopPropagation()" role="dialog"
       aria-modal="true" aria-labelledby="delete-rsvp-title">
-      <div class="modal-header">
+      <div class="modal-header header-danger">
         <div class="modal-title-wrapper">
-          <div class="modal-icon modal-icon-danger">
+          <div class="modal-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M3 6h18" />
               <path d="M8 6V4h8v2" />
               <path d="M19 6l-1 14H6L5 6" />
             </svg>
           </div>
-          <h3 id="delete-rsvp-title">Delete RSVP</h3>
+          <h3 id="delete-rsvp-title">Delete RSVP Event</h3>
         </div>
         <button type="button" class="modal-close-btn" (click)="closeDeleteRsvpModal()" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">

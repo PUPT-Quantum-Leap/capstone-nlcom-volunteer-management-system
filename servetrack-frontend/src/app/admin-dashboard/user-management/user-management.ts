@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { User } from '../../models/user';
 import { UserService } from '../../services/user.service';
+import { InviteService } from '../../services/invite.service';
 
 @Component({
   selector: 'app-user-management',
@@ -21,6 +22,7 @@ import { UserService } from '../../services/user.service';
 })
 export class UserManagementComponent {
   private readonly userService = inject(UserService);
+  private readonly inviteService = inject(InviteService);
   private readonly destroyRef = inject(DestroyRef);
 
   // Outputs
@@ -43,6 +45,11 @@ export class UserManagementComponent {
   readonly editingUser = signal<User | null>(null);
   readonly showEditUserModal = signal(false);
   readonly editFormData = signal<{ name: string; email: string; role: string }>({ name: '', email: '', role: '' });
+  readonly inviteMode = signal<'email' | 'link'>('email');
+  readonly inviteEmail = signal('');
+  readonly inviteLink = signal('');
+  readonly isCreatingInvite = signal(false);
+  readonly showInviteSuccess = signal(false);
 
   readonly filteredUsers = computed(() => {
     const search = this.userSearchQuery().toLowerCase().trim();
@@ -104,6 +111,10 @@ export class UserManagementComponent {
   openCreateUserModal(): void {
     this.editingUser.set(null);
     this.editFormData.set({ name: '', email: '', role: 'volunteer' });
+    this.inviteMode.set('email');
+    this.inviteEmail.set('');
+    this.inviteLink.set('');
+    this.showInviteSuccess.set(false);
     this.showEditUserModal.set(true);
   }
 
@@ -231,6 +242,10 @@ export class UserManagementComponent {
     this.showEditUserModal.set(false);
     this.editingUser.set(null);
     this.editFormData.set({ name: '', email: '', role: '' });
+    this.inviteMode.set('email');
+    this.inviteEmail.set('');
+    this.inviteLink.set('');
+    this.showInviteSuccess.set(false);
   }
 
   updateEditForm(field: 'name' | 'email' | 'role', value: string): void {
@@ -262,6 +277,45 @@ export class UserManagementComponent {
           this.showSnackbar.emit({ message: 'Failed to update user', type: 'error' });
         },
       });
+  }
+
+  setInviteMode(mode: 'email' | 'link'): void {
+    this.inviteMode.set(mode);
+  }
+
+  setInviteEmail(email: string): void {
+    this.inviteEmail.set(email);
+  }
+
+  createInvite(): void {
+    const formData = this.editFormData();
+    const email = this.inviteMode() === 'email' ? this.inviteEmail() : null;
+
+    this.isCreatingInvite.set(true);
+
+    this.inviteService.createInvite(email, formData.role)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.inviteLink.set(response.data.invite_link);
+          this.showInviteSuccess.set(true);
+          this.isCreatingInvite.set(false);
+          this.showSnackbar.emit({ message: 'Invite created successfully', type: 'success' });
+        },
+        error: (error: Error) => {
+          console.error('Error creating invite:', error);
+          this.showSnackbar.emit({ message: 'Failed to create invite', type: 'error' });
+          this.isCreatingInvite.set(false);
+        },
+      });
+  }
+
+  copyInviteLink(): void {
+    navigator.clipboard.writeText(this.inviteLink()).then(() => {
+      this.showSnackbar.emit({ message: 'Invite link copied to clipboard', type: 'success' });
+    }).catch(() => {
+      this.showSnackbar.emit({ message: 'Failed to copy link', type: 'error' });
+    });
   }
 
   openViewUserModal(user: User): void {

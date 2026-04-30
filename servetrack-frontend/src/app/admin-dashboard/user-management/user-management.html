@@ -270,11 +270,11 @@
 </section>
 
 @if (showDeleteUserModal()) {
-  <div class="modal-backdrop">
-    <div class="modal-card">
-      <div class="modal-header">
+  <div class="modal-backdrop" (click)="closeDeleteUserModal()">
+    <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header header-danger">
         <div class="modal-title-wrapper">
-          <div class="modal-icon modal-icon-danger">
+          <div class="modal-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M3 6h18" />
               <path d="M8 6V4h8v2" />
@@ -297,7 +297,7 @@
 
       <div class="modal-footer">
         <button type="button" class="outline-btn" (click)="closeDeleteUserModal()">Cancel</button>
-        <button type="button" class="danger-btn" (click)="deleteUser()">Archive</button>
+        <button type="button" class="danger-btn" (click)="deleteUser()">Archive User</button>
       </div>
     </div>
   </div>
@@ -306,17 +306,17 @@
 <!-- Edit User Modal -->
 @if (showEditUserModal()) {
   <div class="modal-backdrop" (click)="closeEditUserModal()">
-    <section class="modal-card user-edit-modal" (click)="$event.stopPropagation()" role="dialog"
+    <section class="modal-card modal-md" (click)="$event.stopPropagation()" role="dialog"
       aria-modal="true" aria-labelledby="user-edit-title">
-      <div class="modal-header">
+      <div class="modal-header header-warning">
         <div class="modal-title-wrapper">
-          <div class="modal-icon modal-icon-warning">
+          <div class="modal-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
           </div>
-          <h3 id="user-edit-title">Edit User</h3>
+          <h3 id="user-edit-title">@if (editingUser()) { Edit User Details } @else { Add User / Send Invite }</h3>
         </div>
         <button type="button" class="modal-close-btn" (click)="closeEditUserModal()" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -326,28 +326,39 @@
       </div>
 
       <div class="modal-body">
-        <form class="edit-form" (submit)="$event.preventDefault(); saveUser()">
-          <div class="form-group">
-            <label for="edit-user-name">Full Name</label>
-            <input
-              id="edit-user-name"
-              type="text"
-              [value]="editFormData().name"
-              (input)="updateEditForm('name', $any($event.target).value)"
-              placeholder="Enter full name"
-              required />
+        @if (!editingUser()) {
+          <!-- Invite Mode Selection -->
+          <div class="invite-mode-selector">
+            <button type="button" class="mode-btn" [class.active]="inviteMode() === 'email'" (click)="setInviteMode('email')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+              <span>Send Email Invite</span>
+            </button>
+            <button type="button" class="mode-btn" [class.active]="inviteMode() === 'link'" (click)="setInviteMode('link')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              <span>Copy Invite Link</span>
+            </button>
           </div>
+        }
 
-          <div class="form-group">
-            <label for="edit-user-email">Email Address</label>
-            <input
-              id="edit-user-email"
-              type="email"
-              [value]="editFormData().email"
-              (input)="updateEditForm('email', $any($event.target).value)"
-              placeholder="Enter email address"
-              required />
-          </div>
+        <form class="edit-form" (submit)="$event.preventDefault()">
+          @if (inviteMode() === 'email') {
+            <div class="form-group">
+              <label for="invite-email">Recipient Email</label>
+              <input
+                id="invite-email"
+                type="email"
+                [value]="inviteEmail()"
+                (input)="setInviteEmail($any($event.target).value)"
+                placeholder="Enter recipient email address"
+                required />
+            </div>
+          }
 
           <div class="form-group">
             <label for="edit-user-role">Role</label>
@@ -359,14 +370,40 @@
               <option value="coordinator">Coordinator</option>
               <option value="volunteer">Volunteer</option>
             </select>
-            <small class="form-hint">Changing role will update user permissions and create appropriate profile.</small>
+            <small class="form-hint">@if (editingUser()) { Changing role will update user permissions and create appropriate profile. } @else { The invited user will be assigned this role upon registration. }</small>
           </div>
+
+          @if (showInviteSuccess()) {
+            <div class="invite-success-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+              <div class="invite-success-content">
+                <p class="invite-success-title">Invite Created Successfully!</p>
+                <p class="invite-link-text">{{ inviteLink() }}</p>
+                <button type="button" class="copy-link-btn" (click)="copyInviteLink()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  Copy Link
+                </button>
+              </div>
+            </div>
+          }
         </form>
       </div>
 
       <div class="modal-footer">
         <button type="button" class="outline-btn" (click)="closeEditUserModal()">Cancel</button>
-        <button type="button" class="primary-btn" (click)="saveUser()">Save Changes</button>
+        @if (editingUser()) {
+          <button type="button" class="primary-btn" (click)="saveUser()">Save Changes</button>
+        } @else {
+          <button type="button" class="primary-btn" (click)="createInvite()" [disabled]="isCreatingInvite()">
+            @if (isCreatingInvite()) { Creating... } @else { Create Invite }
+          </button>
+        }
       </div>
     </section>
   </div>
@@ -375,55 +412,65 @@
 <!-- View User Details Modal -->
 @if (showViewUserModal()) {
   <div class="modal-backdrop" (click)="closeViewUserModal()">
-    <section class="modal-card user-details-modal" (click)="$event.stopPropagation()" role="dialog"
+    <section class="modal-card modal-md" (click)="$event.stopPropagation()" role="dialog"
       aria-modal="true" aria-labelledby="user-details-title">
-      <div class="modal-header">
-        <h3 id="user-details-title">User Details</h3>
+      <div class="modal-header header-info">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </div>
+          <h3 id="user-details-title">User Information</h3>
+        </div>
         <button type="button" class="modal-close-btn" (click)="closeViewUserModal()" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" />
           </svg>
         </button>
       </div>
 
-      @if (viewingUser(); as user) {
-        <div class="user-details-content">
-          <div class="user-details-header">
-            <div class="user-avatar-large" [class]="'avatar-' + user.role" aria-hidden="true">
-              {{ user.name.charAt(0) }}
-            </div>
-            <div class="user-header-info">
-              <h4>{{ user.name }}</h4>
-              <span class="role-badge" [class]="'role-' + user.role">{{ user.role }}</span>
-            </div>
-          </div>
-
-          <div class="user-details-grid">
-            <div class="detail-item">
-              <label>User ID</label>
-              <p>#{{ user.id }}</p>
-            </div>
-            <div class="detail-item">
-              <label>Email Address</label>
-              <p>{{ user.email }}</p>
-            </div>
-            <div class="detail-item">
-              <label>Date Joined</label>
-              <p>{{ user.created_at | date: 'MMM d, yyyy' }}</p>
-            </div>
-            <div class="detail-item">
-              <label>Last Updated</label>
-              <p>{{ user.updated_at | date: 'MMM d, yyyy h:mm a' }}</p>
-            </div>
-            @if (user.deleted_at) {
-              <div class="detail-item full-width">
-                <label>Archived On</label>
-                <p class="text-danger">{{ user.deleted_at | date: 'MMM d, yyyy h:mm a' }}</p>
+      <div class="modal-body">
+        @if (viewingUser(); as user) {
+          <div class="user-details-content">
+            <div class="user-details-header">
+              <div class="user-avatar-large" [class]="'avatar-' + user.role" aria-hidden="true">
+                {{ user.name.charAt(0) }}
               </div>
-            }
+              <div class="user-header-info">
+                <h4>{{ user.name }}</h4>
+                <span class="role-badge" [class]="'role-' + user.role">{{ user.role }}</span>
+              </div>
+            </div>
+
+            <div class="user-details-grid">
+              <div class="detail-item">
+                <label>User ID</label>
+                <p>#{{ user.id }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Email Address</label>
+                <p>{{ user.email }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Date Joined</label>
+                <p>{{ user.created_at | date: 'MMM d, yyyy' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Last Updated</label>
+                <p>{{ user.updated_at | date: 'MMM d, yyyy h:mm a' }}</p>
+              </div>
+              @if (user.deleted_at) {
+                <div class="detail-item full-width">
+                  <label>Archived On</label>
+                  <p class="text-danger">{{ user.deleted_at | date: 'MMM d, yyyy h:mm a' }}</p>
+                </div>
+              }
+            </div>
           </div>
-        </div>
-      }
+        }
+      </div>
 
       <div class="modal-footer">
         <button type="button" class="outline-btn" (click)="closeViewUserModal()">Close</button>

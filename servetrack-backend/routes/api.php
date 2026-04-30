@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\FacebookWebhookController;
+use App\Http\Controllers\InviteController;
 use App\Http\Controllers\RsvpController;
 use App\Http\Controllers\SmsController;
 use App\Http\Controllers\UserController;
@@ -21,6 +22,9 @@ Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(funct
     Route::post('/register', [RegisterController::class, 'store']);
     Route::get('/auth/facebook', [LoginController::class, 'redirectToFacebook']);
     Route::get('/auth/facebook/callback', [LoginController::class, 'handleFacebookCallback']);
+
+    // Invite validation (public)
+    Route::post('/invites/validate', [InviteController::class, 'validate']);
 });
 
 // Volunteer registration - public signup with registration rate limit + email normalization
@@ -90,6 +94,11 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::patch('/users/{id}/soft-delete', [UserController::class, 'softDelete']);
     Route::patch('/users/{id}/restore', [UserController::class, 'restore']);
     Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
+
+    // Invite management — create, list, delete (admin only)
+    Route::post('/invites', [InviteController::class, 'store']);
+    Route::get('/invites', [InviteController::class, 'index']);
+    Route::delete('/invites/{id}', [InviteController::class, 'destroy']);
 
     // RSVP management — full CRUD + status toggle (admin only)
     Route::post('/rsvp', [RsvpController::class, 'store']);

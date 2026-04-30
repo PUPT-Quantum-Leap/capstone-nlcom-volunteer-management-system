@@ -254,17 +254,17 @@
 <!-- Edit Volunteer Modal -->
 @if (showEditModal()) {
   <div class="modal-backdrop" (click)="closeEditModal()">
-    <section class="modal-card volunteer-edit-modal" (click)="$event.stopPropagation()" role="dialog"
+    <section class="modal-card modal-md" (click)="$event.stopPropagation()" role="dialog"
       aria-modal="true" aria-labelledby="volunteer-edit-title">
-      <div class="modal-header">
+      <div class="modal-header header-warning">
         <div class="modal-title-wrapper">
-          <div class="modal-icon modal-icon-warning">
+          <div class="modal-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
             </svg>
           </div>
-          <h3 id="volunteer-edit-title">Edit Volunteer</h3>
+          <h3 id="volunteer-edit-title">Edit Volunteer Details</h3>
         </div>
         <button type="button" class="modal-close-btn" (click)="closeEditModal()" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -341,11 +341,11 @@
 }
 
 @if (showDeleteModal()) {
-  <div class="modal-backdrop">
-    <div class="modal-card">
-      <div class="modal-header">
+  <div class="modal-backdrop" (click)="closeDeleteModal()">
+    <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header header-danger">
         <div class="modal-title-wrapper">
-          <div class="modal-icon modal-icon-danger">
+          <div class="modal-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <path d="M3 6h18" />
               <path d="M8 6V4h8v2" />
@@ -368,7 +368,7 @@
 
       <div class="modal-footer">
         <button type="button" class="outline-btn" (click)="closeDeleteModal()">Cancel</button>
-        <button type="button" class="danger-btn" (click)="archiveVolunteer()">Archive</button>
+        <button type="button" class="danger-btn" (click)="archiveVolunteer()">Archive Volunteer</button>
       </div>
     </div>
   </div>
@@ -377,10 +377,18 @@
 <!-- View Volunteer Details Modal -->
 @if (showViewModal()) {
   <div class="modal-backdrop" (click)="closeViewModal()">
-    <section class="modal-card volunteer-details-modal" (click)="$event.stopPropagation()" role="dialog"
+    <section class="modal-card modal-md" (click)="$event.stopPropagation()" role="dialog"
       aria-modal="true" aria-labelledby="volunteer-details-title">
-      <div class="modal-header">
-        <h3 id="volunteer-details-title">Volunteer Details</h3>
+      <div class="modal-header header-info">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </div>
+          <h3 id="volunteer-details-title">Volunteer Information</h3>
+        </div>
         <button type="button" class="modal-close-btn" (click)="closeViewModal()" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M18 6L6 18M6 6L18 18" />
@@ -388,46 +396,48 @@
         </button>
       </div>
 
-      @if (viewingVolunteer(); as volunteer) {
-        <div class="volunteer-details-content">
-          <div class="volunteer-details-header">
-            <div class="volunteer-avatar-large">{{ volunteer.name.charAt(0) }}</div>
-            <div class="volunteer-header-info">
-              <h4>{{ volunteer.name }}</h4>
-              <span class="status-badge" [class]="volunteer.status === 'active' ? 'status-active' : 'status-archived'">
-                {{ volunteer.status === 'active' ? 'Active' : 'Archived' }}
-              </span>
+      <div class="modal-body">
+        @if (viewingVolunteer(); as volunteer) {
+          <div class="volunteer-details-content">
+            <div class="volunteer-details-header">
+              <div class="volunteer-avatar-large">{{ volunteer.name.charAt(0) }}</div>
+              <div class="volunteer-header-info">
+                <h4>{{ volunteer.name }}</h4>
+                <span class="status-badge" [class]="volunteer.status === 'active' ? 'status-active' : 'status-archived'">
+                  {{ volunteer.status === 'active' ? 'Active' : 'Archived' }}
+                </span>
+              </div>
             </div>
-          </div>
 
-          <div class="volunteer-details-grid">
-            <div class="detail-item">
-              <label>Volunteer ID</label>
-              <p>#{{ volunteer.id }}</p>
-            </div>
-            <div class="detail-item">
-              <label>Email Address</label>
-              <p>{{ volunteer.email }}</p>
-            </div>
-            <div class="detail-item">
-              <label>Phone Number</label>
-              <p>{{ volunteer.phone }}</p>
-            </div>
-            <div class="detail-item">
-              <label>Facebook Name</label>
-              <p>{{ volunteer.facebookName || 'Not provided' }}</p>
-            </div>
-            <div class="detail-item">
-              <label>Department</label>
-              <p>{{ volunteer.department }}</p>
-            </div>
-            <div class="detail-item">
-              <label>Joined Date</label>
-              <p>{{ volunteer.joined_date ? (volunteer.joined_date | date: 'MMM d, yyyy') : 'Unknown' }}</p>
+            <div class="volunteer-details-grid">
+              <div class="detail-item">
+                <label>Volunteer ID</label>
+                <p>#{{ volunteer.id }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Email Address</label>
+                <p>{{ volunteer.email }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Phone Number</label>
+                <p>{{ volunteer.phone }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Facebook Name</label>
+                <p>{{ volunteer.facebookName || 'Not provided' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Department</label>
+                <p>{{ volunteer.department }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Joined Date</label>
+                <p>{{ volunteer.joined_date ? (volunteer.joined_date | date: 'MMM d, yyyy') : 'Unknown' }}</p>
+              </div>
             </div>
           </div>
-        </div>
-      }
+        }
+      </div>
 
       <div class="modal-footer">
         <button type="button" class="outline-btn" (click)="closeViewModal()">Close</button>

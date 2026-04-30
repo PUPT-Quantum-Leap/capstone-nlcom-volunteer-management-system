@@ -11,6 +11,7 @@ use App\Http\Resources\VolunteerProfileResource;
 use App\Models\Availability;
 use App\Models\EmergencyContact;
 use App\Models\Experience;
+use App\Models\Invite;
 use App\Models\Lifegroup;
 use App\Models\Position;
 use App\Models\ProfileChangeLog;
@@ -48,6 +49,18 @@ class VolunteerController extends Controller
         }
         // Email normalization is now handled by NormalizeEmail middleware
 
+        // Validate invite token if provided
+        $invite = null;
+        if ($request->has('token')) {
+            $invite = Invite::where('token', $request->token)->first();
+            if (! $invite || ! $invite->isValid()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid or expired invite token',
+                ], 400);
+            }
+        }
+
         // Validate incoming data
         $validator = Validator::make($request->all(), [
             // Personal Information
@@ -83,6 +96,9 @@ class VolunteerController extends Controller
             // Password (for authentication)
             'password' => ['required', 'string', Password::defaults()],
             'confirmPassword' => ['required', 'string', 'same:password'],
+
+            // Invite token (optional)
+            'token' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -96,13 +112,21 @@ class VolunteerController extends Controller
         // Use database transaction for data integrity
         DB::beginTransaction();
         try {
+            // Determine role from invite or default to volunteer
+            $role = $invite ? $invite->role : 'volunteer';
+
             // Create user account first
             $user = User::create([
                 'name' => $request->firstName.' '.$request->lastName,
                 'email' => $request->email,
                 'password' => bcrypt($request->password),
-                'role' => 'volunteer',
+                'role' => $role,
             ]);
+
+            // Mark invite as accepted if used
+            if ($invite) {
+                $invite->accept();
+            }
 
             // Create volunteer profile linked to user
             $volunteer = Volunteer::create([

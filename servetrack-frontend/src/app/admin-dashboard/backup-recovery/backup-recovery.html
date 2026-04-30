@@ -215,21 +215,20 @@
 <!-- Confirmation Dialog -->
 @if (showConfirmationDialog()) {
   <div class="modal-backdrop" (click)="closeConfirmationDialog()">
-    <div class="modal-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
+    <div class="modal-card modal-sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
       [attr.aria-labelledby]="'confirm-dialog-title'">
-      <div class="modal-header">
+      <div class="modal-header header-danger">
         <div class="modal-title-wrapper">
-          <div class="modal-icon modal-icon-danger">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"/>
             </svg>
           </div>
           <h3 id="confirm-dialog-title">{{ confirmationDialogTitle() }}</h3>
         </div>
         <button type="button" class="modal-close-btn" (click)="closeConfirmationDialog()" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" />
           </svg>
         </button>
       </div>
