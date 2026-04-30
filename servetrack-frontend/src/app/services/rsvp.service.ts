@@ -25,15 +25,15 @@ export class RsvpService {
     return this.http.get<{ data: Rsvp }>(`${this.apiUrl}/${id}`, { withCredentials: true });
   }
 
-  createRsvp(body: Record<string, unknown>): Observable<{ data: Rsvp }> {
+  createRsvp(body: Record<string, unknown>): Observable<Rsvp> {
     return this.ensureCsrf().pipe(
-      switchMap(() => this.http.post<{ data: Rsvp }>(this.apiUrl, body, { withCredentials: true }))
+      switchMap(() => this.http.post<Rsvp>(this.apiUrl, body, { withCredentials: true }))
     );
   }
 
-  updateRsvp(id: number, body: Record<string, unknown>): Observable<{ data: Rsvp }> {
+  updateRsvp(id: number, body: Record<string, unknown>): Observable<Rsvp> {
     return this.ensureCsrf().pipe(
-      switchMap(() => this.http.put<{ data: Rsvp }>(`${this.apiUrl}/${id}`, body, { withCredentials: true }))
+      switchMap(() => this.http.put<Rsvp>(`${this.apiUrl}/${id}`, body, { withCredentials: true }))
     );
   }
 
