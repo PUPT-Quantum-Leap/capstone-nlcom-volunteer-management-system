@@ -355,6 +355,8 @@ export class AdminDashboard implements OnInit {
   };
 
   nlcomChartView = signal<'overview' | 'teams' | 'sites' | 'timeline'>('overview');
+  editingNlcomSiteNo = signal<number | null>(null);
+  nlcomSiteDetailsDraft = signal('');
   
   // Confirmation dialog state
   showConfirmationDialog = signal(false);
@@ -2460,6 +2462,48 @@ export class AdminDashboard implements OnInit {
     const y2 = cy + r * Math.sin(endRad);
     const largeArc = (end - start) > 180 ? 1 : 0;
     return `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+  }
+
+  startNlcomDetailsEdit(siteNo: number): void {
+    const site = this.nlcomOperation.allSites.find(s => s.siteNo === siteNo);
+    if (!site) {
+      return;
+    }
+
+    this.editingNlcomSiteNo.set(siteNo);
+    this.nlcomSiteDetailsDraft.set(site.details);
+  }
+
+  cancelNlcomDetailsEdit(): void {
+    this.editingNlcomSiteNo.set(null);
+    this.nlcomSiteDetailsDraft.set('');
+  }
+
+  updateNlcomSiteDetailsDraft(value: string): void {
+    this.nlcomSiteDetailsDraft.set(value);
+  }
+
+  saveNlcomDetailsEdit(siteNo: number): void {
+    const updatedDetails = this.nlcomSiteDetailsDraft().trim();
+    if (!updatedDetails) {
+      this.showSnackbar('Details cannot be empty.', 'error');
+      return;
+    }
+
+    const allSitesTarget = this.nlcomOperation.allSites.find(site => site.siteNo === siteNo);
+    if (allSitesTarget) {
+      allSitesTarget.details = updatedDetails;
+    }
+
+    const teamSiteTarget = this.nlcomOperation.teams
+      .flatMap(team => team.sites)
+      .find(site => site.siteNo === siteNo);
+    if (teamSiteTarget) {
+      teamSiteTarget.details = updatedDetails;
+    }
+
+    this.cancelNlcomDetailsEdit();
+    this.showSnackbar('Site details updated.', 'success');
   }
 
   setReportType(type: 'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'): void {
