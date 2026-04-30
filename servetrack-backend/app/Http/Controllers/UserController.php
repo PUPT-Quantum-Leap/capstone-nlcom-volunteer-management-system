@@ -73,6 +73,8 @@ class UserController extends Controller
         }
 
         try {
+            DB::beginTransaction();
+
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -80,12 +82,43 @@ class UserController extends Controller
                 'role' => $request->role,
             ]);
 
+            // Cascade create to volunteer if role is volunteer
+            if ($request->role === 'volunteer') {
+                $nameParts = explode(' ', $request->name, 2);
+                $firstName = $nameParts[0] ?? '';
+                $lastName = $nameParts[1] ?? '';
+
+                Volunteer::create([
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'facebook_name' => $firstName,
+                    'email' => $request->email,
+                    'mobile_number' => '00000000000',
+                    'birthdate' => now()
+                        ->subYears(20)
+                        ->format('Y-m-d'),
+                    'address' => '',
+                    'educational_attainment' => '',
+                    'last_medical_examination' => null,
+                    'user_id' => $user->id,
+                ]);
+            }
+
+            DB::commit();
+
             return response()->json([
                 'success' => true,
                 'message' => 'User created successfully',
                 'data' => $user,
             ], 201);
         } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('User creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create user',
@@ -154,6 +187,19 @@ class UserController extends Controller
                 'email' => $request->email,
                 'role' => $newRole,
             ]);
+
+            // Cascade update to associated volunteer
+            if ($user->volunteer) {
+                $nameParts = explode(' ', $request->name, 2);
+                $firstName = $nameParts[0] ?? '';
+                $lastName = $nameParts[1] ?? '';
+
+                $user->volunteer->update([
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'email' => $request->email,
+                ]);
+            }
 
             if ($roleChanged) {
                 $this->handleRoleChange($user, $oldRole, $newRole);
