@@ -28,7 +28,7 @@ Route::post('/volunteer/register', [VolunteerController::class, 'register'])
 
 // Admin registration - public signup with registration rate limit + email normalization
 Route::post('/admin/register', [AdminController::class, 'register'])
-    ->middleware(['api', 'guest', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration']);
+    ->middleware(['api', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration']);
 
 // Coordinator registration - public signup with registration rate limit + email normalization
 Route::post('/coordinator/register', [CoordinatorController::class, 'register'])
