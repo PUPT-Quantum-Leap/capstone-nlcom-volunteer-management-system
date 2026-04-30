@@ -73,6 +73,8 @@ class UserController extends Controller
         }
 
         try {
+            DB::beginTransaction();
+
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -80,12 +82,43 @@ class UserController extends Controller
                 'role' => $request->role,
             ]);
 
+            // Cascade create to volunteer if role is volunteer
+            if ($request->role === 'volunteer') {
+                $nameParts = explode(' ', $request->name, 2);
+                $firstName = $nameParts[0] ?? '';
+                $lastName = $nameParts[1] ?? '';
+
+                Volunteer::create([
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'facebook_name' => $firstName,
+                    'email' => $request->email,
+                    'mobile_number' => '00000000000',
+                    'birthdate' => now()
+                        ->subYears(20)
+                        ->format('Y-m-d'),
+                    'address' => '',
+                    'educational_attainment' => '',
+                    'last_medical_examination' => null,
+                    'user_id' => $user->id,
+                ]);
+            }
+
+            DB::commit();
+
             return response()->json([
                 'success' => true,
                 'message' => 'User created successfully',
                 'data' => $user,
             ], 201);
         } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('User creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create user',
@@ -155,6 +188,19 @@ class UserController extends Controller
                 'role' => $newRole,
             ]);
 
+            // Cascade update to associated volunteer
+            if ($user->volunteer) {
+                $nameParts = explode(' ', $request->name, 2);
+                $firstName = $nameParts[0] ?? '';
+                $lastName = $nameParts[1] ?? '';
+
+                $user->volunteer->update([
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'email' => $request->email,
+                ]);
+            }
+
             if ($roleChanged) {
                 $this->handleRoleChange($user, $oldRole, $newRole);
             }
@@ -201,14 +247,30 @@ class UserController extends Controller
             ], 404);
         }
 
+        DB::beginTransaction();
         try {
+            // Cascade force delete to associated volunteer
+            if ($user->volunteer) {
+                $user->volunteer->forceDelete();
+            }
+
             $user->forceDelete();
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'User deleted successfully',
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('User force delete failed', [
+                'user_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete user',
@@ -231,14 +293,38 @@ class UserController extends Controller
             ], 404);
         }
 
-        if (! $user->trashed()) {
-            $user->delete();
-        }
+        DB::beginTransaction();
+        try {
+            if (! $user->trashed()) {
+                $user->delete();
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User archived successfully',
-        ]);
+            // Cascade soft delete to associated volunteer
+            if ($user->volunteer
+                && ! $user->volunteer->trashed()) {
+                $user->volunteer->delete();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User archived successfully',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('User soft delete failed', [
+                'user_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to archive user',
+            ], 500);
+        }
     }
 
     /**
@@ -255,12 +341,38 @@ class UserController extends Controller
             ], 404);
         }
 
-        $user->restore();
+        DB::beginTransaction();
+        try {
+            $user->restore();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User restored successfully',
-        ]);
+            // Cascade restore to associated volunteer (load with trashed)
+            $volunteer = Volunteer::withTrashed()
+                ->where('user_id', $user->id)
+                ->first();
+            if ($volunteer && $volunteer->trashed()) {
+                $volunteer->restore();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User restored successfully',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('User restore failed', [
+                'user_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore user',
+            ], 500);
+        }
     }
 
     /**
