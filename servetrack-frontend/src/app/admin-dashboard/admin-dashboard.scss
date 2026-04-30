@@ -7295,6 +7295,36 @@ a:focus-visible {
     .details-cell {
       color: var(--gray-600);
       max-width: 200px;
+      min-width: 280px;
+
+      .details-text {
+        display: block;
+      }
+
+      .details-editor {
+        width: 100%;
+        border: 1px solid var(--gray-300);
+        border-radius: var(--radius-md);
+        padding: 0.5rem 0.625rem;
+        font-size: 0.8125rem;
+        font-family: inherit;
+        color: var(--gray-700);
+        resize: vertical;
+      }
+    }
+
+    th:last-child {
+      text-align: center;
+      width: 108px;
+    }
+
+    td.actions-cell {
+      .action-buttons {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
     }
   }
 }
