@@ -151,6 +151,15 @@ class AdminController extends Controller
     {
         // Email normalization is now handled by NormalizeEmail middleware
 
+        // If already authenticated, log out first to prevent duplicate accounts
+        if (Auth::check()) {
+            Auth::logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+        }
+
         // Security gate: verify invite code and email domain before any other processing.
         $inviteCode = config('services.admin.invite_code');
         if (empty($inviteCode)) {
