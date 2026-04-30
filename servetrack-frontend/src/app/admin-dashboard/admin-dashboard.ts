@@ -245,6 +245,16 @@ export class AdminDashboard implements OnInit {
   isCreatingRsvp = signal(false);
   isDeletingRsvp = signal(false);
 
+  // User management loading states
+  isUpdatingUser = signal(false);
+  isDeletingUser = signal(false);
+  isResettingPassword = signal(false);
+
+  // Volunteer management loading states
+  isUpdatingVolunteer = signal(false);
+  isDeletingVolunteer = signal(false);
+  isRestoringVolunteer = signal(false);
+
   // Snackbar notifications
   snackbarMessage = signal<string>('');
   snackbarVisible = signal(false);
@@ -1651,6 +1661,7 @@ export class AdminDashboard implements OnInit {
         this.userForm.get('confirmPassword')?.setErrors({ mismatch: true });
         return;
       }
+      this.isUpdatingUser.set(true);
       this.userService.createUser({
         name: val.name!,
         email: val.email!,
@@ -1661,13 +1672,16 @@ export class AdminDashboard implements OnInit {
           this.loadUsers();
           this.closeUserModal();
           this.showSnackbar('User created successfully', 'success');
+          this.isUpdatingUser.set(false);
         },
         error: (error) => {
           console.error('Error creating user:', error);
           this.showSnackbar('Failed to create user', 'error');
+          this.isUpdatingUser.set(false);
         }
       });
     } else {
+      this.isUpdatingUser.set(true);
       this.userService.updateUser(editingUser.id, {
         name: val.name!,
         email: val.email!,
@@ -1677,10 +1691,12 @@ export class AdminDashboard implements OnInit {
           this.loadUsers();
           this.closeUserModal();
           this.showSnackbar('User updated successfully', 'success');
+          this.isUpdatingUser.set(false);
         },
         error: (error) => {
           console.error('Error updating user:', error);
           this.showSnackbar('Failed to update user', 'error');
+          this.isUpdatingUser.set(false);
         }
       });
     }
@@ -1699,15 +1715,18 @@ export class AdminDashboard implements OnInit {
   deleteUser(): void {
     const id = this.deletingUserId();
     if (id !== null) {
+      this.isDeletingUser.set(true);
       this.userService.softDeleteUser(id).subscribe({
         next: () => {
           this.loadUsers();
           this.closeDeleteUserModal();
           this.showSnackbar('User archived successfully', 'success');
+          this.isDeletingUser.set(false);
         },
         error: (error) => {
           console.error('Error archiving user:', error);
           this.showSnackbar('Failed to archive user', 'error');
+          this.isDeletingUser.set(false);
         }
       });
     }
@@ -2225,6 +2244,7 @@ export class AdminDashboard implements OnInit {
   deleteVolunteer(): void {
     const volunteerId = this.deletingVolunteerId();
     if (volunteerId !== null) {
+      this.isDeletingVolunteer.set(true);
       this.adminDashboardService.softDeleteVolunteer(volunteerId).subscribe({
         next: (response) => {
           if (response.success) {
@@ -2242,13 +2262,16 @@ export class AdminDashboard implements OnInit {
 
             // Show success snackbar
             this.showSnackbar('Volunteer archived successfully', 'success');
+            this.closeDeleteVolunteerModal();
+            this.isDeletingVolunteer.set(false);
+          } else {
+            this.isDeletingVolunteer.set(false);
           }
-          this.closeDeleteVolunteerModal();
         },
         error: (error) => {
           console.error('Error archiving volunteer:', error);
           this.showSnackbar('Failed to archive volunteer', 'error');
-          this.closeDeleteVolunteerModal();
+          this.isDeletingVolunteer.set(false);
         }
       });
     }

@@ -2908,8 +2908,19 @@
         <p>Are you sure you want to archive this volunteer? The volunteer will be hidden but can be restored later if needed.</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="outline-btn" (click)="closeDeleteVolunteerModal()">Cancel</button>
-        <button type="button" class="danger-btn" (click)="deleteVolunteer()">Archive Volunteer</button>
+        <button type="button" class="outline-btn" 
+                (click)="closeDeleteVolunteerModal()" 
+                [disabled]="isDeletingVolunteer()">Cancel</button>
+        <button type="button" class="danger-btn" 
+                (click)="deleteVolunteer()" 
+                [disabled]="isDeletingVolunteer()">
+          @if (isDeletingVolunteer()) {
+            <span class="loading-spinner" aria-hidden="true"></span>
+            Archiving Volunteer...
+          } @else {
+            Archive Volunteer
+          }
+        </button>
       </div>
     </section>
   </div>
@@ -3007,9 +3018,17 @@
         </div>
 
         <div class="modal-footer modern-footer">
-          <button type="button" class="outline-btn" (click)="closeUserModal()">Cancel</button>
-          <button type="submit" class="primary-btn">
-            {{ editingUser() ? 'Update User' : 'Create User' }}
+          <button type="button" class="outline-btn" 
+                  (click)="closeUserModal()" 
+                  [disabled]="isUpdatingUser()">Cancel</button>
+          <button type="submit" class="primary-btn" 
+                  [disabled]="isUpdatingUser()">
+            @if (isUpdatingUser()) {
+              <span class="loading-spinner" aria-hidden="true"></span>
+              {{ editingUser() ? 'Updating User...' : 'Creating User...' }}
+            } @else {
+              {{ editingUser() ? 'Update User' : 'Create User' }}
+            }
           </button>
         </div>
       </form>
@@ -3021,17 +3040,30 @@
   <div class="modal-backdrop" (click)="closeDeleteUserModal()">
     <section class="modal-card delete-modal" (click)="$event.stopPropagation()" role="dialog"
       aria-modal="true" aria-labelledby="archive-user-title">
-      <div class="delete-modal-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none">
-          <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+      <div class="modal-body">
+        <div class="delete-modal-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+        <h3 id="archive-user-title">Archive User</h3>
+        <p>Are you sure you want to archive this user? The user will be hidden but can be restored later if needed.</p>
       </div>
-      <h3 id="archive-user-title">Archive User</h3>
-      <p>Are you sure you want to archive this user? The user will be hidden but can be restored later.</p>
-      <div class="modal-actions">
-        <button type="button" class="outline-btn" (click)="closeDeleteUserModal()">Cancel</button>
-        <button type="button" class="danger-btn" (click)="deleteUser()">Archive User</button>
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" 
+                (click)="closeDeleteUserModal()" 
+                [disabled]="isDeletingUser()">Cancel</button>
+        <button type="button" class="danger-btn" 
+                (click)="deleteUser()" 
+                [disabled]="isDeletingUser()">
+          @if (isDeletingUser()) {
+            <span class="loading-spinner" aria-hidden="true"></span>
+            Archiving User...
+          } @else {
+            Archive User
+          }
+        </button>
       </div>
     </section>
   </div>
