@@ -189,7 +189,17 @@ describe('RsvpComponent - Closed State Logic', () => {
     it('should return true when all conditions are met', () => {
       const rsvp = createMockRsvp({ status: 'active', isCutoffPassed: false });
       component.rsvp.set(rsvp);
-      component.remainingEdits.set(3); // Set remaining edits > 0
+      component.rsvpResponse.set({
+        id: 1,
+        volunteerId: 1,
+        rsvpId: 1,
+        timeSlotId: 1,
+        votedAt: '2026-09-25T10:00:00Z',
+        createdAt: '2026-09-25T10:00:00Z',
+        editCount: 0,
+        remainingEdits: 3, // Set remaining edits > 0
+        editHistory: [],
+      });
       expect(component.canEditResponse()).toBe(true);
     });
   });
