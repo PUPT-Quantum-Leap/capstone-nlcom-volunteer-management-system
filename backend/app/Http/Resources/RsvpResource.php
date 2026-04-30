@@ -9,6 +9,8 @@ class RsvpResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $volunteerId = $request->user()?->volunteer?->volunteer_id;
+
         return [
             'id' => $this->rsvp_id,
             'slug' => $this->slug,
@@ -24,7 +26,6 @@ class RsvpResource extends JsonResource
             'createdAt' => $this->created_at?->toDateString(),
             'shifts' => $this->whenLoaded('shifts', function () {
                 return $this->shifts->map(function ($shift) {
-                    // Count responses for this shift from the loaded responses relationship
                     $responseCount = 0;
                     if ($this->relationLoaded('responses')) {
                         $responseCount = $this->responses
@@ -41,6 +42,57 @@ class RsvpResource extends JsonResource
                     ];
                 });
             }),
+            'userVote' => $volunteerId ? $this->getUserVote($volunteerId) : null,
+            'canEditVote' => $volunteerId ? $this->canUserEditVote($volunteerId) : false,
+            'remainingEdits' => $volunteerId ? $this->getRemainingEdits($volunteerId) : 0,
         ];
+    }
+
+    private function getUserVote(int $volunteerId): ?array
+    {
+        $response = $this->responses()
+            ->where('volunteer_id', $volunteerId)
+            ->first();
+
+        if (! $response) {
+            return null;
+        }
+
+        return [
+            'timeSlotId' => $response->time_slot_id,
+            'votedAt' => $response->voted_at?->toIso8601String(),
+            'editCount' => $response->edit_count,
+            'remainingEdits' => 3 - $response->edit_count,
+        ];
+    }
+
+    private function canUserEditVote(int $volunteerId): bool
+    {
+        $response = $this->responses()
+            ->where('volunteer_id', $volunteerId)
+            ->first();
+
+        if (! $response) {
+            return false;
+        }
+
+        if ($this->status !== 'active') {
+            return false;
+        }
+
+        if ($this->isCutoffPassed()) {
+            return false;
+        }
+
+        return $response->edit_count < 3;
+    }
+
+    private function getRemainingEdits(int $volunteerId): int
+    {
+        $response = $this->responses()
+            ->where('volunteer_id', $volunteerId)
+            ->first();
+
+        return $response ? (3 - $response->edit_count) : 0;
     }
 }
