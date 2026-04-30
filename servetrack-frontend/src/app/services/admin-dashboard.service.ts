@@ -196,6 +196,21 @@ export class AdminDashboardService {
     );
   }
 
+  updateVolunteer(id: number, data: Partial<VolunteerUser>): Observable<ApiResponse<VolunteerUser>> {
+    return this.http.put<ApiResponse<VolunteerUser>>(`${environment.apiUrl}/volunteers/${id}`, data, {
+      withCredentials: true,
+    }).pipe(
+      catchError((error) => {
+        console.error('Error updating volunteer:', error);
+        return of({
+          success: false,
+          message: 'Failed to update volunteer',
+          data: {} as VolunteerUser,
+        });
+      })
+    );
+  }
+
   // Backup management methods
   getBackups(page: number = 1, perPage: number = 10, type?: string, status?: string): Observable<BackupListResponse> {
     let url = `${environment.apiUrl}/backups?page=${page}&per_page=${perPage}`;

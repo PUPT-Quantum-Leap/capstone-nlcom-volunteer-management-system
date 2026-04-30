@@ -1,23 +1,27 @@
-<section class="module-container">
-  <header class="module-header">
-    <div class="header-content">
-      <h2>SMS Notifications</h2>
-      <p>Prepare messages with templates and queue targeted broadcasts</p>
+<section class="sms-management-container">
+  <!-- Blue Header Bar -->
+  <header class="report-header">
+    <div class="report-header-left">
+      <div class="report-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
+      <div class="report-title-group">
+        <span class="report-label">SMS NOTIFICATIONS</span>
+        <h2 class="report-title">Prepare Messages & Broadcasts</h2>
+      </div>
+    </div>
+    <div class="report-header-right">
+      @if (smsConfigured() === false) {
+        <span class="status-badge status-error">SMS Not Configured</span>
+      } @else {
+        <span class="status-badge status-success">SMS Ready</span>
+      }
     </div>
   </header>
 
-  @if (smsConfigured() === false) {
-    <div class="status-banner error">
-      <strong>SMS Not Configured:</strong> {{ smsConfigMessage() }}
-    </div>
-  }
-
-  @if (smsConfigured() === true) {
-    <div class="status-banner success">
-      <strong>SMS Ready:</strong> {{ smsConfigMessage() }}
-    </div>
-  }
-
+  <!-- Status Banner -->
   @if (feedbackMessage()) {
     <div class="status-banner" [class.success]="feedbackType() === 'success'" [class.error]="feedbackType() === 'error'">
       {{ feedbackMessage() }}
@@ -27,7 +31,16 @@
   <section class="sms-layout">
     <article class="sms-panel sms-panel-compose">
       <header class="sms-panel-header">
-        <h3>Compose Message</h3>
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Compose Message</h3>
+          <p>Create and queue SMS broadcasts</p>
+        </div>
       </header>
 
       <div class="compose-form">
@@ -65,12 +78,19 @@
         </div>
 
         <div class="sms-actions">
-          <button type="button" class="primary-btn" [disabled]="smsSending() || smsConfigured() === false" (click)="sendSmsBroadcast()">
+          <button type="button" class="action-btn" [disabled]="smsSending() || smsConfigured() === false" (click)="sendSmsBroadcast()">
             @if (smsSending()) {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
               Sending...
             } @else if (smsConfigured() === false) {
               SMS Not Configured
             } @else {
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
               Queue Broadcast
             }
           </button>
@@ -81,7 +101,15 @@
     <div class="sms-sidebar">
       <article class="sms-panel sms-panel-auto">
         <header class="sms-panel-header">
-          <h3>Auto Cutoff SMS</h3>
+          <div class="panel-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Auto Cutoff SMS</h3>
+            <p>Automatic reminder system</p>
+          </div>
           <span class="badge" [class.badge-active]="autoSmsEnabled()" [class.badge-inactive]="!autoSmsEnabled()">
             {{ autoSmsEnabled() ? 'ON' : 'OFF' }}
           </span>
@@ -116,8 +144,11 @@
             </div>
           </div>
 
-          <button type="button" class="primary-btn" [disabled]="!autoSmsEnabled() || autoSmsCutoffRecipients().length === 0"
+          <button type="button" class="action-btn" [disabled]="!autoSmsEnabled() || autoSmsCutoffRecipients().length === 0"
             (click)="sendAutomaticCutoffReminders()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
             Send Reminders Now
           </button>
         </div>

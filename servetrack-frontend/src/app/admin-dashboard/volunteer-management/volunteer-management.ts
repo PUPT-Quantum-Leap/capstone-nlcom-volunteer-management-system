@@ -42,10 +42,38 @@ export class VolunteerManagement implements OnInit {
   volunteersPerPage = signal(5);
   deletingVolunteerId = signal<number | null>(null);
   editingVolunteer = signal<DashboardVolunteerRow | null>(null);
+  viewingVolunteer = signal<DashboardVolunteerRow | null>(null);
   showEditModal = signal(false);
   showDeleteModal = signal(false);
+  showViewModal = signal(false);
+  editFormData = signal<{
+    first_name: string;
+    last_name: string;
+    email: string;
+    mobile_number: string;
+    facebook_name: string;
+  }>({
+    first_name: '',
+    last_name: '',
+    email: '',
+    mobile_number: '',
+    facebook_name: '',
+  });
 
   // Computed
+  activeVolunteersCount = computed(() => this.volunteerRows().length);
+
+  archivedVolunteersCount = computed(() => this.archivedVolunteerRows().length);
+
+  totalVolunteersCount = computed(() =>
+    this.volunteerRows().length + this.archivedVolunteerRows().length
+  );
+
+  departmentCount = computed(() => {
+    const departments = new Set(this.volunteerRows().map((v) => v.department));
+    return departments.size;
+  });
+
   filteredVolunteers = computed(() => {
     const search = this.volunteerSearchQuery().toLowerCase().trim();
     const volunteers = this.showArchivedVolunteers()
@@ -204,12 +232,57 @@ export class VolunteerManagement implements OnInit {
   // Actions
   openEditVolunteerModal(volunteer: DashboardVolunteerRow): void {
     this.editingVolunteer.set(volunteer);
+    const nameParts = volunteer.name.split(' ', 2);
+    this.editFormData.set({
+      first_name: nameParts[0] || '',
+      last_name: nameParts[1] || '',
+      email: volunteer.email,
+      mobile_number: volunteer.phone,
+      facebook_name: volunteer.facebookName || '',
+    });
     this.showEditModal.set(true);
   }
 
   closeEditModal(): void {
     this.showEditModal.set(false);
     this.editingVolunteer.set(null);
+    this.editFormData.set({
+      first_name: '',
+      last_name: '',
+      email: '',
+      mobile_number: '',
+      facebook_name: '',
+    });
+  }
+
+  updateEditForm(field: 'first_name' | 'last_name' | 'email' | 'mobile_number' | 'facebook_name', value: string): void {
+    this.editFormData.update((current) => ({ ...current, [field]: value }));
+  }
+
+  saveVolunteer(): void {
+    const volunteer = this.editingVolunteer();
+    if (!volunteer) return;
+
+    const formData = this.editFormData();
+
+    this.adminDashboardService.updateVolunteer(volunteer.id, formData)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.loadVolunteers();
+            this.loadArchivedVolunteers();
+            this.showSnackbar.emit({ message: 'Volunteer updated successfully', type: 'success' });
+            this.closeEditModal();
+          } else {
+            this.showSnackbar.emit({ message: response.message || 'Failed to update volunteer', type: 'error' });
+          }
+        },
+        error: (error: Error) => {
+          console.error('Error updating volunteer:', error);
+          this.showSnackbar.emit({ message: 'Failed to update volunteer', type: 'error' });
+        },
+      });
   }
 
   confirmDeleteVolunteer(id: number): void {
@@ -220,6 +293,16 @@ export class VolunteerManagement implements OnInit {
   closeDeleteModal(): void {
     this.showDeleteModal.set(false);
     this.deletingVolunteerId.set(null);
+  }
+
+  openViewModal(volunteer: DashboardVolunteerRow): void {
+    this.viewingVolunteer.set(volunteer);
+    this.showViewModal.set(true);
+  }
+
+  closeViewModal(): void {
+    this.showViewModal.set(false);
+    this.viewingVolunteer.set(null);
   }
 
   archiveVolunteer(): void {

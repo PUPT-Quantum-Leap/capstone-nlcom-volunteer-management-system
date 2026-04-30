@@ -63,8 +63,17 @@ export class AnalyticsComponent {
     () => (this.reportData()?.departmentBreakdown.length ?? 0) > this.departmentsPerPage(),
   );
 
+  readonly maxSkillCount = computed(() => {
+    const skills = this.reportData()?.skillsDistribution.skills ?? [];
+    return Math.max(...skills.map(s => s.count), 1);
+  });
+
   constructor() {
     this.loadAnalyticsData();
+  }
+
+  calculateSkillPercentage(count: number): number {
+    return Math.round((count / this.maxSkillCount()) * 100);
   }
 
   setReportType(type: 'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'): void {

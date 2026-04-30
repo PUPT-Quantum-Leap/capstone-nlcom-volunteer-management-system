@@ -72,6 +72,22 @@ export class AttendanceManagement {
 
   readonly Math = Math;
 
+  // Computed signals for stats cards
+  presentCount = computed(() =>
+    this.attendanceRecords().filter((r) => r.status === 'present').length
+  );
+
+  absentCount = computed(() =>
+    this.attendanceRecords().filter((r) => r.status === 'absent').length
+  );
+
+  totalAttendanceCount = computed(() => this.attendanceRecords().length);
+
+  departmentCount = computed(() => {
+    const departments = new Set(this.attendanceRecords().map((r) => r.department));
+    return departments.size;
+  });
+
   filteredAttendance = computed(() => {
     const search = this.attendanceSearchQuery().toLowerCase().trim();
     const records = this.attendanceRecords();

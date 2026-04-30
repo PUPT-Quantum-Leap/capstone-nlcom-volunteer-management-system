@@ -79,6 +79,7 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
 
     Route::get('/volunteers', [VolunteerController::class, 'index']);
     Route::get('/volunteers/{id}', [VolunteerController::class, 'show']);
+    Route::put('/volunteers/{id}', [VolunteerController::class, 'update']);
     Route::patch('/volunteers/{id}/soft-delete', [VolunteerController::class, 'softDelete']);
     Route::patch('/volunteers/{id}/restore', [VolunteerController::class, 'restore']);
     Route::delete('/volunteers/{id}', [VolunteerController::class, 'destroy']);

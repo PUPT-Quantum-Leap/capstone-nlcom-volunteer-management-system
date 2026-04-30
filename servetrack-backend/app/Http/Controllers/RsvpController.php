@@ -264,7 +264,7 @@ class RsvpController extends Controller
             }
 
             $shift = $lockedRsvp->shifts()
-                ->where('time_slot.time_slot_id', $request->integer('time_slot_id'))
+                ->where('time_slot_id', $request->integer('time_slot_id'))
                 ->lockForUpdate()
                 ->first();
 
@@ -522,7 +522,7 @@ class RsvpController extends Controller
 
         // Verify new slot exists in this RSVP
         $newSlot = $rsvp->shifts()
-            ->where('time_slot.time_slot_id', $newTimeSlotId)
+            ->where('time_slot_id', $newTimeSlotId)
             ->first();
 
         if (! $newSlot) {

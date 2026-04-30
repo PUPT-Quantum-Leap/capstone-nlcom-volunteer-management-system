@@ -1,8 +1,25 @@
-<section class="module-container">
-  <header class="module-header">
-    <div class="header-content">
-      <h2>Backup & Recovery</h2>
-      <p>Track backup health, run manual backups, and restore safely</p>
+<section class="backup-recovery-container">
+  <!-- Blue Header Bar -->
+  <header class="report-header">
+    <div class="report-header-left">
+      <div class="report-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15"
+            stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <div class="report-title-group">
+        <span class="report-label">BACKUP & RECOVERY</span>
+        <h2 class="report-title">Track Health, Run Backups & Restore</h2>
+      </div>
+    </div>
+    <div class="report-header-right">
+      <button type="button" class="action-btn" [disabled]="backupActionLoading()" (click)="refreshBackups()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Refresh
+      </button>
     </div>
   </header>
 
@@ -51,13 +68,8 @@
       </article>
     </div>
 
+    <!-- Backup History -->
     <section class="backup-history">
-      <div class="section-header">
-        <h2>Backup History</h2>
-        <button type="button" class="outline-btn btn-sm" [disabled]="backupActionLoading()"
-          (click)="refreshBackups()">Refresh</button>
-      </div>
-
       <div class="backup-health-row">
         @if (latestBackup(); as latest) {
           <p>Latest backup: <strong>{{ latest.name }}</strong> on {{ latest.created_at | date: 'MMM d, yyyy h:mm a' }}</p>
@@ -66,16 +78,16 @@
         }
       </div>
 
-      <div class="table-container">
-        <table class="data-table">
+      <div class="report-table-container">
+        <table class="report-table">
           <thead>
             <tr>
-              <th scope="col">Backup Name</th>
-              <th scope="col">Date Created</th>
-              <th scope="col">Size</th>
-              <th scope="col">Type</th>
-              <th scope="col">Status</th>
-              <th scope="col">Actions</th>
+              <th scope="col">BACKUP NAME</th>
+              <th scope="col">DATE CREATED</th>
+              <th scope="col">SIZE</th>
+              <th scope="col">TYPE</th>
+              <th scope="col">STATUS</th>
+              <th scope="col" class="actions-header">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
@@ -157,16 +169,44 @@
         </table>
       </div>
 
+      <!-- Pagination -->
       <div class="pagination-container">
         <div class="pagination-info">
-          Page <strong>{{ backupHistoryPage() }}</strong> of <strong>{{ backupTotalPages() }}</strong>
+          @if (paginatedBackupRecords().length > 0) {
+            Showing <strong>{{ (backupHistoryPage() - 1) * backupPerPage() + 1 }}</strong> to
+            <strong>{{ Math.min(backupHistoryPage() * backupPerPage(), backupRecords().length) }}</strong>
+            of <strong>{{ backupRecords().length }}</strong> backup(s)
+          } @else {
+            No backups found
+          }
         </div>
-        <nav class="pagination-controls" aria-label="Backup history pages">
-          <button type="button" class="pagination-btn" [disabled]="backupHistoryPage() <= 1"
-            (click)="previousBackupHistoryPage()">Previous</button>
-          <button type="button" class="pagination-btn" [disabled]="backupHistoryPage() >= backupTotalPages()"
-            (click)="nextBackupHistoryPage()">Next</button>
-        </nav>
+
+        @if (backupTotalPages() > 1) {
+          <nav class="pagination-controls" aria-label="Backup history pages">
+            <button type="button" class="pagination-btn" [disabled]="backupHistoryPage() === 1" (click)="previousBackupHistoryPage()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <div class="pagination-numbers">
+              @for (page of getBackupPageNumbers(); track page) {
+                @if (page === -1) {
+                  <span class="pagination-ellipsis">...</span>
+                } @else {
+                  <button type="button" class="pagination-number" [class.active]="backupHistoryPage() === page"
+                    (click)="goToBackupPage(page)" [attr.aria-current]="backupHistoryPage() === page ? 'page' : null">
+                    {{ page }}
+                  </button>
+                }
+              }
+            </div>
+            <button type="button" class="pagination-btn" [disabled]="backupHistoryPage() === backupTotalPages()" (click)="nextBackupHistoryPage()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </nav>
+        }
       </div>
     </section>
   </section>

@@ -6,10 +6,7 @@
       <ul role="list">
         <li class="menu-label" aria-hidden="true">Dashboard</li>
         <li>
-          <button 
-            type="button" 
-            [class.active]="isActive('dashboard')"
-            (click)="navigateTo('dashboard')"
+          <button type="button" [class.active]="isActive('dashboard')" (click)="navigateTo('dashboard')"
             [attr.aria-current]="currentView() === 'dashboard' ? 'page' : null">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -22,10 +19,7 @@
           </button>
         </li>
         <li>
-          <button 
-            type="button" 
-            [class.active]="isActive('analytics')"
-            (click)="navigateTo('analytics')"
+          <button type="button" [class.active]="isActive('analytics')" (click)="navigateTo('analytics')"
             [attr.aria-current]="currentView() === 'analytics' ? 'page' : null">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -37,10 +31,7 @@
 
         <li class="menu-label" aria-hidden="true">Management</li>
         <li>
-          <button 
-            type="button" 
-            [class.active]="isActive('users')"
-            (click)="navigateTo('users')"
+          <button type="button" [class.active]="isActive('users')" (click)="navigateTo('users')"
             [attr.aria-current]="currentView() === 'users' ? 'page' : null">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -53,10 +44,7 @@
           </button>
         </li>
         <li>
-          <button 
-            type="button" 
-            [class.active]="isActive('volunteers')"
-            (click)="navigateTo('volunteers')"
+          <button type="button" [class.active]="isActive('volunteers')" (click)="navigateTo('volunteers')"
             [attr.aria-current]="currentView() === 'volunteers' ? 'page' : null">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -69,23 +57,18 @@
           </button>
         </li>
         <li>
-          <button 
-            type="button" 
-            [class.active]="isActive('attendance')"
-            (click)="navigateTo('attendance')"
+          <button type="button" [class.active]="isActive('attendance')" (click)="navigateTo('attendance')"
             [attr.aria-current]="currentView() === 'attendance' ? 'page' : null">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4m-4 0V9a2 2 0 1 1 4 0v2m-4 0a2 2 0 1 0 4 0" />
+              <path
+                d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4m-4 0V9a2 2 0 1 1 4 0v2m-4 0a2 2 0 1 0 4 0" />
             </svg>
             <span class="nav-text">Attendance</span>
           </button>
         </li>
         <li>
-          <button 
-            type="button" 
-            [class.active]="isActive('performance')"
-            (click)="navigateTo('performance')"
+          <button type="button" [class.active]="isActive('performance')" (click)="navigateTo('performance')"
             [attr.aria-current]="currentView() === 'performance' ? 'page' : null">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -97,10 +80,7 @@
 
         <li class="menu-label" aria-hidden="true">Tools</li>
         <li>
-          <button 
-            type="button" 
-            [class.active]="isActive('sms')"
-            (click)="navigateTo('sms')"
+          <button type="button" [class.active]="isActive('sms')" (click)="navigateTo('sms')"
             [attr.aria-current]="currentView() === 'sms' ? 'page' : null">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -110,10 +90,7 @@
           </button>
         </li>
         <li>
-          <button 
-            type="button" 
-            [class.active]="isActive('rsvps')"
-            (click)="navigateTo('rsvps')"
+          <button type="button" [class.active]="isActive('rsvps')" (click)="navigateTo('rsvps')"
             [attr.aria-current]="currentView() === 'rsvps' ? 'page' : null">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -125,10 +102,7 @@
           </button>
         </li>
         <li>
-          <button 
-            type="button" 
-            [class.active]="isActive('ics')"
-            (click)="navigateTo('ics')"
+          <button type="button" [class.active]="isActive('ics')" (click)="navigateTo('ics')"
             [attr.aria-current]="currentView() === 'ics' ? 'page' : null">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -140,10 +114,7 @@
 
         <li class="menu-label" aria-hidden="true">System</li>
         <li>
-          <button 
-            type="button" 
-            [class.active]="isActive('backup')"
-            (click)="navigateTo('backup')"
+          <button type="button" [class.active]="isActive('backup')" (click)="navigateTo('backup')"
             [attr.aria-current]="currentView() === 'backup' ? 'page' : null">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -174,7 +145,8 @@
 
     <div class="sidebar-footer">
       <div class="user-brief">
-        <img [ngSrc]="defaultPhoto" width="32" height="32" alt="Admin" class="avatar-sm" [class.svg]="defaultPhoto.endsWith('.svg')" />
+        <img [ngSrc]="defaultPhoto" width="32" height="32" alt="Admin" class="avatar-sm"
+          [class.svg]="defaultPhoto.endsWith('.svg')" />
         <div class="user-info">
           <p class="name">{{ currentUser()?.name || 'Admin User' }}</p>
           <p class="role">{{ currentUser()?.role || 'System Administrator' }}</p>
@@ -208,7 +180,8 @@
 
     <div class="sidebar-footer">
       <div class="user-brief">
-        <img [ngSrc]="defaultPhoto" width="32" height="32" alt="Admin" class="avatar-sm" [class.svg]="defaultPhoto.endsWith('.svg')" />
+        <img [ngSrc]="defaultPhoto" width="32" height="32" alt="Admin" class="avatar-sm"
+          [class.svg]="defaultPhoto.endsWith('.svg')" />
         <div class="user-info">
           <p class="name">{{ currentUser()?.name || 'Admin User' }}</p>
           <p class="role">{{ currentUser()?.role || 'System Administrator' }}</p>
@@ -243,32 +216,19 @@
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input #dashboardSearch
-            type="text"
-            class="search-input"
-            [value]="searchQuery()"
-            (input)="setSearchQuery(dashboardSearch.value)"
-            (keydown.enter)="runSearch()"
-            placeholder="Search..."
+          <input #dashboardSearch type="text" class="search-input" [value]="searchQuery()"
+            (input)="setSearchQuery(dashboardSearch.value)" (keydown.enter)="runSearch()" placeholder="Search..."
             aria-label="Search modules" />
         </div>
-        <button 
-          type="button" 
-          class="outline-btn ai-toggle-btn" 
-          [class.active]="showAiSidebar()" 
-          (click)="toggleAiSidebar()"
-          aria-label="Toggle Star AI Assistant" 
-          title="Star AI Assistant">
+        <button type="button" class="outline-btn ai-toggle-btn" [class.active]="showAiSidebar()"
+          (click)="toggleAiSidebar()" aria-label="Toggle Star AI Assistant" title="Star AI Assistant">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z" />
           </svg>
           Star AI
         </button>
-        <button 
-          type="button" 
-          class="outline-btn" 
-          (click)="toggleNotifications()"
+        <button type="button" class="outline-btn" (click)="toggleNotifications()"
           [attr.aria-label]="'Notifications' + (notificationCount() > 0 ? ', ' + notificationCount() + ' unread' : '')"
           aria-haspopup="true">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -277,7 +237,7 @@
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
           @if (notificationCount() > 0) {
-            <span class="notification-badge">{{ notificationCount() }}</span>
+          <span class="notification-badge">{{ notificationCount() }}</span>
           }
         </button>
         <button type="button" class="outline-btn" (click)="logout()">Logout</button>

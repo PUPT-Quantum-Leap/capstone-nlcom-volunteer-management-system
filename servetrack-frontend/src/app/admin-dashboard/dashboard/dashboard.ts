@@ -117,7 +117,7 @@ export class DashboardComponent {
       })
       .filter((event) => event.timestamp >= today.getTime())
       .sort((left, right) => left.timestamp - right.timestamp)
-      .slice(0, 4);
+      .slice(0, 3);
   });
 
   readonly upcomingEventRows = computed(() =>
@@ -139,7 +139,11 @@ export class DashboardComponent {
 
         return left.status === 'active' ? -1 : 1;
       })
-      .slice(0, 5),
+      .slice(0, 5)
+      .map(volunteer => ({
+        ...volunteer,
+        department: (volunteer as any).department || 'General',
+      })),
   );
 
   readonly leaderboard = computed(() =>
@@ -154,18 +158,6 @@ export class DashboardComponent {
       .slice(0, 4),
   );
 
-  readonly focusMessage = computed(() => {
-    if (this.unreadNotificationCount() > 0) {
-      return `${this.unreadNotificationCount()} admin alert${this.unreadNotificationCount() === 1 ? '' : 's'} need follow-up today.`;
-    }
-
-    if (this.nextEvents().length > 0) {
-      return `${this.nextEvents().length} event${this.nextEvents().length === 1 ? '' : 's'} are in the active planning window.`;
-    }
-
-    return 'Everything is calm right now. Use this space to plan the next volunteer push.';
-  });
-
   private timeIntervalId: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
@@ -176,18 +168,6 @@ export class DashboardComponent {
 
   navigateTo(path: string): void {
     void this.router.navigateByUrl(path);
-  }
-
-  goToVolunteersModule(): void {
-    this.navigateTo('/admin-dashboard/volunteers');
-  }
-
-  goToPerformanceModule(): void {
-    this.navigateTo('/admin-dashboard/performance');
-  }
-
-  goToRsvpsModule(): void {
-    this.navigateTo('/admin-dashboard/rsvps');
   }
 
   formatStatusLabel(status: string): string {

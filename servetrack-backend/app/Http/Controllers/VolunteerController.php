@@ -1054,4 +1054,99 @@ class VolunteerController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Update volunteer basic information (admin only)
+     */
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $volunteer = Volunteer::find($id);
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Volunteer not found.',
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'first_name' => 'sometimes|string|max:50',
+            'last_name' => 'sometimes|string|max:50',
+            'email' => 'sometimes|email|unique:volunteer,email,'.$id.',volunteer_id',
+            'mobile_number' => 'sometimes|string|max:15',
+            'facebook_name' => 'nullable|string|max:100',
+            'address' => 'nullable|string|max:255',
+            'educational_attainment' => 'nullable|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $updateData = $request->only([
+                'first_name',
+                'last_name',
+                'email',
+                'mobile_number',
+                'facebook_name',
+                'address',
+                'educational_attainment',
+            ]);
+
+            $volunteer->update($updateData);
+
+            // Also update associated user if exists
+            if ($volunteer->user) {
+                $userUpdateData = [];
+                if ($request->has('first_name') || $request->has('last_name')) {
+                    $firstName = $request->input('first_name', $volunteer->first_name);
+                    $lastName = $request->input('last_name', $volunteer->last_name);
+                    $userUpdateData['name'] = trim($firstName.' '.$lastName);
+                }
+                if ($request->has('email')) {
+                    $userUpdateData['email'] = $request->input('email');
+                }
+                if (! empty($userUpdateData)) {
+                    $volunteer->user->update($userUpdateData);
+                }
+            }
+
+            // Log the change
+            ProfileChangeLog::create([
+                'volunteer_id' => $volunteer->volunteer_id,
+                'changed_by' => Auth::id(),
+                'field_name' => 'profile_update',
+                'old_value' => null,
+                'new_value' => json_encode($updateData),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Volunteer updated successfully.',
+                'data' => $volunteer->fresh(),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Volunteer update failed', [
+                'volunteer_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update volunteer.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

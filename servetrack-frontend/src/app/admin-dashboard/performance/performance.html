@@ -1,60 +1,87 @@
-<section class="module-container performance-layout">
-  <header class="module-header">
-    <div class="header-content">
-      <h2>Volunteer Performance</h2>
-      <p>Overall performance metrics and detailed volunteer statistics</p>
+<section class="performance-management-container">
+  <!-- Blue Header Bar -->
+  <header class="report-header">
+    <div class="report-header-left">
+      <div class="report-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+      </div>
+      <div class="report-title-group">
+        <span class="report-label">PERFORMANCE METRICS</span>
+        <h2 class="report-title">Volunteer Performance & Statistics</h2>
+      </div>
+    </div>
+    <div class="report-header-right">
+      <span class="filter-label">SORT BY</span>
+      <select class="filter-dropdown" [value]="sortField()" (change)="sortBy($any($event.target).value)">
+        <option value="attendance">Attendance Rate</option>
+        <option value="hours">Hours Served</option>
+        <option value="name">Volunteer Name</option>
+        <option value="tasks">Tasks Completed</option>
+        <option value="rating">Rating</option>
+      </select>
     </div>
   </header>
 
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <div class="search-wrapper">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.35-4.35" />
+      </svg>
+      <input
+        type="text"
+        placeholder="Search volunteers by name..."
+        aria-label="Search performance records" />
+    </div>
+  </div>
+
+  <!-- Top Performer Banner -->
   @if (topPerformer()) {
-    <section class="top-performer-simple" aria-label="Top performer">
-      <div class="top-performer-content">
-        <div class="top-performer-avatar">{{ topPerformer()?.volunteerName?.charAt(0) }}</div>
-        <div class="top-performer-info">
-          <h3 class="top-performer-name">{{ topPerformer()?.volunteerName }}</h3>
-          <span class="top-performer-hours">{{ topPerformer()?.hoursServed }} hours served</span>
-        </div>
-        <div class="top-performer-badge">Top Performer</div>
+  <section class="top-performer-banner" aria-label="Top performer">
+    <div class="top-performer-content">
+      <div class="top-performer-avatar">{{ topPerformer()?.volunteerName?.charAt(0) }}</div>
+      <div class="top-performer-info">
+        <span class="top-performer-label">TOP PERFORMER</span>
+        <h3 class="top-performer-name">{{ topPerformer()?.volunteerName }}</h3>
+        <span class="top-performer-hours">{{ topPerformer()?.hoursServed }} hours served</span>
       </div>
-    </section>
+      <div class="top-performer-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </div>
+    </div>
+  </section>
   }
 
-  <div class="table-container">
-    <table class="data-table">
+  <!-- Performance Table -->
+  <div class="report-table-container">
+    <table class="report-table">
       <thead>
         <tr>
-          <th scope="col">
-            <button type="button" class="sort-btn" (click)="sortBy('name')">
-              Volunteer Name
-              @if (sortField() === 'name') {
-                <span class="sort-indicator" aria-hidden="true">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
-              }
-            </button>
-          </th>
-          <th scope="col">
-            <button type="button" class="sort-btn" (click)="sortBy('attendance')">
-              Attendance
-              @if (sortField() === 'attendance') {
-                <span class="sort-indicator" aria-hidden="true">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
-              }
-            </button>
-          </th>
-          <th scope="col">
-            <button type="button" class="sort-btn" (click)="sortBy('hours')">
-              Hours Served
-              @if (sortField() === 'hours') {
-                <span class="sort-indicator" aria-hidden="true">{{ sortDirection() === 'asc' ? '↑' : '↓' }}</span>
-              }
-            </button>
-          </th>
-          <th scope="col">Last Activity</th>
+          <th scope="col">VOLUNTEER</th>
+          <th scope="col">ATTENDANCE</th>
+          <th scope="col">HOURS SERVED</th>
+          <th scope="col">TASKS</th>
+          <th scope="col">RATING</th>
+          <th scope="col">LAST ACTIVITY</th>
         </tr>
       </thead>
       <tbody>
         @if (sortedPerformanceMetrics().length > 0) {
           @for (metric of paginatedPerformanceMetrics(); track metric.id) {
             <tr>
-              <td class="volunteer-name">{{ metric.volunteerName }}</td>
+              <td>
+                <div class="volunteer-info-cell">
+                  <div class="volunteer-avatar">{{ metric.volunteerName.charAt(0).toUpperCase() }}</div>
+                  <div class="volunteer-details">
+                    <span class="volunteer-name">{{ metric.volunteerName }}</span>
+                  </div>
+                </div>
+              </td>
               <td>
                 <div class="attendance-cell">
                   <span class="attendance-value">{{ metric.attendanceRate }}%</span>
@@ -65,15 +92,31 @@
                 </div>
               </td>
               <td>{{ metric.hoursServed }}h</td>
-              <td class="last-activity">{{ metric.lastActivity | date: 'MMM d, yyyy' }}</td>
+              <td>{{ metric.tasksCompleted }}</td>
+              <td>
+                <div class="rating-stars">
+                  @for (i of [1, 2, 3, 4, 5]; track i) {
+                    <svg class="star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      [class.filled]="i <= metric.rating" aria-hidden="true">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  }
+                  <span class="rating-value">{{ metric.rating }}/5</span>
+                </div>
+              </td>
+              <td>{{ metric.lastActivity | date: 'MMM d, yyyy' }}</td>
             </tr>
           }
         } @else {
-          <tr class="empty-state-row">
-            <td colspan="4">
+          <tr>
+            <td colspan="6">
               <div class="empty-state">
-                <p class="empty-state-title">No performance data yet</p>
-                <p class="empty-state-text">Volunteer performance metrics will appear here once activities are recorded.</p>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8V12M12 16H12.01" stroke-linecap="round" />
+                </svg>
+                <p>No performance data yet</p>
+                <span>Volunteer performance metrics will appear here once activities are recorded.</span>
               </div>
             </td>
           </tr>
@@ -82,21 +125,27 @@
     </table>
   </div>
 
+  <!-- Pagination -->
   <div class="pagination-container">
     <div class="pagination-info">
       @if (sortedPerformanceMetrics().length > 0) {
         Showing <strong>{{ (performancePage() - 1) * performancePerPage() + 1 }}</strong> to
         <strong>{{ Math.min(performancePage() * performancePerPage(), sortedPerformanceMetrics().length) }}</strong>
-        of <strong>{{ sortedPerformanceMetrics().length }}</strong> records
+        of <strong>{{ sortedPerformanceMetrics().length }}</strong> record(s)
       } @else {
         No records found
       }
     </div>
+
     @if (performanceTotalPages() > 1) {
-      <nav class="pagination-controls" aria-label="Performance pages">
-        <button type="button" class="pagination-btn" [disabled]="performancePage() === 1" (click)="previousPerformancePage()">Previous</button>
+      <nav class="pagination-controls" aria-label="Performance list pages">
+        <button type="button" class="pagination-btn" [disabled]="performancePage() === 1" (click)="previousPerformancePage()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
         <div class="pagination-numbers">
-          @for (page of getPerformancePageNumbers(); track $index) {
+          @for (page of getPerformancePageNumbers(); track page) {
             @if (page === -1) {
               <span class="pagination-ellipsis">...</span>
             } @else {
@@ -107,7 +156,11 @@
             }
           }
         </div>
-        <button type="button" class="pagination-btn" [disabled]="performancePage() === performanceTotalPages()" (click)="nextPerformancePage()">Next</button>
+        <button type="button" class="pagination-btn" [disabled]="performancePage() === performanceTotalPages()" (click)="nextPerformancePage()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
       </nav>
     }
   </div>

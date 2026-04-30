@@ -25,7 +25,11 @@ export class RsvpsComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly rsvps = signal<Rsvp[]>([]);
+  readonly isLoading = signal(true);
   readonly rsvpFilterStatus = signal<'all' | 'active' | 'closed' | 'draft'>('all');
+  readonly rsvpSearchQuery = signal('');
+  readonly currentPage = signal(1);
+  readonly itemsPerPage = signal(10);
   readonly showRsvpModal = signal(false);
   readonly showDeleteRsvpModal = signal(false);
   readonly showShareRsvpModal = signal(false);
@@ -41,11 +45,55 @@ export class RsvpsComponent {
 
   readonly filteredRsvps = computed(() => {
     const status = this.rsvpFilterStatus();
-    if (status === 'all') {
-      return this.rsvps();
+    const searchQuery = this.rsvpSearchQuery().toLowerCase();
+    
+    let filtered = this.rsvps();
+    
+    // Filter by status
+    if (status !== 'all') {
+      filtered = filtered.filter((rsvp) => rsvp.status === status);
     }
+    
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (rsvp) =>
+          rsvp.title.toLowerCase().includes(searchQuery) ||
+          (rsvp.eventLocation && rsvp.eventLocation.toLowerCase().includes(searchQuery))
+      );
+    }
+    
+    return filtered;
+  });
 
-    return this.rsvps().filter((rsvp) => rsvp.status === status);
+  readonly totalPages = computed(() => {
+    return Math.ceil(this.filteredRsvps().length / this.itemsPerPage());
+  });
+
+  readonly paginatedRsvps = computed(() => {
+    const start = (this.currentPage() - 1) * this.itemsPerPage();
+    const end = start + this.itemsPerPage();
+    return this.filteredRsvps().slice(start, end);
+  });
+
+  readonly paginatedRangeEnd = computed(() => {
+    return Math.min(this.currentPage() * this.itemsPerPage(), this.filteredRsvps().length);
+  });
+
+  readonly activeRsvpsCount = computed(() => {
+    return this.rsvps().filter((rsvp) => rsvp.status === 'active').length;
+  });
+
+  readonly draftRsvpsCount = computed(() => {
+    return this.rsvps().filter((rsvp) => rsvp.status === 'draft').length;
+  });
+
+  readonly closedRsvpsCount = computed(() => {
+    return this.rsvps().filter((rsvp) => rsvp.status === 'closed').length;
+  });
+
+  readonly totalResponsesCount = computed(() => {
+    return this.rsvps().reduce((sum, rsvp) => sum + rsvp.totalResponses, 0);
   });
 
   readonly rsvpForm = this.fb.group(
@@ -71,6 +119,68 @@ export class RsvpsComponent {
 
   setRsvpFilterStatus(status: 'all' | 'active' | 'closed' | 'draft'): void {
     this.rsvpFilterStatus.set(status);
+    this.currentPage.set(1);
+  }
+
+  setRsvpSearchQuery(query: string): void {
+    this.rsvpSearchQuery.set(query);
+    this.currentPage.set(1);
+  }
+
+  goToPage(page: number): void {
+    this.currentPage.set(page);
+  }
+
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const total = this.totalPages();
+    const current = this.currentPage();
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (current <= 4) {
+        for (let i = 1; i <= 5; i++) {
+          pages.push(i);
+        }
+        pages.push(-1);
+        pages.push(total);
+      } else if (current >= total - 3) {
+        pages.push(1);
+        pages.push(-1);
+        for (let i = total - 4; i <= total; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push(-1);
+        for (let i = current - 1; i <= current + 1; i++) {
+          pages.push(i);
+        }
+        pages.push(-1);
+        pages.push(total);
+      }
+    }
+    
+    return pages;
+  }
+
+  getTotalCapacity(rsvp: Rsvp): number {
+    return rsvp.shifts.reduce((sum, shift) => sum + shift.capacity, 0);
   }
 
   openCreateRsvpModal(): void {
@@ -382,16 +492,19 @@ export class RsvpsComponent {
   }
 
   private loadRsvps(): void {
+    this.isLoading.set(true);
     this.rsvpService
       .getRsvps()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
           this.rsvps.set(response.data ?? []);
+          this.isLoading.set(false);
         },
         error: (error: Error) => {
           console.error('Error loading RSVPs:', error);
           this.rsvps.set([]);
+          this.isLoading.set(false);
         },
       });
   }

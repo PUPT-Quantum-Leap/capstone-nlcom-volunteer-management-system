@@ -25,6 +25,9 @@ export class BackupRecoveryComponent {
   private adminDashboardService = inject(AdminDashboardService);
   private destroyRef = inject(DestroyRef);
 
+  // Expose Math for template
+  readonly Math = Math;
+
   // Outputs
   showSnackbar = output<{ message: string; type: 'success' | 'error' | 'info' }>();
 
@@ -340,7 +343,11 @@ export class BackupRecoveryComponent {
       });
   }
 
-  // Pagination
+  // Pagination helpers
+  backupPerPage(): number {
+    return this.backupHistoryPageSize();
+  }
+
   previousBackupHistoryPage(): void {
     if (this.backupHistoryPage() > 1) {
       this.backupHistoryPage.update((page) => page - 1);
@@ -351,5 +358,44 @@ export class BackupRecoveryComponent {
     if (this.backupHistoryPage() < this.backupTotalPages()) {
       this.backupHistoryPage.update((page) => page + 1);
     }
+  }
+
+  goToBackupPage(page: number): void {
+    if (page >= 1 && page <= this.backupTotalPages()) {
+      this.backupHistoryPage.set(page);
+    }
+  }
+
+  getBackupPageNumbers(): number[] {
+    const total = this.backupTotalPages();
+    const current = this.backupHistoryPage();
+    const pages: number[] = [];
+
+    if (total <= 7) {
+      for (let page = 1; page <= total; page += 1) {
+        pages.push(page);
+      }
+    } else {
+      pages.push(1);
+
+      if (current > 3) {
+        pages.push(-1);
+      }
+
+      const start = Math.max(2, current - 1);
+      const end = Math.min(total - 1, current + 1);
+
+      for (let page = start; page <= end; page += 1) {
+        pages.push(page);
+      }
+
+      if (current < total - 2) {
+        pages.push(-1);
+      }
+
+      pages.push(total);
+    }
+
+    return pages;
   }
 }
