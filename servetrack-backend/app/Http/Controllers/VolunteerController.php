@@ -459,7 +459,7 @@ class VolunteerController extends Controller
             'success' => true,
             'message' => 'Profile photo updated successfully.',
             'data' => [
-                'profile_photo_url' => Storage::disk('public')->url($path),
+                'profile_photo_url' => Storage::url($path),
             ],
         ]);
     }
@@ -926,15 +926,39 @@ class VolunteerController extends Controller
             ], 404);
         }
 
-        // Use Laravel's soft delete method
-        if (! $volunteer->trashed()) {
-            $volunteer->delete(); // This sets deleted_at automatically
-        }
+        DB::beginTransaction();
+        try {
+            // Use Laravel's soft delete method
+            if (! $volunteer->trashed()) {
+                $volunteer->delete();
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Volunteer archived successfully.',
-        ]);
+            // Cascade soft delete to associated user
+            if ($volunteer->user
+                && ! $volunteer->user->trashed()) {
+                $volunteer->user->delete();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Volunteer archived successfully.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Volunteer soft delete failed', [
+                'volunteer_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to archive volunteer.',
+            ], 500);
+        }
     }
 
     /**
@@ -951,12 +975,83 @@ class VolunteerController extends Controller
             ], 404);
         }
 
-        // Use Laravel's restore method
-        $volunteer->restore(); // This clears deleted_at automatically
+        DB::beginTransaction();
+        try {
+            // Use Laravel's restore method
+            $volunteer->restore();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Volunteer restored successfully.',
-        ]);
+            // Cascade restore to associated user (load with trashed)
+            $user = User::withTrashed()
+                ->find($volunteer->user_id);
+            if ($user && $user->trashed()) {
+                $user->restore();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Volunteer restored successfully.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Volunteer restore failed', [
+                'volunteer_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore volunteer.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Force delete a volunteer permanently
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $volunteer = Volunteer::withTrashed()->find($id);
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Volunteer not found.',
+            ], 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Force delete the volunteer first
+            $volunteer->forceDelete();
+
+            // Cascade force delete to associated user
+            if ($volunteer->user) {
+                $volunteer->user->forceDelete();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Volunteer deleted permanently.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Volunteer force delete failed', [
+                'volunteer_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete volunteer.',
+            ], 500);
+        }
     }
 }

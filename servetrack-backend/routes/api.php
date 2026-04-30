@@ -80,6 +80,7 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::get('/volunteers/{id}', [VolunteerController::class, 'show']);
     Route::patch('/volunteers/{id}/soft-delete', [VolunteerController::class, 'softDelete']);
     Route::patch('/volunteers/{id}/restore', [VolunteerController::class, 'restore']);
+    Route::delete('/volunteers/{id}', [VolunteerController::class, 'destroy']);
     Route::get('/admin/volunteers/{id}/change-history', [VolunteerController::class, 'changeHistory']);
 
     // User management — CRUD for users (admin only)
