@@ -113,6 +113,8 @@ export class VolunteerManagement implements OnInit {
     this.loadArchivedVolunteers();
   }
 
+  constructor() {}
+
   private loadVolunteers(): void {
     this.isLoading.set(true);
     this.adminDashboardService

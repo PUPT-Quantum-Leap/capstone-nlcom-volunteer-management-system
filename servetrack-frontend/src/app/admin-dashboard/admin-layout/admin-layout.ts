@@ -47,15 +47,16 @@ export class AdminLayout implements OnInit {
   currentView = computed(() => {
     // Derive current view from router URL
     const url = this.currentUrl();
-    if (url.includes('analytics')) return 'analytics';
-    if (url.includes('user-management')) return 'users';
-    if (url.includes('volunteers')) return 'volunteers';
-    if (url.includes('attendance')) return 'attendance';
-    if (url.includes('performance')) return 'performance';
-    if (url.includes('sms')) return 'sms';
-    if (url.includes('rsvps')) return 'rsvps';
-    if (url.includes('ics')) return 'ics';
-    if (url.includes('backup-recovery')) return 'backup';
+    if (url.includes('/analytics')) return 'analytics';
+    if (url.includes('/user-management')) return 'users';
+    if (url.includes('/volunteers')) return 'volunteers';
+    if (url.includes('/attendance')) return 'attendance';
+    if (url.includes('/performance')) return 'performance';
+    if (url.includes('/sms')) return 'sms';
+    if (url.includes('/rsvps')) return 'rsvps';
+    if (url.includes('/ics')) return 'ics';
+    if (url.includes('/backup-recovery')) return 'backup';
+    if (url.includes('/dashboard')) return 'dashboard';
     return 'dashboard';
   });
 
@@ -117,7 +118,7 @@ export class AdminLayout implements OnInit {
     this.mobileSidebarOpen.set(false);
   }
 
-  navigateTo(view: string): void {
+  navigateTo(view: string, isSearch: boolean = false): void {
     const routeMap: Record<string, string> = {
       dashboard: 'dashboard',
       analytics: 'analytics',
@@ -133,7 +134,16 @@ export class AdminLayout implements OnInit {
 
     const route = routeMap[view];
     if (route) {
-      void this.router.navigate([route], { relativeTo: this.route });
+      if (this.currentView() === view) {
+        if (!isSearch) {
+          this.searchQuery.set('');
+        }
+      } else {
+        void this.router.navigate(['/admin-dashboard', route]);
+        if (!isSearch) {
+          this.searchQuery.set('');
+        }
+      }
       this.closeMobileSidebar();
     }
   }
@@ -163,62 +173,66 @@ export class AdminLayout implements OnInit {
   }
 
   runSearch(): void {
-    const query = this.searchQuery().trim().toLowerCase();
+    const query = this.searchQuery().trim();
 
     if (!query) {
       return;
     }
 
-    if (query.includes('analytic') || query.includes('report')) {
-      this.navigateTo('analytics');
+    const lowerQuery = query.toLowerCase();
+
+    // 1. Check for Module Navigation Shortcuts
+    if (lowerQuery.includes('analytic') || lowerQuery.includes('report')) {
+      this.navigateTo('analytics', true);
       return;
     }
 
-    if (query.includes('user')) {
-      this.navigateTo('users');
+    if (lowerQuery.includes('user')) {
+      this.navigateTo('users', true);
       return;
     }
 
     if (
-      query.includes('volunteer') ||
-      query.includes('roster') ||
-      query.includes('member')
+      lowerQuery.includes('volunteer') ||
+      lowerQuery.includes('roster') ||
+      lowerQuery.includes('member')
     ) {
-      this.navigateTo('volunteers');
+      this.navigateTo('volunteers', true);
       return;
     }
 
-    if (query.includes('attendance') || query.includes('check-in')) {
-      this.navigateTo('attendance');
+    if (lowerQuery.includes('attendance') || lowerQuery.includes('check-in')) {
+      this.navigateTo('attendance', true);
       return;
     }
 
-    if (query.includes('performance') || query.includes('rating')) {
-      this.navigateTo('performance');
+    if (lowerQuery.includes('performance') || lowerQuery.includes('rating')) {
+      this.navigateTo('performance', true);
       return;
     }
 
-    if (query.includes('sms') || query.includes('message')) {
-      this.navigateTo('sms');
+    if (lowerQuery.includes('sms') || lowerQuery.includes('message')) {
+      this.navigateTo('sms', true);
       return;
     }
 
-    if (query.includes('rsvp') || query.includes('event') || query.includes('schedule')) {
-      this.navigateTo('rsvps');
+    if (lowerQuery.includes('rsvp') || lowerQuery.includes('event') || lowerQuery.includes('schedule')) {
+      this.navigateTo('rsvps', true);
       return;
     }
 
-    if (query.includes('ics') || query.includes('incident')) {
-      this.navigateTo('ics');
+    if (lowerQuery.includes('ics') || lowerQuery.includes('incident')) {
+      this.navigateTo('ics', true);
       return;
     }
 
-    if (query.includes('backup') || query.includes('recovery')) {
-      this.navigateTo('backup');
+    if (lowerQuery.includes('backup') || lowerQuery.includes('recovery')) {
+      this.navigateTo('backup', true);
       return;
     }
 
-    this.navigateTo('dashboard');
+    // Default behavior if no module match
+    this.navigateTo('dashboard', true);
   }
 
   private getStoredSidebarState(): boolean {

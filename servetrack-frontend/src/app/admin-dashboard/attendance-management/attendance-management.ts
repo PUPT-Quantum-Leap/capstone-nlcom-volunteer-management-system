@@ -70,6 +70,8 @@ export class AttendanceManagement {
     { id: 5, volunteerName: 'George Arvin Ventura', email: 'george.ventura@example.com', department: 'Mobile Kitchen Operations', checkInTime: null, checkOutTime: null, duration: null, status: 'absent' },
   ]);
 
+  constructor() {}
+
   readonly Math = Math;
 
   // Computed signals for stats cards
