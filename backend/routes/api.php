@@ -2,12 +2,15 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\FacebookWebhookController;
+use App\Http\Controllers\InviteController;
 use App\Http\Controllers\RsvpController;
+use App\Http\Controllers\SmsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VolunteerController;
 use Illuminate\Http\Request;
@@ -20,6 +23,9 @@ Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(funct
     Route::post('/register', [RegisterController::class, 'store']);
     Route::get('/auth/facebook', [LoginController::class, 'redirectToFacebook']);
     Route::get('/auth/facebook/callback', [LoginController::class, 'handleFacebookCallback']);
+
+    // Invite validation (public)
+    Route::post('/invites/validate', [InviteController::class, 'validate']);
 });
 
 // Volunteer registration - public signup with registration rate limit + email normalization
@@ -78,6 +84,7 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
 
     Route::get('/volunteers', [VolunteerController::class, 'index']);
     Route::get('/volunteers/{id}', [VolunteerController::class, 'show']);
+    Route::put('/volunteers/{id}', [VolunteerController::class, 'update']);
     Route::patch('/volunteers/{id}/soft-delete', [VolunteerController::class, 'softDelete']);
     Route::patch('/volunteers/{id}/restore', [VolunteerController::class, 'restore']);
     Route::delete('/volunteers/{id}', [VolunteerController::class, 'destroy']);
@@ -88,6 +95,17 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::patch('/users/{id}/soft-delete', [UserController::class, 'softDelete']);
     Route::patch('/users/{id}/restore', [UserController::class, 'restore']);
     Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
+
+    // Invite management — create, list, delete (admin only)
+    Route::post('/invites', [InviteController::class, 'store']);
+    Route::get('/invites', [InviteController::class, 'index']);
+    Route::delete('/invites/{id}', [InviteController::class, 'destroy']);
+
+    // Attendance photo management — upload, list, delete (admin only)
+    Route::post('/attendance-photos', [AttendancePhotoController::class, 'store']);
+    Route::get('/attendance-photos', [AttendancePhotoController::class, 'index']);
+    Route::post('/attendance-photos/archive-old', [AttendancePhotoController::class, 'archiveOldPhotos']);
+    Route::delete('/attendance-photos/{id}', [AttendancePhotoController::class, 'destroy']);
 
     // RSVP management — full CRUD + status toggle (admin only)
     Route::post('/rsvp', [RsvpController::class, 'store']);
@@ -113,4 +131,12 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     // Scheduled backup settings
     Route::get('/backups/schedule', [BackupController::class, 'getSchedule']);
     Route::put('/backups/schedule', [BackupController::class, 'updateSchedule']);
+
+    // Admin profile routes
+    Route::get('/admin/profile', [AdminController::class, 'profile']);
+    Route::put('/admin/profile', [AdminController::class, 'updateProfile'])
+        ->middleware('throttle:profile-update');
+
+    // SMS configuration status check
+    Route::get('/sms/config-status', [SmsController::class, 'configStatus']);
 });
