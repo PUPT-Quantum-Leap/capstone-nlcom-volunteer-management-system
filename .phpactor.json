@@ -1,17 +1,17 @@
 {
     "indexer.include_patterns": [
-        "servetrack-backend/app/**/*.php",
-        "servetrack-backend/routes/**/*.php",
-        "servetrack-backend/config/**/*.php",
-        "servetrack-backend/database/**/*.php",
-        "servetrack-backend/tests/**/*.php"
+        "app/**/*.php",
+        "routes/**/*.php",
+        "config/**/*.php",
+        "database/**/*.php",
+        "tests/**/*.php"
     ],
     "indexer.exclude_patterns": [
-        "servetrack-backend/vendor/**",
-        "servetrack-backend/storage/**",
-        "servetrack-backend/bootstrap/cache/**",
-        "servetrack-frontend/**",
+        "vendor/**",
+        "storage/**",
+        "bootstrap/cache/**",
         "node_modules/**",
         "docs/**"
-    ]
+    ],
+    "indexer.workspace_root": "servetrack-backend"
 }
