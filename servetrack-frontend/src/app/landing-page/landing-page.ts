@@ -11,9 +11,6 @@ import { CommonModule } from '@angular/common';
 export class LandingPage implements OnDestroy, AfterViewInit {
   private observer?: IntersectionObserver;
 
-  // Popup control signals
-  showPopup = signal(false);
-
   // AI chatbot state
   showChatWindow = signal(false);
   chatInput = signal('');
@@ -37,15 +34,6 @@ export class LandingPage implements OnDestroy, AfterViewInit {
       this.observer.disconnect();
       this.observer = undefined;
     }
-  }
-
-  // Popup methods
-  showPopupModal() {
-    this.showPopup.set(true);
-  }
-
-  closePopup() {
-    this.showPopup.set(false);
   }
 
   // AI Chat methods
