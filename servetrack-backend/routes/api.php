@@ -4,7 +4,6 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\FacebookWebhookController;
@@ -20,7 +19,6 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(function (): void {
     Route::post('/login', [LoginController::class, 'store']);
     Route::post('/admin/login', [LoginController::class, 'adminStore']);
-    Route::post('/register', [RegisterController::class, 'store']);
     Route::get('/auth/facebook', [LoginController::class, 'redirectToFacebook']);
     Route::get('/auth/facebook/callback', [LoginController::class, 'handleFacebookCallback']);
 

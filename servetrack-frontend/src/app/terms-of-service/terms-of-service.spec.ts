@@ -42,7 +42,7 @@ describe('TermsOfService', () => {
 
   it('should have link to signup page', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const signupLink = compiled.querySelector('a[routerLink="/signup"]');
+    const signupLink = compiled.querySelector('a[routerLink="/signup-form"]');
     expect(signupLink).toBeTruthy();
   });
 

@@ -3,7 +3,6 @@ import { LandingPage } from './landing-page/landing-page';
 import { RsvpComponent } from './rsvp/rsvp';
 import { Login } from './auth/login/login';
 import { FacebookOAuthCallbackComponent } from './auth/facebook-oauth-callback/facebook-oauth-callback';
-import { Signup } from './auth/signup/signup';
 import { SignupForm } from './auth/signup-form/signup-form';
 import { AdminAuthPage } from './auth/admin-auth-page/admin-auth-page';
 import { VolunteerDashboardShell } from './volunteer-dashboard/volunteer-dashboard-shell/volunteer-dashboard-shell';
@@ -32,7 +31,6 @@ export const routes: Routes = [
   { path: '', component: LandingPage },
   { path: 'login', component: Login },
   { path: 'auth/facebook/callback', component: FacebookOAuthCallbackComponent },
-  { path: 'signup', component: Signup },
   { path: 'signup-form', component: SignupForm },
   { path: 'admin-auth', component: AdminAuthPage },
   { path: 'admin-login', redirectTo: 'admin-auth', pathMatch: 'full' },

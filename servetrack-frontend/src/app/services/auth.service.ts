@@ -9,12 +9,6 @@ export interface LoginCredentials {
   password: string;
 }
 
-export interface RegisterData {
-  email: string;
-  password: string;
-  password_confirmation: string;
-}
-
 export interface VolunteerSignupData {
   firstName: string;
   lastName: string;
@@ -330,46 +324,6 @@ export class AuthService {
   }
 
   /**
-   * Observable version of register for RxJS compatibility.
-   */
-  register$(data: RegisterData): Observable<AuthResponse> {
-    this.isLoading.set(true);
-    this.error.set(null);
-
-    if (!this.isValidEmail(data.email)) {
-      this.isLoading.set(false);
-      return of({ success: false, message: 'Invalid email format' } as AuthResponse);
-    }
-
-    return this.ensureCsrf$().pipe(
-      switchMap(() => 
-        this.http.post<AuthResponse>(`${environment.apiUrl}/register`, data, { withCredentials: true })
-      ),
-      tap((response) => {
-        if (response.success && response.user) {
-          this.isAuthenticated.set(true);
-          this.currentUser.set(response.user);
-        }
-      }),
-      catchError((err: HttpErrorResponse) => {
-        const message = err.error?.message || 'Registration failed';
-        this.error.set(message);
-        return of({ success: false, message } as AuthResponse);
-      }),
-      tap(() => this.isLoading.set(false)),
-    );
-  }
-
-  register(data: RegisterData): Promise<AuthResponse> {
-    return new Promise((resolve, reject) => {
-      this.register$(data).subscribe({
-        next: (response) => resolve(response),
-        error: (error) => reject(error),
-      });
-    });
-  }
-
-  /**
    * Register new volunteer - Observable version.
    */
   volunteerSignup$(data: VolunteerSignupData): Observable<AuthResponse> {
@@ -512,9 +466,9 @@ export class AuthService {
   }
 
   /**
-   * Validate registration data
+   * Validate volunteer signup data
    */
-  validateRegistration(data: RegisterData): ValidationError[] {
+  validateVolunteerSignup(data: VolunteerSignupData): ValidationError[] {
     const errors: ValidationError[] = [];
 
     // Email validation
@@ -541,30 +495,17 @@ export class AuthService {
     }
 
     // Confirm password validation
-    if (!data.password_confirmation?.trim()) {
+    if (!data.confirmPassword?.trim()) {
       errors.push({
-        field: 'password_confirmation',
+        field: 'confirmPassword',
         message: 'Please confirm your password',
       });
-    } else if (data.password !== data.password_confirmation) {
+    } else if (data.password !== data.confirmPassword) {
       errors.push({
-        field: 'password_confirmation',
+        field: 'confirmPassword',
         message: 'Passwords do not match',
       });
     }
-
-    return errors;
-  }
-
-  /**
-   * Validate volunteer signup data
-   */
-  validateVolunteerSignup(data: VolunteerSignupData): ValidationError[] {
-    const errors = this.validateRegistration({
-      email: data.email,
-      password: data.password,
-      password_confirmation: data.confirmPassword,
-    });
 
     // Name validation
     if (!data.firstName?.trim()) {
