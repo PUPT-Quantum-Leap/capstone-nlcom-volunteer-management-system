@@ -32,20 +32,9 @@ export class Login implements OnInit, OnDestroy {
   registrationSuccessMessage = signal<string | null>(null);
   showPassword = signal(false);
 
-  // Popup signal
-  showPopup = signal(false);
   isAdminLoginPage = signal(false);
   private loginRedirectPath: '/volunteer-dashboard' | '/admin-dashboard' = '/volunteer-dashboard';
   private queryParamsSubscription?: Subscription;
-
-  // Popup methods
-  showPopupModal() {
-    this.showPopup.set(true);
-  }
-
-  closePopup() {
-    this.showPopup.set(false);
-  }
 
   // Password visibility methods
   togglePasswordVisibility(): void {

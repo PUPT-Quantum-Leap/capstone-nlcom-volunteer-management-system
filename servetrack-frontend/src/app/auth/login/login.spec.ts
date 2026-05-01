@@ -284,19 +284,4 @@ describe('Login Component', () => {
       expect(component.errorMessage()).toBe('Navigation error. Please try again.');
     });
   });
-
-  describe('Popup Methods', () => {
-    it('should set showPopup to true on showPopupModal', () => {
-      expect(component.showPopup()).toBe(false);
-      component.showPopupModal();
-      expect(component.showPopup()).toBe(true);
-    });
-
-    it('should set showPopup to false on closePopup', () => {
-      component.showPopup.set(true);
-      expect(component.showPopup()).toBe(true);
-      component.closePopup();
-      expect(component.showPopup()).toBe(false);
-    });
-  });
 });
