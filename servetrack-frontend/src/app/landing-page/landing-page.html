@@ -19,8 +19,8 @@
           </li>
         </ul>
         <div class="nav-buttons">
-          <button class="btn btn-outline" routerLink="/login">Login</button>
-          <button class="btn btn-primary" routerLink="/signup-form">Sign Up</button>
+          <button class="btn btn-outline" routerLink="/volunteer-auth">Login</button>
+          <button class="btn btn-primary" [routerLink]="['/volunteer-auth']" [queryParams]="{tab: 'signup'}">Sign Up</button>
         </div>
       </div>
     </div>
@@ -37,7 +37,7 @@
             meaningful opportunities in your community.
           </p>
           <div class="hero-buttons">
-            <button class="btn btn-primary btn-large" routerLink="/signup-form">
+            <button class="btn btn-primary btn-large" [routerLink]="['/volunteer-auth']" [queryParams]="{tab: 'signup'}">
               Get Started
             </button>
             <button class="btn btn-outline btn-large" (click)="scrollToSection('features', $event)">
