@@ -275,7 +275,7 @@
     <!-- Footer -->
     <div class="legal-footer">
       <a routerLink="/" class="btn btn-outline"> ← Back to Home </a>
-      <a routerLink="/signup-form" class="btn btn-primary"> Back to Sign Up </a>
+      <a [routerLink]="['/volunteer-auth']" [queryParams]="{tab: 'signup'}" class="btn btn-primary"> Back to Sign Up </a>
     </div>
   </div>
 </div>

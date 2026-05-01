@@ -1,9 +1,8 @@
 import { Routes } from '@angular/router';
 import { LandingPage } from './landing-page/landing-page';
 import { RsvpComponent } from './rsvp/rsvp';
-import { Login } from './auth/login/login';
+import { VolunteerAuthPage } from './auth/volunteer-auth-page/volunteer-auth-page';
 import { FacebookOAuthCallbackComponent } from './auth/facebook-oauth-callback/facebook-oauth-callback';
-import { SignupForm } from './auth/signup-form/signup-form';
 import { AdminAuthPage } from './auth/admin-auth-page/admin-auth-page';
 import { VolunteerDashboardShell } from './volunteer-dashboard/volunteer-dashboard-shell/volunteer-dashboard-shell';
 import { OverviewComponent } from './volunteer-dashboard/overview/overview';
@@ -29,9 +28,10 @@ import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', component: LandingPage },
-  { path: 'login', component: Login },
+  { path: 'volunteer-auth', component: VolunteerAuthPage },
+  { path: 'login', redirectTo: 'volunteer-auth', pathMatch: 'full' },
+  { path: 'signup-form', redirectTo: 'volunteer-auth?tab=signup', pathMatch: 'full' },
   { path: 'auth/facebook/callback', component: FacebookOAuthCallbackComponent },
-  { path: 'signup-form', component: SignupForm },
   { path: 'admin-auth', component: AdminAuthPage },
   { path: 'admin-login', redirectTo: 'admin-auth', pathMatch: 'full' },
   { path: 'admin-signup', redirectTo: 'admin-auth?tab=signup', pathMatch: 'full' },

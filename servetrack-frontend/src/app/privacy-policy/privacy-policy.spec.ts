@@ -42,7 +42,7 @@ describe('PrivacyPolicy', () => {
 
   it('should have link to signup page', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const signupLink = compiled.querySelector('a[routerLink="/signup-form"]');
+    const signupLink = compiled.querySelector('a.btn-primary');
     expect(signupLink).toBeTruthy();
   });
 });
