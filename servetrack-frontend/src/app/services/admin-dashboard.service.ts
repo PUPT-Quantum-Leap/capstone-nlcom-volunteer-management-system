@@ -196,6 +196,21 @@ export class AdminDashboardService {
     );
   }
 
+  updateVolunteer(id: number, data: Partial<VolunteerUser>): Observable<ApiResponse<VolunteerUser>> {
+    return this.http.put<ApiResponse<VolunteerUser>>(`${environment.apiUrl}/volunteers/${id}`, data, {
+      withCredentials: true,
+    }).pipe(
+      catchError((error) => {
+        console.error('Error updating volunteer:', error);
+        return of({
+          success: false,
+          message: 'Failed to update volunteer',
+          data: {} as VolunteerUser,
+        });
+      })
+    );
+  }
+
   // Backup management methods
   getBackups(page: number = 1, perPage: number = 10, type?: string, status?: string): Observable<BackupListResponse> {
     let url = `${environment.apiUrl}/backups?page=${page}&per_page=${perPage}`;
@@ -362,7 +377,7 @@ export class AdminDashboardService {
     frequency: 'daily' | 'weekly' | 'monthly'
   ): Observable<ApiResponse<void>> {
     const body = { enabled, frequency };
-    
+
     return this.http.put<ApiResponse<void>>(
       `${environment.apiUrl}/backups/schedule`,
       body,
@@ -376,6 +391,73 @@ export class AdminDashboardService {
           success: false,
           message: 'Failed to update scheduled backup settings',
         } as ApiResponse<void>);
+      })
+    );
+  }
+
+  // SMS configuration check
+  getSmsConfigStatus(): Observable<{ configured: boolean; message?: string }> {
+    return this.http.get<{ configured: boolean; message?: string }>(
+      `${environment.apiUrl}/sms/config-status`,
+      { withCredentials: true }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error fetching SMS config status:', error);
+        return of({
+          configured: false,
+          message: 'Unable to verify SMS configuration',
+        });
+      })
+    );
+  }
+
+  // Admin Profile management
+  getAdminProfile(): Observable<ApiResponse<{
+    id: number;
+    name: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    contact_number: string | null;
+    profile_photo_url: string | null;
+  }>> {
+    return this.http.get<ApiResponse<{
+      id: number;
+      name: string;
+      email: string;
+      first_name: string;
+      last_name: string;
+      contact_number: string | null;
+      profile_photo_url: string | null;
+    }>>(`${environment.apiUrl}/admin/profile`, { withCredentials: true }).pipe(
+      catchError((error) => {
+        console.error('Error fetching admin profile:', error);
+        return of({
+          success: false,
+          message: 'Failed to fetch admin profile',
+          data: {} as any,
+        });
+      })
+    );
+  }
+
+  updateAdminProfile(data: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    contact_number?: string | null;
+    profile_photo?: string | null;
+  }): Observable<ApiResponse<any>> {
+    return this.http.put<ApiResponse<any>>(`${environment.apiUrl}/admin/profile`, data, {
+      withCredentials: true,
+    }).pipe(
+      catchError((error) => {
+        console.error('Error updating admin profile:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Failed to update profile',
+          data: error.error?.errors,
+        });
       })
     );
   }

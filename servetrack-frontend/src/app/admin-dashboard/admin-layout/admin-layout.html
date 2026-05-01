@@ -1,0 +1,358 @@
+<div class="dashboard-container">
+
+  <!-- Sidebar Navigation Template -->
+  <ng-template #sidebarNav>
+    <nav class="sidebar-nav" aria-label="Main navigation">
+      <ul role="list">
+        <li class="menu-label" aria-hidden="true">Dashboard</li>
+        <li>
+          <button type="button" [class.active]="isActive('dashboard')" (click)="navigateTo('dashboard')"
+            [attr.aria-current]="currentView() === 'dashboard' ? 'page' : null">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            <span class="nav-text">Dashboard</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="isActive('analytics')" (click)="navigateTo('analytics')"
+            [attr.aria-current]="currentView() === 'analytics' ? 'page' : null">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z" />
+            </svg>
+            <span class="nav-text">Analytics</span>
+          </button>
+        </li>
+
+        <li class="menu-label" aria-hidden="true">Management</li>
+        <li>
+          <button type="button" [class.active]="isActive('users')" (click)="navigateTo('users')"
+            [attr.aria-current]="currentView() === 'users' ? 'page' : null">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span class="nav-text">User Management</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="isActive('volunteers')" (click)="navigateTo('volunteers')"
+            [attr.aria-current]="currentView() === 'volunteers' ? 'page' : null">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 1-4-4H6a4 4 0 0 1-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="19" y1="8" x2="19" y2="14" />
+              <line x1="22" y1="11" x2="16" y2="11" />
+            </svg>
+            <span class="nav-text">Volunteers</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="isActive('attendance')" (click)="navigateTo('attendance')"
+            [attr.aria-current]="currentView() === 'attendance' ? 'page' : null">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path
+                d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4m-4 0V9a2 2 0 1 1 4 0v2m-4 0a2 2 0 1 0 4 0" />
+            </svg>
+            <span class="nav-text">Attendance</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="isActive('performance')" (click)="navigateTo('performance')"
+            [attr.aria-current]="currentView() === 'performance' ? 'page' : null">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+            <span class="nav-text">Performance</span>
+          </button>
+        </li>
+
+        <li class="menu-label" aria-hidden="true">Tools</li>
+        <li>
+          <button type="button" [class.active]="isActive('sms')" (click)="navigateTo('sms')"
+            [attr.aria-current]="currentView() === 'sms' ? 'page' : null">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span class="nav-text">SMS</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="isActive('rsvps')" (click)="navigateTo('rsvps')"
+            [attr.aria-current]="currentView() === 'rsvps' ? 'page' : null">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <polyline points="16 11 18 13 22 9" />
+            </svg>
+            <span class="nav-text">RSVPs</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="isActive('ics')" (click)="navigateTo('ics')"
+            [attr.aria-current]="currentView() === 'ics' ? 'page' : null">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            <span class="nav-text">ICS</span>
+          </button>
+        </li>
+
+        <li class="menu-label" aria-hidden="true">System</li>
+        <li>
+          <button type="button" [class.active]="isActive('backup')" (click)="navigateTo('backup')"
+            [attr.aria-current]="currentView() === 'backup' ? 'page' : null">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            <span class="nav-text">Backup</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </ng-template>
+
+  <!-- Desktop Sidebar -->
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()" [class.mobile-open]="mobileSidebarOpen()">
+    <div class="sidebar-header">
+      <div class="logo-area" (click)="toggleSidebar()" (keydown.enter)="toggleSidebar()" role="button" tabindex="0"
+        aria-label="Toggle sidebar">
+        <div class="logo-icon">
+          <img ngSrc="/assets/logo.png" width="36" height="36" alt="ServeTrack Logo" />
+        </div>
+        <span class="logo-text">ServeTrack</span>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="sidebarNav"></ng-container>
+
+    <div class="sidebar-footer">
+      <div class="user-brief" (click)="openProfileModal()" role="button" tabindex="0" (keydown.enter)="openProfileModal()" aria-label="Edit Profile">
+        <img [src]="$any(currentUser())?.profile_photo_url || defaultPhoto" width="32" height="32" alt="Admin" class="avatar-sm"
+          [class.svg]="($any(currentUser())?.profile_photo_url || defaultPhoto).endsWith('.svg')" />
+        <div class="user-info">
+          <p class="name">{{ currentUser()?.name || 'Admin User' }}</p>
+          <p class="role">{{ currentUser()?.role || 'System Administrator' }}</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Sidebar -->
+  <aside class="mobile-sidebar" [class.mobile-open]="mobileSidebarOpen()" aria-label="Mobile navigation">
+    <div class="mobile-sidebar-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <img ngSrc="/assets/logo.png" width="36" height="36" alt="ServeTrack Logo" />
+        </div>
+        <span class="logo-text">ServeTrack</span>
+      </div>
+      <button type="button" class="mobile-logout-btn" (click)="logout(); closeMobileSidebar()"
+        (keydown.enter)="logout(); closeMobileSidebar()" aria-label="Logout">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M9 21H12M12 21L15 18M9 21L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <path d="M16 17V14C16 12.58 14.58 9 10 9S4 12.58 4 17V20" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" />
+          <path d="M12 14V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        Logout
+      </button>
+    </div>
+
+    <ng-container *ngTemplateOutlet="sidebarNav"></ng-container>
+
+    <div class="sidebar-footer">
+      <div class="user-brief" (click)="openProfileModal()" role="button" tabindex="0" (keydown.enter)="openProfileModal()" aria-label="Edit Profile">
+        <img [src]="$any(currentUser())?.profile_photo_url || defaultPhoto" width="32" height="32" alt="Admin" class="avatar-sm"
+          [class.svg]="($any(currentUser())?.profile_photo_url || defaultPhoto).endsWith('.svg')" />
+        <div class="user-info">
+          <p class="name">{{ currentUser()?.name || 'Admin User' }}</p>
+          <p class="role">{{ currentUser()?.role || 'System Administrator' }}</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" [class.active]="mobileSidebarOpen()" (click)="closeMobileSidebar()"
+    (keydown.enter)="closeMobileSidebar()" role="button" tabindex="0" aria-label="Close sidebar"></div>
+
+  <div class="main-wrapper" [class.expanded]="sidebarCollapsed()">
+    <!-- Top Bar / Header -->
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <button type="button" class="mobile-menu-btn" (click)="toggleMobileSidebar()"
+          (keydown.enter)="toggleMobileSidebar()" aria-label="Open menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        <h1 class="page-title">{{ pageTitle() }}</h1>
+      </div>
+
+      <div class="top-bar-right">
+        <div class="search-inline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" style="margin-left: 0.5rem; color: var(--gray-400);">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input #dashboardSearch type="text" class="search-input" [value]="searchQuery()"
+            (input)="setSearchQuery(dashboardSearch.value)" (keydown.enter)="runSearch()" placeholder="Search..."
+            aria-label="Search modules" />
+        </div>
+        <button type="button" class="outline-btn ai-toggle-btn" [class.active]="showAiSidebar()"
+          (click)="toggleAiSidebar()" aria-label="Toggle Star AI Assistant" title="Star AI Assistant">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z" />
+          </svg>
+          Star AI
+        </button>
+        <button type="button" class="outline-btn" (click)="toggleNotifications()"
+          [attr.aria-label]="'Notifications' + (notificationCount() > 0 ? ', ' + notificationCount() + ' unread' : '')"
+          aria-haspopup="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          @if (notificationCount() > 0) {
+          <span class="notification-badge">{{ notificationCount() }}</span>
+          }
+        </button>
+        <button type="button" class="outline-btn" (click)="logout()">Logout</button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<!-- Admin Profile Edit Modal -->
+@if (showProfileModal()) {
+<div class="modal-backdrop" (click)="closeProfileModal()">
+  <div class="modal-card modal-md" (click)="$event.stopPropagation()">
+    <div class="modal-header header-primary">
+      <div class="modal-title-wrapper">
+        <div class="modal-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+        <h3>Edit Profile</h3>
+      </div>
+      <button type="button" class="modal-close-btn" (click)="closeProfileModal()" aria-label="Close modal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <form (submit)="$event.preventDefault(); saveProfile()" class="modal-form">
+      <div class="modal-body">
+        <p>Update your personal information and profile picture below.</p>
+
+        <!-- Profile Photo Upload -->
+        <div class="profile-photo-upload">
+          <div class="photo-preview-wrapper">
+            <img [src]="profileFormData().profile_photo_url || defaultPhoto" alt="Profile Preview" class="photo-preview"
+              [class.svg]="(profileFormData().profile_photo_url || defaultPhoto).endsWith('.svg')" />
+            <label for="photo_input" class="photo-edit-overlay">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+              <span>Change Photo</span>
+            </label>
+            <input type="file" id="photo_input" (change)="onPhotoSelected($event)" accept="image/*" hidden />
+          </div>
+          <div class="photo-instructions">
+            <p class="photo-hint">Click the icon to upload a new photo. JPG, PNG or WEBP recommended.</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="profile_first_name">First Name</label>
+            <input type="text" id="profile_first_name" [value]="profileFormData().first_name"
+              (input)="updateProfileField('first_name', firstName.value)" #firstName placeholder="Enter first name"
+              required [class.invalid]="profileErrors()['first_name']" />
+            @if (profileErrors()['first_name']) {
+            <span class="error-text">{{ profileErrors()['first_name'][0] }}</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="profile_last_name">Last Name</label>
+            <input type="text" id="profile_last_name" [value]="profileFormData().last_name"
+              (input)="updateProfileField('last_name', lastName.value)" #lastName placeholder="Enter last name" required
+              [class.invalid]="profileErrors()['last_name']" />
+            @if (profileErrors()['last_name']) {
+            <span class="error-text">{{ profileErrors()['last_name'][0] }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="profile_email">Email Address</label>
+          <input type="email" id="profile_email" [value]="profileFormData().email"
+            (input)="updateProfileField('email', email.value)" #email placeholder="Enter email address" required
+            [class.invalid]="profileErrors()['email']" />
+          @if (profileErrors()['email']) {
+          <span class="error-text">{{ profileErrors()['email'][0] }}</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="profile_contact">Contact Number</label>
+          <input type="text" id="profile_contact" [value]="profileFormData().contact_number"
+            (input)="updateProfileField('contact_number', contact.value)" #contact placeholder="Enter contact number"
+            [class.invalid]="profileErrors()['contact_number']" />
+          @if (profileErrors()['contact_number']) {
+          <span class="error-text">{{ profileErrors()['contact_number'][0] }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="secondary-btn" (click)="closeProfileModal()">Cancel</button>
+        <button type="submit" class="primary-btn" [disabled]="isSavingProfile()">
+          @if (isSavingProfile()) {
+          <span class="spinner"></span> Saving...
+          } @else {
+          Save Changes
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+}

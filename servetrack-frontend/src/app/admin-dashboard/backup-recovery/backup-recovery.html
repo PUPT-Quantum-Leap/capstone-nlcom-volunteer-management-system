@@ -1,0 +1,244 @@
+<section class="backup-recovery-container">
+  <!-- Blue Header Bar -->
+  <header class="report-header">
+    <div class="report-header-left">
+      <div class="report-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15"
+            stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <div class="report-title-group">
+        <span class="report-label">BACKUP & RECOVERY</span>
+        <h2 class="report-title">Track Health, Run Backups & Restore</h2>
+      </div>
+    </div>
+    <div class="report-header-right">
+      <button type="button" class="action-btn" [disabled]="backupActionLoading()" (click)="refreshBackups()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <section class="backup-restore-layout">
+    <div class="backup-actions-grid">
+      <article class="backup-card">
+        <div class="backup-icon backup-icon-create">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 8L12 3M12 3L7 8M12 3V15"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+        <div class="backup-card-content">
+          <h3>Create Backup</h3>
+          <p>Create a manual snapshot of your current system data and records.</p>
+          <button type="button" class="primary-btn btn-lg" [disabled]="backupActionLoading()"
+            (click)="createBackup()">
+            Create Full Backup
+          </button>
+        </div>
+      </article>
+
+      <article class="backup-card">
+        <div class="backup-icon backup-icon-schedule">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+            <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div class="backup-card-content">
+          <h3>Scheduled Backups</h3>
+          <p>Enable recurring backups and control how frequently they run.</p>
+          <div class="backup-schedule-controls">
+            <select class="form-input" [value]="scheduledBackupFrequency()"
+              (change)="setScheduledBackupFrequency($any($event.target).value)"
+              aria-label="Backup frequency">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+            <button type="button" class="outline-btn" (click)="toggleScheduledBackups()">
+              @if (scheduledBackupEnabled()) { Disable Schedule } @else { Enable Schedule }
+            </button>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <!-- Backup History -->
+    <section class="backup-history">
+      <div class="backup-health-row">
+        @if (latestBackup(); as latest) {
+          <p>Latest backup: <strong>{{ latest.name }}</strong> on {{ latest.created_at | date: 'MMM d, yyyy h:mm a' }}</p>
+        } @else {
+          <p>No backups available.</p>
+        }
+      </div>
+
+      <div class="report-table-container">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th scope="col">BACKUP NAME</th>
+              <th scope="col">DATE CREATED</th>
+              <th scope="col">SIZE</th>
+              <th scope="col">TYPE</th>
+              <th scope="col">STATUS</th>
+              <th scope="col" class="actions-header">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (paginatedBackupRecords().length > 0) {
+              @for (backup of paginatedBackupRecords(); track backup.id) {
+                <tr>
+                  <td><div class="backup-name">{{ backup.name }}</div></td>
+                  <td>{{ backup.created_at | date: 'MMM d, yyyy h:mm a' }}</td>
+                  <td>{{ formatFileSize(backup.size_bytes) }}</td>
+                  <td>
+                    <span
+                      class="backup-badge"
+                      [class.backup-auto]="backup.type === 'automatic'"
+                      [class.backup-manual]="backup.type === 'manual'"
+                    >
+                      {{ backup.type === 'automatic' ? 'Automatic' : 'Manual' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      class="status-badge"
+                      [class.status-success]="backup.status === 'completed'"
+                      [class.status-warning]="backup.status === 'in_progress'"
+                      [class.status-danger]="backup.status === 'failed'"
+                    >
+                      {{ getBackupStatusText(backup.status) }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <button
+                        type="button"
+                        class="icon-btn icon-btn-primary"
+                        [attr.aria-label]="'Download ' + backup.name"
+                        title="Download"
+                        (click)="downloadBackup(backup)"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        class="icon-btn icon-btn-success"
+                        [attr.aria-label]="'Restore ' + backup.name"
+                        title="Restore"
+                        (click)="restoreBackup(backup)"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        class="icon-btn icon-btn-danger"
+                        [attr.aria-label]="'Delete ' + backup.name"
+                        title="Delete"
+                        (click)="deleteBackup(backup.id)"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            } @else {
+              <tr>
+                <td colspan="6" class="empty-table-cell">
+                  <div class="empty-table-state"><p>No backup entries yet.</p></div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-container">
+        <div class="pagination-info">
+          @if (paginatedBackupRecords().length > 0) {
+            Showing <strong>{{ (backupHistoryPage() - 1) * backupPerPage() + 1 }}</strong> to
+            <strong>{{ Math.min(backupHistoryPage() * backupPerPage(), backupRecords().length) }}</strong>
+            of <strong>{{ backupRecords().length }}</strong> backup(s)
+          } @else {
+            No backups found
+          }
+        </div>
+
+        @if (backupTotalPages() > 1) {
+          <nav class="pagination-controls" aria-label="Backup history pages">
+            <button type="button" class="pagination-btn" [disabled]="backupHistoryPage() === 1" (click)="previousBackupHistoryPage()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <div class="pagination-numbers">
+              @for (page of getBackupPageNumbers(); track page) {
+                @if (page === -1) {
+                  <span class="pagination-ellipsis">...</span>
+                } @else {
+                  <button type="button" class="pagination-number" [class.active]="backupHistoryPage() === page"
+                    (click)="goToBackupPage(page)" [attr.aria-current]="backupHistoryPage() === page ? 'page' : null">
+                    {{ page }}
+                  </button>
+                }
+              }
+            </div>
+            <button type="button" class="pagination-btn" [disabled]="backupHistoryPage() === backupTotalPages()" (click)="nextBackupHistoryPage()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </nav>
+        }
+      </div>
+    </section>
+  </section>
+</section>
+
+<!-- Confirmation Dialog -->
+@if (showConfirmationDialog()) {
+  <div class="modal-backdrop" (click)="closeConfirmationDialog()">
+    <div class="modal-card modal-sm" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
+      [attr.aria-labelledby]="'confirm-dialog-title'">
+      <div class="modal-header header-danger">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 9V13M12 17H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"/>
+            </svg>
+          </div>
+          <h3 id="confirm-dialog-title">{{ confirmationDialogTitle() }}</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeConfirmationDialog()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>{{ confirmationDialogMessage() }}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" (click)="closeConfirmationDialog()">Cancel</button>
+        <button type="button" class="danger-btn" (click)="confirmationDialogAction()()">Confirm</button>
+      </div>
+    </div>
+  </div>
+}

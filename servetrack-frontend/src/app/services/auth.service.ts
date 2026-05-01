@@ -65,6 +65,7 @@ export interface ValidationError {
 }
 
 export interface AuthResponse {
+  /** Success flag */
   success: boolean;
   message?: string;
   user?: {
@@ -72,6 +73,7 @@ export interface AuthResponse {
     email: string;
     name?: string;
     role?: 'volunteer' | 'admin' | 'coordinator';
+    profile_photo_url?: string;
     user_type?: 'volunteer' | 'admin' | 'coordinator';
     volunteer_profile?: {
       volunteer_id: number;

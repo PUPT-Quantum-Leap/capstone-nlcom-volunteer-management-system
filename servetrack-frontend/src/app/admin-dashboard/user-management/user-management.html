@@ -1,0 +1,521 @@
+<section class="user-management-container">
+  @if (isLoading()) {
+  <div class="loading-state">
+    <div class="loading-spinner"></div>
+    <p>Loading users...</p>
+  </div>
+  } @else {
+  <!-- Dark Header Bar -->
+  <header class="report-header">
+    <div class="report-header-left">
+      <div class="report-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+        </svg>
+      </div>
+      <div class="report-title-group">
+        <span class="report-label">USER MANAGEMENT</span>
+        <h2 class="report-title">Manage Users, Roles & Permissions</h2>
+      </div>
+    </div>
+    <div class="report-header-right">
+      <span class="filter-label">STATUS</span>
+      <select class="filter-dropdown" [value]="showArchivedUsers() ? 'archived' : 'active'" (change)="$any($event.target).value === 'active' ? switchToActiveUsers() : switchToArchivedUsers()">
+        <option value="active">Active Users</option>
+        <option value="archived">Archived Users</option>
+      </select>
+      <span class="filter-label">ROLE</span>
+      <select class="filter-dropdown" [value]="userRoleFilter()" (change)="setUserRoleFilter($any($event.target).value)">
+        <option value="">All Roles</option>
+        <option value="admin">Admin</option>
+        <option value="coordinator">Coordinator</option>
+        <option value="volunteer">Volunteer</option>
+      </select>
+      @if (!showArchivedUsers()) {
+      <button type="button" class="action-btn" (click)="openCreateUserModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span>Add User</span>
+      </button>
+      }
+    </div>
+  </header>
+
+  <!-- Stats Cards -->
+  <div class="user-stats-grid">
+    <article class="stat-card stat-card-blue">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ activeUsersCount() }}</div>
+        <div class="stat-label">Active Users</div>
+      </div>
+    </article>
+
+    <article class="stat-card stat-card-red">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="8.5" cy="7" r="4"/>
+          <line x1="20" y1="8" x2="20" y2="14"/>
+          <line x1="23" y1="11" x2="17" y2="11"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ adminCount() }}</div>
+        <div class="stat-label">Admins</div>
+      </div>
+    </article>
+
+    <article class="stat-card stat-card-green">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ coordinatorCount() }}</div>
+        <div class="stat-label">Coordinators</div>
+      </div>
+    </article>
+
+    <article class="stat-card stat-card-purple">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ volunteerCount() }}</div>
+        <div class="stat-label">Volunteers</div>
+      </div>
+    </article>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <div class="search-wrapper">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.35-4.35" />
+      </svg>
+      <input
+        #userSearchInput
+        type="text"
+        placeholder="Search users by name or email..."
+        [value]="userSearchQuery()"
+        (input)="setUserSearchQuery(userSearchInput.value)"
+        aria-label="Search users" />
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="report-table-container">
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th scope="col">USER</th>
+          <th scope="col">ROLE</th>
+          <th scope="col">JOINED DATE</th>
+          <th scope="col">STATUS</th>
+          <th scope="col" class="actions-header">ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of paginatedUsers(); track user.id) {
+        <tr>
+          <td>
+            <div class="user-info-cell">
+              <div class="user-avatar" [class]="'avatar-' + user.role" aria-hidden="true">
+                {{ user.name.charAt(0).toUpperCase() }}
+              </div>
+              <div class="user-details">
+                <span class="user-name">{{ user.name }}</span>
+                <span class="user-email">{{ user.email }}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="role-badge" [class]="'role-' + user.role">{{ formatRole(user.role) }}</span>
+          </td>
+          <td>{{ user.created_at | date: 'MMM d, yyyy' }}</td>
+          <td>
+            <span class="status-badge" [class]="user.deleted_at ? 'status-archived' : 'status-active'">
+              {{ user.deleted_at ? 'Archived' : 'Active' }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            <div class="action-buttons">
+              <button
+                type="button"
+                class="icon-btn icon-btn-info"
+                (click)="openViewUserModal(user)"
+                [attr.aria-label]="'View details for ' + user.name"
+                title="View Details">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
+              @if (!showArchivedUsers()) {
+                <button
+                  type="button"
+                  class="icon-btn icon-btn-warning"
+                  (click)="openEditUserModal(user)"
+                  [attr.aria-label]="'Edit ' + user.name"
+                  title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="icon-btn icon-btn-danger"
+                  (click)="confirmDeleteUser(user.id)"
+                  [attr.aria-label]="'Archive ' + user.name"
+                  title="Archive">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M3 6h18" />
+                    <path d="M8 6V4h8v2" />
+                    <path d="M19 6l-1 14H6L5 6" />
+                  </svg>
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="icon-btn icon-btn-success"
+                  (click)="restoreUser(user.id)"
+                  [attr.aria-label]="'Restore ' + user.name"
+                  title="Restore">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                    <path d="M3 3v5h5" />
+                  </svg>
+                </button>
+              }
+            </div>
+          </td>
+        </tr>
+        } @empty {
+        <tr>
+          <td colspan="5">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+              </svg>
+              <p>{{ showArchivedUsers() ? 'No archived users found.' : 'No active users found.' }}</p>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container">
+    <div class="pagination-info">
+      @if (filteredUsers().length > 0) {
+        Showing <strong>{{ (currentPage() - 1) * usersPerPage() + 1 }}</strong> to
+        <strong>{{ Math.min(currentPage() * usersPerPage(), filteredUsers().length) }}</strong>
+        of <strong>{{ filteredUsers().length }}</strong> user(s)
+      } @else {
+        No users found
+      }
+    </div>
+
+    @if (usersTotalPages() > 1) {
+      <nav class="pagination-controls" aria-label="User list pages">
+        <button type="button" class="pagination-btn" [disabled]="currentPage() === 1" (click)="previousPage()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <div class="pagination-numbers">
+          @for (page of getPageNumbers(); track $index) {
+            @if (page === -1) {
+              <span class="pagination-ellipsis">...</span>
+            } @else {
+              <button type="button" class="pagination-number" [class.active]="currentPage() === page"
+                (click)="goToPage(page)" [attr.aria-current]="currentPage() === page ? 'page' : null">
+                {{ page }}
+              </button>
+            }
+          }
+        </div>
+        <button type="button" class="pagination-btn" [disabled]="currentPage() === usersTotalPages()" (click)="nextPage()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </nav>
+    }
+  </div>
+  }
+</section>
+
+@if (showDeleteUserModal()) {
+  <div class="modal-backdrop" (click)="closeDeleteUserModal()">
+    <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header header-danger">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M3 6h18" />
+              <path d="M8 6V4h8v2" />
+              <path d="M19 6l-1 14H6L5 6" />
+            </svg>
+          </div>
+          <h3>Archive User</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeDeleteUserModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m18 6-12 12" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p>This will move the user to the archived list. You can restore them later if needed.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" (click)="closeDeleteUserModal()">Cancel</button>
+        <button type="button" class="danger-btn" (click)="deleteUser()">Archive User</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Edit User Modal -->
+@if (showEditUserModal()) {
+  <div class="modal-backdrop" (click)="closeEditUserModal()">
+    <section class="modal-card modal-md" (click)="$event.stopPropagation()" role="dialog"
+      aria-modal="true" aria-labelledby="user-edit-title">
+      <div class="modal-header header-warning">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </div>
+          <h3 id="user-edit-title">@if (editingUser()) { Edit User Details } @else { Add User / Send Invite }</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeEditUserModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (!editingUser()) {
+          <!-- Invite Mode Selection -->
+          <div class="invite-mode-selector">
+            <button type="button" class="mode-btn" [class.active]="inviteMode() === 'email'" (click)="setInviteMode('email')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+              <span>Send Email Invite</span>
+            </button>
+            <button type="button" class="mode-btn" [class.active]="inviteMode() === 'link'" (click)="setInviteMode('link')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              <span>Copy Invite Link</span>
+            </button>
+          </div>
+        }
+
+        <form class="edit-form" (submit)="$event.preventDefault()">
+          @if (inviteMode() === 'email') {
+            <div class="form-group">
+              <label for="invite-email">Recipient Email</label>
+              <input
+                id="invite-email"
+                type="email"
+                [value]="inviteEmail()"
+                (input)="setInviteEmail($any($event.target).value)"
+                placeholder="Enter recipient email address"
+                required />
+            </div>
+          }
+
+          <div class="form-group">
+            <label for="edit-user-role">Role</label>
+            <select
+              id="edit-user-role"
+              [value]="editFormData().role"
+              (change)="updateEditForm('role', $any($event.target).value)">
+              <option value="admin">Admin</option>
+              <option value="coordinator">Coordinator</option>
+              <option value="volunteer">Volunteer</option>
+            </select>
+            <small class="form-hint">@if (editingUser()) { Changing role will update user permissions and create appropriate profile. } @else { The invited user will be assigned this role upon registration. }</small>
+          </div>
+
+          @if (showInviteSuccess()) {
+            <div class="invite-success-box">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+              <div class="invite-success-content">
+                <p class="invite-success-title">Invite Created Successfully!</p>
+                <p class="invite-link-text">{{ inviteLink() }}</p>
+                <button type="button" class="copy-link-btn" (click)="copyInviteLink()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  Copy Link
+                </button>
+              </div>
+            </div>
+          }
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" (click)="closeEditUserModal()">Cancel</button>
+        @if (editingUser()) {
+          <button type="button" class="primary-btn" (click)="saveUser()">Save Changes</button>
+        } @else {
+          <button type="button" class="primary-btn" (click)="createInvite()" [disabled]="isCreatingInvite()">
+            @if (isCreatingInvite()) { Creating... } @else { Create Invite }
+          </button>
+        }
+      </div>
+    </section>
+  </div>
+}
+
+<!-- Invite Success Popup -->
+@if (showInviteSuccess()) {
+  <div class="modal-backdrop" (click)="closeEditUserModal()">
+    <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header header-success">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
+          <h3>Invite Created Successfully!</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeEditUserModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="invite-success-content">
+          <p class="invite-link-text">{{ inviteLink() }}</p>
+          <button type="button" class="copy-link-btn" (click)="copyInviteLink()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            Copy Link
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="primary-btn" (click)="closeEditUserModal()">Done</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- View User Details Modal -->
+@if (showViewUserModal()) {
+  <div class="modal-backdrop" (click)="closeViewUserModal()">
+    <section class="modal-card modal-md" (click)="$event.stopPropagation()" role="dialog"
+      aria-modal="true" aria-labelledby="user-details-title">
+      <div class="modal-header header-info">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </div>
+          <h3 id="user-details-title">User Information</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeViewUserModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (viewingUser(); as user) {
+          <div class="user-details-content">
+            <div class="user-details-header">
+              <div class="user-avatar-large" [class]="'avatar-' + user.role" aria-hidden="true">
+                {{ user.name.charAt(0) }}
+              </div>
+              <div class="user-header-info">
+                <h4>{{ user.name }}</h4>
+                <span class="role-badge" [class]="'role-' + user.role">{{ user.role }}</span>
+              </div>
+            </div>
+
+            <div class="user-details-grid">
+              <div class="detail-item">
+                <label>User ID</label>
+                <p>#{{ user.id }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Email Address</label>
+                <p>{{ user.email }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Date Joined</label>
+                <p>{{ user.created_at | date: 'MMM d, yyyy' }}</p>
+              </div>
+              <div class="detail-item">
+                <label>Last Updated</label>
+                <p>{{ user.updated_at | date: 'MMM d, yyyy h:mm a' }}</p>
+              </div>
+              @if (user.deleted_at) {
+                <div class="detail-item full-width">
+                  <label>Archived On</label>
+                  <p class="text-danger">{{ user.deleted_at | date: 'MMM d, yyyy h:mm a' }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" (click)="closeViewUserModal()">Close</button>
+      </div>
+    </section>
+  </div>
+}

@@ -1,0 +1,498 @@
+<section class="rsvp-management-container">
+  @if (isLoading()) {
+  <div class="loading-state">
+    <div class="loading-spinner"></div>
+    <p>Loading RSVPs...</p>
+  </div>
+  } @else {
+  <!-- Dark Header Bar -->
+  <header class="report-header">
+    <div class="report-header-left">
+      <div class="report-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <polyline points="16 11 18 13 22 9"/>
+        </svg>
+      </div>
+      <div class="report-title-group">
+        <span class="report-label">RSVP MANAGEMENT</span>
+        <h2 class="report-title">Manage Events, Shifts & Responses</h2>
+      </div>
+    </div>
+    <div class="report-header-right">
+      <span class="filter-label">STATUS</span>
+      <select class="filter-dropdown" [value]="rsvpFilterStatus()" (change)="setRsvpFilterStatus($any($event.target).value)">
+        <option value="all">All RSVPs</option>
+        <option value="active">Active</option>
+        <option value="draft">Draft</option>
+        <option value="closed">Closed</option>
+      </select>
+      <button type="button" class="action-btn" (click)="openCreateRsvpModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span>Create RSVP</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Stats Cards -->
+  <div class="rsvp-stats-grid">
+    <article class="stat-card stat-card-blue">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ activeRsvpsCount() }}</div>
+        <div class="stat-label">Active RSVPs</div>
+      </div>
+    </article>
+
+    <article class="stat-card stat-card-green">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11v-7.93c0-.37-.07-.73-.2-1.07l-2.67-6.22"/>
+          <path d="M17.92 14.61c.36.59.56 1.28.56 2.02 0 2.21-1.79 4-4 4s-4-1.79-4-4"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ draftRsvpsCount() }}</div>
+        <div class="stat-label">Draft RSVPs</div>
+      </div>
+    </article>
+
+    <article class="stat-card stat-card-gray">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ closedRsvpsCount() }}</div>
+        <div class="stat-label">Closed RSVPs</div>
+      </div>
+    </article>
+
+    <article class="stat-card stat-card-purple">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ totalResponsesCount() }}</div>
+        <div class="stat-label">Total Responses</div>
+      </div>
+    </article>
+  </div>
+
+  <!-- Feedback Banner -->
+  @if (feedbackMessage()) {
+    <div class="status-banner" [class.success]="feedbackType() === 'success'" [class.error]="feedbackType() === 'error'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        @if (feedbackType() === 'success') {
+          <polyline points="20 6 9 17 4 12"/>
+        } @else {
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        }
+      </svg>
+      {{ feedbackMessage() }}
+    </div>
+  }
+
+  <!-- Search Bar -->
+  <div class="search-bar">
+    <div class="search-wrapper">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.35-4.35" />
+      </svg>
+      <input
+        #rsvpSearchInput
+        type="text"
+        placeholder="Search RSVPs by title or location..."
+        [value]="rsvpSearchQuery()"
+        (input)="setRsvpSearchQuery(rsvpSearchInput.value)"
+        aria-label="Search RSVPs" />
+    </div>
+  </div>
+
+  <!-- RSVPs Table -->
+  <div class="report-table-container">
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th scope="col">EVENT</th>
+          <th scope="col">DATE</th>
+          <th scope="col">LOCATION</th>
+          <th scope="col">STATUS</th>
+          <th scope="col">RESPONSES</th>
+          <th scope="col" class="actions-header">ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (rsvp of paginatedRsvps(); track rsvp.id) {
+        <tr>
+          <td>
+            <div class="event-info-cell">
+              <div class="event-avatar" aria-hidden="true">
+                {{ rsvp.title.charAt(0).toUpperCase() }}
+              </div>
+              <div class="event-details">
+                <span class="event-name">{{ rsvp.title }}</span>
+                <span class="event-shifts">{{ rsvp.shifts.length }} shift(s)</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="event-date">
+              <span class="date-primary">{{ rsvp.date | date: 'MMM d, yyyy' }}</span>
+              <span class="date-secondary">Cut-off: {{ rsvp.cutOffDay | date: 'MMM d' }}</span>
+            </div>
+          </td>
+          <td>{{ rsvp.eventLocation || 'N/A' }}</td>
+          <td>
+            <span class="status-badge" [class.status-active]="rsvp.status === 'active'"
+              [class.status-draft]="rsvp.status === 'draft'" [class.status-closed]="rsvp.status === 'closed'">
+              {{ rsvp.status === 'active' ? 'Active' : rsvp.status === 'draft' ? 'Draft' : 'Closed' }}
+            </span>
+          </td>
+          <td>
+            <div class="responses-cell">
+              <span class="responses-count">{{ rsvp.totalResponses }}</span>
+              <div class="responses-progress" role="progressbar" [attr.aria-valuenow]="rsvp.totalResponses"
+                [attr.aria-valuemax]="getTotalCapacity(rsvp)" aria-valuemin="0">
+                <div class="responses-fill" [style.width.%]="getTotalCapacity(rsvp) > 0 ? (rsvp.totalResponses / getTotalCapacity(rsvp)) * 100 : 0"></div>
+              </div>
+            </div>
+          </td>
+          <td class="actions-cell">
+            <div class="action-buttons">
+              <button
+                type="button"
+                class="icon-btn icon-btn-success"
+                (click)="openShareRsvpModal(rsvp)"
+                [attr.aria-label]="'Share RSVP for ' + rsvp.title"
+                title="Share">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="18" cy="5" r="3"/>
+                  <circle cx="6" cy="12" r="3"/>
+                  <circle cx="18" cy="19" r="3"/>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="icon-btn"
+                (click)="notifyRsvpSms(rsvp.id)"
+                [disabled]="isNotifyingRsvpId() === rsvp.id && notifyType() === 'sms'"
+                [attr.aria-label]="'Send SMS for ' + rsvp.title"
+                title="SMS Notify">
+                @if (isNotifyingRsvpId() === rsvp.id && notifyType() === 'sms') {
+                  <span class="loading-dots">...</span>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                }
+              </button>
+              <button
+                type="button"
+                class="icon-btn"
+                (click)="notifyRsvpFacebook(rsvp.id)"
+                [disabled]="isNotifyingRsvpId() === rsvp.id && notifyType() === 'facebook'"
+                [attr.aria-label]="'Send Facebook notification for ' + rsvp.title"
+                title="FB Notify">
+                @if (isNotifyingRsvpId() === rsvp.id && notifyType() === 'facebook') {
+                  <span class="loading-dots">...</span>
+                } @else {
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                }
+              </button>
+              <button
+                type="button"
+                class="icon-btn icon-btn-warning"
+                (click)="openEditRsvpModal(rsvp)"
+                [attr.aria-label]="'Edit ' + rsvp.title"
+                title="Edit">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="icon-btn icon-btn-danger"
+                (click)="confirmDeleteRsvp(rsvp.id)"
+                [attr.aria-label]="'Delete ' + rsvp.title"
+                title="Delete">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M3 6h18" />
+                  <path d="M8 6V4h8v2" />
+                  <path d="M19 6l-1 14H6L5 6" />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        } @empty {
+        <tr>
+          <td colspan="6">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              <p>No RSVPs found matching your criteria.</p>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container">
+    <div class="pagination-info">
+      @if (filteredRsvps().length > 0) {
+        Showing <strong>{{ (currentPage() - 1) * itemsPerPage() + 1 }}</strong> to
+        <strong>{{ paginatedRangeEnd() }}</strong>
+        of <strong>{{ filteredRsvps().length }}</strong> RSVP(s)
+      } @else {
+        No RSVPs found
+      }
+    </div>
+
+    @if (totalPages() > 1) {
+      <nav class="pagination-controls" aria-label="RSVP list pages">
+        <button type="button" class="pagination-btn" [disabled]="currentPage() === 1" (click)="previousPage()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <div class="pagination-numbers">
+          @for (page of getPageNumbers(); track $index) {
+            @if (page === -1) {
+              <span class="pagination-ellipsis">...</span>
+            } @else {
+              <button type="button" class="pagination-number" [class.active]="currentPage() === page"
+                (click)="goToPage(page)" [attr.aria-current]="currentPage() === page ? 'page' : null">
+                {{ page }}
+              </button>
+            }
+          }
+        </div>
+        <button type="button" class="pagination-btn" [disabled]="currentPage() === totalPages()" (click)="nextPage()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </nav>
+    }
+  </div>
+  }
+</section>
+
+@if (showRsvpModal()) {
+  <div class="modal-backdrop" (click)="closeRsvpModal()">
+    <section class="modal-card modal-lg" (click)="$event.stopPropagation()" role="dialog"
+      aria-modal="true" [attr.aria-labelledby]="editingRsvp() ? 'edit-rsvp-title' : 'create-rsvp-title'">
+      <div class="modal-header" [class.header-warning]="editingRsvp()" [class.header-primary]="!editingRsvp()">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              @if (editingRsvp()) {
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              } @else {
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              }
+            </svg>
+          </div>
+          <h3 [id]="editingRsvp() ? 'edit-rsvp-title' : 'create-rsvp-title'">{{ editingRsvp() ? 'Edit RSVP Event' : 'Create New RSVP' }}</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeRsvpModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m18 6-12 12" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <form [formGroup]="rsvpForm" (ngSubmit)="saveRsvp()">
+        <div class="modal-body">
+          <div class="form-section">
+            <h4 class="section-title">Event Details</h4>
+            <div class="form-grid modern-form-grid">
+              <div class="form-group">
+                <label for="rsvp-title">RSVP Title *</label>
+                <input id="rsvp-title" type="text" formControlName="title" placeholder="e.g., Mobile Kitchen Operations" class="form-input" />
+              </div>
+
+              <div class="form-group">
+                <label for="rsvp-location">Event Location *</label>
+                <input id="rsvp-location" type="text" formControlName="eventLocation" placeholder="e.g., NLCOM Main Hall" class="form-input" />
+              </div>
+
+              <div class="form-group full-width">
+                <label for="rsvp-description">Description *</label>
+                <textarea id="rsvp-description" formControlName="description" placeholder="Describe the purpose of this RSVP..." class="form-input" rows="3"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="rsvp-date">Event Date *</label>
+                <input id="rsvp-date" type="date" formControlName="date" class="form-input" />
+              </div>
+
+              <div class="form-group">
+                <label for="rsvp-cutoff-day">Cut-off Date *</label>
+                <input id="rsvp-cutoff-day" type="date" formControlName="cutOffDay" class="form-input" />
+              </div>
+
+              <div class="form-group">
+                <label for="rsvp-cutoff-time">Cut-off Time *</label>
+                <input id="rsvp-cutoff-time" type="time" formControlName="cutOffTime" class="form-input" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section shifts-section">
+            <div class="section-header">
+              <div class="section-title-wrapper">
+                <h4 class="section-title">Available Shifts</h4>
+                <span class="section-subtitle">Configure time slots and capacity</span>
+              </div>
+              <button type="button" class="add-shift-btn" (click)="addRsvpShift()">Add Shift</button>
+            </div>
+
+            <div formArrayName="shifts" class="rsvp-shifts-list">
+              @for (shift of rsvpShifts.controls; track $index; let i = $index) {
+                <div [formGroupName]="i" class="shift-card">
+                  <div class="shift-number">{{ i + 1 }}</div>
+                  <div class="shift-fields-grid">
+                    <div class="form-group">
+                      <label [for]="'rsvp-shift-start-time-' + i">Start Time</label>
+                      <input [id]="'rsvp-shift-start-time-' + i" type="time" formControlName="startTime" class="form-input" />
+                    </div>
+                    <div class="form-group">
+                      <label [for]="'rsvp-shift-end-time-' + i">End Time</label>
+                      <input [id]="'rsvp-shift-end-time-' + i" type="time" formControlName="endTime" class="form-input" />
+                    </div>
+                    <div class="form-group capacity-field">
+                      <label [for]="'rsvp-shift-capacity-' + i">Capacity</label>
+                      <input [id]="'rsvp-shift-capacity-' + i" type="number" formControlName="capacity" min="1" class="form-input" />
+                    </div>
+                  </div>
+                  @if (rsvpShifts.length > 1) {
+                    <button type="button" class="shift-remove-btn" (click)="removeRsvpShift(i)">×</button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="outline-btn" (click)="closeRsvpModal()" [disabled]="isCreatingRsvp()">Cancel</button>
+          <button type="submit" class="primary-btn" [disabled]="isCreatingRsvp()">
+            @if (isCreatingRsvp()) {
+              {{ editingRsvp() ? 'Updating...' : 'Creating...' }}
+            } @else {
+              {{ editingRsvp() ? 'Update RSVP' : 'Create RSVP' }}
+            }
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (showShareRsvpModal() && sharingRsvp()) {
+  <div class="modal-backdrop" (click)="closeShareRsvpModal()">
+    <section class="modal-card modal-md" (click)="$event.stopPropagation()" role="dialog"
+      aria-modal="true" aria-labelledby="share-rsvp-title">
+      <div class="modal-header header-success">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="18" cy="5" r="3"/>
+              <circle cx="6" cy="12" r="3"/>
+              <circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+          </div>
+          <h3 id="share-rsvp-title">Share RSVP Link</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeShareRsvpModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m18 6-12 12" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Share this link with volunteers to allow them to RSVP for <strong>{{ sharingRsvp()?.title }}</strong>.</p>
+        <div class="share-link-wrapper">
+          <input type="text" readonly [value]="getShareLink()" aria-label="RSVP share link" class="share-link-input" />
+          <button type="button" class="primary-btn" (click)="copyShareLink()">Copy Link</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" (click)="closeShareRsvpModal()">Close</button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (showDeleteRsvpModal()) {
+  <div class="modal-backdrop" (click)="closeDeleteRsvpModal()">
+    <section class="modal-card modal-sm" (click)="$event.stopPropagation()" role="dialog"
+      aria-modal="true" aria-labelledby="delete-rsvp-title">
+      <div class="modal-header header-danger">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M3 6h18" />
+              <path d="M8 6V4h8v2" />
+              <path d="M19 6l-1 14H6L5 6" />
+            </svg>
+          </div>
+          <h3 id="delete-rsvp-title">Delete RSVP Event</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeDeleteRsvpModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m18 6-12 12" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete this RSVP? This action cannot be undone and all responses will be permanently removed.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" (click)="closeDeleteRsvpModal()" [disabled]="isDeletingRsvp()">Cancel</button>
+        <button type="button" class="danger-btn" (click)="deleteRsvp()" [disabled]="isDeletingRsvp()">
+          @if (isDeletingRsvp()) { Deleting... } @else { Delete RSVP }
+        </button>
+      </div>
+    </section>
+  </div>
+}
