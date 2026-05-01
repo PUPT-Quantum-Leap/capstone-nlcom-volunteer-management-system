@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, signal, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, inject, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
 import {
   passwordStrengthValidator,
   passwordMatchValidator,
@@ -17,6 +18,7 @@ import {
   lifegroupLeaderValidator,
 } from '../../validators/form.validator';
 import { AuthService } from '../../services/auth.service';
+import { InviteService } from '../../services/invite.service';
 import { InputSanitizerService } from '../../services/input-sanitizer.service';
 
 @Component({
@@ -26,11 +28,15 @@ import { InputSanitizerService } from '../../services/input-sanitizer.service';
   styleUrl: './signup-form.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SignupForm {
+export class SignupForm implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private fb = inject(FormBuilder);
   private sanitizer = inject(InputSanitizerService);
+  private inviteService = inject(InviteService);
+
+  private queryParamsSub?: Subscription;
 
   currentStep = signal(1);
   isSubmitting = signal(false);
@@ -43,6 +49,9 @@ export class SignupForm {
   showErrorModal = signal(false);
   showLifegroupLeaderInput = signal(false);
   showOtherAvailabilityInput = signal(false);
+  inviteToken = signal<string | null>(null);
+  inviteEmail = signal<string | null>(null);
+  isValidInvite = signal(false);
 
   personalInfoForm: FormGroup;
   educationForm: FormGroup;
@@ -125,6 +134,36 @@ export class SignupForm {
     });
   }
 
+  ngOnInit(): void {
+    this.queryParamsSub = this.route.queryParams.subscribe((params) => {
+      const token = params['token'];
+      if (token) {
+        this.inviteToken.set(token);
+        this.validateInvite(token);
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.queryParamsSub?.unsubscribe();
+  }
+
+  private validateInvite(token: string): void {
+    this.inviteService.validateInvite(token).subscribe({
+      next: (response) => {
+        if (response.success && response.data?.email) {
+          this.inviteEmail.set(response.data.email);
+          this.isValidInvite.set(true);
+          this.personalInfoForm.get('email')?.setValue(response.data.email);
+          this.personalInfoForm.get('email')?.disable();
+        }
+      },
+      error: () => {
+        this.isValidInvite.set(false);
+      },
+    });
+  }
+
   getCurrentForm(): FormGroup {
     if (this.currentStep() === 1) return this.personalInfoForm;
     if (this.currentStep() === 2) return this.educationForm;
@@ -193,9 +232,9 @@ export class SignupForm {
 
   private sanitizeAndValidateFormData(): any | null {
     const rawData = {
-      ...this.personalInfoForm.value,
-      ...this.educationForm.value,
-      ...this.preferencesForm.value,
+      ...this.personalInfoForm.getRawValue(),
+      ...this.educationForm.getRawValue(),
+      ...this.preferencesForm.getRawValue(),
     };
 
     // Sanitize text fields
@@ -224,6 +263,7 @@ export class SignupForm {
       emergencyContactRelationship: this.sanitizer.sanitizeInput(rawData.emergencyContactRelationship, 'both'),
       password: rawData.password,
       confirmPassword: rawData.confirmPassword,
+      token: this.inviteToken() || undefined,
     };
 
     // Additional validations

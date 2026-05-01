@@ -997,3 +997,49 @@
     grid-template-columns: 1fr;
   }
 }
+// Invite Error Box
+.invite-error-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  .error-message {
+    padding: 1rem;
+    background: #fef2f2;
+    border-left: 4px solid #ef4444;
+    color: #b91c1c;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.5;
+    margin: 0;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .error-guidance {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+
+    p {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #475569;
+      margin: 0 0 0.75rem 0;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      li {
+        font-size: 0.8125rem;
+        color: #64748b;
+        line-height: 1.4;
+      }
+    }
+  }
+}

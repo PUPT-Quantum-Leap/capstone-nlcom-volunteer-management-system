@@ -1,5 +1,5 @@
-import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Component, ChangeDetectionStrategy, signal, inject, OnInit, OnDestroy } from '@angular/core';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import {
   FormBuilder,
   FormGroup,
@@ -8,8 +8,9 @@ import {
   AbstractControl,
 } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import { InviteService } from '../../services/invite.service';
 import {
   passwordStrengthValidator,
   passwordMatchValidator,
@@ -22,10 +23,11 @@ import {
   templateUrl: './signup.html',
   styleUrl: './signup.scss',
 })
-export class Signup {
+export class Signup implements OnInit, OnDestroy {
   private router = inject(Router);
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
+  private inviteService = inject(InviteService);
 
   // State signals
   isLoading = signal(false);
@@ -34,6 +36,10 @@ export class Signup {
   showPassword = signal(false);
   showConfirmPassword = signal(false);
   showSuccessModal = signal(false);
+  token = signal<string | null>(null);
+  inviteEmail = signal<string | null>(null);
+  isValidInvite = signal(false);
+  private queryParamsSub?: Subscription;
 
   // Form group with validators
   signupForm: FormGroup = this.fb.group(
@@ -47,6 +53,39 @@ export class Signup {
       validators: passwordMatchValidator('password', 'confirmPassword'),
     },
   );
+
+  private route = inject(ActivatedRoute);
+
+  ngOnInit(): void {
+    this.queryParamsSub = this.route.queryParams.subscribe(params => {
+      const token = params['token'];
+      if (token) {
+        this.token.set(token);
+        this.validateInvite(token);
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.queryParamsSub?.unsubscribe();
+  }
+
+  private validateInvite(token: string): void {
+    this.inviteService.validateInvite(token).subscribe({
+      next: (response) => {
+        if (response.success && response.data?.email) {
+          this.inviteEmail.set(response.data.email);
+          this.isValidInvite.set(true);
+          this.signupForm.get('email')?.setValue(response.data.email);
+          this.signupForm.get('email')?.disable();
+        }
+      },
+      error: () => {
+        this.isValidInvite.set(false);
+        this.errorMessage.set('Invalid or expired invite token');
+      },
+    });
+  }
 
   // Computed getters for form controls
   get emailControl(): AbstractControl | null {
@@ -143,14 +182,16 @@ export class Signup {
     this.errorMessage.set(null);
 
     try {
-      const formValue = this.signupForm.value;
+      const formValue = this.signupForm.getRawValue();
       const signupData = {
+        name: formValue.email.split('@')[0], // Default name from email prefix
         email: formValue.email.trim(),
         password: formValue.password,
-        password_confirmation: formValue.confirmPassword,
+        confirmPassword: formValue.confirmPassword,
+        token: this.token() || undefined,
       };
 
-      const response = await firstValueFrom(this.authService.register$(signupData));
+      const response = await firstValueFrom(this.authService.coordinatorRegister$(signupData));
 
       if (response.success) {
         // Show success modal

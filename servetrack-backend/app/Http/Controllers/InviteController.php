@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invite;
+use App\Services\SupabaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -11,14 +12,17 @@ use Illuminate\Support\Str;
 
 class InviteController extends Controller
 {
+    public function __construct(private readonly SupabaseService $supabaseService) {}
+
     /**
      * Create a new invite.
      */
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'email' => 'nullable|email',
-            'role' => 'required|in:admin,coordinator,volunteer',
+            'email' => 'required|email|max:255',
+            'role' => 'required|string|in:admin,coordinator,volunteer',
+            'send_email' => 'boolean',
         ]);
 
         if ($validator->fails()) {
@@ -26,6 +30,14 @@ class InviteController extends Controller
                 'success' => false,
                 'message' => 'Validation failed',
                 'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        // Check if user already exists in local database
+        if ($request->email && \App\Models\User::where('email', $request->email)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A user with this email address is already registered in the system.',
             ], 422);
         }
 
@@ -41,15 +53,34 @@ class InviteController extends Controller
                 'created_by' => $request->user()->id,
             ]);
 
-            $inviteLink = config('app.frontend_url').'/register?token='.$token;
+            // Generate internal invite link for our system
+            $internalInviteLink = $this->generateInviteLink($token, $request->role);
+
+            // Generate Supabase auth link for copying/sharing
+            $supabaseLinkResult = $this->supabaseService->generateInviteLink($request->email, $internalInviteLink, $request->role);
+            $supabaseAuthLink = $supabaseLinkResult['success'] ? $supabaseLinkResult['data']['auth_link'] : null;
+
+            // Send email invite if email is provided and send_email is true (or defaults to true when email is provided)
+            $shouldSendEmail = $request->email && ($request->boolean('send_email', true));
+            $emailSent = false;
+
+            if ($shouldSendEmail) {
+                $emailResult = $this->sendInviteEmail($request->email, $internalInviteLink, $request->role, $request->user()->name);
+                $emailSent = $emailResult['success'];
+            }
+
+            $responseData = [
+                'invite' => $invite,
+                'invite_link' => $supabaseAuthLink ?: $internalInviteLink, // Use Supabase link if available, fallback to internal
+                'internal_invite_link' => $internalInviteLink,
+                'supabase_auth_link' => $supabaseAuthLink,
+                'email_sent' => $emailSent,
+            ];
 
             return response()->json([
                 'success' => true,
-                'message' => 'Invite created successfully',
-                'data' => [
-                    'invite' => $invite,
-                    'invite_link' => $inviteLink,
-                ],
+                'message' => $emailSent ? 'Invite created and email sent successfully' : 'Invite created successfully',
+                'data' => $responseData,
             ], 201);
         } catch (\Exception $e) {
             Log::error('Invite creation failed', [
@@ -63,6 +94,32 @@ class InviteController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Generate role-specific invite link
+     */
+    private function generateInviteLink(string $token, string $role): string
+    {
+        $baseUrl = config('app.frontend_url');
+
+        return match ($role) {
+            'volunteer' => $baseUrl.'/signup-form?token='.$token,
+            'admin' => $baseUrl.'/admin-auth?tab=signup&token='.$token,
+            'coordinator' => $baseUrl.'/signup?token='.$token,
+            default => $baseUrl.'/signup?token='.$token,
+        };
+    }
+
+    /**
+     * Send invite email using Supabase Auth API
+     *
+     * Uses Supabase's admin invite endpoint to send email with magic link.
+     * The user clicks the link, authenticates with Supabase, and gets redirected\n     * to our auth callback which then routes them to the appropriate signup form.
+     */
+    private function sendInviteEmail(string $email, string $inviteLink, string $role, ?string $invitedBy = null): array
+    {
+        return $this->supabaseService->sendInviteEmail($email, $inviteLink, $role);
     }
 
     /**

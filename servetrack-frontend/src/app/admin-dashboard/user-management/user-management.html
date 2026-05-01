@@ -372,26 +372,6 @@
             </select>
             <small class="form-hint">@if (editingUser()) { Changing role will update user permissions and create appropriate profile. } @else { The invited user will be assigned this role upon registration. }</small>
           </div>
-
-          @if (showInviteSuccess()) {
-            <div class="invite-success-box">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-              </svg>
-              <div class="invite-success-content">
-                <p class="invite-success-title">Invite Created Successfully!</p>
-                <p class="invite-link-text">{{ inviteLink() }}</p>
-                <button type="button" class="copy-link-btn" (click)="copyInviteLink()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                  </svg>
-                  Copy Link
-                </button>
-              </div>
-            </div>
-          }
         </form>
       </div>
 
@@ -442,9 +422,48 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+}
+
+<!-- Invite Error Popup -->
+@if (showInviteError()) {
+  <div class="modal-backdrop" (click)="closeEditUserModal()">
+    <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header header-danger">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
+          <h3>Failed to Create Invite</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeEditUserModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M18 6L6 18M6 6L18 18" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="invite-error-content">
+          <p class="error-message">{{ inviteError() }}</p>
+          <div class="error-guidance">
+            <p>Common reasons for failure:</p>
+            <ul>
+              <li>Supabase credentials are incorrect in .env</li>
+              <li>Supabase Project is paused or has reached limits</li>
+              <li>Network connectivity issues</li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
       <div class="modal-footer">
-        <button type="button" class="primary-btn" (click)="closeEditUserModal()">Done</button>
+        <button type="button" class="primary-btn" (click)="closeEditUserModal()">Close</button>
       </div>
     </div>
   </div>

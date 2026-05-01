@@ -50,6 +50,8 @@ export class UserManagementComponent {
   readonly inviteLink = signal('');
   readonly isCreatingInvite = signal(false);
   readonly showInviteSuccess = signal(false);
+  readonly showInviteError = signal(false);
+  readonly inviteError = signal<string | null>(null);
 
   readonly filteredUsers = computed(() => {
     const search = this.userSearchQuery().toLowerCase().trim();
@@ -246,6 +248,8 @@ export class UserManagementComponent {
     this.inviteEmail.set('');
     this.inviteLink.set('');
     this.showInviteSuccess.set(false);
+    this.showInviteError.set(false);
+    this.inviteError.set(null);
   }
 
   updateEditForm(field: 'name' | 'email' | 'role', value: string): void {
@@ -290,23 +294,38 @@ export class UserManagementComponent {
   createInvite(): void {
     const formData = this.editFormData();
     const email = this.inviteMode() === 'email' ? this.inviteEmail() : null;
+    const sendEmail = this.inviteMode() === 'email';
 
     this.isCreatingInvite.set(true);
 
-    this.inviteService.createInvite(email, formData.role)
+    this.inviteService.createInvite(email, formData.role, sendEmail)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
           this.inviteLink.set(response.data.invite_link);
-          this.showInviteSuccess.set(true);
           this.isCreatingInvite.set(false);
-          this.showEditUserModal.set(false);
-          this.showSnackbar.emit({ message: 'Invite created successfully', type: 'success' });
+
+          if (this.inviteMode() === 'link') {
+            // Show link popup only in link mode
+            this.showInviteSuccess.set(true);
+            this.showEditUserModal.set(false);
+          } else {
+            // Just close modal and show success message in email mode
+            this.showEditUserModal.set(false);
+          }
+
+          const message = response.data.email_sent
+            ? `Invite created and email sent to ${email}`
+            : 'Invite created successfully';
+          this.showSnackbar.emit({ message, type: 'success' });
         },
-        error: (error: Error) => {
+        error: (error: any) => {
           console.error('Error creating invite:', error);
-          this.showSnackbar.emit({ message: 'Failed to create invite', type: 'error' });
+          const errorMessage = error.error?.message || error.error?.error || 'Failed to create invite. Please check your Supabase configuration or try again later.';
+          this.inviteError.set(errorMessage);
           this.isCreatingInvite.set(false);
+          this.showInviteError.set(true);
+          this.showEditUserModal.set(false);
         },
       });
   }

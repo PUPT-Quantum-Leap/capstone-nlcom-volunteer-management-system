@@ -26,6 +26,39 @@ Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(funct
 
     // Invite validation (public)
     Route::post('/invites/validate', [InviteController::class, 'validate']);
+
+    // Debug: Check Supabase configuration
+    Route::get('/debug/supabase', function (): Illuminate\Http\JsonResponse {
+        $url = config('services.supabase.url');
+        $hasKey = ! empty(config('services.supabase.service_role_key'));
+        $keyPrefix = $hasKey ? substr(config('services.supabase.service_role_key'), 0, 10).'...' : 'NOT SET';
+
+        // Test connection to Supabase
+        $healthCheck = null;
+        try {
+            $response = Illuminate\Support\Facades\Http::withHeaders([
+                'apikey' => config('services.supabase.anon_key'),
+            ])->get(rtrim($url, '/').'/rest/v1/');
+            $healthCheck = [
+                'status' => $response->status(),
+                'reachable' => $response->successful() || $response->status() === 401, // 401 means auth required but server is up
+            ];
+        } catch (Exception $e) {
+            $healthCheck = [
+                'reachable' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+
+        return response()->json([
+            'url_configured' => ! empty($url),
+            'url' => $url ? substr($url, 0, 30).'...' : 'NOT SET',
+            'service_key_configured' => $hasKey,
+            'service_key_prefix' => $keyPrefix,
+            'health_check' => $healthCheck,
+            'config_source' => env('SUPABASE_URL') ? 'env' : 'config/services.php',
+        ]);
+    });
 });
 
 // Volunteer registration - public signup with registration rate limit + email normalization

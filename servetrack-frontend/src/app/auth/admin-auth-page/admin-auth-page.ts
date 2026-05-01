@@ -18,6 +18,7 @@ import {
 import { NgOptimizedImage } from '@angular/common';
 import { firstValueFrom, Subscription } from 'rxjs';
 import { AuthService, AdminSignupData } from '../../services/auth.service';
+import { InviteService } from '../../services/invite.service';
 import { InputSanitizerService } from '../../services/input-sanitizer.service';
 import { passwordStrengthValidator, passwordMatchValidator } from '../../validators/password.validator';
 import { emailValidator } from '../../validators/form.validator';
@@ -37,6 +38,7 @@ export class AdminAuthPage implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private sanitizer = inject(InputSanitizerService);
+  private inviteService = inject(InviteService);
 
   // ─── Tab state ────────────────────────────────────────────────────────────
   activeTab = signal<AuthTab>('login');
@@ -64,6 +66,11 @@ export class AdminAuthPage implements OnInit, OnDestroy {
   private countdownInterval?: ReturnType<typeof setInterval>;
 
   private queryParamsSub?: Subscription;
+
+  // ─── Invite state ────────────────────────────────────────────────────────
+  inviteToken = signal<string | null>(null);
+  inviteEmail = signal<string | null>(null);
+  isValidInvite = signal(false);
 
   // ─── Login form ───────────────────────────────────────────────────────────
   loginForm: FormGroup = this.fb.group({
@@ -133,10 +140,17 @@ export class AdminAuthPage implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.queryParamsSub = this.route.queryParams.subscribe((params) => {
       const tab = params['tab'];
-      if (tab === 'signup') {
+      const token = params['token'];
+
+      if (tab === 'signup' || token) {
         this.activeTab.set('signup');
       } else {
         this.activeTab.set('login');
+      }
+
+      if (token) {
+        this.inviteToken.set(token);
+        this.validateInvite(token);
       }
     });
   }
@@ -144,6 +158,26 @@ export class AdminAuthPage implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.queryParamsSub?.unsubscribe();
     this.clearCountdown();
+  }
+
+  private validateInvite(token: string): void {
+    this.inviteService.validateInvite(token).subscribe({
+      next: (response) => {
+        if (response.success && response.data?.email) {
+          this.inviteEmail.set(response.data.email);
+          this.isValidInvite.set(true);
+          this.signupEmailControl?.setValue(response.data.email);
+          this.signupEmailControl?.disable();
+          
+          // Clear invite code requirement since we have a token
+          this.inviteCodeControl?.clearValidators();
+          this.inviteCodeControl?.updateValueAndValidity();
+        }
+      },
+      error: () => {
+        this.isValidInvite.set(false);
+      },
+    });
   }
 
   // ─── Tab switching ────────────────────────────────────────────────────────
@@ -315,15 +349,16 @@ export class AdminAuthPage implements OnInit, OnDestroy {
     this.signupError.set(null);
 
     try {
-      const raw = this.signupForm.value;
+      const raw = this.signupForm.getRawValue();
       const adminData: AdminSignupData = {
         firstName: this.sanitizer.sanitizeInput(raw.firstName ?? '', 'both'),
         lastName: this.sanitizer.sanitizeInput(raw.lastName ?? '', 'both'),
         email: this.sanitizer.sanitizeInput(raw.email ?? '', 'text'),
         contactNumber: this.sanitizer.sanitizeInput(raw.contactNumber ?? '', 'text'),
-        inviteCode: raw.inviteCode,
+        inviteCode: raw.inviteCode || '',
         password: raw.password,
         confirmPassword: raw.confirmPassword,
+        token: this.inviteToken() || undefined,
       };
 
       const response = await firstValueFrom(this.authService.adminRegister$(adminData));

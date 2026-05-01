@@ -40,6 +40,7 @@ export interface VolunteerSignupData {
   emergencyContactRelationship: string;
   password: string;
   confirmPassword: string;
+  token?: string;
 }
 
 export interface AdminSignupData {
@@ -50,6 +51,7 @@ export interface AdminSignupData {
   password: string;
   confirmPassword: string;
   inviteCode: string;
+  token?: string;
 }
 
 export interface CoordinatorSignupData {
@@ -57,6 +59,7 @@ export interface CoordinatorSignupData {
   email: string;
   password: string;
   confirmPassword: string;
+  token?: string;
 }
 
 export interface ValidationError {
@@ -384,6 +387,7 @@ export class AuthService {
     return this.ensureCsrf$().pipe(
       switchMap(() => 
         this.http.post<AuthResponse>(`${environment.apiUrl}/volunteer/register`, data, {
+          params: data.token ? { token: data.token } : {},
           withCredentials: true,
         })
       ),
@@ -670,7 +674,10 @@ export class AuthService {
     }
 
     return this.http
-      .post<AuthResponse>(`${environment.apiUrl}/coordinator/register`, data, { withCredentials: true })
+      .post<AuthResponse>(`${environment.apiUrl}/coordinator/register`, data, {
+        params: data.token ? { token: data.token } : {},
+        withCredentials: true,
+      })
       .pipe(
         map((response) => response),
         tap((response) => {
@@ -770,7 +777,10 @@ export class AuthService {
     }
 
     return this.http
-      .post<AuthResponse>(`${environment.apiUrl}/admin/register`, data, { withCredentials: true })
+      .post<AuthResponse>(`${environment.apiUrl}/admin/register`, data, {
+        params: data.token ? { token: data.token } : {},
+        withCredentials: true,
+      })
       .pipe(
         map((response) => response),
         tap((response) => {

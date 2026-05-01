@@ -45,6 +45,7 @@ class RegisterRequest extends FormRequest
                     ->symbols()
                     ->uncompromised(3),
             ],
+            'token' => ['nullable', 'string', 'exists:invites,token'],
         ];
     }
 

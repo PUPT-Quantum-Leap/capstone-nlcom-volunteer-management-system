@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Constants\TokenAbilities;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Models\Invite;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -22,6 +23,10 @@ class RegisterController extends Controller
             $userData['name'] = 'Volunteer User';
         }
 
+        // Remove token from user data (not a user field)
+        $inviteToken = $userData['token'] ?? null;
+        unset($userData['token']);
+
         try {
             $user = User::create($userData);
         } catch (\Exception $e) {
@@ -35,7 +40,17 @@ class RegisterController extends Controller
             ], 500);
         }
 
-        $token = $user->createToken(
+        // Mark invite as used if token was provided
+        if ($inviteToken) {
+            $invite = Invite::where('token', $inviteToken)->first();
+            if ($invite && $invite->isValid()) {
+                $invite->update([
+                    'accepted_at' => now(),
+                ]);
+            }
+        }
+
+        $authToken = $user->createToken(
             'auth-token',
             TokenAbilities::VOLUNTEER,
             now()->addMinutes((int) config('sanctum.expiration', 60))
@@ -43,7 +58,7 @@ class RegisterController extends Controller
 
         $cookie = cookie(
             'auth_token',
-            $token,
+            $authToken,
             (int) config('sanctum.expiration', 60),
             '/',
             null,

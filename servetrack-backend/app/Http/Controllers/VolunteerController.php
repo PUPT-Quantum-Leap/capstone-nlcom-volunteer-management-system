@@ -59,6 +59,14 @@ class VolunteerController extends Controller
                     'message' => 'Invalid or expired invite token',
                 ], 400);
             }
+
+            // Ensure the email matches the invite if a token is used
+            if (strtolower($invite->email) !== strtolower($request->email)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Registration email must match the invitation email.',
+                ], 400);
+            }
         }
 
         // Validate incoming data

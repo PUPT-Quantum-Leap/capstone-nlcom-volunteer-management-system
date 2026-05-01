@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Constants\TokenAbilities;
+use App\Models\Invite;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,26 @@ class CoordinatorController extends Controller
      */
     public function register(Request $request): JsonResponse
     {
+        // Validate invite token if provided (for email invites)
+        $invite = null;
+        if ($request->has('token')) {
+            $invite = Invite::where('token', $request->token)->first();
+            if (! $invite || ! $invite->isValid() || $invite->role !== 'coordinator') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid or expired invite token',
+                ], 400);
+            }
+
+            // Ensure the email matches the invite if a token is used
+            if (strtolower($invite->email) !== strtolower($request->email)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Registration email must match the invitation email.',
+                ], 400);
+            }
+        }
+
         // Validate incoming data
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|min:2|max:100',
@@ -43,6 +64,11 @@ class CoordinatorController extends Controller
                 'password' => Hash::make($request->password),
                 'role' => 'coordinator',
             ]);
+
+            // Mark invite as accepted if used
+            if ($invite) {
+                $invite->accept();
+            }
 
             // Log the user in
             Auth::login($user);
@@ -73,7 +99,7 @@ class CoordinatorController extends Controller
             ], 201)->withCookie($cookie);
 
         } catch (\Exception $e) {
-            \Log::error('Coordinator registration failed', [
+            Log::error('Coordinator registration failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

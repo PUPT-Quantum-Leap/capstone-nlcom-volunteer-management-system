@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Constants\TokenAbilities;
 use App\Models\Admin;
 use App\Models\Attendance;
+use App\Models\Invite;
 use App\Models\User;
 use App\Models\Volunteer;
 use Illuminate\Http\JsonResponse;
@@ -161,45 +162,68 @@ class AdminController extends Controller
             }
         }
 
+        // Validate invite token if provided (for email invites)
+        $invite = null;
+        if ($request->has('token')) {
+            $invite = Invite::where('token', $request->token)->first();
+            if (! $invite || ! $invite->isValid() || $invite->role !== 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid or expired invite token',
+                ], 400);
+            }
+        }
+
         // Security gate: verify invite code and email domain before any other processing.
-        $inviteCode = config('services.admin.invite_code');
-        if (empty($inviteCode)) {
-            Log::error('Admin registration attempted but no invite code is configured in .env');
+        // Only required if not using an invite token
+        if (! $invite) {
+            $inviteCode = config('services.admin.invite_code');
+            if (empty($inviteCode)) {
+                Log::error('Admin registration attempted but no invite code is configured in .env');
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Registration failed. Please contact your administrator.',
-            ], 422);
-        }
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Registration failed. Please contact your administrator.',
+                ], 422);
+            }
 
-        if ($request->input('inviteCode') !== $inviteCode) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Registration failed. Please contact your administrator.',
-            ], 422);
-        }
+            if ($request->input('inviteCode') !== $inviteCode) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Registration failed. Please contact your administrator.',
+                ], 422);
+            }
 
-        $allowedDomainsRaw = config('services.admin.allowed_domains');
-        if (empty($allowedDomainsRaw)) {
-            Log::error('Admin registration attempted but no allowed domains are configured in .env');
+            $allowedDomainsRaw = config('services.admin.allowed_domains');
+            if (empty($allowedDomainsRaw)) {
+                Log::error('Admin registration attempted but no allowed domains are configured in .env');
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Registration failed. Please contact your administrator.',
-            ], 422);
-        }
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Registration failed. Please contact your administrator.',
+                ], 422);
+            }
 
-        $allowedDomains = array_map(
-            fn (string $d) => strtolower(trim($d)),
-            explode(',', $allowedDomainsRaw),
-        );
+            $allowedDomains = array_map(
+                fn (string $d) => strtolower(trim($d)),
+                explode(',', $allowedDomainsRaw),
+            );
 
-        $emailDomain = strtolower(substr(strrchr((string) $request->input('email', ''), '@'), 1));
-        if (! in_array($emailDomain, $allowedDomains, true)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Registration failed. Please contact your administrator.',
-            ], 422);
+            $emailDomain = strtolower(substr(strrchr((string) $request->input('email', ''), '@'), 1));
+            if (! in_array($emailDomain, $allowedDomains, true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Registration failed. Please contact your administrator.',
+                ], 422);
+            }
+        } else {
+            // Ensure the email matches the invite if a token is used
+            if (strtolower($invite->email) !== strtolower($request->email)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Registration email must match the invitation email.',
+                ], 400);
+            }
         }
 
         // Validate incoming data
@@ -221,7 +245,7 @@ class AdminController extends Controller
         }
 
         try {
-            $result = DB::transaction(function () use ($request) {
+            $result = DB::transaction(function () use ($request, $invite) {
                 // Create admin user in users table
                 $user = User::create([
                     'name' => $request->firstName.' '.$request->lastName,
@@ -254,6 +278,11 @@ class AdminController extends Controller
                 }
 
                 $admin = Admin::create($adminData);
+
+                // Mark invite as accepted if used
+                if ($invite) {
+                    $invite->accept();
+                }
 
                 $adminName = trim((string) ($admin->name ?? ''));
                 $profileFirstName = $admin->first_name;
@@ -308,7 +337,7 @@ class AdminController extends Controller
             ], 201)->withCookie($cookie);
 
         } catch (\Exception $e) {
-            \Log::error('Admin registration failed', [
+            Log::error('Admin registration failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -340,7 +369,7 @@ class AdminController extends Controller
 
         $photoUrl = null;
         if ($admin->profile_photo) {
-            $photoUrl = Storage::disk('public')->url($admin->profile_photo);
+            $photoUrl = asset('storage/'.$admin->profile_photo);
         }
 
         return response()->json([
