@@ -369,7 +369,11 @@ class AdminController extends Controller
 
         $photoUrl = null;
         if ($admin->profile_photo) {
+<<<<<<< deleon-jasmine
             $photoUrl = asset('storage/'.$admin->profile_photo);
+=======
+            $photoUrl = Storage::disk('public')->url($admin->profile_photo);
+>>>>>>> main
         }
 
         return response()->json([

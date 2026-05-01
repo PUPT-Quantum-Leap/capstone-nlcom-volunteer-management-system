@@ -1,7 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+<<<<<<< deleon-jasmine
 import { Observable, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
+=======
+import { Observable } from 'rxjs';
+>>>>>>> main
 
 export interface Invite {
   id: number;
@@ -21,7 +25,10 @@ export interface InviteResponse {
   data: {
     invite: Invite;
     invite_link: string;
+<<<<<<< deleon-jasmine
     email_sent?: boolean;
+=======
+>>>>>>> main
   };
 }
 
@@ -38,6 +45,7 @@ export interface InviteValidationResponse {
   providedIn: 'root',
 })
 export class InviteService {
+<<<<<<< deleon-jasmine
   private readonly apiUrl = environment.apiUrl;
   private readonly baseUrl = this.apiUrl.replace('/api', '');
 
@@ -86,5 +94,25 @@ export class InviteService {
         )
       )
     );
+=======
+  private readonly apiUrl = 'http://localhost:8000/api';
+
+  constructor(private readonly http: HttpClient) {}
+
+  createInvite(email: string | null, role: string): Observable<InviteResponse> {
+    return this.http.post<InviteResponse>(`${this.apiUrl}/invites`, { email, role });
+  }
+
+  validateInvite(token: string): Observable<InviteValidationResponse> {
+    return this.http.post<InviteValidationResponse>(`${this.apiUrl}/invites/validate`, { token });
+  }
+
+  getInvites(): Observable<{ success: boolean; data: any }> {
+    return this.http.get<{ success: boolean; data: any }>(`${this.apiUrl}/invites`);
+  }
+
+  deleteInvite(id: number): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(`${this.apiUrl}/invites/${id}`);
+>>>>>>> main
   }
 }

@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invite;
+<<<<<<< deleon-jasmine
 use App\Services\SupabaseService;
+=======
+>>>>>>> main
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -12,17 +15,25 @@ use Illuminate\Support\Str;
 
 class InviteController extends Controller
 {
+<<<<<<< deleon-jasmine
     public function __construct(private readonly SupabaseService $supabaseService) {}
 
+=======
+>>>>>>> main
     /**
      * Create a new invite.
      */
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
+<<<<<<< deleon-jasmine
             'email' => 'required|email|max:255',
             'role' => 'required|string|in:admin,coordinator,volunteer',
             'send_email' => 'boolean',
+=======
+            'email' => 'nullable|email',
+            'role' => 'required|in:admin,coordinator,volunteer',
+>>>>>>> main
         ]);
 
         if ($validator->fails()) {
@@ -33,6 +44,7 @@ class InviteController extends Controller
             ], 422);
         }
 
+<<<<<<< deleon-jasmine
         // Check if user already exists in local database
         if ($request->email && \App\Models\User::where('email', $request->email)->exists()) {
             return response()->json([
@@ -41,6 +53,8 @@ class InviteController extends Controller
             ], 422);
         }
 
+=======
+>>>>>>> main
         try {
             $token = Str::random(64);
             $expiresAt = now()->addDays(7);
@@ -53,6 +67,7 @@ class InviteController extends Controller
                 'created_by' => $request->user()->id,
             ]);
 
+<<<<<<< deleon-jasmine
             // Generate internal invite link for our system
             $internalInviteLink = $this->generateInviteLink($token, $request->role);
 
@@ -81,6 +96,17 @@ class InviteController extends Controller
                 'success' => true,
                 'message' => $emailSent ? 'Invite created and email sent successfully' : 'Invite created successfully',
                 'data' => $responseData,
+=======
+            $inviteLink = config('app.frontend_url').'/register?token='.$token;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invite created successfully',
+                'data' => [
+                    'invite' => $invite,
+                    'invite_link' => $inviteLink,
+                ],
+>>>>>>> main
             ], 201);
         } catch (\Exception $e) {
             Log::error('Invite creation failed', [
@@ -97,6 +123,7 @@ class InviteController extends Controller
     }
 
     /**
+<<<<<<< deleon-jasmine
      * Generate role-specific invite link
      */
     private function generateInviteLink(string $token, string $role): string
@@ -123,6 +150,8 @@ class InviteController extends Controller
     }
 
     /**
+=======
+>>>>>>> main
      * Validate an invite token.
      */
     public function validate(Request $request): JsonResponse
