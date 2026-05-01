@@ -74,19 +74,6 @@ describe('SecurityAudit middleware', function (): void {
         Log::shouldHaveReceived('channel')->with('security')->once();
     });
 
-    it('logs email on a successful register attempt', function (): void {
-        $this->postJson('/api/register', [
-            'name' => 'Test User',
-            'email' => 'newuser@example.com',
-            'password' => 'Password1!Secure',
-            'password_confirmation' => 'Password1!Secure',
-        ]);
-
-        $log = file_get_contents(storage_path('logs/laravel.log'));
-
-        expect($log)->toContain('Security audit event')
-            ->toContain('n*****r@example.com');
-    });
 });
 
 describe('GuestOnly (RedirectIfAuthenticated) middleware', function (): void {

@@ -183,7 +183,7 @@ export class Login implements OnInit, OnDestroy {
    */
   async navigateToSignup(): Promise<void> {
     try {
-      await this.router.navigate(['/signup']);
+      await this.router.navigate(['/signup-form']);
     } catch (error) {
       this.errorMessage.set('Navigation error. Please try again.');
     }

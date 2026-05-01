@@ -260,7 +260,7 @@ describe('Login Component', () => {
   describe('Navigation', () => {
     it('should navigate to signup page', async () => {
       await component.navigateToSignup();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/signup']);
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/signup-form']);
     });
 
     it('should handle navigateToSignup error gracefully', async () => {
