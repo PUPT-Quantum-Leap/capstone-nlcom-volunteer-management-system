@@ -26,6 +26,7 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+.server.env
 
 # Gitleaks report
 gitleaks-report.json
