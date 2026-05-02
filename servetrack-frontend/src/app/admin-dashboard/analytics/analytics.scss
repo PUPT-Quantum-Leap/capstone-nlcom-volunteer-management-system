@@ -586,3 +586,91 @@
     grid-template-columns: 1fr;
   }
 }
+
+// Operations Section
+.operations-section {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+
+  .section-header {
+    margin-bottom: 1.5rem;
+
+    h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 0.25rem;
+    }
+
+    p {
+      font-size: 0.875rem;
+      color: var(--gray-500);
+    }
+  }
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+}
+
+.operations-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+
+  thead {
+    background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
+    border-bottom: 2px solid var(--gray-300);
+
+    th {
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+      color: var(--gray-700);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid var(--gray-200);
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: var(--gray-50);
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      td {
+        padding: 1rem;
+        color: var(--gray-700);
+        vertical-align: top;
+
+        &.team-cell {
+          font-weight: 600;
+          color: var(--gray-900);
+          background-color: var(--gray-50);
+        }
+
+        &.pax-cell {
+          font-weight: 700;
+          color: var(--primary-600);
+          text-align: center;
+        }
+      }
+    }
+  }
+}
+
+
