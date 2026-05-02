@@ -6,6 +6,7 @@ import {
   inject,
   OnInit,
   OnDestroy,
+  effect,
 } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import {
@@ -167,6 +168,29 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
         lifegroupLeaderControl?.setValue('');
       }
       lifegroupLeaderControl?.updateValueAndValidity();
+    });
+
+    // ─── Programmatic form disabled state management ──────────────────────────
+    // Listen to isLoginLoading signal and disable/enable login form accordingly
+    effect(() => {
+      if (this.isLoginLoading()) {
+        this.loginForm.disable({ emitEvent: false });
+      } else {
+        this.loginForm.enable({ emitEvent: false });
+      }
+    });
+
+    // Listen to isSignupSubmitting signal and disable/enable all signup forms
+    effect(() => {
+      if (this.isSignupSubmitting()) {
+        this.personalInfoForm.disable({ emitEvent: false });
+        this.educationForm.disable({ emitEvent: false });
+        this.preferencesForm.disable({ emitEvent: false });
+      } else {
+        this.personalInfoForm.enable({ emitEvent: false });
+        this.educationForm.enable({ emitEvent: false });
+        this.preferencesForm.enable({ emitEvent: false });
+      }
     });
   }
 
