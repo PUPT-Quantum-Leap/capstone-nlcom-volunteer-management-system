@@ -242,5 +242,37 @@
     </div>
     }
   </article>
+
+  <!-- Operations Report Table -->
+  <article class="operations-section">
+    <div class="section-header">
+      <h3>NLCOM x Metro World Child Feeding Operation</h3>
+      <p>November 22, 2025</p>
+    </div>
+    <div class="table-wrapper">
+      <table class="operations-table">
+        <thead>
+          <tr>
+            <th>Team & Time Departure</th>
+            <th>Location</th>
+            <th>Time</th>
+            <th>No. of Pax</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (operation of operationsData(); track operation.id) {
+          <tr>
+            <td class="team-cell">{{ operation.team }}</td>
+            <td>{{ operation.location }}</td>
+            <td>{{ operation.time }}</td>
+            <td class="pax-cell">{{ operation.participants }}</td>
+            <td>{{ operation.details }}</td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </article>
   }
 </section>
