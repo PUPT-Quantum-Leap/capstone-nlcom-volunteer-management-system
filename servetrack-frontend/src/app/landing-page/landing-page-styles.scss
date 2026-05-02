@@ -827,6 +827,22 @@ $white: #ffffff;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     text-align: center;
     color: $text-muted;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+
+    .admin-access-link {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.3);
+      text-decoration: none;
+      transition: color 0.3s;
+
+      &:hover {
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: underline;
+      }
+    }
   }
 }
 
