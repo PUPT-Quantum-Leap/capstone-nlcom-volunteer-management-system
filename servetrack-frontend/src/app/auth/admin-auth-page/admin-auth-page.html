@@ -87,7 +87,6 @@
             formControlName="email"
             class="form-input"
             [class.error]="loginEmailControl?.invalid && loginEmailControl?.touched"
-            [disabled]="isLoginLoading()"
             placeholder="admin@example.com"
             autocomplete="email"
             [attr.aria-describedby]="
@@ -113,7 +112,6 @@
               formControlName="password"
               class="form-input password-input"
               [class.error]="loginPasswordControl?.invalid && loginPasswordControl?.touched"
-              [disabled]="isLoginLoading()"
               placeholder="Enter your password"
               autocomplete="current-password"
               [attr.aria-describedby]="
@@ -168,7 +166,6 @@
               type="checkbox"
               formControlName="rememberMe"
               class="checkbox-input"
-              [disabled]="isLoginLoading()"
             />
             <span class="checkmark"></span>
             Remember me
@@ -227,7 +224,6 @@
               formControlName="firstName"
               class="form-input"
               [class.error]="firstNameControl?.invalid && firstNameControl?.touched"
-              [disabled]="isSignupLoading()"
               placeholder="Juan"
               autocomplete="given-name"
               [attr.aria-describedby]="
@@ -251,7 +247,6 @@
               formControlName="lastName"
               class="form-input"
               [class.error]="lastNameControl?.invalid && lastNameControl?.touched"
-              [disabled]="isSignupLoading()"
               placeholder="dela Cruz"
               autocomplete="family-name"
               [attr.aria-describedby]="
@@ -277,7 +272,6 @@
             formControlName="email"
             class="form-input"
             [class.error]="signupEmailControl?.invalid && signupEmailControl?.touched"
-            [disabled]="isSignupLoading()"
             placeholder="admin@example.com"
             autocomplete="email"
             [attr.aria-describedby]="
@@ -305,7 +299,6 @@
             formControlName="contactNumber"
             class="form-input"
             [class.error]="contactNumberControl?.invalid && contactNumberControl?.touched"
-            [disabled]="isSignupLoading()"
             placeholder="+639XXXXXXXXX"
             autocomplete="tel"
             [attr.aria-describedby]="
@@ -331,7 +324,6 @@
               formControlName="inviteCode"
               class="form-input password-input"
               [class.error]="inviteCodeControl?.invalid && inviteCodeControl?.touched"
-              [disabled]="isSignupLoading()"
               placeholder="Enter your invite code"
               autocomplete="off"
               [attr.aria-describedby]="
@@ -387,7 +379,6 @@
               formControlName="password"
               class="form-input password-input"
               [class.error]="signupPasswordControl?.invalid && signupPasswordControl?.touched"
-              [disabled]="isSignupLoading()"
               placeholder="Create a strong password"
               autocomplete="new-password"
               (focus)="showPasswordRequirements.set(true)"
@@ -459,7 +450,6 @@
               formControlName="confirmPassword"
               class="form-input password-input"
               [class.error]="confirmPasswordControl?.invalid && confirmPasswordControl?.touched"
-              [disabled]="isSignupLoading()"
               placeholder="Repeat your password"
               autocomplete="new-password"
               [attr.aria-describedby]="
@@ -512,7 +502,6 @@
               type="checkbox"
               formControlName="agreeToTerms"
               class="checkbox-input"
-              [disabled]="isSignupLoading()"
             />
             <span class="checkmark"></span>
             I agree to the
