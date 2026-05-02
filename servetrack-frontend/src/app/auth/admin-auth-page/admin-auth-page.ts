@@ -6,6 +6,7 @@ import {
   inject,
   OnInit,
   OnDestroy,
+  effect,
 } from '@angular/core';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import {
@@ -86,6 +87,27 @@ export class AdminAuthPage implements OnInit, OnDestroy {
     },
     { validators: passwordMatchValidator('password', 'confirmPassword') },
   );
+
+  constructor() {
+    // ─── Programmatic form disabled state management ──────────────────────────
+    // Listen to isLoginLoading signal and disable/enable login form accordingly
+    effect(() => {
+      if (this.isLoginLoading()) {
+        this.loginForm.disable({ emitEvent: false });
+      } else {
+        this.loginForm.enable({ emitEvent: false });
+      }
+    });
+
+    // Listen to isSignupLoading signal and disable/enable signup form accordingly
+    effect(() => {
+      if (this.isSignupLoading()) {
+        this.signupForm.disable({ emitEvent: false });
+      } else {
+        this.signupForm.enable({ emitEvent: false });
+      }
+    });
+  }
 
   // ─── Login form control getters ───────────────────────────────────────────
   get loginEmailControl(): AbstractControl | null {
