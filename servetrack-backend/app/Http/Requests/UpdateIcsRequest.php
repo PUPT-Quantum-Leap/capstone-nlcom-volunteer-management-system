@@ -30,6 +30,14 @@ class UpdateIcsRequest extends FormRequest
             'team_ids' => ['nullable', 'array'],
             'team_ids.*' => ['exists:teams,id'],
             'ai_suggestions' => ['nullable', 'array'],
+            'ai_suggestions.*.volunteer_id' => ['required_with:ai_suggestions', 'integer', 'exists:volunteer,volunteer_id'],
+            'ai_suggestions.*.volunteer_name' => ['nullable', 'string', 'max:255'],
+            'ai_suggestions.*.team_id' => ['required_with:ai_suggestions', 'integer', 'exists:teams,id'],
+            'ai_suggestions.*.team_name' => ['nullable', 'string', 'max:255'],
+            'ai_suggestions.*.role' => ['nullable', 'string', 'max:255'],
+            'ai_suggestions.*.skills' => ['nullable', 'array'],
+            'ai_suggestions.*.skills.*' => ['string', 'max:255'],
+            'ai_suggestions.*.confidence' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ];
     }
 }

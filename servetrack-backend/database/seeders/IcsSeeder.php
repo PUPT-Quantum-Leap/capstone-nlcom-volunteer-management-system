@@ -119,12 +119,12 @@ class IcsSeeder extends Seeder
         $volunteers = Volunteer::query()->limit(5)->get();
 
         foreach ($volunteers as $volunteer) {
-            $team = $teams->random();
+            $suggestedTeam = $teams->random();
             $aiSuggestions[] = [
                 'volunteer_id' => $volunteer->volunteer_id,
                 'volunteer_name' => $volunteer->first_name.' '.$volunteer->last_name,
-                'team_id' => $team->id,
-                'team_name' => $team->name,
+                'team_id' => $suggestedTeam->id,
+                'team_name' => $suggestedTeam->name,
                 'role' => $this->getRandomRole(),
                 'skills' => $volunteer->skills->pluck('name')->toArray(),
                 'confidence' => rand(70, 95),
