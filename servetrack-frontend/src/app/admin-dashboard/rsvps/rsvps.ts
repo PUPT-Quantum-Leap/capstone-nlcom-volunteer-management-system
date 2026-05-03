@@ -189,6 +189,7 @@ export class RsvpsComponent {
     this.rsvpShifts.clear();
     this.addRsvpShift();
     this.addRsvpShift();
+    this.lockBodyScroll();
     this.showRsvpModal.set(true);
   }
 
@@ -244,11 +245,13 @@ export class RsvpsComponent {
       description: rsvp.description,
     });
 
+    this.lockBodyScroll();
     this.showRsvpModal.set(true);
   }
 
   closeRsvpModal(): void {
     this.showRsvpModal.set(false);
+    this.unlockBodyScroll();
     this.editingRsvp.set(null);
     this.rsvpForm.reset();
   }
@@ -338,12 +341,14 @@ export class RsvpsComponent {
 
   openShareRsvpModal(rsvp: Rsvp): void {
     this.sharingRsvp.set(rsvp);
+    this.lockBodyScroll();
     this.showShareRsvpModal.set(true);
   }
 
   closeShareRsvpModal(): void {
     this.sharingRsvp.set(null);
     this.showShareRsvpModal.set(false);
+    this.unlockBodyScroll();
   }
 
   getShareLink(): string {
@@ -370,11 +375,13 @@ export class RsvpsComponent {
 
   confirmDeleteRsvp(rsvpId: number): void {
     this.deletingRsvpId.set(rsvpId);
+    this.lockBodyScroll();
     this.showDeleteRsvpModal.set(true);
   }
 
   closeDeleteRsvpModal(): void {
     this.showDeleteRsvpModal.set(false);
+    this.unlockBodyScroll();
     this.deletingRsvpId.set(null);
   }
 
@@ -570,5 +577,13 @@ export class RsvpsComponent {
   private showFeedback(message: string, type: 'success' | 'error' | 'info'): void {
     this.feedbackMessage.set(message);
     this.feedbackType.set(type);
+  }
+
+  private lockBodyScroll(): void {
+    document.body.style.overflow = 'hidden';
+  }
+
+  private unlockBodyScroll(): void {
+    document.body.style.overflow = '';
   }
 }
