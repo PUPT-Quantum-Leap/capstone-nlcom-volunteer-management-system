@@ -30,4 +30,4 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         with:
-          model: openrouter/openai/gpt-oss-120b:free
+          model: openrouter/openai/gpt-oss-20b:free

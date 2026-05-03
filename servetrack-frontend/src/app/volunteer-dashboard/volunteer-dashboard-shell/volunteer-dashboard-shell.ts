@@ -221,16 +221,13 @@ export class VolunteerDashboardShell implements OnInit {
     this.showLogoutModal.set(false);
   }
 
-  async confirmLogout(): Promise<void> {
+  confirmLogout(): void {
     if (this.isLoading()) return;
     this.isLoading.set(true);
     this.showLogoutModal.set(false);
-    try {
-      await this.authService.logout();
-    } finally {
+    this.authService.logout().finally(() => {
       this.isLoading.set(false);
-      await this.router.navigate(['/volunteer-auth']);
-    }
+    });
   }
 
   logout(): void {
