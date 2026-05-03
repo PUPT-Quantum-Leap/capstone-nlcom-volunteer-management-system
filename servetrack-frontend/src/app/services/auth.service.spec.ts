@@ -17,6 +17,7 @@ describe('AuthService', () => {
   beforeEach(() => {
     mockRouter = {
       navigate: vi.fn().mockResolvedValue(true),
+      navigateByUrl: vi.fn().mockResolvedValue(true),
     };
 
     TestBed.configureTestingModule({
@@ -228,15 +229,32 @@ describe('AuthService', () => {
       req.flush({ message: 'Invalid credentials' }, { status: 401, statusText: 'Unauthorized' });
     });
 
-    it('should logout successfully', () => {
-      // Set user as authenticated first
+    it('should logout successfully and navigate to volunteer-auth', () => {
+      // Set user as authenticated first (volunteer role - no admin role)
       service.isAuthenticated.set(true);
-      service.currentUser.set({ id: '1', email: 'test@example.com' });
+      service.currentUser.set({ id: '1', email: 'test@example.com', role: 'volunteer' });
 
       service.logout$().subscribe(() => {
         expect(service.isAuthenticated()).toBe(false);
         expect(service.currentUser()).toBeNull();
-        expect(mockRouter.navigate).toHaveBeenCalledWith(['/login']);
+        expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/volunteer-auth');
+      });
+
+      const req = httpMock.expectOne(`${environment.apiUrl}/logout`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.withCredentials).toBe(true);
+      req.flush(null);
+    });
+
+    it('should logout admin and navigate to admin-auth', () => {
+      // Set user as admin
+      service.isAuthenticated.set(true);
+      service.currentUser.set({ id: '1', email: 'admin@example.com', role: 'admin' });
+
+      service.logout$().subscribe(() => {
+        expect(service.isAuthenticated()).toBe(false);
+        expect(service.currentUser()).toBeNull();
+        expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/admin-auth');
       });
 
       const req = httpMock.expectOne(`${environment.apiUrl}/logout`);

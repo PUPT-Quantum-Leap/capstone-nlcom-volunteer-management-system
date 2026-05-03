@@ -379,12 +379,30 @@ export class AuthService {
   }
 
   logout(): Promise<void> {
+    const redirectUrl = this.getLogoutRedirectUrl();
     return new Promise((resolve, reject) => {
       this.logout$().subscribe({
-        next: () => resolve(),
+        next: () => {
+          this.router.navigateByUrl(redirectUrl).catch((error) => {
+            console.error('Logout navigation failed:', error);
+          });
+          resolve();
+        },
         error: (error) => reject(error),
       });
     });
+  }
+
+  /**
+   * Determines the correct redirect URL based on user role after logout.
+   */
+  private getLogoutRedirectUrl(): string {
+    const user = this.currentUser();
+    const userRole = user?.role?.toLowerCase() ?? '';
+    if (userRole === 'admin') {
+      return '/admin-auth';
+    }
+    return '/volunteer-auth';
   }
 
   /**
