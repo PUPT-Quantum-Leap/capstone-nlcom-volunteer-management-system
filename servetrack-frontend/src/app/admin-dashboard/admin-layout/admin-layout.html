@@ -240,7 +240,7 @@
           <span class="notification-badge">{{ notificationCount() }}</span>
           }
         </button>
-        <button type="button" class="outline-btn" (click)="logout()">Sign Out</button>
+        <button type="button" class="outline-btn" (click)="logout()" [disabled]="isLoading()">Sign Out</button>
       </div>
     </header>
 
@@ -359,9 +359,9 @@
 
 <!-- Logout Modal -->
 @if (showLogoutModal()) {
-  <div class="modal-backdrop" (click)="closeLogoutModal()">
-    <div class="modal-card modal-sm logout-modal" (click)="$event.stopPropagation()">
-      <h3>Sign Out</h3>
+  <div class="modal-backdrop" tabindex="-1" (click)="closeLogoutModal()" (keydown.escape)="closeLogoutModal()">
+    <div class="modal-card modal-sm logout-modal" role="dialog" aria-modal="true" aria-labelledby="logout-modal-title" (click)="$event.stopPropagation()">
+      <h3 id="logout-modal-title">Sign Out</h3>
       <p>Are you sure you want to log out of ServeTrack?</p>
       <div class="modal-actions">
         <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
