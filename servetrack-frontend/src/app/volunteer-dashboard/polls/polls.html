@@ -47,7 +47,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
-              Event Date: {{ poll.date | date:'mediumDate' }}
+              Event Date: {{ poll.date }}
             </span>
             <span class="poll-meta-item">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -63,7 +63,7 @@
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
             <span>
-              <strong>Voting closes:</strong> {{ poll.cutOffDay || poll.date | date:'mediumDate' }}
+              <strong>Voting closes:</strong> {{ poll.cutOffDay || poll.date }}
               <span class="days-left">({{ getDaysUntilClosing(poll.cutOffDay, poll.date) }})</span>
             </span>
           </div>
@@ -231,7 +231,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
-              Event Date: {{ selectedPoll.date | date:'mediumDate' }}
+              Event Date: {{ selectedPoll.date }}
             </span>
             <span class="poll-meta-item">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -283,7 +283,7 @@
             <div class="past-poll-header">
               <div class="past-poll-status">Closed</div>
               <h3 class="past-poll-title">{{ poll.title }}</h3>
-              <p class="past-poll-date">{{ poll.date | date:'mediumDate' }}</p>
+              <p class="past-poll-date">{{ poll.date }}</p>
             </div>
             <div class="past-poll-summary">
               <div class="summary-item">
