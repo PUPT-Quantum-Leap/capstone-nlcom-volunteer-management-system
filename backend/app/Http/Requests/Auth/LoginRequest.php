@@ -34,6 +34,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', $emailRule],
             'password' => ['required', 'string'],
+            'remember' => ['nullable', 'boolean'],
         ];
     }
 
