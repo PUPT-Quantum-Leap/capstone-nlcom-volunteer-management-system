@@ -285,6 +285,7 @@ describe('AdminAuthPage Component', () => {
       expect(mockAuthService.adminLogin$).toHaveBeenCalledWith({
         email: 'test@example.com',
         password: 'password123',
+        remember: false,
       });
     });
 
