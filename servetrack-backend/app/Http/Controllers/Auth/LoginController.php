@@ -39,6 +39,7 @@ class LoginController extends Controller
         }
 
         $user = $request->user();
+        /** @var User $user */
 
         // Volunteer login endpoint should not authenticate admin accounts.
         if ($user && $user->role === 'admin') {
@@ -99,6 +100,7 @@ class LoginController extends Controller
         }
 
         $user = $request->user();
+        /** @var User $user */
 
         // Admin login endpoint accepts only admin role.
         if (! $user || $user->role !== 'admin') {
