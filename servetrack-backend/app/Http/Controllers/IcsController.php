@@ -72,12 +72,7 @@ class IcsController extends Controller
             ]);
 
             if ($request->has('team_ids')) {
-                foreach ($request->input('team_ids') as $teamId) {
-                    $team = Team::query()->find($teamId);
-                    if ($team) {
-                        $ics->teams()->attach($teamId);
-                    }
-                }
+                $ics->teams()->sync($request->input('team_ids'));
             }
 
             return $ics->load('teams');
@@ -129,12 +124,12 @@ class IcsController extends Controller
     /**
      * Get volunteers who RSVP'd for a specific event.
      */
-    public function getRsvpVolunteers(int $rsvpId): AnonymousResourceCollection
+    public function getRsvpVolunteers(int $rsvpId): AnonymousResourceCollection|JsonResponse
     {
         $rsvp = Rsvp::query()->find($rsvpId);
 
         if (! $rsvp) {
-            abort(404, 'RSVP not found.');
+            return response()->json(['message' => 'RSVP not found.'], 404);
         }
 
         $volunteers = Volunteer::query()

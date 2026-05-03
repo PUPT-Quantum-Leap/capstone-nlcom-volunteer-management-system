@@ -33,7 +33,7 @@ class IcsResource extends JsonResource
                 'team_id' => $volunteer->pivot->team_id,
                 'role' => $volunteer->pivot->role,
                 'assigned_at' => $volunteer->pivot->assigned_at,
-                'skills' => $volunteer->skills->pluck('name'),
+                'skills' => $volunteer->relationLoaded('skills') ? $volunteer->skills->pluck('name') : [],
             ])),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

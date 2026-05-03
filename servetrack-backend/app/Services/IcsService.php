@@ -16,11 +16,21 @@ class IcsService
     public function generateTeamAssignments(Ics $ics): array
     {
         $rsvp = $ics->rsvp;
+
+        if (! $rsvp) {
+            return [
+                'message' => 'No RSVP associated with this ICS.',
+                'total_volunteers' => 0,
+                'assignments' => [],
+            ];
+        }
+
         $teams = $ics->teams;
 
         if ($teams->isEmpty()) {
             return [
                 'message' => 'No teams assigned to this ICS.',
+                'total_volunteers' => 0,
                 'assignments' => [],
             ];
         }

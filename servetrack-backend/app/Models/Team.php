@@ -23,6 +23,8 @@ class Team extends Model
             Volunteer::class,
             'volunteer_team',
             'team_id',
+            'volunteer_id',
+            'id',
             'volunteer_id'
         );
     }
