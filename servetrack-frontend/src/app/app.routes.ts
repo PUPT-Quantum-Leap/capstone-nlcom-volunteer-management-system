@@ -13,6 +13,7 @@ import { RequestsComponent } from './volunteer-dashboard/requests/requests';
 import { AdminLayout } from './admin-dashboard/admin-layout/admin-layout';
 import { DashboardComponent } from './admin-dashboard/dashboard/dashboard';
 import { AnalyticsComponent } from './admin-dashboard/analytics/analytics';
+import { AnalyticsFeedingOperationComponent } from './admin-dashboard/analytics-feeding-operation/analytics-feeding-operation';
 import { UserManagementComponent } from './admin-dashboard/user-management/user-management';
 import { OverviewDashboard } from './admin-dashboard/overview-dashboard/overview-dashboard';
 import { VolunteerManagement } from './admin-dashboard/volunteer-management/volunteer-management';
@@ -58,6 +59,7 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
+      { path: 'analytics/feeding-operation', component: AnalyticsFeedingOperationComponent },
       { path: 'analytics', component: AnalyticsComponent },
       { path: 'user-management', component: UserManagementComponent },
       { path: 'volunteers', component: VolunteerManagement },
