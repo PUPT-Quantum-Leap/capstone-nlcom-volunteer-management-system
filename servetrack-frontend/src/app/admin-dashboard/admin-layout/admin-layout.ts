@@ -37,6 +37,7 @@ export class AdminLayout implements OnInit {
   isMobile = signal(false);
   showNotifications = signal(false);
   showLogoutModal = signal(false);
+  isLoading = signal(false);
   showAiSidebar = signal(false);
   searchQuery = signal('');
   currentUrl = signal(this.router.url);
@@ -184,15 +185,18 @@ export class AdminLayout implements OnInit {
   }
 
   async confirmLogout(): Promise<void> {
+    if (this.isLoading()) return;
+    this.isLoading.set(true);
     this.showLogoutModal.set(false);
     try {
       await this.authService.logout();
     } finally {
+      this.isLoading.set(false);
       await this.router.navigate(['/login']);
     }
   }
 
-  async logout(): Promise<void> {
+  logout(): void {
     this.openLogoutModal();
   }
 
