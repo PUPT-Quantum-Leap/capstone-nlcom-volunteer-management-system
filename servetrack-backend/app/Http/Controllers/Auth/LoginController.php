@@ -73,7 +73,9 @@ class LoginController extends Controller
                 break;
         }
 
-        return $this->buildAuthenticatedResponse($userData, $user, $this->abilitiesForRole($user->role));
+        $remember = $request->boolean('remember');
+
+        return $this->buildAuthenticatedResponse($userData, $user, $this->abilitiesForRole($user->role), $remember);
     }
 
     /**
@@ -118,7 +120,9 @@ class LoginController extends Controller
         $userData['user_type'] = 'admin';
         $userData['admin_profile'] = $user->admin;
 
-        return $this->buildAuthenticatedResponse($userData, $user, TokenAbilities::ADMIN);
+        $remember = $request->boolean('remember');
+
+        return $this->buildAuthenticatedResponse($userData, $user, TokenAbilities::ADMIN, $remember);
     }
 
     /**
@@ -323,14 +327,18 @@ class LoginController extends Controller
      * @param  array<string, mixed>  $userData
      * @param  string[]  $abilities
      */
-    private function buildAuthenticatedResponse(array $userData, User $user, array $abilities): JsonResponse
+    private function buildAuthenticatedResponse(array $userData, User $user, array $abilities, bool $remember = false): JsonResponse
     {
-        $token = $user->createToken('auth-token', $abilities, now()->addMinutes((int) config('sanctum.expiration', 60)))->plainTextToken;
+        $expirationMinutes = $remember
+            ? 43200 // 30 days in minutes
+            : (int) config('sanctum.expiration', 60);
+
+        $token = $user->createToken('auth-token', $abilities, now()->addMinutes($expirationMinutes))->plainTextToken;
 
         $cookie = cookie(
             'auth_token',
             $token,
-            config('sanctum.expiration', 60),
+            $expirationMinutes,
             '/',
             null,
             true,
