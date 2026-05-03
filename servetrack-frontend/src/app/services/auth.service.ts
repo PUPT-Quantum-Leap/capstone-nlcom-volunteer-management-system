@@ -398,7 +398,7 @@ export class AuthService {
    */
   private getLogoutRedirectUrl(): string {
     const user = this.currentUser();
-    const userRole = user?.role?.toLowerCase() ?? '';
+    const userRole = (user?.role ?? user?.user_type ?? '').toLowerCase();
     if (userRole === 'admin') {
       return '/admin-auth';
     }
