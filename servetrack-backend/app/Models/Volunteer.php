@@ -153,4 +153,9 @@ class Volunteer extends Model
             'ics_id'
         )->withPivot('team_id', 'role', 'assigned_at');
     }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class, 'volunteer_id', 'volunteer_id');
+    }
 }

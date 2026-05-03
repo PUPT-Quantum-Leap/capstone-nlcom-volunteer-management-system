@@ -1,15 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { of } from 'rxjs';
 import { IcsService } from './ics.service';
 import { Ics, CreateIcsRequest, UpdateIcsRequest, AiSuggestion, AssignVolunteerRequest } from '../models/ics';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
 
-class MockAuthService {
-  ensureCsrf$() {
-    return { pipe: () => ({ subscribe: (fn: () => void) => fn() }) };
-  }
-}
+const mockAuthService = {
+  ensureCsrf$: () => of(void 0)
+};
 
 describe('IcsService', () => {
   let service: IcsService;
@@ -37,11 +37,12 @@ describe('IcsService', () => {
   };
 
   beforeEach(() => {
+    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
       providers: [
         IcsService,
-        { provide: 'AuthService', useClass: MockAuthService },
+        { provide: AuthService, useValue: mockAuthService },
       ],
     });
     service = TestBed.inject(IcsService);
