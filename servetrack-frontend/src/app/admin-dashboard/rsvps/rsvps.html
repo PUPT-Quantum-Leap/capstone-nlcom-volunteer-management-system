@@ -370,6 +370,15 @@
                 <label for="rsvp-cutoff-time">Cut-off Time *</label>
                 <input id="rsvp-cutoff-time" type="time" formControlName="cutOffTime" class="form-input" />
               </div>
+
+              <div class="form-group">
+                <label for="rsvp-status">Status *</label>
+                <select id="rsvp-status" formControlName="status" class="form-input">
+                  <option value="active">Active</option>
+                  <option value="draft">Draft</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
             </div>
           </div>
 
