@@ -16,7 +16,7 @@ class RsvpResource extends JsonResource
             'slug' => $this->slug,
             'title' => $this->title,
             'description' => $this->description,
-            'date' => $this->date?->format('M d'),
+            'date' => $this->date?->format('M d, Y'),
             'eventLocation' => $this->event_location,
             'cutOffDay' => $this->cutoff_day?->format('M d, Y'),
             'cutOffTime' => $this->cutoff_time ? date('g:i A', strtotime($this->cutoff_time)) : null,

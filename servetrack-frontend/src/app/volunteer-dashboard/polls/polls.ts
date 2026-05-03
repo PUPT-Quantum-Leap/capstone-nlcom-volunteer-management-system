@@ -7,7 +7,7 @@ import {
   computed,
   DestroyRef,
 } from '@angular/core';
-import { DatePipe, TitleCasePipe } from '@angular/common';
+import { TitleCasePipe } from '@angular/common';
 import { RsvpService } from '../../services/rsvp.service';
 import { Rsvp, UserVote } from '../../models/rsvp';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -36,7 +36,7 @@ interface Poll {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, TitleCasePipe],
+  imports: [TitleCasePipe],
   templateUrl: './polls.html',
   styleUrl: './polls.scss',
 })
