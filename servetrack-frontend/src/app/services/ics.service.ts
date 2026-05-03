@@ -6,7 +6,6 @@ import {
   CreateIcsRequest,
   UpdateIcsRequest,
   AiSuggestion,
-  AiSuggestionsResponse,
   AssignVolunteerRequest,
   RsvpVolunteer,
 } from '../models/ics';
@@ -42,18 +41,18 @@ export class IcsService {
   /**
    * Create a new ICS.
    */
-  createIcs(body: CreateIcsRequest): Observable<Ics> {
+  createIcs(body: CreateIcsRequest): Observable<{ data: Ics }> {
     return this.ensureCsrf().pipe(
-      switchMap(() => this.http.post<Ics>(this.apiUrl, body, { withCredentials: true }))
+      switchMap(() => this.http.post<{ data: Ics }>(this.apiUrl, body, { withCredentials: true }))
     );
   }
 
   /**
    * Update an existing ICS.
    */
-  updateIcs(id: number, body: UpdateIcsRequest): Observable<Ics> {
+  updateIcs(id: number, body: UpdateIcsRequest): Observable<{ data: Ics }> {
     return this.ensureCsrf().pipe(
-      switchMap(() => this.http.put<Ics>(`${this.apiUrl}/${id}`, body, { withCredentials: true }))
+      switchMap(() => this.http.put<{ data: Ics }>(`${this.apiUrl}/${id}`, body, { withCredentials: true }))
     );
   }
 
@@ -79,8 +78,8 @@ export class IcsService {
   /**
    * Get AI suggestions for team assignments.
    */
-  getAiSuggestions(icsId: number): Observable<AiSuggestionsResponse> {
-    return this.http.get<AiSuggestionsResponse>(
+  getAiSuggestions(icsId: number): Observable<{ data: AiSuggestion[] }> {
+    return this.http.get<{ data: AiSuggestion[] }>(
       `${this.apiUrl}/${icsId}/ai-suggestions`,
       { withCredentials: true }
     );

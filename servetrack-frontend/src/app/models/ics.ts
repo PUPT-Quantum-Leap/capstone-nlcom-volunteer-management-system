@@ -1,21 +1,21 @@
 export interface Ics {
   readonly id: number;
   readonly rsvp_id: number;
-  readonly rsvp?: {
+  readonly rsvp: {
     readonly id: number;
     readonly title: string;
     readonly date: string;
-  };
+  } | null;
   name: string;
-  description?: string;
+  description: string | null;
   date: string;
-  location?: string;
+  location: string | null;
   status: 'draft' | 'active' | 'completed';
-  ai_suggestions?: AiSuggestion[];
-  teams?: Team[];
-  volunteers?: IcsVolunteer[];
-  readonly created_at?: string;
-  readonly updated_at?: string;
+  ai_suggestions: AiSuggestion[] | null;
+  teams: Team[] | null;
+  volunteers: IcsVolunteer[] | null;
+  readonly created_at: string;
+  readonly updated_at: string;
 }
 
 export interface Team {
@@ -26,31 +26,25 @@ export interface Team {
 export interface IcsVolunteer {
   id: number;
   name: string;
-  first_name?: string;
-  last_name?: string;
-  team_id?: number;
-  role?: string;
-  assigned_at?: string;
-  skills?: string[];
-  isNew?: boolean;
-  isDriver?: boolean;
-  isLeader?: boolean;
+  first_name: string | null;
+  last_name: string | null;
+  team_id: number | null;
+  role: string | null;
+  assigned_at: string | null;
+  skills: string[] | null;
+  isNew: boolean;
+  isDriver: boolean;
+  isLeader: boolean;
 }
 
 export interface AiSuggestion {
-  volunteer_id: number;
-  volunteer_name: string;
-  team_id: number;
-  team_name: string;
-  role: string;
-  skills: string[];
-  confidence: number;
-}
-
-export interface AiSuggestionsResponse {
-  message: string;
-  total_volunteers: number;
-  assignments: AiSuggestion[];
+  readonly volunteer_id: number;
+  readonly volunteer_name: string;
+  readonly team_id: number;
+  readonly team_name: string;
+  readonly role: string;
+  readonly skills: string[];
+  readonly confidence: number;
 }
 
 export interface CreateIcsRequest {
@@ -81,8 +75,8 @@ export interface RsvpVolunteer {
   id: number;
   first_name: string;
   last_name: string;
-  full_name?: string;
-  skills?: { id: number; name: string }[];
-  positions?: { id: number; name: string }[];
-  experiences?: { id: number; name: string }[];
+  full_name: string | null;
+  skills: { id: number; name: string }[] | null;
+  positions: { id: number; name: string }[] | null;
+  experiences: { id: number; name: string }[] | null;
 }

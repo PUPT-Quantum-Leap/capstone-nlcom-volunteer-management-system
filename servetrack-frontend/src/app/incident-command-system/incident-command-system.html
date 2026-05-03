@@ -41,8 +41,8 @@
   <!-- RSVP Selector -->
   @if (rsvpList.length > 0) {
     <div class="rsvp-selector">
-      <label>Select RSVP Event:</label>
-      <select (change)="selectRsvp($any($event.target).value)">
+      <label for="rsvp-event-select">Select RSVP Event:</label>
+      <select id="rsvp-event-select" (change)="selectRsvp($any($event.target).value)">
         @for (rsvp of rsvpList; track rsvp.id) {
           <option [value]="rsvp.id" [selected]="rsvp.id === rsvpId">
             {{ rsvp.title }} ({{ rsvp.date | date:'mediumDate' }})
@@ -59,7 +59,7 @@
       @if (!isEditMode) {
         <span class="value">{{ objective }}</span>
       } @else {
-        <input type="number" [(ngModel)]="objective" class="edit-input" placeholder="Enter objective">
+        <input type="number" [(ngModel)]="newObjective" class="edit-input" placeholder="Enter objective">
       }
     </div>
     <div class="info-card">
@@ -67,7 +67,7 @@
       @if (!isEditMode) {
         <span class="value">{{ menu }}</span>
       } @else {
-        <input type="text" [(ngModel)]="menu" class="edit-input" placeholder="Enter menu">
+        <input type="text" [(ngModel)]="newMenu" class="edit-input" placeholder="Enter menu">
       }
     </div>
     <div class="info-card">
@@ -75,7 +75,7 @@
       @if (!isEditMode) {
         <span class="value">{{ date }}</span>
       } @else {
-        <input type="text" [(ngModel)]="date" class="edit-input" placeholder="Enter date">
+        <input type="text" [(ngModel)]="newDate" class="edit-input" placeholder="Enter date">
       }
     </div>
     <div class="info-card">
@@ -197,7 +197,7 @@
             </div>
             @if (isEditMode) {
               <div class="add-volunteer">
-                <input type="text" [(ngModel)]="newVolunteerName" placeholder="Add volunteer" (keyup.enter)="addVolunteer('mobileKitchen', teamIdx)">
+                <input type="text" [(ngModel)]="mobileKitchenNewVolunteer" placeholder="Add volunteer" (keyup.enter)="addVolunteer('mobileKitchen', teamIdx)">
                 <button class="btn btn-sm" (click)="addVolunteer('mobileKitchen', teamIdx)">+</button>
               </div>
             }
@@ -252,7 +252,7 @@
             </div>
             @if (isEditMode) {
               <div class="add-volunteer">
-                <input type="text" [(ngModel)]="newVolunteerName" placeholder="Add volunteer" (keyup.enter)="addVolunteer('amDistribution', teamIdx)">
+                <input type="text" [(ngModel)]="amDistributionNewVolunteer" placeholder="Add volunteer" (keyup.enter)="addVolunteer('amDistribution', teamIdx)">
                 <button class="btn btn-sm" (click)="addVolunteer('amDistribution', teamIdx)">+</button>
               </div>
             }
@@ -307,7 +307,7 @@
             </div>
             @if (isEditMode) {
               <div class="add-volunteer">
-                <input type="text" [(ngModel)]="newVolunteerName" placeholder="Add volunteer" (keyup.enter)="addVolunteer('pmDistribution', teamIdx)">
+                <input type="text" [(ngModel)]="pmDistributionNewVolunteer" placeholder="Add volunteer" (keyup.enter)="addVolunteer('pmDistribution', teamIdx)">
                 <button class="btn btn-sm" (click)="addVolunteer('pmDistribution', teamIdx)">+</button>
               </div>
             }
@@ -327,7 +327,7 @@
       <ul>
         <li><span class="symbol">*</span> new volunteer</li>
         <li><span class="symbol">~</span> driver</li>
-        <li><span class="symbol">^/a</span> team leader</li>
+        <li><span class="symbol">^</span> team leader</li>
       </ul>
     </div>
     <div class="footer-card">

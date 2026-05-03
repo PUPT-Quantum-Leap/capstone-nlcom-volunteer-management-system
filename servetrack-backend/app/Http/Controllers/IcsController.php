@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreIcsRequest;
-use App\Http\Requests\UpdateIcsRequest;
+use App\Http\Requests\ApplyAiSuggestionsRequest;
+use App\Http\Requests\AssignVolunteerRequest;
+use App\Http\Requests\RemoveVolunteerRequest;
 use App\Http\Resources\IcsResource;
 use App\Http\Resources\VolunteerResource;
 use App\Models\Ics;
@@ -29,7 +30,7 @@ class IcsController extends Controller
                 $query->with('skills');
             }]);
 
-        if ($request->user()->role !== 'admin') {
+        if ($request->user()?->role !== 'admin') {
             $query->where('status', 'active');
         }
 
@@ -163,22 +164,25 @@ class IcsController extends Controller
     /**
      * Apply AI suggestions to assign volunteers to teams.
      */
-    public function applyAiSuggestions(Request $request, int $icsId): JsonResponse
+    public function applyAiSuggestions(ApplyAiSuggestionsRequest $request, int $icsId): JsonResponse
     {
-        $request->validate([
-            'suggestions' => ['required', 'array'],
-        ]);
-
         $ics = Ics::query()->find($icsId);
 
         if (! $ics) {
             return response()->json(['message' => 'ICS not found.'], 404);
         }
 
-        DB::transaction(function () use ($request, $ics): void {
+        // Pre-load all volunteers and teams to avoid N+1 queries
+        $volunteerIds = collect($request->input('suggestions'))->pluck('volunteer_id')->unique();
+        $teamIds = collect($request->input('suggestions'))->pluck('team_id')->unique();
+
+        $volunteers = Volunteer::query()->whereIn('volunteer_id', $volunteerIds)->get()->keyBy('volunteer_id');
+        $teams = Team::query()->whereIn('id', $teamIds)->get()->keyBy('id');
+
+        DB::transaction(function () use ($request, $ics, $volunteers, $teams): void {
             foreach ($request->input('suggestions') as $suggestion) {
-                $volunteer = Volunteer::query()->find($suggestion['volunteer_id']);
-                $team = Team::query()->find($suggestion['team_id']);
+                $volunteer = $volunteers->get($suggestion['volunteer_id']);
+                $team = $teams->get($suggestion['team_id']);
 
                 if ($volunteer && $team) {
                     $ics->volunteers()->syncWithoutDetaching([
@@ -200,14 +204,8 @@ class IcsController extends Controller
     /**
      * Manually assign a volunteer to a team in an ICS.
      */
-    public function assignVolunteer(Request $request, int $icsId): JsonResponse
+    public function assignVolunteer(AssignVolunteerRequest $request, int $icsId): JsonResponse
     {
-        $request->validate([
-            'volunteer_id' => ['required', 'exists:volunteer,volunteer_id'],
-            'team_id' => ['nullable', 'exists:teams,id'],
-            'role' => ['nullable', 'string'],
-        ]);
-
         $ics = Ics::query()->find($icsId);
 
         if (! $ics) {
@@ -236,12 +234,8 @@ class IcsController extends Controller
     /**
      * Remove a volunteer from an ICS.
      */
-    public function removeVolunteer(Request $request, int $icsId): JsonResponse
+    public function removeVolunteer(RemoveVolunteerRequest $request, int $icsId): JsonResponse
     {
-        $request->validate([
-            'volunteer_id' => ['required', 'exists:volunteer,volunteer_id'],
-        ]);
-
         $ics = Ics::query()->find($icsId);
 
         if (! $ics) {

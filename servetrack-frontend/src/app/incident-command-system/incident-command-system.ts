@@ -92,6 +92,9 @@ export class IncidentCommandSystemComponent implements OnInit {
 
   // New volunteer input for adding to teams
   newVolunteerName = '';
+  mobileKitchenNewVolunteer = '';
+  amDistributionNewVolunteer = '';
+  pmDistributionNewVolunteer = '';
   selectedColumn: 'mobileKitchen' | 'amDistribution' | 'pmDistribution' | null = null;
   selectedTeamIndex = -1;
 
@@ -123,16 +126,17 @@ export class IncidentCommandSystemComponent implements OnInit {
 
   // Volunteer management
   addVolunteer(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution', teamIndex: number): void {
-    if (this.newVolunteerName.trim()) {
+    const volunteerName = this.getVolunteerNameForColumn(columnKey);
+    if (volunteerName.trim()) {
       const column = this.getColumn(columnKey);
       if (column && column.teams[teamIndex]) {
         column.teams[teamIndex].volunteers.push({
-          name: this.newVolunteerName.trim(),
+          name: volunteerName.trim(),
           isNew: false,
           isDriver: false,
           isLeader: false
         });
-        this.newVolunteerName = '';
+        this.clearVolunteerNameForColumn(columnKey);
         this.updateVolunteerCount();
       }
     }
@@ -227,6 +231,24 @@ export class IncidentCommandSystemComponent implements OnInit {
   // Get all operational columns for template iteration
   getOperationalColumns(): OperationalColumn[] {
     return [this.mobileKitchen, this.amDistribution, this.pmDistribution];
+  }
+
+  // Helper methods for volunteer name management
+  private getVolunteerNameForColumn(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution'): string {
+    switch (columnKey) {
+      case 'mobileKitchen': return this.mobileKitchenNewVolunteer;
+      case 'amDistribution': return this.amDistributionNewVolunteer;
+      case 'pmDistribution': return this.pmDistributionNewVolunteer;
+      default: return '';
+    }
+  }
+
+  private clearVolunteerNameForColumn(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution'): void {
+    switch (columnKey) {
+      case 'mobileKitchen': this.mobileKitchenNewVolunteer = ''; break;
+      case 'amDistribution': this.amDistributionNewVolunteer = ''; break;
+      case 'pmDistribution': this.pmDistributionNewVolunteer = ''; break;
+    }
   }
 
   // Get column key for template

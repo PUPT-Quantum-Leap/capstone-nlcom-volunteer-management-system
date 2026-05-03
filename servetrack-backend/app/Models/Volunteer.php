@@ -129,9 +129,9 @@ class Volunteer extends Model
         return $this->hasMany(SmsNotification::class, 'volunteer_id');
     }
 
-    public function attendances(): HasMany
+    public function rsvpResponses(): HasMany
     {
-        return $this->hasMany(Attendance::class, 'volunteer_id', 'volunteer_id');
+        return $this->hasMany(RsvpResponse::class, 'volunteer_id');
     }
 
     public function teams(): BelongsToMany

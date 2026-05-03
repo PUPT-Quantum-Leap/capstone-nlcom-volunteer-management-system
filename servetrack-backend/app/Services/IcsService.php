@@ -126,7 +126,7 @@ class IcsService
             $score = 0;
 
             foreach ($volunteerSkills as $skill) {
-                if (isset($skillTeamMappings[$skill]) && in_array($team->name, $skillTeamMappings[$skill], true)) {
+                if (isset($skillTeamMappings[$skill]) && in_array(strtolower($team->name), array_map('strtolower', $skillTeamMappings[$skill]), true)) {
                     $score += 10;
                 }
             }
@@ -215,7 +215,7 @@ class IcsService
         $matchingSkills = 0;
 
         foreach ($volunteerSkills as $skill) {
-            if (isset($skillTeamMappings[$skill]) && in_array($team->name, $skillTeamMappings[$skill], true)) {
+            if (isset($skillTeamMappings[$skill]) && in_array(strtolower($team->name), array_map('strtolower', $skillTeamMappings[$skill]), true)) {
                 $matchingSkills++;
             }
         }

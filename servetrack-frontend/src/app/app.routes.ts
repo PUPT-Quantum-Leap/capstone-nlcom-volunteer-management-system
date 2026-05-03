@@ -39,6 +39,7 @@ export const routes: Routes = [
     path: 'incident-command-system',
     loadComponent: () =>
       import('./incident-command-system/incident-command-system').then((m) => m.IncidentCommandSystemComponent),
+    canActivate: [authGuard],
   },
   {
     path: 'volunteer-dashboard',
