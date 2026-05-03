@@ -229,38 +229,44 @@ describe('AuthService', () => {
       req.flush({ message: 'Invalid credentials' }, { status: 401, statusText: 'Unauthorized' });
     });
 
-    it('should logout successfully and navigate to volunteer-auth', () => {
+    it('should logout successfully and navigate to volunteer-auth', async () => {
       // Set user as authenticated first (volunteer role - no admin role)
       service.isAuthenticated.set(true);
       service.currentUser.set({ id: '1', email: 'test@example.com', role: 'volunteer' });
 
-      service.logout$().subscribe(() => {
-        expect(service.isAuthenticated()).toBe(false);
-        expect(service.currentUser()).toBeNull();
-        expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/volunteer-auth');
-      });
+      // Call logout() which handles navigation
+      const logoutPromise = service.logout();
 
       const req = httpMock.expectOne(`${environment.apiUrl}/logout`);
       expect(req.request.method).toBe('POST');
       expect(req.request.withCredentials).toBe(true);
       req.flush(null);
+
+      await logoutPromise;
+
+      expect(service.isAuthenticated()).toBe(false);
+      expect(service.currentUser()).toBeNull();
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/volunteer-auth');
     });
 
-    it('should logout admin and navigate to admin-auth', () => {
+    it('should logout admin and navigate to admin-auth', async () => {
       // Set user as admin
       service.isAuthenticated.set(true);
       service.currentUser.set({ id: '1', email: 'admin@example.com', role: 'admin' });
 
-      service.logout$().subscribe(() => {
-        expect(service.isAuthenticated()).toBe(false);
-        expect(service.currentUser()).toBeNull();
-        expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/admin-auth');
-      });
+      // Call logout() which handles navigation
+      const logoutPromise = service.logout();
 
       const req = httpMock.expectOne(`${environment.apiUrl}/logout`);
       expect(req.request.method).toBe('POST');
       expect(req.request.withCredentials).toBe(true);
       req.flush(null);
+
+      await logoutPromise;
+
+      expect(service.isAuthenticated()).toBe(false);
+      expect(service.currentUser()).toBeNull();
+      expect(mockRouter.navigateByUrl).toHaveBeenCalledWith('/admin-auth');
     });
 
     it('should check auth status successfully', () => {
