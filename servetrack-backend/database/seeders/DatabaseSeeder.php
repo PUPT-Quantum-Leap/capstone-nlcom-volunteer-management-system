@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PositionSeeder::class,
             VolunteerSeeder::class,
+            TeamSeeder::class,
+            IcsSeeder::class,
         ]);
     }
 }

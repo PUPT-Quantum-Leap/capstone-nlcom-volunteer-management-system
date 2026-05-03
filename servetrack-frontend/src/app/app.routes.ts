@@ -20,7 +20,6 @@ import { AttendanceManagement } from './admin-dashboard/attendance-management/at
 import { PerformanceComponent } from './admin-dashboard/performance/performance';
 import { SmsManagementComponent } from './admin-dashboard/sms-management/sms-management';
 import { RsvpsComponent } from './admin-dashboard/rsvps/rsvps';
-import { IcsComponent } from './admin-dashboard/ics/ics';
 import { BackupRecoveryComponent } from './admin-dashboard/backup-recovery/backup-recovery';
 import { NotFound } from './not-found/not-found';
 import { IncidentCommandSystemComponent } from './incident-command-system/incident-command-system';
@@ -65,7 +64,7 @@ export const routes: Routes = [
       { path: 'performance', component: PerformanceComponent },
       { path: 'sms', component: SmsManagementComponent },
       { path: 'rsvps', component: RsvpsComponent },
-      { path: 'ics', component: IcsComponent },
+      { path: 'ics', component: IncidentCommandSystemComponent },
       { path: 'backup-recovery', component: BackupRecoveryComponent },
     ],
   },

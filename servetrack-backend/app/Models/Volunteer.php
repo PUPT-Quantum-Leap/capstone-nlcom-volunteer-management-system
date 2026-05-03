@@ -133,4 +133,24 @@ class Volunteer extends Model
     {
         return $this->hasMany(Attendance::class, 'volunteer_id', 'volunteer_id');
     }
+
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Team::class,
+            'volunteer_team',
+            'volunteer_id',
+            'team_id'
+        );
+    }
+
+    public function ics(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Ics::class,
+            'ics_volunteer',
+            'volunteer_id',
+            'ics_id'
+        )->withPivot('team_id', 'role', 'assigned_at');
+    }
 }

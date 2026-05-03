@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\FacebookWebhookController;
+use App\Http\Controllers\IcsController;
 use App\Http\Controllers\InviteController;
 use App\Http\Controllers\RsvpController;
 use App\Http\Controllers\SmsController;
@@ -137,4 +138,16 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
 
     // SMS configuration status check
     Route::get('/sms/config-status', [SmsController::class, 'configStatus']);
+
+    // ICS management — full CRUD + AI suggestions (admin only)
+    Route::get('/ics', [IcsController::class, 'index']);
+    Route::get('/ics/{id}', [IcsController::class, 'show']);
+    Route::post('/ics', [IcsController::class, 'store']);
+    Route::put('/ics/{id}', [IcsController::class, 'update']);
+    Route::delete('/ics/{id}', [IcsController::class, 'destroy']);
+    Route::get('/ics/{rsvpId}/rsvp-volunteers', [IcsController::class, 'getRsvpVolunteers']);
+    Route::get('/ics/{icsId}/ai-suggestions', [IcsController::class, 'getAiSuggestions']);
+    Route::post('/ics/{icsId}/apply-suggestions', [IcsController::class, 'applyAiSuggestions']);
+    Route::post('/ics/{icsId}/assign-volunteer', [IcsController::class, 'assignVolunteer']);
+    Route::post('/ics/{icsId}/remove-volunteer', [IcsController::class, 'removeVolunteer']);
 });
