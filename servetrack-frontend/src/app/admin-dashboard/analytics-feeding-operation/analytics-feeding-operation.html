@@ -1,0 +1,68 @@
+<section class="feeding-operation-page">
+  <header class="report-header">
+    <div>
+      <span class="report-label">ANALYTICS SUBPAGE</span>
+      <h2 class="report-title">NLCOM x Metro World Child Feeding Operation</h2>
+      <p class="report-date">November 22, 2025</p>
+    </div>
+    <div class="header-actions">
+      <button
+        type="button"
+        class="action-btn action-btn-pdf"
+        (click)="exportReport('pdf')"
+        [disabled]="analyticsLoading()">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M7 3h8l5 5v13H7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+          <path d="M15 3v5h5" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+          <path d="M10 14h4M10 17h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        Export PDF
+      </button>
+      <button
+        type="button"
+        class="action-btn action-btn-excel"
+        (click)="exportReport('excel')"
+        [disabled]="analyticsLoading()">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M7 3h8l5 5v13H7z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+          <path d="M15 3v5h5" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+          <path d="M10 14l4 4M14 14l-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        Export Excel
+      </button>
+      <a class="back-link" routerLink="/admin-dashboard/analytics">Back to Analytics</a>
+    </div>
+  </header>
+
+  <article class="operations-section">
+    <div class="table-wrapper">
+      <table class="operations-table">
+        <thead>
+          <tr>
+            <th>Team & Time Departure</th>
+            <th>Location</th>
+            <th>Time</th>
+            <th>No. of Pax</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (operation of operationsData; track operation.id) {
+            <tr>
+              @if (operation.showTeamCell) {
+                <td class="team-cell" [attr.rowspan]="operation.teamRowSpan">
+                  <span class="team-name">{{ operation.team }}</span>
+                  <span class="team-departure">{{ operation.departureNote }}</span>
+                </td>
+              }
+              <td>{{ operation.location }}</td>
+              <td>{{ operation.time }}</td>
+              <td class="pax-cell">{{ operation.participants }}</td>
+              <td>{{ operation.details }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
