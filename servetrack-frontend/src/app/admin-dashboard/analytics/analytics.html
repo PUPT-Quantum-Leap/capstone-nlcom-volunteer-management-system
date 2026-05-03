@@ -34,24 +34,6 @@
         <option [value]="department.name">{{ department.name }}</option>
         }
       </select>
-      <button type="button" class="action-btn" (click)="exportReport('pdf')" [disabled]="analyticsLoading()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M13 3V9H19" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9 13H15" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9 17H15" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Export PDF
-      </button>
-      <button type="button" class="action-btn" (click)="exportReport('excel')" [disabled]="analyticsLoading()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M13 3V9H19" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9 17L11 15L9 13" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M12 15H15" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Export Excel
-      </button>
     </div>
   </header>
 
@@ -243,36 +225,14 @@
     }
   </article>
 
-  <!-- Operations Report Table -->
-  <article class="operations-section">
-    <div class="section-header">
+  <article class="operations-link-card">
+    <div>
       <h3>NLCOM x Metro World Child Feeding Operation</h3>
-      <p>November 22, 2025</p>
+      <p>Schedule table has been moved to its own analytics page.</p>
     </div>
-    <div class="table-wrapper">
-      <table class="operations-table">
-        <thead>
-          <tr>
-            <th>Team & Time Departure</th>
-            <th>Location</th>
-            <th>Time</th>
-            <th>No. of Pax</th>
-            <th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (operation of operationsData(); track operation.id) {
-          <tr>
-            <td class="team-cell">{{ operation.team }}</td>
-            <td>{{ operation.location }}</td>
-            <td>{{ operation.time }}</td>
-            <td class="pax-cell">{{ operation.participants }}</td>
-            <td>{{ operation.details }}</td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+    <button type="button" class="action-btn" (click)="openFeedingOperationPage()">
+      Open Feeding Operation Page
+    </button>
   </article>
   }
 </section>
