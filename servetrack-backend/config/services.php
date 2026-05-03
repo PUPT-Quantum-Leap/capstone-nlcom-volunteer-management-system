@@ -35,4 +35,24 @@ return [
         ],
     ],
 
+    'admin' => [
+        'invite_code' => env('ADMIN_INVITE_CODE'),
+        'allowed_domains' => env('ADMIN_ALLOWED_DOMAINS'),
+    ],
+
+    'facebook' => [
+        'app_id' => env('FACEBOOK_APP_ID'),
+        'app_secret' => env('FACEBOOK_APP_SECRET'),
+        'page_id' => env('FACEBOOK_PAGE_ID'),
+        'page_access_token' => env('FACEBOOK_PAGE_ACCESS_TOKEN'),
+        'redirect_uri' => env('FACEBOOK_REDIRECT_URI'),
+        'webhook_verify_token' => env('FACEBOOK_WEBHOOK_VERIFY_TOKEN'),
+    ],
+
+    'twilio' => [
+        'sid' => env('TWILIO_SID'),
+        'token' => env('TWILIO_TOKEN'),
+        'phone_number' => env('TWILIO_PHONE_NUMBER'),
+    ],
+
 ];

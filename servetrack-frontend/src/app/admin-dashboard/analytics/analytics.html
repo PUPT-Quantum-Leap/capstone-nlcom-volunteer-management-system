@@ -1,0 +1,278 @@
+<section class="analytics-container">
+  @if (analyticsLoading()) {
+  <div class="loading-state">
+    <div class="loading-spinner"></div>
+    <p>Loading analytics data...</p>
+  </div>
+  } @else {
+  <!-- Dark Header Bar -->
+  <header class="report-header">
+    <div class="report-header-left">
+      <div class="report-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M3 3v18h18"/>
+          <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+        </svg>
+      </div>
+      <div class="report-title-group">
+        <span class="report-label">ANALYTICS & REPORTS</span>
+        <h2 class="report-title">Comprehensive Insights & System Metrics</h2>
+      </div>
+    </div>
+    <div class="report-header-right">
+      <span class="filter-label">DATE RANGE</span>
+      <select class="filter-dropdown" [value]="dateRangeFilter()" (change)="setDateRange($any($event.target).value)">
+        <option value="all">All Time</option>
+        <option value="month">This Month</option>
+        <option value="quarter">This Quarter</option>
+        <option value="year">This Year</option>
+      </select>
+      <span class="filter-label">DEPT</span>
+      <select class="filter-dropdown filter-dropdown-compact" (change)="onDepartmentFilterChange($any($event.target).value)">
+        <option value="">All</option>
+        @for (department of reportData()?.departmentBreakdown ?? []; track department.name) {
+        <option [value]="department.name">{{ department.name }}</option>
+        }
+      </select>
+      <button type="button" class="action-btn" (click)="exportReport('pdf')" [disabled]="analyticsLoading()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M13 3V9H19" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 13H15" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 17H15" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Export PDF
+      </button>
+      <button type="button" class="action-btn" (click)="exportReport('excel')" [disabled]="analyticsLoading()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M13 3V9H19" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 17L11 15L9 13" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 15H15" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Export Excel
+      </button>
+    </div>
+  </header>
+
+  <!-- Stats Cards -->
+  <div class="analytics-stats-grid">
+    <article class="stat-card stat-card-blue">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ reportData()?.eventParticipation?.totalEvents ?? 0 }}</div>
+        <div class="stat-label">Total Events</div>
+      </div>
+    </article>
+
+    <article class="stat-card stat-card-green">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ reportData()?.trainingCompletion?.completionRate ?? 0 }}%</div>
+        <div class="stat-label">Training Rate</div>
+      </div>
+    </article>
+
+    <article class="stat-card stat-card-purple">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ reportData()?.retentionMetrics?.retentionRate ?? 0 }}%</div>
+        <div class="stat-label">Retention Rate</div>
+      </div>
+    </article>
+
+    <article class="stat-card stat-card-orange">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ reportData()?.eventParticipation?.totalResponses ?? 0 }}</div>
+        <div class="stat-label">Total Responses</div>
+      </div>
+    </article>
+  </div>
+
+  <!-- Charts Grid -->
+  <div class="analytics-charts-grid">
+    <!-- Monthly Trends Chart -->
+    <article class="chart-card">
+      <div class="chart-header">
+        <h3>Monthly Trends</h3>
+        <p>Volunteer activity over time</p>
+      </div>
+      <div class="chart-container">
+        <svg viewBox="0 0 400 200" class="chart-svg" aria-label="Monthly volunteer activity trend chart" role="img">
+          <defs>
+            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--primary-500)" stop-opacity="0.3" />
+              <stop offset="100%" stop-color="var(--primary-500)" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <g class="chart-grid">
+            <line x1="40" y1="20" x2="360" y2="20" class="chart-grid-line" />
+            <line x1="40" y1="55" x2="360" y2="55" class="chart-grid-line" />
+            <line x1="40" y1="90" x2="360" y2="90" class="chart-grid-line" />
+            <line x1="40" y1="125" x2="360" y2="125" class="chart-grid-line" />
+            <line x1="40" y1="160" x2="360" y2="160" class="chart-grid-line" />
+          </g>
+          <path d="M70,130 L120,110 L170,90 L220,70 L270,80 L320,50 L320,160 L70,160 Z" fill="url(#chartGradient)" />
+          <polyline points="70,130 120,110 170,90 220,70 270,80 320,50" class="chart-line" />
+          <circle cx="70" cy="130" r="4.5" class="chart-point" />
+          <circle cx="120" cy="110" r="4.5" class="chart-point" />
+          <circle cx="170" cy="90" r="4.5" class="chart-point" />
+          <circle cx="220" cy="70" r="4.5" class="chart-point" />
+          <circle cx="270" cy="80" r="4.5" class="chart-point" />
+          <circle cx="320" cy="50" r="4.5" class="chart-point" />
+          <g font-size="10" fill="var(--gray-400)" text-anchor="middle" font-weight="600">
+            @for (trend of reportData()?.monthlyTrend ?? []; track trend.month) {
+            <text [attr.x]="70 + ($index * 50)" y="185">{{ trend.month }}</text>
+            }
+          </g>
+        </svg>
+      </div>
+    </article>
+
+    <!-- Department Breakdown -->
+    <article class="chart-card">
+      <div class="chart-header">
+        <h3>Department Breakdown</h3>
+        <p>Volunteer distribution by department</p>
+      </div>
+      <div class="department-list">
+        @for (department of paginatedDepartments(); track department.name) {
+        <div class="department-item">
+          <div class="department-info">
+            <span class="department-name">{{ department.name }}</span>
+            <span class="department-count">{{ department.count }} volunteers</span>
+          </div>
+          <div class="department-bar" role="progressbar" [attr.aria-valuenow]="department.percentage" aria-valuemin="0"
+            aria-valuemax="100">
+            <div class="department-fill" [style.width.%]="department.percentage"></div>
+          </div>
+          <span class="department-percentage">{{ department.percentage }}%</span>
+        </div>
+        } @empty {
+        <div class="empty-chart-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+          </svg>
+          <p>No department data available.</p>
+        </div>
+        }
+      </div>
+      @if (hasMoreDepartments()) {
+      <div class="mini-pagination">
+        <button type="button" class="pagination-btn" (click)="previousDepartmentsPage()"
+          [disabled]="departmentsPage() === 1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <span class="pagination-info">{{ departmentsPage() }} / {{ totalDepartmentsPages() }}</span>
+        <button type="button" class="pagination-btn" (click)="nextDepartmentsPage()"
+          [disabled]="departmentsPage() >= totalDepartmentsPages()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
+      }
+    </article>
+  </div>
+
+  <!-- Skills Distribution -->
+  <article class="skills-section">
+    <div class="section-header">
+      <h3>Skills Distribution</h3>
+      <p>Top skills in volunteer pool</p>
+    </div>
+    <div class="skills-grid">
+      @for (skill of paginatedSkills(); track skill.name) {
+      <div class="skill-card">
+        <div class="skill-name">{{ skill.name }}</div>
+        <div class="skill-count">{{ skill.count }}</div>
+        <div class="skill-bar">
+          <div class="skill-fill" [style.width.%]="calculateSkillPercentage(skill.count)"></div>
+        </div>
+      </div>
+      } @empty {
+      <div class="empty-skills-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p>No skills data available</p>
+      </div>
+      }
+    </div>
+    @if (hasMoreSkills()) {
+    <div class="mini-pagination">
+      <button type="button" class="pagination-btn" (click)="previousSkillsPage()" [disabled]="skillsPage() === 1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <span class="pagination-info">{{ skillsPage() }} / {{ totalSkillsPages() }}</span>
+      <button type="button" class="pagination-btn" (click)="nextSkillsPage()"
+        [disabled]="skillsPage() >= totalSkillsPages()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
+    }
+  </article>
+
+  <!-- Operations Report Table -->
+  <article class="operations-section">
+    <div class="section-header">
+      <h3>NLCOM x Metro World Child Feeding Operation</h3>
+      <p>November 22, 2025</p>
+    </div>
+    <div class="table-wrapper">
+      <table class="operations-table">
+        <thead>
+          <tr>
+            <th>Team & Time Departure</th>
+            <th>Location</th>
+            <th>Time</th>
+            <th>No. of Pax</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (operation of operationsData(); track operation.id) {
+          <tr>
+            <td class="team-cell">{{ operation.team }}</td>
+            <td>{{ operation.location }}</td>
+            <td>{{ operation.time }}</td>
+            <td class="pax-cell">{{ operation.participants }}</td>
+            <td>{{ operation.details }}</td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </article>
+  }
+</section>

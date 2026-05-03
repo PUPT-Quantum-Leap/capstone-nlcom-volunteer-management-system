@@ -11,7 +11,7 @@ else
 fi
 
 # Run Laravel Pint only on staged PHP files (not the entire backend)
-STAGED_PHP_FILES=$(git diff --cached --name-only | grep -E 'servetrack-backend/.*\.php$' || true)
+STAGED_PHP_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E 'servetrack-backend/.*\.php$' || true)
 if [ -n "$STAGED_PHP_FILES" ]; then
   echo "🎨 Running Laravel Pint on staged files..."
   if [ -f "servetrack-backend/vendor/bin/pint" ]; then

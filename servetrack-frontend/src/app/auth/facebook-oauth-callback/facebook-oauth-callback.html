@@ -1,0 +1,14 @@
+<section class="callback-page" aria-live="polite">
+  @if (isLoading()) {
+    <div class="card">
+      <h1>Signing you in...</h1>
+      <p>Please wait while we complete your Facebook login.</p>
+    </div>
+  } @else {
+    <div class="card error">
+      <h1>Facebook login failed</h1>
+      <p>{{ errorMessage() }}</p>
+      <a routerLink="/volunteer-auth">Back to login</a>
+    </div>
+  }
+</section>

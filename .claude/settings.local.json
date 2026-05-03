@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(git add:*)",
+      "Bash(echo:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)"
+    ]
+  }
+}

@@ -26,6 +26,15 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+.server.env
 
 # Gitleaks report
 gitleaks-report.json
+
+# Private server configuration
+VPS_CONFIG_PRIVATE.md
+session-transcript-*.md
+deployment-*.md
+vps-hardening-guide.md
+PRODUCTION_DOCKER_PLAN.md
+project-deployment-*.md

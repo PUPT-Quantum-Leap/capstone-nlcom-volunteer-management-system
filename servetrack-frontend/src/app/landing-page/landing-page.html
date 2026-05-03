@@ -19,8 +19,8 @@
           </li>
         </ul>
         <div class="nav-buttons">
-          <button class="btn btn-outline" routerLink="/login">Login</button>
-          <button class="btn btn-primary" (click)="showPopupModal()">Sign Up</button>
+          <button class="btn btn-outline" routerLink="/volunteer-auth">Login</button>
+          <button class="btn btn-primary" [routerLink]="['/volunteer-auth']" [queryParams]="{tab: 'signup'}">Sign Up</button>
         </div>
       </div>
     </div>
@@ -37,7 +37,7 @@
             meaningful opportunities in your community.
           </p>
           <div class="hero-buttons">
-            <button class="btn btn-primary btn-large" (click)="showPopupModal()">
+            <button class="btn btn-primary btn-large" [routerLink]="['/volunteer-auth']" [queryParams]="{tab: 'signup'}">
               Get Started
             </button>
             <button class="btn btn-outline btn-large" (click)="scrollToSection('features', $event)">
@@ -294,24 +294,64 @@
       </div>
       <div class="footer-bottom">
         <p>&copy; 2026 NLCOM ServeTrack. All rights reserved.</p>
+        <a routerLink="/admin-auth" class="admin-access-link" aria-label="Admin Access">Staff Portal</a>
       </div>
     </div>
   </footer>
 
-  <!-- Popup Modal -->
-  @if (showPopup()) {
-    <div class="popup-overlay" (click)="closePopup()">
-      <div class="popup-modal" (click)="$event.stopPropagation()">
-        <button class="popup-close" (click)="closePopup()">×</button>
-        <div class="popup-content">
-          <h3 class="popup-title">Already an NLCOM volunteer?</h3>
-          <p class="popup-message">Sign up here to continue your journey with us!</p>
-          <div class="popup-actions">
-            <button class="btn btn-primary" routerLink="/signup">Sign Up</button>
-            <button class="btn btn-outline" routerLink="/signup-form">I'm a new member</button>
+  <!-- AI Chat Widget -->
+  <button
+    type="button"
+    class="ai-chat-fab"
+    [class.hidden]="showChatWindow()"
+    (click)="openChatWindow()"
+    aria-label="Open AI Chat"
+    title="AI Chat"
+  >
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z"/>
+    </svg>
+  </button>
+
+  @if (showChatWindow()) {
+    <div class="chat-backdrop" (click)="closeChatWindow()">
+      <section class="chat-panel" (click)="$event.stopPropagation()">
+        <div class="chat-header">
+          <h3>ServeBot</h3>
+          <button class="close-chat" type="button" (click)="closeChatWindow()">✕</button>
+        </div>
+
+        <div class="chat-body">
+          <div class="chat-messages">
+            <div
+              *ngFor="let message of chatMessages()"
+              class="chat-message"
+              [class.user]="message.sender === 'user'"
+              [class.bot]="message.sender === 'bot'"
+            >
+              <div class="message-bubble">{{ message.text }}</div>
+            </div>
+          </div>
+          <div class="quick-questions">
+            <p>Try these samples:</p>
+            <div class="question-chip" (click)="askQuickQuestion(item.question)" *ngFor="let item of predefinedQuestions">
+              {{ item.question }}
+            </div>
           </div>
         </div>
-      </div>
+
+        <form class="chat-input-area" (ngSubmit)="sendChatMessage()">
+          <input
+            type="text"
+            placeholder="Type your question..."
+            [value]="chatInput()"
+            (input)="setChatInput($any($event.target).value)"
+            aria-label="Chat input"
+          />
+          <button type="submit" class="btn btn-primary">Send</button>
+        </form>
+      </section>
     </div>
   }
+
 </div>

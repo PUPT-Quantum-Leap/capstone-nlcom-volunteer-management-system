@@ -8,6 +8,11 @@ use App\Http\Requests\UpdateProfilePhotoRequest;
 use App\Http\Requests\UpdateVolunteerProfileRequest;
 use App\Http\Resources\ProfileChangeLogResource;
 use App\Http\Resources\VolunteerProfileResource;
+use App\Models\Availability;
+use App\Models\EmergencyContact;
+use App\Models\Experience;
+use App\Models\Invite;
+use App\Models\Lifegroup;
 use App\Models\Position;
 use App\Models\ProfileChangeLog;
 use App\Models\Skill;
@@ -19,6 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
@@ -42,6 +48,18 @@ class VolunteerController extends Controller
             ]);
         }
         // Email normalization is now handled by NormalizeEmail middleware
+
+        // Validate invite token if provided
+        $invite = null;
+        if ($request->has('token')) {
+            $invite = Invite::where('token', $request->token)->first();
+            if (! $invite || ! $invite->isValid()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid or expired invite token',
+                ], 400);
+            }
+        }
 
         // Validate incoming data
         $validator = Validator::make($request->all(), [
@@ -78,6 +96,9 @@ class VolunteerController extends Controller
             // Password (for authentication)
             'password' => ['required', 'string', Password::defaults()],
             'confirmPassword' => ['required', 'string', 'same:password'],
+
+            // Invite token (optional)
+            'token' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -91,13 +112,21 @@ class VolunteerController extends Controller
         // Use database transaction for data integrity
         DB::beginTransaction();
         try {
+            // Determine role from invite or default to volunteer
+            $role = $invite ? $invite->role : 'volunteer';
+
             // Create user account first
             $user = User::create([
                 'name' => $request->firstName.' '.$request->lastName,
                 'email' => $request->email,
                 'password' => bcrypt($request->password),
-                'role' => 'volunteer',
+                'role' => $role,
             ]);
+
+            // Mark invite as accepted if used
+            if ($invite) {
+                $invite->accept();
+            }
 
             // Create volunteer profile linked to user
             $volunteer = Volunteer::create([
@@ -113,26 +142,8 @@ class VolunteerController extends Controller
                 'user_id' => $user->id,
             ]);
 
-            // Process and attach training experience
-            $this->processTrainingExperience($volunteer, $request->trainingExperience);
-
-            // Process and attach skills/hobbies
-            $this->processSkillsHobbies($volunteer, $request->skillsHobbies);
-
-            // Process and attach classes/training
-            $this->processClassesTraining($volunteer, $request->classesTraining);
-
-            // Process volunteer preference and attach to position
-            $this->processVolunteerPreference($volunteer, $request->volunteerPreference, $request->otherPreference);
-
-            // Process emergency contact
-            $this->processEmergencyContact($volunteer, $request->emergencyContactName, $request->emergencyContactNumber, $request->emergencyContactRelationship);
-
-            // Process availability
-            $this->processAvailability($volunteer, $request->availability, $request->otherAvailability);
-
-            // Process lifegroup information
-            $this->processLifegroupInfo($volunteer, $request->partOfLifegroup, $request->lifegroupLeaderName, $request->leadingLifegroup);
+            // Sync all related data
+            $this->syncVolunteerData($volunteer, $request);
 
             // Log the user in
             Auth::login($user);
@@ -169,7 +180,7 @@ class VolunteerController extends Controller
             DB::rollBack();
 
             // Log detailed error internally
-            \Log::error('Volunteer registration failed', [
+            Log::error('Volunteer registration failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -206,7 +217,7 @@ class VolunteerController extends Controller
         $volunteer->load(['experiences', 'skills', 'trainings', 'positions', 'availabilities', 'lifegroups', 'emergencyContact']);
 
         // Get text fields from related tables
-        $trainingExperience = $volunteer->trainings->pluck('name')->implode(', ');
+        $trainingExperience = $volunteer->experiences->pluck('name')->implode(', ');
         $skillsHobbies = $volunteer->skills->pluck('name')->implode(', ');
         $classesTraining = $volunteer->trainings->pluck('name')->implode(', ');
 
@@ -269,20 +280,8 @@ class VolunteerController extends Controller
                 $user->email = $request->email;
                 $user->save();
 
-                // Process skills, training, and positions
-                if ($request->skillsHobbies) {
-                    $this->processSkillsHobbies($volunteer, $request->skillsHobbies);
-                }
-                if ($request->trainingExperience) {
-                    $this->processTrainingExperience($volunteer, $request->trainingExperience);
-                }
-                if ($request->classesTraining) {
-                    $this->processClassesTraining($volunteer, $request->classesTraining);
-                }
-                $this->processVolunteerPreference($volunteer, $request->volunteerPreference, $request->otherPreference);
-                $this->processEmergencyContact($volunteer, $request->emergencyContactName, $request->emergencyContactNumber, $request->emergencyContactRelationship);
-                $this->processAvailability($volunteer, $request->availability, $request->otherAvailability);
-                $this->processLifegroupInfo($volunteer, $request->partOfLifegroup, $request->lifegroupLeaderName, $request->leadingLifegroup);
+                // Sync all related data
+                $this->syncVolunteerData($volunteer, $request);
 
                 DB::commit();
 
@@ -319,10 +318,14 @@ class VolunteerController extends Controller
             } catch (\Exception $e) {
                 DB::rollBack();
 
+                Log::error('Profile creation failed', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to create profile. Please try again.',
-                    'errors' => ['server' => $e->getMessage()],
+                    'message' => 'Failed to create profile. Please try again or contact support.',
                 ], 500);
             }
         }
@@ -417,10 +420,14 @@ class VolunteerController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
 
+            Log::error('Profile update failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update profile. Please try again.',
-                'errors' => ['server' => $e->getMessage()],
+                'message' => 'Failed to update profile. Please try again or contact support.',
             ], 500);
         }
     }
@@ -476,7 +483,7 @@ class VolunteerController extends Controller
             'success' => true,
             'message' => 'Profile photo updated successfully.',
             'data' => [
-                'profile_photo_url' => Storage::disk('public')->url($path),
+                'profile_photo_url' => Storage::url($path),
             ],
         ]);
     }
@@ -572,7 +579,20 @@ class VolunteerController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Volunteer::with([
+        // Check if we want archived volunteers
+        $showArchived = $request->query('archived') === 'true';
+
+        // Build query with proper soft delete handling
+        if ($showArchived) {
+            // Show only archived (soft-deleted) volunteers
+            $query = Volunteer::onlyTrashed();
+        } else {
+            // Show only active volunteers (default)
+            $query = Volunteer::query();
+        }
+
+        // Add eager loading
+        $query->with([
             'experiences',
             'skills',
             'trainings',
@@ -606,7 +626,7 @@ class VolunteerController extends Controller
         $sortOrder = $request->query('order') === 'asc' ? 'asc' : 'desc';
 
         // Log sorting for security audit
-        \Log::debug('Sorting volunteers', ['sortBy' => $sortBy, 'sortOrder' => $sortOrder]);
+        Log::debug('Sorting volunteers', ['sortBy' => $sortBy, 'sortOrder' => $sortOrder, 'showArchived' => $showArchived]);
 
         $query->orderBy($sortBy, $sortOrder);
 
@@ -702,24 +722,80 @@ class VolunteerController extends Controller
     }
 
     /**
-     * Process training experience text and create/find training records
+     * Sync all related volunteer data from request.
      */
-    private function processTrainingExperience(Volunteer $volunteer, ?string $trainingExperience): void
+    private function syncVolunteerData(Volunteer $volunteer, Request $request): void
     {
-        if (empty($trainingExperience)) {
-            return;
+        // Sync skills
+        $volunteer->skills()->detach();
+        if ($request->has('skillsHobbies')) {
+            $this->processSkillsHobbies($volunteer, $request->skillsHobbies);
+        }
+
+        // Sync experiences
+        $volunteer->experiences()->detach();
+        if ($request->has('trainingExperience')) {
+            $this->processTrainingExperience($volunteer, $request->trainingExperience);
+        }
+
+        // Sync trainings
+        $volunteer->trainings()->detach();
+        if ($request->has('classesTraining')) {
+            $this->processClassesTraining($volunteer, $request->classesTraining);
+        }
+
+        // Sync positions
+        $volunteer->positions()->detach();
+        $this->processVolunteerPreference($volunteer, $request->volunteerPreference, $request->otherPreference);
+
+        // Sync emergency contact
+        $this->processEmergencyContact(
+            $volunteer,
+            $request->emergencyContactName,
+            $request->emergencyContactNumber,
+            $request->emergencyContactRelationship
+        );
+
+        // Sync availability
+        $volunteer->availabilities()->detach();
+        $this->processAvailability($volunteer, $request->availability, $request->otherAvailability);
+
+        // Sync lifegroup info
+        $volunteer->lifegroups()->detach();
+        $this->processLifegroupInfo(
+            $volunteer,
+            $request->partOfLifegroup,
+            $request->lifegroupLeaderName,
+            $request->leadingLifegroup
+        );
+    }
+
+    /**
+     * Parse a delimited string into an array of clean items.
+     */
+    private function parseDelimitedString(?string $input): array
+    {
+        if (empty($input)) {
+            return [];
         }
 
         // Split by common delimiters (commas, semicolons, new lines)
-        $trainingItems = preg_split('/[,;\n]+/', $trainingExperience);
-        $trainingItems = array_map('trim', $trainingItems);
-        $trainingItems = array_filter($trainingItems, 'strlen');
+        $items = preg_split('/[,;\n]+/', $input);
+        $items = array_map('trim', $items);
 
-        foreach ($trainingItems as $trainingName) {
-            if (strlen($trainingName) > 0) {
-                $training = Training::firstOrCreate(['name' => $trainingName]);
-                $volunteer->trainings()->attach($training->training_id);
-            }
+        return array_filter($items, 'strlen');
+    }
+
+    /**
+     * Process training experience text and create/find experience records
+     */
+    private function processTrainingExperience(Volunteer $volunteer, ?string $trainingExperience): void
+    {
+        $experienceItems = $this->parseDelimitedString($trainingExperience);
+
+        foreach ($experienceItems as $experienceName) {
+            $experience = Experience::firstOrCreate(['name' => $experienceName]);
+            $volunteer->experiences()->attach($experience->experience_id);
         }
     }
 
@@ -728,20 +804,11 @@ class VolunteerController extends Controller
      */
     private function processSkillsHobbies(Volunteer $volunteer, ?string $skillsHobbies): void
     {
-        if (empty($skillsHobbies)) {
-            return;
-        }
-
-        // Split by common delimiters
-        $skillItems = preg_split('/[,;\n]+/', $skillsHobbies);
-        $skillItems = array_map('trim', $skillItems);
-        $skillItems = array_filter($skillItems, 'strlen');
+        $skillItems = $this->parseDelimitedString($skillsHobbies);
 
         foreach ($skillItems as $skillName) {
-            if (strlen($skillName) > 0) {
-                $skill = Skill::firstOrCreate(['name' => $skillName]);
-                $volunteer->skills()->attach($skill->skill_id);
-            }
+            $skill = Skill::firstOrCreate(['name' => $skillName]);
+            $volunteer->skills()->attach($skill->skill_id);
         }
     }
 
@@ -750,20 +817,11 @@ class VolunteerController extends Controller
      */
     private function processClassesTraining(Volunteer $volunteer, ?string $classesTraining): void
     {
-        if (empty($classesTraining)) {
-            return;
-        }
+        $trainingItems = $this->parseDelimitedString($classesTraining);
 
-        // Split by common delimiters
-        $classItems = preg_split('/[,;\n]+/', $classesTraining);
-        $classItems = array_map('trim', $classItems);
-        $classItems = array_filter($classItems, 'strlen');
-
-        foreach ($classItems as $className) {
-            if (strlen($className) > 0) {
-                $training = Training::firstOrCreate(['name' => $className]);
-                $volunteer->trainings()->attach($training->training_id);
-            }
+        foreach ($trainingItems as $trainingName) {
+            $training = Training::firstOrCreate(['name' => $trainingName]);
+            $volunteer->trainings()->attach($training->training_id);
         }
     }
 
@@ -795,9 +853,14 @@ class VolunteerController extends Controller
         ];
 
         if ($preference === 'other' && ! empty($otherPreference)) {
+            // Original: 'other' key with custom text in otherPreference
             $positionName = $otherPreference;
         } elseif (isset($preferenceMap[$preference])) {
+            // Map key to display name
             $positionName = $preferenceMap[$preference];
+        } elseif (! in_array($preference, array_keys($preferenceMap)) && $preference !== 'other') {
+            // Custom value sent directly (not a key, not 'other') - treat as custom position
+            $positionName = $preference;
         }
 
         $position = Position::firstOrCreate(['name' => $positionName]);
@@ -813,7 +876,7 @@ class VolunteerController extends Controller
         string $number,
         string $relationship
     ): void {
-        $emergencyContact = \App\Models\EmergencyContact::firstOrCreate([
+        $emergencyContact = EmergencyContact::firstOrCreate([
             'name' => $name,
             'phone_number' => $number,
             'relationship' => $relationship,
@@ -840,7 +903,7 @@ class VolunteerController extends Controller
             $customDescription = $otherAvailability;
         }
 
-        $availabilityRecord = \App\Models\Availability::firstOrCreate([
+        $availabilityRecord = Availability::firstOrCreate([
             'name' => $availabilityName,
         ]);
 
@@ -862,7 +925,7 @@ class VolunteerController extends Controller
         if ($partOfLifegroup === 'yes') {
             $lifegroupName = ! empty($lifegroupLeaderName) ? $lifegroupLeaderName : 'General Lifegroup';
 
-            $lifegroup = \App\Models\Lifegroup::firstOrCreate([
+            $lifegroup = Lifegroup::firstOrCreate([
                 'name' => $lifegroupName,
             ]);
 
@@ -870,6 +933,244 @@ class VolunteerController extends Controller
                 $lifegroup->lifegroup_id,
                 ['is_leader' => $leadingLifegroup === 'yes' ? 1 : 0]
             );
+        }
+    }
+
+    /**
+     * Soft delete a volunteer (archive)
+     */
+    public function softDelete(Request $request, int $id): JsonResponse
+    {
+        $volunteer = Volunteer::withTrashed()->find($id);
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Volunteer not found.',
+            ], 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Use Laravel's soft delete method
+            if (! $volunteer->trashed()) {
+                $volunteer->delete();
+            }
+
+            // Cascade soft delete to associated user
+            if ($volunteer->user
+                && ! $volunteer->user->trashed()) {
+                $volunteer->user->delete();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Volunteer archived successfully.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Volunteer soft delete failed', [
+                'volunteer_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to archive volunteer.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Restore a soft-deleted volunteer
+     */
+    public function restore(Request $request, int $id): JsonResponse
+    {
+        $volunteer = Volunteer::onlyTrashed()->find($id);
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Archived volunteer not found.',
+            ], 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Use Laravel's restore method
+            $volunteer->restore();
+
+            // Cascade restore to associated user (load with trashed)
+            $user = User::withTrashed()
+                ->find($volunteer->user_id);
+            if ($user && $user->trashed()) {
+                $user->restore();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Volunteer restored successfully.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Volunteer restore failed', [
+                'volunteer_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore volunteer.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Force delete a volunteer permanently
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $volunteer = Volunteer::withTrashed()->find($id);
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Volunteer not found.',
+            ], 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Force delete the volunteer first
+            $volunteer->forceDelete();
+
+            // Cascade force delete to associated user
+            if ($volunteer->user) {
+                $volunteer->user->forceDelete();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Volunteer deleted permanently.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Volunteer force delete failed', [
+                'volunteer_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete volunteer.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Update volunteer basic information (admin only)
+     */
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $volunteer = Volunteer::find($id);
+
+        if (! $volunteer) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Volunteer not found.',
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'first_name' => 'sometimes|string|max:50',
+            'last_name' => 'sometimes|string|max:50',
+            'email' => 'sometimes|email|unique:volunteer,email,'.$id.',volunteer_id',
+            'mobile_number' => 'sometimes|string|max:15',
+            'facebook_name' => 'nullable|string|max:100',
+            'address' => 'nullable|string|max:255',
+            'educational_attainment' => 'nullable|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $updateData = $request->only([
+                'first_name',
+                'last_name',
+                'email',
+                'mobile_number',
+                'facebook_name',
+                'address',
+                'educational_attainment',
+            ]);
+
+            $volunteer->update($updateData);
+
+            // Also update associated user if exists
+            if ($volunteer->user) {
+                $userUpdateData = [];
+                if ($request->has('first_name') || $request->has('last_name')) {
+                    $firstName = $request->input('first_name', $volunteer->first_name);
+                    $lastName = $request->input('last_name', $volunteer->last_name);
+                    $userUpdateData['name'] = trim($firstName.' '.$lastName);
+                }
+                if ($request->has('email')) {
+                    $userUpdateData['email'] = $request->input('email');
+                }
+                if (! empty($userUpdateData)) {
+                    $volunteer->user->update($userUpdateData);
+                }
+            }
+
+            // Log the change
+            ProfileChangeLog::create([
+                'volunteer_id' => $volunteer->volunteer_id,
+                'changed_by' => Auth::id(),
+                'field_name' => 'profile_update',
+                'old_value' => null,
+                'new_value' => json_encode($updateData),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Volunteer updated successfully.',
+                'data' => $volunteer->fresh(),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Volunteer update failed', [
+                'volunteer_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update volunteer.',
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
 }

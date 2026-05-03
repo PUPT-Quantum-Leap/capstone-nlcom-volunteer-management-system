@@ -1,3 +1,6 @@
+
+
+
 /* You can add global styles to this file, and also import other style files */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
@@ -11,4 +14,10 @@ body {
   font-family: 'Inter', sans-serif;
   color: #1f2937;
   overflow-x: hidden;
+}
+
+:root {
+  --green-100: #d1fae5;
+  --green-600: #16a34a;
+  --green-700: #15803d;
 }

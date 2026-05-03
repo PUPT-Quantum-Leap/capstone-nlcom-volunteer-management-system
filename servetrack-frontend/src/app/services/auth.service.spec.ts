@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import {
   AuthService,
   LoginCredentials,
-  RegisterData,
   VolunteerSignupData,
 } from './auth.service';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
@@ -118,47 +117,6 @@ describe('AuthService', () => {
         const errors = service.validateLogin(credentials);
         expect(errors).toHaveLength(2);
         expect(errors.map((e) => e.field)).toEqual(['email', 'password']);
-      });
-    });
-
-    describe('validateRegistration', () => {
-      it('should return no errors for valid registration data', () => {
-        const data: RegisterData = {
-          email: 'test@example.com',
-          password: 'Password123',
-          password_confirmation: 'Password123',
-        };
-
-        const errors = service.validateRegistration(data);
-        expect(errors).toHaveLength(0);
-      });
-
-      it('should return error for password mismatch', () => {
-        const data: RegisterData = {
-          email: 'test@example.com',
-          password: 'Password123',
-          password_confirmation: 'DifferentPassword',
-        };
-
-        const errors = service.validateRegistration(data);
-        expect(errors).toHaveLength(1);
-        expect(errors[0].field).toBe('password_confirmation');
-        expect(errors[0].message).toBe('Passwords do not match');
-      });
-
-      it('should return error for weak password format', () => {
-        const data: RegisterData = {
-          email: 'test@example.com',
-          password: 'weakpassword',
-          password_confirmation: 'weakpassword',
-        };
-
-        const errors = service.validateRegistration(data);
-        expect(errors).toHaveLength(1);
-        expect(errors[0].field).toBe('password');
-        expect(errors[0].message).toBe(
-          'Password must contain at least one uppercase letter, one lowercase letter, and one number',
-        );
       });
     });
 

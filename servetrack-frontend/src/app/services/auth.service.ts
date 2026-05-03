@@ -1,18 +1,12 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, catchError, tap, of, map, switchMap } from 'rxjs';
+import { Observable, catchError, tap, of, map, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface LoginCredentials {
   email: string;
   password: string;
-}
-
-export interface RegisterData {
-  email: string;
-  password: string;
-  password_confirmation: string;
 }
 
 export interface VolunteerSignupData {
@@ -49,6 +43,7 @@ export interface AdminSignupData {
   contactNumber?: string;
   password: string;
   confirmPassword: string;
+  inviteCode: string;
 }
 
 export interface CoordinatorSignupData {
@@ -64,6 +59,7 @@ export interface ValidationError {
 }
 
 export interface AuthResponse {
+  /** Success flag */
   success: boolean;
   message?: string;
   user?: {
@@ -71,6 +67,7 @@ export interface AuthResponse {
     email: string;
     name?: string;
     role?: 'volunteer' | 'admin' | 'coordinator';
+    profile_photo_url?: string;
     user_type?: 'volunteer' | 'admin' | 'coordinator';
     volunteer_profile?: {
       volunteer_id: number;
@@ -133,6 +130,67 @@ export class AuthService {
    */
   adminLogin$(credentials: LoginCredentials): Observable<AuthResponse> {
     return this.loginWithEndpoint$(credentials, '/admin/login');
+  }
+
+  /**
+   * Get Facebook OAuth redirect URL.
+   */
+  getFacebookAuthUrl$(): Observable<{ redirect_url: string }> {
+    this.error.set(null);
+
+    return this.http
+      .get<{ redirect_url: string }>(`${environment.apiUrl}/auth/facebook`, { withCredentials: true })
+      .pipe(
+        catchError((err: HttpErrorResponse) => {
+          const message =
+            typeof err.error?.message === 'string'
+              ? err.error.message
+              : 'Failed to initialize Facebook login.';
+          this.error.set(message);
+          return throwError(() => err);
+        }),
+      );
+  }
+
+  exchangeFacebookCode$(code: string, state: string): Observable<AuthResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.http
+      .get<{ user?: AuthResponse['user']; message?: string }>(
+        `${environment.apiUrl}/auth/facebook/callback`,
+        {
+          params: { code, state },
+          withCredentials: true,
+        },
+      )
+      .pipe(
+        map((response) => {
+          if (response.user) {
+            return { success: true, user: response.user } as AuthResponse;
+          }
+
+          return {
+            success: false,
+            message: response.message || 'Facebook authentication failed.',
+          } as AuthResponse;
+        }),
+        tap((response) => {
+          if (response.user) {
+            this.isAuthenticated.set(true);
+            this.currentUser.set(response.user);
+          }
+        }),
+        catchError((err: HttpErrorResponse) => {
+          const message =
+            typeof err.error?.message === 'string'
+              ? err.error.message
+              : 'Facebook authentication failed.';
+          this.error.set(message);
+          return of({ success: false, message } as AuthResponse);
+        }),
+        tap(() => this.isLoading.set(false)),
+      );
   }
 
   private loginWithEndpoint$(
@@ -263,46 +321,6 @@ export class AuthService {
     }
 
     return message;
-  }
-
-  /**
-   * Observable version of register for RxJS compatibility.
-   */
-  register$(data: RegisterData): Observable<AuthResponse> {
-    this.isLoading.set(true);
-    this.error.set(null);
-
-    if (!this.isValidEmail(data.email)) {
-      this.isLoading.set(false);
-      return of({ success: false, message: 'Invalid email format' } as AuthResponse);
-    }
-
-    return this.ensureCsrf$().pipe(
-      switchMap(() => 
-        this.http.post<AuthResponse>(`${environment.apiUrl}/register`, data, { withCredentials: true })
-      ),
-      tap((response) => {
-        if (response.success && response.user) {
-          this.isAuthenticated.set(true);
-          this.currentUser.set(response.user);
-        }
-      }),
-      catchError((err: HttpErrorResponse) => {
-        const message = err.error?.message || 'Registration failed';
-        this.error.set(message);
-        return of({ success: false, message } as AuthResponse);
-      }),
-      tap(() => this.isLoading.set(false)),
-    );
-  }
-
-  register(data: RegisterData): Promise<AuthResponse> {
-    return new Promise((resolve, reject) => {
-      this.register$(data).subscribe({
-        next: (response) => resolve(response),
-        error: (error) => reject(error),
-      });
-    });
   }
 
   /**
@@ -448,9 +466,9 @@ export class AuthService {
   }
 
   /**
-   * Validate registration data
+   * Validate volunteer signup data
    */
-  validateRegistration(data: RegisterData): ValidationError[] {
+  validateVolunteerSignup(data: VolunteerSignupData): ValidationError[] {
     const errors: ValidationError[] = [];
 
     // Email validation
@@ -477,30 +495,17 @@ export class AuthService {
     }
 
     // Confirm password validation
-    if (!data.password_confirmation?.trim()) {
+    if (!data.confirmPassword?.trim()) {
       errors.push({
-        field: 'password_confirmation',
+        field: 'confirmPassword',
         message: 'Please confirm your password',
       });
-    } else if (data.password !== data.password_confirmation) {
+    } else if (data.password !== data.confirmPassword) {
       errors.push({
-        field: 'password_confirmation',
+        field: 'confirmPassword',
         message: 'Passwords do not match',
       });
     }
-
-    return errors;
-  }
-
-  /**
-   * Validate volunteer signup data
-   */
-  validateVolunteerSignup(data: VolunteerSignupData): ValidationError[] {
-    const errors = this.validateRegistration({
-      email: data.email,
-      password: data.password,
-      password_confirmation: data.confirmPassword,
-    });
 
     // Name validation
     if (!data.firstName?.trim()) {

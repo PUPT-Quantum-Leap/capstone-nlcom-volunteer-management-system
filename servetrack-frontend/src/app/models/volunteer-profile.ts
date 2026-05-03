@@ -42,6 +42,8 @@ export interface VolunteerProfileResponse {
   skills_hobbies: string;
   /** Classes/training attended from trainings table */
   classes_training: string;
+  /** Profile photo URL */
+  photo_url?: string;
   positions: Position[];
   experiences?: Experience[];
   skills?: Skill[];

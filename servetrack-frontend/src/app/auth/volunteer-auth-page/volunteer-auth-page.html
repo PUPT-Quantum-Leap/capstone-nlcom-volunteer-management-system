@@ -1,0 +1,564 @@
+<div class="auth-container">
+  <div class="auth-card" [class.signup-mode]="isSignupTab()">
+    <!-- ── Header ─────────────────────────────────────────────────── -->
+    <div class="auth-header">
+      <div class="logo">
+        <img
+          ngSrc="/assets/nlcom.png"
+          width="60"
+          height="60"
+          alt="NLCOM Logo"
+          class="logo-image"
+          priority
+        />
+        <span class="logo-text">ServeTrack</span>
+      </div>
+      <h1 class="auth-title">Welcome</h1>
+      <p class="auth-subtitle">Sign in or create your volunteer account</p>
+    </div>
+
+    <!-- ── Tab list ────────────────────────────────────────────────── -->
+    <div class="tab-list" role="tablist" aria-label="Authentication options">
+      <button
+        role="tab"
+        class="tab-btn"
+        [class.active]="isLoginTab()"
+        [attr.aria-selected]="isLoginTab()"
+        aria-controls="panel-login"
+        id="tab-login"
+        (click)="switchTab('login')"
+        (keydown)="onTabKeydown($event)"
+        [tabindex]="isLoginTab() ? 0 : -1"
+      >
+        Sign In
+      </button>
+      <button
+        role="tab"
+        class="tab-btn"
+        [class.active]="isSignupTab()"
+        [attr.aria-selected]="isSignupTab()"
+        aria-controls="panel-signup"
+        id="tab-signup"
+        (click)="switchTab('signup')"
+        (keydown)="onTabKeydown($event)"
+        [tabindex]="isSignupTab() ? 0 : -1"
+      >
+        Sign Up
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- LOGIN PANEL                                                   -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div
+      role="tabpanel"
+      id="panel-login"
+      aria-labelledby="tab-login"
+      [class.hidden]="!isLoginTab()"
+    >
+      @if (loginErrorMessage()) {
+        <div class="alert alert-error" role="alert">
+          {{ loginErrorMessage() }}
+        </div>
+      }
+
+      @if (registrationSuccessMessage() && !isLoginSuccess()) {
+        <div class="alert alert-success" role="status">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="alert-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{{ registrationSuccessMessage() }}</span>
+        </div>
+      }
+
+      @if (isLoginSuccess()) {
+        <div class="alert alert-success" role="status">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="alert-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Login successful! Redirecting to dashboard...</span>
+        </div>
+      }
+
+      <form
+        class="auth-form"
+        [formGroup]="loginForm"
+        (ngSubmit)="onLoginSubmit()"
+        novalidate
+      >
+         <div class="form-group">
+           <label for="login-email" class="form-label">Email Address</label>
+           <input
+             type="email"
+             id="login-email"
+             formControlName="email"
+             class="form-input"
+             [class.error]="loginEmailControl?.invalid && loginEmailControl?.touched"
+             placeholder="Enter your email"
+             autocomplete="email"
+             [attr.aria-describedby]="loginEmailControl?.invalid && loginEmailControl?.touched ? 'login-email-error' : null"
+           />
+          @if (loginEmailControl?.invalid && loginEmailControl?.touched) {
+            <span id="login-email-error" class="error-text" role="alert">
+              {{ getLoginErrorMessage('email') }}
+            </span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="login-password" class="form-label">Password</label>
+          <div class="password-input-wrapper">
+             <input
+               [type]="showLoginPassword() ? 'text' : 'password'"
+               id="login-password"
+               formControlName="password"
+               class="form-input password-input"
+               [class.error]="loginPasswordControl?.invalid && loginPasswordControl?.touched"
+               placeholder="Enter your password"
+               autocomplete="current-password"
+               [attr.aria-describedby]="loginPasswordControl?.invalid && loginPasswordControl?.touched ? 'login-password-error' : null"
+             />
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="toggleLoginPasswordVisibility()"
+              [attr.aria-label]="showLoginPassword() ? 'Hide password' : 'Show password'"
+              [disabled]="isLoginLoading()"
+            >
+              @if (showLoginPassword()) {
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="eye-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="eye-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              }
+            </button>
+          </div>
+          @if (loginPasswordControl?.invalid && loginPasswordControl?.touched) {
+            <span id="login-password-error" class="error-text" role="alert">
+              {{ getLoginErrorMessage('password') }}
+            </span>
+          }
+        </div>
+
+         <div class="form-options">
+           <label class="checkbox-container">
+             <input type="checkbox" formControlName="rememberMe" class="checkbox-input" />
+             <span class="checkmark"></span>Remember me
+           </label>
+          @if (!isLoginLoading()) {
+            <a routerLink="/forgot-password" class="forgot-password">Forgot password?</a>
+          } @else {
+            <span class="forgot-password disabled">Forgot password?</span>
+          }
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full" [disabled]="isLoginLoading()">
+          @if (isLoginLoading()) {
+            <span class="loading-spinner"></span>
+            Signing In...
+          } @else {
+            Sign In
+          }
+        </button>
+
+        <div class="divider">
+          <span>or</span>
+        </div>
+
+        <button type="button" class="btn btn-facebook btn-full" [disabled]="isLoginLoading()" (click)="loginWithFacebook()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="facebook-icon"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          Continue with Facebook
+        </button>
+      </form>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- SIGNUP PANEL                                                  -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div
+      role="tabpanel"
+      id="panel-signup"
+      aria-labelledby="tab-signup"
+      [class.hidden]="!isSignupTab()"
+    >
+      <div class="progress-indicator">
+        <div class="step" [class.active]="currentStep() >= 1" [class.completed]="currentStep() > 1">
+          <div class="step-number">1</div>
+          <span class="step-label">Personal Info</span>
+        </div>
+        <div class="step-line" [class.completed]="currentStep() > 1"></div>
+        <div class="step" [class.active]="currentStep() >= 2" [class.completed]="currentStep() > 2">
+          <div class="step-number">2</div>
+          <span class="step-label">Education</span>
+        </div>
+        <div class="step-line" [class.completed]="currentStep() > 2"></div>
+        <div class="step" [class.active]="currentStep() >= 3">
+          <div class="step-number">3</div>
+          <span class="step-label">Preferences</span>
+        </div>
+      </div>
+
+      <!-- STEP 1 -->
+      @if (currentStep() === 1) {
+        <h2 class="signup-title">Personal Information</h2>
+        <p class="signup-subtitle">Fill in your details to continue</p>
+        <form [formGroup]="personalInfoForm" (ngSubmit)="onNextStep()" class="signup-form">
+           <div class="form-row">
+             <div class="form-group">
+               <label for="firstName" class="form-label">First Name <span class="required">*</span></label>
+               <input type="text" id="firstName" formControlName="firstName" class="form-input" placeholder="Enter your first name" [class.error]="personalInfoForm.get('firstName')?.invalid && personalInfoForm.get('firstName')?.touched" />
+               @if (personalInfoForm.get('firstName')?.touched && personalInfoForm.get('firstName')?.invalid) {
+                 <span class="error-message">{{ getSignupErrorMessage('firstName') }}</span>
+               }
+             </div>
+             <div class="form-group">
+               <label for="lastName" class="form-label">Last Name <span class="required">*</span></label>
+               <input type="text" id="lastName" formControlName="lastName" class="form-input" placeholder="Enter your last name" [class.error]="personalInfoForm.get('lastName')?.invalid && personalInfoForm.get('lastName')?.touched" />
+               @if (personalInfoForm.get('lastName')?.touched && personalInfoForm.get('lastName')?.invalid) {
+                 <span class="error-message">{{ getSignupErrorMessage('lastName') }}</span>
+               }
+             </div>
+           </div>
+           <div class="form-group">
+             <label for="facebookName" class="form-label">Facebook Name <span class="required">*</span></label>
+             <input type="text" id="facebookName" formControlName="facebookName" class="form-input" placeholder="Enter your Facebook name" [class.error]="personalInfoForm.get('facebookName')?.invalid && personalInfoForm.get('facebookName')?.touched" />
+             @if (personalInfoForm.get('facebookName')?.touched && personalInfoForm.get('facebookName')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('facebookName') }}</span>
+             }
+           </div>
+           <div class="form-group">
+             <label for="signup-email" class="form-label">Email Address <span class="required">*</span></label>
+             <input type="email" id="signup-email" formControlName="email" class="form-input" placeholder="your.email@example.com" [class.error]="personalInfoForm.get('email')?.invalid && personalInfoForm.get('email')?.touched" />
+             @if (personalInfoForm.get('email')?.touched && personalInfoForm.get('email')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('email') }}</span>
+             }
+           </div>
+           <div class="form-group">
+             <label for="mobileNumber" class="form-label">Mobile Number <span class="required">*</span></label>
+             <input type="tel" id="mobileNumber" formControlName="mobileNumber" class="form-input" placeholder="09XXXXXXXXX" [class.error]="personalInfoForm.get('mobileNumber')?.invalid && personalInfoForm.get('mobileNumber')?.touched" />
+             @if (personalInfoForm.get('mobileNumber')?.touched && personalInfoForm.get('mobileNumber')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('mobileNumber') }}</span>
+             }
+           </div>
+           <div class="form-group">
+             <label for="birthdate" class="form-label">Birthdate <span class="required">*</span></label>
+             <input type="date" id="birthdate" formControlName="birthdate" class="form-input" [class.error]="personalInfoForm.get('birthdate')?.invalid && personalInfoForm.get('birthdate')?.touched" />
+             @if (personalInfoForm.get('birthdate')?.touched && personalInfoForm.get('birthdate')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('birthdate') }}</span>
+             }
+           </div>
+           <div class="form-group">
+             <label for="lastMedicalExam" class="form-label">Date of Last Medical Exam <span class="required">*</span></label>
+             <p class="form-hint">e.g. Annual Physical Exam or seen by Medical Doctor</p>
+             <input type="date" id="lastMedicalExam" formControlName="lastMedicalExam" class="form-input" [class.error]="personalInfoForm.get('lastMedicalExam')?.invalid && personalInfoForm.get('lastMedicalExam')?.touched" />
+             @if (personalInfoForm.get('lastMedicalExam')?.touched && personalInfoForm.get('lastMedicalExam')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('lastMedicalExam') }}</span>
+             }
+           </div>
+           <div class="form-group">
+             <label for="completeAddress" class="form-label">Complete Address <span class="required">*</span></label>
+             <textarea id="completeAddress" formControlName="completeAddress" class="form-input form-textarea" placeholder="Enter your complete address" rows="3" [class.error]="personalInfoForm.get('completeAddress')?.invalid && personalInfoForm.get('completeAddress')?.touched"></textarea>
+             @if (personalInfoForm.get('completeAddress')?.touched && personalInfoForm.get('completeAddress')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('completeAddress') }}</span>
+             }
+           </div>
+          <div class="form-actions form-actions-single">
+            <button type="submit" class="btn-next" [disabled]="isSignupSubmitting()">
+              @if (isSignupSubmitting()) {
+                <span class="spinner"></span> Processing...
+              } @else {
+                Next <span class="arrow">→</span>
+              }
+            </button>
+          </div>
+        </form>
+      }
+
+      <!-- STEP 2 -->
+      @if (currentStep() === 2) {
+        <h2 class="signup-title">Education & Experience</h2>
+        <p class="signup-subtitle">Tell us about your background</p>
+         <form [formGroup]="educationForm" (ngSubmit)="onNextStep()" class="signup-form">
+           <div class="form-group">
+             <label for="educationalAttainment" class="form-label">Educational Attainment <span class="required">*</span></label>
+             <select id="educationalAttainment" formControlName="educationalAttainment" class="form-input" [class.error]="educationForm.get('educationalAttainment')?.invalid && educationForm.get('educationalAttainment')?.touched">
+               <option value="" disabled selected>Select your educational attainment</option>
+               <option value="elementary">Elementary</option>
+               <option value="high-school">High School</option>
+               <option value="senior-high">Senior High School</option>
+               <option value="vocational">Vocational Course</option>
+               <option value="college-undergraduate">College Undergraduate</option>
+               <option value="college-graduate">College Graduate</option>
+               <option value="masters">Master's Degree</option>
+               <option value="doctorate">Doctorate Degree</option>
+             </select>
+             @if (educationForm.get('educationalAttainment')?.touched && educationForm.get('educationalAttainment')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('educationalAttainment') }}</span>
+             }
+           </div>
+           <div class="form-group">
+             <label for="trainingExperience" class="form-label">Training and Experience</label>
+             <textarea id="trainingExperience" formControlName="trainingExperience" class="form-input form-textarea" placeholder="Describe your training and work experience (optional)" rows="3"></textarea>
+           </div>
+           <div class="form-group">
+             <label for="skillsHobbies" class="form-label">Skills or Hobbies</label>
+             <textarea id="skillsHobbies" formControlName="skillsHobbies" class="form-input form-textarea" placeholder="List your skills or hobbies (optional)" rows="3"></textarea>
+           </div>
+           <div class="form-group">
+             <label for="classesTraining" class="form-label">Classes and Training Attended</label>
+             <textarea id="classesTraining" formControlName="classesTraining" class="form-input form-textarea" placeholder="List classes or training programs you attended (optional)" rows="3"></textarea>
+           </div>
+          <div class="form-actions">
+            <button type="button" class="btn-back" (click)="onPrevStep()" [disabled]="isSignupSubmitting()">
+              <span class="arrow">←</span> Back
+            </button>
+            <button type="submit" class="btn-next" [disabled]="isSignupSubmitting()">
+              @if (isSignupSubmitting()) {
+                <span class="spinner"></span> Processing...
+              } @else {
+                Next <span class="arrow">→</span>
+              }
+            </button>
+          </div>
+        </form>
+      }
+
+      <!-- STEP 3 -->
+      @if (currentStep() === 3) {
+        <h2 class="signup-title">Volunteer Preferences</h2>
+        <p class="signup-subtitle">Where would you like to volunteer?</p>
+         <form [formGroup]="preferencesForm" (ngSubmit)="onNextStep()" class="signup-form">
+           <div class="form-group">
+             <label for="volunteerPreference" class="form-label">Where do you want to volunteer? <span class="required">*</span></label>
+             <select id="volunteerPreference" formControlName="volunteerPreference" class="form-input" [class.error]="preferencesForm.get('volunteerPreference')?.invalid && preferencesForm.get('volunteerPreference')?.touched">
+               <option value="" disabled selected>Select your preference</option>
+               <option value="sidewalk-sunday-school">Metro Sidewalk Sunday School</option>
+               <option value="mobile-kitchen">Mobile Kitchen Operations</option>
+               <option value="relief-operations">Relief Operations</option>
+               <option value="safety-emergency">Safety and Emergency Response</option>
+               <option value="medical-operations">Medical Operations</option>
+               <option value="psychological-aid">Psychological First Aid</option>
+               <option value="transportation-logistics">Transportation & Logistics Team</option>
+               <option value="purchasing">Purchasing Team</option>
+               <option value="partnerships">Individual & Corporate Partnerships</option>
+               <option value="digital-marketing">Digital Marketing & Promotions</option>
+               <option value="creatives">Creatives (Video / Photos)</option>
+               <option value="healing">Healing</option>
+               <option value="real-estate-sports">Real Estate & Sports</option>
+               <option value="kitchen-related">Anything kitchen-related</option>
+               <option value="wherever-needed">Wherever is needed</option>
+               <option value="dont-know">Don't know yet</option>
+               <option value="other">Other</option>
+             </select>
+             @if (preferencesForm.get('volunteerPreference')?.touched && preferencesForm.get('volunteerPreference')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('volunteerPreference') }}</span>
+             }
+           </div>
+           @if (showOtherInput()) {
+             <div class="form-group other-input">
+               <label for="otherPreference" class="form-label">Please specify</label>
+               <input type="text" id="otherPreference" formControlName="otherPreference" class="form-input" placeholder="Enter your volunteer preference" />
+             </div>
+           }
+
+           <div class="form-group">
+             <label for="availability" class="form-label">Availability <span class="required">*</span></label>
+             <select id="availability" formControlName="availability" class="form-input" [class.error]="preferencesForm.get('availability')?.invalid && preferencesForm.get('availability')?.touched">
+               <option value="" disabled selected>Select your availability</option>
+               <option value="anytime">Anytime / On Call</option>
+               <option value="weekends-only">Weekends Only</option>
+               <option value="weekdays-only">Weekdays Only</option>
+               <option value="weekdays-weekends">Weekdays & Weekends</option>
+               <option value="friday-saturday">Friday & Saturday Only</option>
+               <option value="scheduled">Scheduled (By Arrangement)</option>
+               <option value="holidays">Holidays (If Available)</option>
+               <option value="rest-days">Rest Days / With Filed Leave</option>
+               <option value="limited-weekdays">Limited Weekdays</option>
+               <option value="day-off">Day Off Only</option>
+               <option value="others">Others</option>
+             </select>
+             @if (preferencesForm.get('availability')?.touched && preferencesForm.get('availability')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('availability') }}</span>
+             }
+           </div>
+           @if (showOtherAvailabilityInput()) {
+             <div class="form-group other-input">
+               <label for="otherAvailability" class="form-label">Please specify</label>
+               <input type="text" id="otherAvailability" formControlName="otherAvailability" class="form-input" placeholder="Enter your availability" />
+             </div>
+           }
+
+           <div class="form-group">
+             <label for="partOfLifegroup" class="form-label">Are you part of a lifegroup? <span class="required">*</span></label>
+             <select id="partOfLifegroup" formControlName="partOfLifegroup" class="form-input" [class.error]="preferencesForm.get('partOfLifegroup')?.invalid && preferencesForm.get('partOfLifegroup')?.touched">
+               <option value="" disabled selected>Select an option</option>
+               <option value="yes">Yes</option>
+               <option value="no">No</option>
+             </select>
+             @if (preferencesForm.get('partOfLifegroup')?.touched && preferencesForm.get('partOfLifegroup')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('partOfLifegroup') }}</span>
+             }
+           </div>
+           @if (showLifegroupLeaderInput()) {
+             <div class="form-group other-input">
+               <label for="lifegroupLeaderName" class="form-label">Name of your Lifegroup Leader <span class="required">*</span></label>
+               <input type="text" id="lifegroupLeaderName" formControlName="lifegroupLeaderName" class="form-input" placeholder="Enter your lifegroup leader's name" [class.error]="preferencesForm.get('lifegroupLeaderName')?.invalid && preferencesForm.get('lifegroupLeaderName')?.touched" />
+               @if (preferencesForm.get('lifegroupLeaderName')?.touched && preferencesForm.get('lifegroupLeaderName')?.invalid) {
+                 <span class="error-message">{{ getSignupErrorMessage('lifegroupLeaderName') }}</span>
+               }
+             </div>
+           }
+
+           <div class="form-group">
+             <label for="leadingLifegroup" class="form-label">Are you leading a lifegroup? <span class="required">*</span></label>
+             <select id="leadingLifegroup" formControlName="leadingLifegroup" class="form-input" [class.error]="preferencesForm.get('leadingLifegroup')?.invalid && preferencesForm.get('leadingLifegroup')?.touched">
+               <option value="" disabled selected>Select an option</option>
+               <option value="yes">Yes</option>
+               <option value="no">No</option>
+             </select>
+             @if (preferencesForm.get('leadingLifegroup')?.touched && preferencesForm.get('leadingLifegroup')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('leadingLifegroup') }}</span>
+             }
+           </div>
+
+           <div class="form-group">
+             <label class="form-label">Emergency Contact <span class="required">*</span></label>
+             <p class="form-hint">In case of any emergency, provide contact details</p>
+             <div class="emergency-contact-fields">
+               <div class="form-group">
+                 <label for="emergencyContactName" class="form-label-small">Name</label>
+                 <input type="text" id="emergencyContactName" formControlName="emergencyContactName" class="form-input" placeholder="Full name" [class.error]="preferencesForm.get('emergencyContactName')?.invalid && preferencesForm.get('emergencyContactName')?.touched" />
+                 @if (preferencesForm.get('emergencyContactName')?.touched && preferencesForm.get('emergencyContactName')?.invalid) {
+                   <span class="error-message">{{ getSignupErrorMessage('emergencyContactName') }}</span>
+                 }
+               </div>
+               <div class="form-group">
+                 <label for="emergencyContactNumber" class="form-label-small">Contact Number</label>
+                 <input type="tel" id="emergencyContactNumber" formControlName="emergencyContactNumber" class="form-input" placeholder="09XXXXXXXXX" [class.error]="preferencesForm.get('emergencyContactNumber')?.invalid && preferencesForm.get('emergencyContactNumber')?.touched" />
+                 @if (preferencesForm.get('emergencyContactNumber')?.touched && preferencesForm.get('emergencyContactNumber')?.invalid) {
+                   <span class="error-message">{{ getSignupErrorMessage('emergencyContactNumber') }}</span>
+                 }
+               </div>
+               <div class="form-group">
+                 <label for="emergencyContactRelationship" class="form-label-small">Relationship</label>
+                 <input type="text" id="emergencyContactRelationship" formControlName="emergencyContactRelationship" class="form-input" placeholder="e.g. Spouse, Parent" [class.error]="preferencesForm.get('emergencyContactRelationship')?.invalid && preferencesForm.get('emergencyContactRelationship')?.touched" />
+                 @if (preferencesForm.get('emergencyContactRelationship')?.touched && preferencesForm.get('emergencyContactRelationship')?.invalid) {
+                   <span class="error-message">{{ getSignupErrorMessage('emergencyContactRelationship') }}</span>
+                 }
+               </div>
+             </div>
+           </div>
+
+           <div class="form-group">
+             <label for="signup-password" class="form-label">Create Password <span class="required">*</span></label>
+             <div class="password-input-wrapper">
+               <input [type]="showSignupPassword() ? 'text' : 'password'" id="signup-password" formControlName="password" class="form-input password-input" placeholder="Create a strong password" [class.error]="preferencesForm.get('password')?.invalid && preferencesForm.get('password')?.touched" (focus)="showPasswordRequirements.set(true)" />
+               <button type="button" class="password-toggle" (click)="toggleSignupPasswordVisibility()" [attr.aria-label]="showSignupPassword() ? 'Hide password' : 'Show password'" [disabled]="isSignupSubmitting()">
+                 @if (showSignupPassword()) {
+                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="eye-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
+                 } @else {
+                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="eye-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                 }
+               </button>
+             </div>
+             @if (preferencesForm.get('password')?.touched && preferencesForm.get('password')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('password') }}</span>
+             }
+             @if (showPasswordRequirements()) {
+               <div class="password-requirements">
+                 <p class="requirements-title">Password must contain:</p>
+                 <ul class="requirements-list">
+                   @for (req of getPasswordRequirements(); track req.label) {
+                     <li [class.met]="req.met">
+                       <span class="requirement-icon">{{ req.met ? '✓' : '○' }}</span>
+                       {{ req.label }}
+                     </li>
+                   }
+                 </ul>
+               </div>
+             }
+           </div>
+
+           <div class="form-group">
+             <label for="confirmPassword" class="form-label">Confirm Password <span class="required">*</span></label>
+             <div class="password-input-wrapper">
+               <input [type]="showConfirmPassword() ? 'text' : 'password'" id="confirmPassword" formControlName="confirmPassword" class="form-input password-input" placeholder="Re-enter your password" [class.error]="preferencesForm.get('confirmPassword')?.invalid && preferencesForm.get('confirmPassword')?.touched" />
+               <button type="button" class="password-toggle" (click)="toggleConfirmPasswordVisibility()" [attr.aria-label]="showConfirmPassword() ? 'Hide password' : 'Show password'" [disabled]="isSignupSubmitting()">
+                 @if (showConfirmPassword()) {
+                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="eye-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
+                 } @else {
+                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="eye-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                 }
+               </button>
+             </div>
+             @if (preferencesForm.get('confirmPassword')?.touched && preferencesForm.get('confirmPassword')?.invalid) {
+               <span class="error-message">{{ getSignupErrorMessage('confirmPassword') }}</span>
+             }
+           </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-back" (click)="onPrevStep()" [disabled]="isSignupSubmitting()">
+              <span class="arrow">←</span> Back
+            </button>
+            <button type="submit" class="btn-next" [disabled]="isSignupSubmitting()">
+              @if (isSignupSubmitting()) {
+                <span class="spinner"></span> Submitting...
+              } @else {
+                Submit <span class="arrow">✓</span>
+              }
+            </button>
+          </div>
+        </form>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- ── Modals ────────────────────────────────────────────────── -->
+@if (showErrorModal()) {
+  <div class="popup-overlay" (click)="closeErrorModal()">
+    <div class="popup-modal popup-error" (click)="$event.stopPropagation()">
+      <button class="popup-close" (click)="closeErrorModal()">×</button>
+      <div class="popup-content">
+        <div class="error-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="error-cross">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+        </div>
+        <h3 class="popup-title">Submission Failed</h3>
+        <p class="popup-message">There were some problems with your submission:</p>
+        <div class="error-list-container">
+          <ul class="error-list">
+            @for (msg of (signupError() || '').split(';'); track msg) {
+              @if (msg.trim()) {
+                <li>{{ msg.trim() }}</li>
+              }
+            }
+          </ul>
+        </div>
+        <div class="popup-actions">
+          <button class="btn btn-error" (click)="closeErrorModal()">Go Back & Fix</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+@if (showSuccessModal()) {
+  <div class="popup-overlay" (click)="goToLoginNow()">
+    <div class="popup-modal" (click)="$event.stopPropagation()">
+      <div class="popup-content">
+        <div class="success-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="success-check">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 class="popup-title">Registration Successful!</h3>
+        <p class="popup-message">Your volunteer account has been created successfully.</p>
+        <p class="popup-redirect">Redirecting to login in {{ countdown() }} seconds...</p>
+        <div class="popup-actions">
+          <button class="btn btn-primary" (click)="goToLoginNow()">Log In Now</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

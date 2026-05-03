@@ -1,0 +1,181 @@
+<div class="dashboard-container">
+  <!-- Sidebar Navigation Template (shared between desktop and mobile) -->
+  <ng-template #sidebarNav>
+    <nav class="sidebar-nav" aria-label="Main navigation">
+      <ul role="list">
+        <li class="menu-label" aria-hidden="true">Dashboard</li>
+        <li>
+          <button type="button" [class.active]="isActive('overview')"
+            (click)="navigateTo('overview'); closeMobileSidebar()">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            <span class="nav-text">Dashboard</span>
+          </button>
+        </li>
+        <li class="menu-label" aria-hidden="true">Personal</li>
+        <li>
+          <button type="button" [class.active]="isActive('profile')"
+            (click)="navigateTo('profile'); closeMobileSidebar()">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span class="nav-text">My Profile</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="isActive('attendance')"
+            (click)="navigateTo('attendance'); closeMobileSidebar()">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span class="nav-text">Attendance Log</span>
+          </button>
+        </li>
+        
+        <li class="menu-label" aria-hidden="true">Community</li>
+        <li>
+          <button type="button" [class.active]="isActive('polls')"
+            (click)="navigateTo('polls'); closeMobileSidebar()">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="nav-text">Community Polls</span>
+          </button>
+        </li>
+        <li>
+          <button type="button" [class.active]="isActive('requests')"
+            (click)="navigateTo('requests'); closeMobileSidebar()">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            <span class="nav-text">Request Changes</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </ng-template>
+
+  <!-- Desktop Sidebar -->
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()">
+    <div class="sidebar-header">
+      <div class="logo-area" (click)="toggleSidebar()" (keydown.enter)="toggleSidebar()" role="button" tabindex="0"
+        aria-label="Toggle sidebar">
+        <div class="logo-icon">
+          <img ngSrc="/assets/logo.png" width="40" height="40" alt="ServeTrack Logo" />
+        </div>
+        <span class="logo-text">ServeTrack</span>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="sidebarNav"></ng-container>
+
+    <div class="sidebar-footer">
+      <div class="user-brief">
+        <img [src]="profilePreviewUrl()" alt="User" class="avatar-sm" [class.svg]="profilePreviewUrl().endsWith('.svg')" />
+        <div class="user-info">
+          <p class="name">{{ userName() }}</p>
+          <p class="role">Volunteer</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Mobile Sidebar -->
+  <aside class="mobile-sidebar" [class.mobile-open]="mobileSidebarOpen()" aria-label="Mobile navigation">
+    <div class="mobile-sidebar-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <img ngSrc="/assets/logo.png" width="40" height="40" alt="ServeTrack Logo" />
+        </div>
+        <span class="logo-text">ServeTrack</span>
+      </div>
+    </div>
+
+    <ng-container *ngTemplateOutlet="sidebarNav"></ng-container>
+  </aside>
+
+  <div class="sidebar-overlay" [class.active]="mobileSidebarOpen()" (click)="closeMobileSidebar()"></div>
+
+  <div class="main-wrapper" [class.expanded]="sidebarCollapsed()">
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <button type="button" class="mobile-menu-btn" (click)="toggleMobileSidebar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="top-bar-right">
+        <div class="search-inline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 0.5rem; color: var(--slate-400);">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input #dashboardSearch type="text" class="search-input" [value]="searchQuery()" (input)="setSearchQuery(dashboardSearch.value)" (keydown.enter)="runSearch()" placeholder="Search..."/>
+        </div>
+        <button type="button" class="outline-btn" (click)="toggleNotifications()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          @if (notificationCount() > 0) {
+            <span class="badge">{{ notificationCount() }}</span>
+          }
+        </button>
+        <button type="button" class="primary-btn" (click)="logout()">Logout</button>
+      </div>
+    </header>
+
+    @if (showNotifications()) {
+      <section class="notification-panel panel">
+        <div class="panel-header">
+          <h2>Notifications</h2>
+          <div class="panel-actions">
+            <button type="button" class="outline-btn" (click)="markNotificationsRead()">Mark Read</button>
+            <button type="button" class="outline-btn" (click)="closeNotifications()">Close</button>
+          </div>
+        </div>
+        <div class="notification-list">
+          @for (item of notifications(); track item.id) {
+            <article class="notification-item" [class.unread]="!item.read">
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.description }}</p>
+              <span class="notification-time">{{ item.time }}</span>
+            </article>
+          } @empty {
+            <div class="empty-state">
+              <p>No notifications at the moment.</p>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <main class="dashboard-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<!-- Modals -->
+@if (showLogoutModal()) {
+  <div class="modal-backdrop">
+    <div class="modal-card">
+      <h3>Sign Out</h3>
+      <p>Are you sure you want to log out of ServeTrack?</p>
+      <div class="modal-actions">
+        <button type="button" class="outline-btn" (click)="closeLogoutModal()">Cancel</button>
+        <button type="button" class="danger-btn" (click)="confirmLogout()">Sign Out</button>
+      </div>
+    </div>
+  </div>
+}

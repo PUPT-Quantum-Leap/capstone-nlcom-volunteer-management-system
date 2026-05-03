@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Volunteer extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     // Volunteer Table
     protected $table = 'volunteer';
@@ -24,6 +25,7 @@ class Volunteer extends Model
         'last_name',
         'facebook_name',
         'facebook_id',
+        'messenger_psid',
         'email',
         'birthdate',
         'address',
@@ -33,12 +35,14 @@ class Volunteer extends Model
         'emergency_contact_id',
         'user_id',
         'profile_photo',
+        'deleted_at',
     ];
 
     protected $casts = [
         'birthdate' => 'date',
         'last_medical_examination' => 'date',
         'facebook_id' => 'integer',
+        'messenger_psid' => 'string',
     ];
 
     // Define Relationships

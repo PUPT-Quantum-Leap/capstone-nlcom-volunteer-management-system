@@ -1,0 +1,17 @@
+{
+    "indexer.include_patterns": [
+        "app/**/*.php",
+        "routes/**/*.php",
+        "config/**/*.php",
+        "database/**/*.php",
+        "tests/**/*.php"
+    ],
+    "indexer.exclude_patterns": [
+        "vendor/**",
+        "storage/**",
+        "bootstrap/cache/**",
+        "node_modules/**",
+        "docs/**"
+    ],
+    "indexer.workspace_root": "servetrack-backend"
+}

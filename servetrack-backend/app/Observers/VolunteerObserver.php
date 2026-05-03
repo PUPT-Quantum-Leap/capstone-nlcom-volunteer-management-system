@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\ProfileChangeLog;
 use App\Models\Volunteer;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class VolunteerObserver
@@ -23,7 +24,7 @@ class VolunteerObserver
     {
         $dirty = $volunteer->getDirty();
         $original = $volunteer->getOriginal();
-        $userId = Auth::id();
+        $userId = Auth::id() ?? $volunteer->user_id; // Use volunteer's user_id if auth is null
         $ip = request()->ip();
 
         foreach ($dirty as $field => $newValue) {
@@ -63,7 +64,7 @@ class VolunteerObserver
             return '';
         }
 
-        if ($value instanceof \Carbon\Carbon) {
+        if ($value instanceof Carbon) {
             return $value->format('Y-m-d');
         }
 

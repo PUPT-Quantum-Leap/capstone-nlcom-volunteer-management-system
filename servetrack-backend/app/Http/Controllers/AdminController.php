@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 
@@ -75,6 +76,7 @@ class AdminController extends Controller
                 'name' => trim($volunteer->first_name.' '.$volunteer->last_name),
                 'email' => $volunteer->email,
                 'phone' => $volunteer->mobile_number,
+                'facebookName' => $volunteer->facebook_name,
                 'department' => $volunteer->positions->first()->name ?? 'Unassigned',
                 'status' => $hasRecentApproved ? 'active' : 'inactive',
                 'joined_date' => optional($volunteer->created_at)->toDateString(),
@@ -149,6 +151,56 @@ class AdminController extends Controller
     public function register(Request $request): JsonResponse
     {
         // Email normalization is now handled by NormalizeEmail middleware
+
+        // If already authenticated, log out first to prevent duplicate accounts
+        if (Auth::check()) {
+            Auth::logout();
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+        }
+
+        // Security gate: verify invite code and email domain before any other processing.
+        $inviteCode = config('services.admin.invite_code');
+        if (empty($inviteCode)) {
+            Log::error('Admin registration attempted but no invite code is configured in .env');
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed. Please contact your administrator.',
+            ], 422);
+        }
+
+        if ($request->input('inviteCode') !== $inviteCode) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed. Please contact your administrator.',
+            ], 422);
+        }
+
+        $allowedDomainsRaw = config('services.admin.allowed_domains');
+        if (empty($allowedDomainsRaw)) {
+            Log::error('Admin registration attempted but no allowed domains are configured in .env');
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed. Please contact your administrator.',
+            ], 422);
+        }
+
+        $allowedDomains = array_map(
+            fn (string $d) => strtolower(trim($d)),
+            explode(',', $allowedDomainsRaw),
+        );
+
+        $emailDomain = strtolower(substr(strrchr((string) $request->input('email', ''), '@'), 1));
+        if (! in_array($emailDomain, $allowedDomains, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed. Please contact your administrator.',
+            ], 422);
+        }
 
         // Validate incoming data
         $validator = Validator::make($request->all(), [
@@ -264,6 +316,155 @@ class AdminController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Registration failed. Please try again or contact support.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get the current admin's profile.
+     */
+    public function profile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $admin = Admin::where('user_id', $user->id)->first() ?? Admin::where('email', $user->email)->first();
+
+        if (! $admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Admin profile not found.',
+            ], 404);
+        }
+
+        // Handle case where Admin model might use different primary key names
+        $adminId = $admin->id ?? $admin->admin_id;
+
+        $photoUrl = null;
+        if ($admin->profile_photo) {
+            $photoUrl = Storage::disk('public')->url($admin->profile_photo);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'first_name' => $admin->first_name ?? explode(' ', $user->name)[0],
+                'last_name' => $admin->last_name ?? (explode(' ', $user->name)[1] ?? ''),
+                'contact_number' => $admin->contact_number,
+                'profile_photo_url' => $photoUrl,
+                'admin_id' => $adminId,
+            ],
+        ]);
+    }
+
+    /**
+     * Update the current admin's profile.
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $admin = Admin::where('user_id', $user->id)->first() ?? Admin::where('email', $user->email)->first();
+
+        if (! $admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Admin profile not found.',
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'first_name' => 'required|string|max:50',
+            'last_name' => 'required|string|max:50',
+            'email' => 'required|email|unique:users,email,'.$user->id,
+            'contact_number' => 'nullable|string|max:20',
+            'profile_photo' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($request, $user, $admin): void {
+                $user->update([
+                    'name' => $request->first_name.' '.$request->last_name,
+                    'email' => $request->email,
+                ]);
+
+                $adminData = [
+                    'email' => $request->email,
+                    'contact_number' => $request->contact_number,
+                ];
+
+                // Handle Photo
+                if ($request->filled('profile_photo')) {
+                    $photo = $request->profile_photo;
+                    if (str_starts_with($photo, 'data:image')) {
+                        $photoData = substr($photo, strpos($photo, ',') + 1);
+                        $photoData = base64_decode($photoData);
+                        $mimeType = explode(':', substr($photo, 0, strpos($photo, ';')))[1];
+                        $extension = explode('/', $mimeType)[1];
+
+                        // Normalize extension
+                        if ($extension === 'jpeg') {
+                            $extension = 'jpg';
+                        }
+
+                        $fileName = 'admin_'.($admin->id ?? $admin->admin_id).'_'.time().'.'.$extension;
+                        Storage::disk('public')->put('profiles/'.$fileName, $photoData);
+
+                        // Delete old photo if exists
+                        if ($admin->profile_photo) {
+                            Storage::disk('public')->delete($admin->profile_photo);
+                        }
+
+                        $adminData['profile_photo'] = 'profiles/'.$fileName;
+                    }
+                }
+
+                if (Schema::hasColumn('admin', 'first_name')) {
+                    $adminData['first_name'] = $request->first_name;
+                }
+
+                if (Schema::hasColumn('admin', 'last_name')) {
+                    $adminData['last_name'] = $request->last_name;
+                }
+
+                if (Schema::hasColumn('admin', 'name')) {
+                    $adminData['name'] = $request->first_name.' '.$request->last_name;
+                }
+
+                $admin->update($adminData);
+            });
+
+            $freshAdmin = $admin->fresh();
+            $photoUrl = null;
+            if ($freshAdmin->profile_photo) {
+                $photoUrl = Storage::disk('public')->url($freshAdmin->profile_photo);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile updated successfully',
+                'data' => [
+                    'id' => $user->id,
+                    'name' => $user->fresh()->name,
+                    'email' => $user->fresh()->email,
+                    'role' => $user->role,
+                    'profile_photo_url' => $photoUrl,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Admin profile update failed', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update profile.',
             ], 500);
         }
     }
