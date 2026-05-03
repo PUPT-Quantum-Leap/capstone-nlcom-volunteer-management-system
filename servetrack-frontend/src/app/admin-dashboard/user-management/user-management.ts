@@ -45,13 +45,15 @@ export class UserManagementComponent {
   readonly editingUser = signal<User | null>(null);
   readonly showEditUserModal = signal(false);
   readonly editFormData = signal<{ name: string; email: string; role: string }>({ name: '', email: '', role: '' });
-  readonly inviteMode = signal<'email' | 'link' | 'direct'>('email');
-  readonly inviteEmail = signal('');
+  readonly inviteMode = signal<'link'>('link');
   readonly inviteLink = signal('');
+  readonly assignedInviteRole = signal<string>('volunteer');
   readonly isCreatingInvite = signal(false);
   readonly showInviteSuccess = signal(false);
   readonly showInviteError = signal(false);
   readonly inviteError = signal<string | null>(null);
+  readonly linkCopied = signal(false);
+  readonly copyingInviteLink = signal(false);
 
   readonly filteredUsers = computed(() => {
     const search = this.userSearchQuery().toLowerCase().trim();
@@ -113,10 +115,14 @@ export class UserManagementComponent {
   openCreateUserModal(): void {
     this.editingUser.set(null);
     this.editFormData.set({ name: '', email: '', role: 'volunteer' });
-    this.inviteMode.set('email');
-    this.inviteEmail.set('');
+    this.inviteMode.set('link');
     this.inviteLink.set('');
+    this.assignedInviteRole.set('volunteer');
     this.showInviteSuccess.set(false);
+    this.showInviteError.set(false);
+    this.inviteError.set(null);
+    this.linkCopied.set(false);
+    this.copyingInviteLink.set(false);
     this.showEditUserModal.set(true);
   }
 
@@ -244,12 +250,24 @@ export class UserManagementComponent {
     this.showEditUserModal.set(false);
     this.editingUser.set(null);
     this.editFormData.set({ name: '', email: '', role: '' });
-    this.inviteMode.set('email');
-    this.inviteEmail.set('');
+    this.inviteMode.set('link');
     this.inviteLink.set('');
+    this.assignedInviteRole.set('volunteer');
     this.showInviteSuccess.set(false);
     this.showInviteError.set(false);
     this.inviteError.set(null);
+    this.linkCopied.set(false);
+    this.copyingInviteLink.set(false);
+  }
+
+  selectInviteLinkText(element: EventTarget | null): void {
+    if (!(element instanceof HTMLElement)) return;
+    
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
   }
 
   updateEditForm(field: 'name' | 'email' | 'role', value: string): void {
@@ -283,41 +301,22 @@ export class UserManagementComponent {
       });
   }
 
-  setInviteMode(mode: 'email' | 'link'): void {
-    this.inviteMode.set(mode);
-  }
-
-  setInviteEmail(email: string): void {
-    this.inviteEmail.set(email);
-  }
-
   createInvite(): void {
     const formData = this.editFormData();
-    const email = this.inviteMode() === 'email' ? this.inviteEmail() : null;
-    const sendEmail = this.inviteMode() === 'email';
 
     this.isCreatingInvite.set(true);
 
-    this.inviteService.createInvite(email, formData.role, sendEmail)
+    this.inviteService.createInvite(null, formData.role, false)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
           this.inviteLink.set(response.data.invite_link);
+          this.assignedInviteRole.set(formData.role);
+          this.linkCopied.set(false);
           this.isCreatingInvite.set(false);
-
-          if (this.inviteMode() === 'link') {
-            // Show link popup only in link mode
-            this.showInviteSuccess.set(true);
-            this.showEditUserModal.set(false);
-          } else {
-            // Just close modal and show success message in email mode
-            this.showEditUserModal.set(false);
-          }
-
-          const message = response.data.email_sent
-            ? `Invite created and email sent to ${email}`
-            : 'Invite created successfully';
-          this.showSnackbar.emit({ message, type: 'success' });
+          this.showInviteSuccess.set(true);
+          this.showEditUserModal.set(false);
+          this.showSnackbar.emit({ message: 'Invite created successfully', type: 'success' });
         },
         error: (error: any) => {
           console.error('Error creating invite:', error);
@@ -331,9 +330,20 @@ export class UserManagementComponent {
   }
 
   copyInviteLink(): void {
+    if (this.copyingInviteLink()) return; // Prevent multiple rapid clicks
+    
+    this.copyingInviteLink.set(true);
     navigator.clipboard.writeText(this.inviteLink()).then(() => {
+      this.linkCopied.set(true);
       this.showSnackbar.emit({ message: 'Invite link copied to clipboard', type: 'success' });
+      
+      // Reset the copied state after 3 seconds
+      setTimeout(() => {
+        this.linkCopied.set(false);
+        this.copyingInviteLink.set(false);
+      }, 3000);
     }).catch(() => {
+      this.copyingInviteLink.set(false);
       this.showSnackbar.emit({ message: 'Failed to copy link', type: 'error' });
     });
   }

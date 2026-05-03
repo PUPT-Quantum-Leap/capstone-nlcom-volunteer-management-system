@@ -3,10 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invite;
-<<<<<<< deleon-jasmine
 use App\Services\SupabaseService;
-=======
->>>>>>> main
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -15,25 +12,17 @@ use Illuminate\Support\Str;
 
 class InviteController extends Controller
 {
-<<<<<<< deleon-jasmine
     public function __construct(private readonly SupabaseService $supabaseService) {}
 
-=======
->>>>>>> main
     /**
      * Create a new invite.
      */
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-<<<<<<< deleon-jasmine
-            'email' => 'required|email|max:255',
+            'email' => 'nullable|email|max:255',
             'role' => 'required|string|in:admin,coordinator,volunteer',
             'send_email' => 'boolean',
-=======
-            'email' => 'nullable|email',
-            'role' => 'required|in:admin,coordinator,volunteer',
->>>>>>> main
         ]);
 
         if ($validator->fails()) {
@@ -44,17 +33,13 @@ class InviteController extends Controller
             ], 422);
         }
 
-<<<<<<< deleon-jasmine
-        // Check if user already exists in local database
+        // Check if user already exists in local database (only if email is provided)
         if ($request->email && \App\Models\User::where('email', $request->email)->exists()) {
             return response()->json([
                 'success' => false,
                 'message' => 'A user with this email address is already registered in the system.',
             ], 422);
         }
-
-=======
->>>>>>> main
         try {
             $token = Str::random(64);
             $expiresAt = now()->addDays(7);
@@ -67,16 +52,18 @@ class InviteController extends Controller
                 'created_by' => $request->user()->id,
             ]);
 
-<<<<<<< deleon-jasmine
             // Generate internal invite link for our system
             $internalInviteLink = $this->generateInviteLink($token, $request->role);
 
-            // Generate Supabase auth link for copying/sharing
-            $supabaseLinkResult = $this->supabaseService->generateInviteLink($request->email, $internalInviteLink, $request->role);
-            $supabaseAuthLink = $supabaseLinkResult['success'] ? $supabaseLinkResult['data']['auth_link'] : null;
+            // Generate Supabase auth link for copying/sharing (only if email is provided)
+            $supabaseAuthLink = null;
+            if ($request->email) {
+                $supabaseLinkResult = $this->supabaseService->generateInviteLink($request->email, $internalInviteLink, $request->role);
+                $supabaseAuthLink = $supabaseLinkResult['success'] ? $supabaseLinkResult['data']['auth_link'] : null;
+            }
 
-            // Send email invite if email is provided and send_email is true (or defaults to true when email is provided)
-            $shouldSendEmail = $request->email && ($request->boolean('send_email', true));
+            // Send email invite if email is provided and send_email is true
+            $shouldSendEmail = $request->email && ($request->boolean('send_email', false));
             $emailSent = false;
 
             if ($shouldSendEmail) {
@@ -96,17 +83,6 @@ class InviteController extends Controller
                 'success' => true,
                 'message' => $emailSent ? 'Invite created and email sent successfully' : 'Invite created successfully',
                 'data' => $responseData,
-=======
-            $inviteLink = config('app.frontend_url').'/register?token='.$token;
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Invite created successfully',
-                'data' => [
-                    'invite' => $invite,
-                    'invite_link' => $inviteLink,
-                ],
->>>>>>> main
             ], 201);
         } catch (\Exception $e) {
             Log::error('Invite creation failed', [
@@ -123,7 +99,6 @@ class InviteController extends Controller
     }
 
     /**
-<<<<<<< deleon-jasmine
      * Generate role-specific invite link
      */
     private function generateInviteLink(string $token, string $role): string
@@ -142,7 +117,8 @@ class InviteController extends Controller
      * Send invite email using Supabase Auth API
      *
      * Uses Supabase's admin invite endpoint to send email with magic link.
-     * The user clicks the link, authenticates with Supabase, and gets redirected\n     * to our auth callback which then routes them to the appropriate signup form.
+     * The user clicks the link, authenticates with Supabase, and gets redirected
+     * to our auth callback which then routes them to the appropriate signup form.
      */
     private function sendInviteEmail(string $email, string $inviteLink, string $role, ?string $invitedBy = null): array
     {
@@ -150,8 +126,6 @@ class InviteController extends Controller
     }
 
     /**
-=======
->>>>>>> main
      * Validate an invite token.
      */
     public function validate(Request $request): JsonResponse

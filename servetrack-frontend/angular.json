@@ -93,7 +93,15 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "watch": false
+          },
+          "configurations": {
+            "development": {
+              "watch": true
+            }
+          }
         },
         "lint": {
           "builder": "@angular-eslint/builder:lint",

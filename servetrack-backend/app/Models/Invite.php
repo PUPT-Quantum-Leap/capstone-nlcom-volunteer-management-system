@@ -3,10 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-<<<<<<< deleon-jasmine
 use Illuminate\Database\Eloquent\Model;
-=======
->>>>>>> main
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
