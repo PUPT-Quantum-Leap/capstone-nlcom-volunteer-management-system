@@ -104,6 +104,7 @@ export class RsvpsComponent {
       cutOffDay: ['', Validators.required],
       cutOffTime: ['', Validators.required],
       description: ['', [Validators.required, Validators.minLength(10)]],
+      status: ['active', Validators.required],
       shifts: this.fb.array([]),
     },
     { validators: this.cutoffDateValidator() },
@@ -189,7 +190,7 @@ export class RsvpsComponent {
 
   openCreateRsvpModal(): void {
     this.editingRsvp.set(null);
-    this.rsvpForm.reset();
+    this.rsvpForm.reset({ status: 'active' });
     this.rsvpShifts.clear();
     this.addRsvpShift();
     this.addRsvpShift();
@@ -247,6 +248,7 @@ export class RsvpsComponent {
       cutOffDay: this.parseBackendDate(rsvp.cutOffDay),
       cutOffTime: parseBackendTime(rsvp.cutOffTime),
       description: rsvp.description,
+      status: rsvp.status,
     });
 
     this.lockBodyScroll();
@@ -257,7 +259,7 @@ export class RsvpsComponent {
     this.showRsvpModal.set(false);
     this.unlockBodyScroll();
     this.editingRsvp.set(null);
-    this.rsvpForm.reset();
+    this.rsvpForm.reset({ status: 'active' });
   }
 
   addRsvpShift(): void {
@@ -294,6 +296,7 @@ export class RsvpsComponent {
       cutoff_day: this.formatDateForBackend(formValue.cutOffDay!),
       cutoff_time: this.formatTimeForBackend(formValue.cutOffTime!),
       description: formValue.description!,
+      status: formValue.status!,
       shifts: (
         formValue.shifts as { startTime: string; endTime: string; capacity: number }[]
       ).map((shift) => {
