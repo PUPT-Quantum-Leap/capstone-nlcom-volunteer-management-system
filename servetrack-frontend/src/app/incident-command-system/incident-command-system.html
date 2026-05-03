@@ -1,4 +1,35 @@
 <section class="ics-page">
+  <!-- Dark Header Bar -->
+  <header class="report-header">
+    <div class="report-header-left">
+      <div class="report-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div class="report-title-group">
+        <span class="report-label">INCIDENT COMMAND SYSTEM</span>
+        <h2 class="report-title">Manage Volunteer Teams & Operations</h2>
+      </div>
+    </div>
+    <div class="report-header-right">
+      <button type="button" class="action-btn secondary" (click)="toggleEditMode()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        <span>{{ isEditMode ? 'Save Changes' : 'Edit ICS' }}</span>
+      </button>
+      <button type="button" class="action-btn" (click)="generateNewICS()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span>Generate ICS</span>
+      </button>
+    </div>
+  </header>
+
   <!-- Error State -->
   @if (error) {
     <div class="error-message">
@@ -20,12 +51,6 @@
       </select>
     </div>
   }
-
-  <!-- Action Bar -->
-  <div class="action-bar">
-    <button class="btn btn-primary" (click)="generateNewICS()">Generate New ICS</button>
-    <button class="btn btn-secondary" (click)="toggleEditMode()">{{ isEditMode ? 'Save Changes' : 'Edit ICS' }}</button>
-  </div>
 
   <!-- Info Cards -->
   <div class="info-cards">
