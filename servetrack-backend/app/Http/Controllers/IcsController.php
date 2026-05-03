@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ApplyAiSuggestionsRequest;
 use App\Http\Requests\AssignVolunteerRequest;
 use App\Http\Requests\RemoveVolunteerRequest;
+use App\Http\Requests\StoreIcsRequest;
+use App\Http\Requests\UpdateIcsRequest;
 use App\Http\Resources\IcsResource;
 use App\Http\Resources\VolunteerResource;
 use App\Models\Ics;
@@ -154,10 +156,14 @@ class IcsController extends Controller
             return response()->json(['message' => 'ICS not found.'], 404);
         }
 
-        $suggestions = $this->icsService->generateTeamAssignments($ics);
+        $result = $this->icsService->generateTeamAssignments($ics);
 
         return response()->json([
-            'data' => $suggestions,
+            'data' => $result['assignments'] ?? [],
+            'meta' => [
+                'message' => $result['message'] ?? null,
+                'total_volunteers' => $result['total_volunteers'] ?? 0,
+            ],
         ]);
     }
 
