@@ -5,6 +5,7 @@ import {
   Ics,
   CreateIcsRequest,
   UpdateIcsRequest,
+  AiSuggestion,
   AiSuggestionsResponse,
   AssignVolunteerRequest,
   RsvpVolunteer,
@@ -88,7 +89,7 @@ export class IcsService {
   /**
    * Apply AI suggestions to assign volunteers to teams.
    */
-  applyAiSuggestions(icsId: number, suggestions: unknown[]): Observable<{ message: string }> {
+  applyAiSuggestions(icsId: number, suggestions: AiSuggestion[]): Observable<{ message: string }> {
     return this.ensureCsrf().pipe(
       switchMap(() =>
         this.http.post<{ message: string }>(

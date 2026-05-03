@@ -11,6 +11,15 @@ class UpdateIcsRequest extends FormRequest
         return $this->user()->role === 'admin';
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'name' => is_string($this->input('name')) ? trim($this->input('name')) : $this->input('name'),
+            'description' => is_string($this->input('description')) ? trim($this->input('description')) : $this->input('description'),
+            'location' => is_string($this->input('location')) ? trim($this->input('location')) : $this->input('location'),
+        ]);
+    }
+
     public function rules(): array
     {
         return [

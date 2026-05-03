@@ -22,7 +22,6 @@ import { SmsManagementComponent } from './admin-dashboard/sms-management/sms-man
 import { RsvpsComponent } from './admin-dashboard/rsvps/rsvps';
 import { BackupRecoveryComponent } from './admin-dashboard/backup-recovery/backup-recovery';
 import { NotFound } from './not-found/not-found';
-import { IncidentCommandSystemComponent } from './incident-command-system/incident-command-system';
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
@@ -36,7 +35,11 @@ export const routes: Routes = [
   { path: 'admin-signup', redirectTo: 'admin-auth?tab=signup', pathMatch: 'full' },
   { path: 'rsvp', component: RsvpComponent },
   { path: 'rsvp/:slug', component: RsvpComponent },
-  { path: 'incident-command-system', component: IncidentCommandSystemComponent },
+  {
+    path: 'incident-command-system',
+    loadComponent: () =>
+      import('./incident-command-system/incident-command-system').then((m) => m.IncidentCommandSystemComponent),
+  },
   {
     path: 'volunteer-dashboard',
     component: VolunteerDashboardShell,
@@ -64,7 +67,11 @@ export const routes: Routes = [
       { path: 'performance', component: PerformanceComponent },
       { path: 'sms', component: SmsManagementComponent },
       { path: 'rsvps', component: RsvpsComponent },
-      { path: 'ics', component: IncidentCommandSystemComponent },
+      {
+        path: 'ics',
+        loadComponent: () =>
+          import('./incident-command-system/incident-command-system').then((m) => m.IncidentCommandSystemComponent),
+      },
       { path: 'backup-recovery', component: BackupRecoveryComponent },
     ],
   },

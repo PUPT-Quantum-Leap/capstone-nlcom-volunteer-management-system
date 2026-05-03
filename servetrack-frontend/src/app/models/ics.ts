@@ -1,10 +1,10 @@
 export interface Ics {
-  id: number;
-  rsvp_id: number;
-  rsvp?: {
-    id: number;
-    title: string;
-    date: string;
+  readonly id: number;
+  readonly rsvp_id: number;
+  readonly rsvp?: {
+    readonly id: number;
+    readonly title: string;
+    readonly date: string;
   };
   name: string;
   description?: string;
@@ -14,8 +14,8 @@ export interface Ics {
   ai_suggestions?: AiSuggestion[];
   teams?: Team[];
   volunteers?: IcsVolunteer[];
-  created_at?: string;
-  updated_at?: string;
+  readonly created_at?: string;
+  readonly updated_at?: string;
 }
 
 export interface Team {

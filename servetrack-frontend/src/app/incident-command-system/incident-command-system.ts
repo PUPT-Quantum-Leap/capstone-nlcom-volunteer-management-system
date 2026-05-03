@@ -42,9 +42,8 @@ export interface CommandRole {
   selector: 'app-incident-command-system',
   templateUrl: './incident-command-system.html',
   styleUrl: './incident-command-system.scss',
-  changeDetection: ChangeDetectionStrategy.Default,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule],
-  standalone: true,
 })
 export class IncidentCommandSystemComponent implements OnInit {
   private rsvpService = inject(RsvpService);
