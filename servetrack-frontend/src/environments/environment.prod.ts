@@ -1,6 +1,8 @@
+// NOTE: Replace with your actual Supabase credentials
+// This is a public anon key safe for frontend use
 export const environment = {
   production: true,
   apiUrl: 'https://servetrack.kaelvxdev.space/api',
-  supabaseUrl: 'https://xfncvsezwywtrmcmzkwf.supabase.co',
-  supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhmbmN2c2V6d3l3dHJtY216a3dmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc2MTExNTUsImV4cCI6MjA5MzE4NzE1NX0.vl1prFeLSvl5E-y1KlGd7fQmdo8k0BI7SiohsVT4twA',
+  supabaseUrl: 'https://your-project.supabase.co',
+  supabaseAnonKey: 'your-supabase-anon-key-here',
 };

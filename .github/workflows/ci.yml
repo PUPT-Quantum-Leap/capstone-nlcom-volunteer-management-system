@@ -55,6 +55,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup environment
+        run: cp src/environments/environment.ci.ts src/environments/environment.ts
+
       - name: Build Angular app
         run: npm run build --if-present
 
