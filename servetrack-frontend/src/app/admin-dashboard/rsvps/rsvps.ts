@@ -111,6 +111,10 @@ export class RsvpsComponent {
 
   constructor() {
     this.loadRsvps();
+
+    this.destroyRef.onDestroy(() => {
+      this.unlockBodyScroll();
+    });
   }
 
   get rsvpShifts(): FormArray {
