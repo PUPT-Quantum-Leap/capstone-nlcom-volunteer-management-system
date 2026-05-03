@@ -37,6 +37,7 @@ export class AdminLayout implements OnInit {
   isMobile = signal(false);
   showNotifications = signal(false);
   showLogoutModal = signal(false);
+  isLoading = signal(false);
   showAiSidebar = signal(false);
   searchQuery = signal('');
   currentUrl = signal(this.router.url);
@@ -175,12 +176,28 @@ export class AdminLayout implements OnInit {
     this.showAiSidebar.update(v => !v);
   }
 
-  async logout(): Promise<void> {
+  openLogoutModal(): void {
+    this.showLogoutModal.set(true);
+  }
+
+  closeLogoutModal(): void {
+    this.showLogoutModal.set(false);
+  }
+
+  async confirmLogout(): Promise<void> {
+    if (this.isLoading()) return;
+    this.isLoading.set(true);
+    this.showLogoutModal.set(false);
     try {
       await this.authService.logout();
     } finally {
+      this.isLoading.set(false);
       await this.router.navigate(['/login']);
     }
+  }
+
+  logout(): void {
+    this.openLogoutModal();
   }
 
   // Profile Modal Methods
