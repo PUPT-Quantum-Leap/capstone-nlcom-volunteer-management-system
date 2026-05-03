@@ -300,6 +300,7 @@ export class AdminAuthPage implements OnInit, OnDestroy {
       const credentials = {
         email: this.sanitizer.sanitizeInput(raw.email ?? '', 'text'),
         password: raw.password,
+        remember: raw.rememberMe ?? false,
       };
 
       const response = await firstValueFrom(this.authService.adminLogin$(credentials));

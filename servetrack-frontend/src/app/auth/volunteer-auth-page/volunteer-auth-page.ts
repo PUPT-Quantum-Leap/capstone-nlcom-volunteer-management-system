@@ -361,6 +361,7 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
       const credentials = {
         email: this.sanitizer.sanitizeInput(formValue.email ?? '', 'text'),
         password: formValue.password,
+        remember: formValue.rememberMe ?? false,
       };
 
       const response = await firstValueFrom(
