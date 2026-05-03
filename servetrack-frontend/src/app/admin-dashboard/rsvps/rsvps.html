@@ -374,9 +374,9 @@
               <div class="form-group">
                 <label for="rsvp-status">Status *</label>
                 <select id="rsvp-status" formControlName="status" class="form-input">
-                  <option value="active">Active</option>
-                  <option value="draft">Draft</option>
-                  <option value="closed">Closed</option>
+                  <option value="active" [disabled]="editingRsvp()?.status === 'closed'">Active</option>
+                  <option value="draft" [disabled]="editingRsvp()?.status === 'active' || editingRsvp()?.status === 'closed'">Draft</option>
+                  <option value="closed" [disabled]="editingRsvp()?.status === 'active' && (editingRsvp()?.totalResponses || 0) > 0">Closed</option>
                 </select>
               </div>
             </div>
