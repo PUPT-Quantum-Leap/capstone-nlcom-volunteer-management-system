@@ -175,12 +175,25 @@ export class AdminLayout implements OnInit {
     this.showAiSidebar.update(v => !v);
   }
 
-  async logout(): Promise<void> {
+  openLogoutModal(): void {
+    this.showLogoutModal.set(true);
+  }
+
+  closeLogoutModal(): void {
+    this.showLogoutModal.set(false);
+  }
+
+  async confirmLogout(): Promise<void> {
+    this.showLogoutModal.set(false);
     try {
       await this.authService.logout();
     } finally {
       await this.router.navigate(['/login']);
     }
+  }
+
+  async logout(): Promise<void> {
+    this.openLogoutModal();
   }
 
   // Profile Modal Methods
