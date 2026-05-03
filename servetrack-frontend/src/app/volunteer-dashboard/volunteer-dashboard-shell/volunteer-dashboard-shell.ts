@@ -229,7 +229,7 @@ export class VolunteerDashboardShell implements OnInit {
       await this.authService.logout();
     } finally {
       this.isLoading.set(false);
-      await this.router.navigate(['/login']);
+      await this.router.navigate(['/volunteer-auth']);
     }
   }
 

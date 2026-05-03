@@ -192,7 +192,7 @@ export class AdminLayout implements OnInit {
       await this.authService.logout();
     } finally {
       this.isLoading.set(false);
-      await this.router.navigate(['/login']);
+      await this.router.navigate(['/admin-auth']);
     }
   }
 
