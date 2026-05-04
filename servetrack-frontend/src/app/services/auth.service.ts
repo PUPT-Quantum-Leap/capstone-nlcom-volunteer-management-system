@@ -180,6 +180,7 @@ export class AuthService {
           if (response.user) {
             this.isAuthenticated.set(true);
             this.currentUser.set(response.user);
+            localStorage.setItem('has_session', 'true');
           }
         }),
         catchError((err: HttpErrorResponse) => {
@@ -242,6 +243,7 @@ export class AuthService {
         if (response.user) {
           this.isAuthenticated.set(true);
           this.currentUser.set(response.user);
+          localStorage.setItem('has_session', 'true');
         }
       }),
       catchError((err: HttpErrorResponse) => {
@@ -272,10 +274,12 @@ export class AuthService {
       tap(() => {
         this.isAuthenticated.set(false);
         this.currentUser.set(null);
+        localStorage.removeItem('has_session');
       }),
       catchError(() => {
         this.isAuthenticated.set(false);
         this.currentUser.set(null);
+        localStorage.removeItem('has_session');
         return of(undefined);
       }),
     );
@@ -346,6 +350,7 @@ export class AuthService {
         if (response.success && response.user) {
           this.isAuthenticated.set(true);
           this.currentUser.set(response.user);
+          localStorage.setItem('has_session', 'true');
         }
       }),
       catchError((err: HttpErrorResponse) => {
@@ -410,6 +415,13 @@ export class AuthService {
    * Check authentication status - Observable version.
    */
   checkAuthStatus$(): Observable<AuthResponse> {
+    // Prevent unnecessary API calls (and 401 console errors) for guests
+    if (localStorage.getItem('has_session') !== 'true') {
+      this.isAuthenticated.set(false);
+      this.currentUser.set(null);
+      return of({ success: false } as AuthResponse);
+    }
+
     return this.http
       .get<AuthResponse | AuthResponse['user']>(`${environment.apiUrl}/user`, { withCredentials: true })
       .pipe(
@@ -435,11 +447,13 @@ export class AuthService {
           if (response.user) {
             this.isAuthenticated.set(true);
             this.currentUser.set(response.user);
+            localStorage.setItem('has_session', 'true');
           }
         }),
         catchError(() => {
           this.isAuthenticated.set(false);
           this.currentUser.set(null);
+          localStorage.removeItem('has_session');
           return of({ success: false } as AuthResponse);
         }),
       );
@@ -456,6 +470,7 @@ export class AuthService {
   private clearSession(): void {
     this.isAuthenticated.set(false);
     this.currentUser.set(null);
+    localStorage.removeItem('has_session');
 
     // Handle navigation errors gracefully
     this.router.navigate(['/login']).catch((error) => {

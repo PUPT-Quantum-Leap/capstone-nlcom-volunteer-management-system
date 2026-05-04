@@ -31,6 +31,7 @@ describe('AuthService', () => {
 
   afterEach(() => {
     httpMock.verify();
+    localStorage.clear();
   });
 
   describe('Validation Methods', () => {
@@ -270,6 +271,7 @@ describe('AuthService', () => {
     });
 
     it('should check auth status successfully', () => {
+      localStorage.setItem('has_session', 'true');
       const mockUser = {
         id: '1',
         email: 'test@example.com',
@@ -290,6 +292,7 @@ describe('AuthService', () => {
     });
 
     it('should handle auth status check failure', () => {
+      localStorage.setItem('has_session', 'true');
       service.checkAuthStatus$().subscribe((response) => {
         expect(response.success).toBe(false);
         expect(service.isAuthenticated()).toBe(false);
@@ -298,6 +301,16 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(`${environment.apiUrl}/user`);
       req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+    });
+
+    it('should return false immediately if no session in localStorage', () => {
+      localStorage.removeItem('has_session');
+      service.checkAuthStatus$().subscribe((response) => {
+        expect(response.success).toBe(false);
+        expect(service.isAuthenticated()).toBe(false);
+        expect(service.currentUser()).toBeNull();
+      });
+      httpMock.expectNone(`${environment.apiUrl}/user`);
     });
   });
 });
