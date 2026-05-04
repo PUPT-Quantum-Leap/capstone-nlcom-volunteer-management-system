@@ -45,7 +45,15 @@ export class HomeComponent implements OnInit {
   private redirectBasedOnRole(): void {
     const user = this.authService.currentUser();
     const userType = user?.user_type || user?.role || '';
-    const redirectUrl = userType === 'admin' ? '/admin-dashboard' : '/volunteer-dashboard';
+    
+    let redirectUrl = '/volunteer-auth'; // Safe default
+    
+    if (userType === 'admin') {
+      redirectUrl = '/admin-dashboard';
+    } else if (userType === 'coordinator' || userType === 'volunteer') {
+      redirectUrl = '/volunteer-dashboard';
+    }
+    
     this.router.navigateByUrl(redirectUrl);
   }
 }
