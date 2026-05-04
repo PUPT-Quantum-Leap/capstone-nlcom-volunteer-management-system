@@ -10,7 +10,13 @@ export const guestGuard: CanActivateFn = () => {
 
   // Helper to determine redirect route
   const getRedirectUrl = (userType: string | undefined): string => {
-    return userType === 'admin' ? '/admin-dashboard' : '/volunteer-dashboard';
+    if (userType === 'admin') {
+      return '/admin-dashboard';
+    } else if (userType === 'coordinator' || userType === 'volunteer') {
+      return '/volunteer-dashboard';
+    }
+    // Safe default for unknown/empty roles
+    return '/volunteer-auth';
   };
 
   // Check if there is a cached authentication state
