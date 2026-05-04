@@ -253,7 +253,7 @@ export class AnalyticsFeedingOperationComponent {
         3: { cellWidth: 55, halign: 'center' },
         4: { cellWidth: 140 },
       },
-      didParseCell: (hookData) => {
+      didParseCell: (hookData: any) => {
         if (hookData.section === 'body' && hookData.column.index === 3) {
           hookData.cell.styles.fontStyle = 'bold';
           hookData.cell.styles.halign = 'center';
