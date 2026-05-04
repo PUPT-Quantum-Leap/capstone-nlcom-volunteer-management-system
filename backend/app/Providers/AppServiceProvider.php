@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\RsvpResponse;
 use App\Models\User;
 use App\Models\Volunteer;
+use App\Observers\RsvpResponseObserver;
 use App\Observers\UserObserver;
 use App\Observers\VolunteerObserver;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -53,5 +55,8 @@ class AppServiceProvider extends ServiceProvider
 
         // Register User observer for security audit logging (role/password changes)
         User::observe(UserObserver::class);
+
+        // Register RsvpResponse observer for ICS auto-availability
+        RsvpResponse::observe(RsvpResponseObserver::class);
     }
 }
