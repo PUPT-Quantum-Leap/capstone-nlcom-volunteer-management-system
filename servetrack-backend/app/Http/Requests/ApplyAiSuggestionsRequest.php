@@ -16,7 +16,15 @@ class ApplyAiSuggestionsRequest extends FormRequest
         // Sanitize suggestions array
         $suggestions = $this->input('suggestions', []);
         if (is_array($suggestions)) {
-            $sanitized = array_map(function ($suggestion) {
+            $sanitized = array_map(static function ($suggestion): array {
+                if (! is_array($suggestion)) {
+                    return [
+                        'volunteer_id' => null,
+                        'team_id' => null,
+                        'role' => null,
+                    ];
+                }
+
                 return [
                     'volunteer_id' => $suggestion['volunteer_id'] ?? null,
                     'team_id' => $suggestion['team_id'] ?? null,
