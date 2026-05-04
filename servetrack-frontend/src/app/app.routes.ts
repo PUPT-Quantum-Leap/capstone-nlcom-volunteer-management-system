@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { LandingPage } from './landing-page/landing-page';
+import { HomeComponent } from './home/home.component';
 import { RsvpComponent } from './rsvp/rsvp';
 import { VolunteerAuthPage } from './auth/volunteer-auth-page/volunteer-auth-page';
 import { FacebookOAuthCallbackComponent } from './auth/facebook-oauth-callback/facebook-oauth-callback';
@@ -26,14 +26,15 @@ import { BackupRecoveryComponent } from './admin-dashboard/backup-recovery/backu
 import { NotFound } from './not-found/not-found';
 import { IncidentCommandSystemComponent } from './incident-command-system/incident-command-system';
 import { authGuard } from './guards/auth.guard';
+import { guestGuard } from './guards/guest.guard';
 
 export const routes: Routes = [
-  { path: '', component: LandingPage },
-  { path: 'volunteer-auth', component: VolunteerAuthPage },
+  { path: '', component: HomeComponent },
+  { path: 'volunteer-auth', component: VolunteerAuthPage, canActivate: [guestGuard] },
   { path: 'login', redirectTo: 'volunteer-auth', pathMatch: 'full' },
   { path: 'signup-form', redirectTo: 'volunteer-auth?tab=signup', pathMatch: 'full' },
-  { path: 'auth/facebook/callback', component: FacebookOAuthCallbackComponent },
-  { path: 'admin-auth', component: AdminAuthPage },
+  { path: 'auth/facebook/callback', component: FacebookOAuthCallbackComponent, canActivate: [guestGuard] },
+  { path: 'admin-auth', component: AdminAuthPage, canActivate: [guestGuard] },
   { path: 'admin-login', redirectTo: 'admin-auth', pathMatch: 'full' },
   { path: 'admin-signup', redirectTo: 'admin-auth?tab=signup', pathMatch: 'full' },
   { path: 'rsvp', component: RsvpComponent },
