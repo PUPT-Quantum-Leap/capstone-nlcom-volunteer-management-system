@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Ics;
 use App\Models\Poll;
+use App\Policies\IcsPolicy;
 use App\Policies\PollPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
@@ -15,6 +17,7 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
+        Ics::class => IcsPolicy::class,
         Poll::class => PollPolicy::class,
     ];
 

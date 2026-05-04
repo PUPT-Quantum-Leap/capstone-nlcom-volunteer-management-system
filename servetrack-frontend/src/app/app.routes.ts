@@ -21,10 +21,8 @@ import { AttendanceManagement } from './admin-dashboard/attendance-management/at
 import { PerformanceComponent } from './admin-dashboard/performance/performance';
 import { SmsManagementComponent } from './admin-dashboard/sms-management/sms-management';
 import { RsvpsComponent } from './admin-dashboard/rsvps/rsvps';
-import { IcsComponent } from './admin-dashboard/ics/ics';
 import { BackupRecoveryComponent } from './admin-dashboard/backup-recovery/backup-recovery';
 import { NotFound } from './not-found/not-found';
-import { IncidentCommandSystemComponent } from './incident-command-system/incident-command-system';
 import { authGuard } from './guards/auth.guard';
 import { guestGuard } from './guards/guest.guard';
 
@@ -39,7 +37,12 @@ export const routes: Routes = [
   { path: 'admin-signup', redirectTo: 'admin-auth?tab=signup', pathMatch: 'full' },
   { path: 'rsvp', component: RsvpComponent },
   { path: 'rsvp/:slug', component: RsvpComponent },
-  { path: 'incident-command-system', component: IncidentCommandSystemComponent },
+  {
+    path: 'incident-command-system',
+    loadComponent: () =>
+      import('./incident-command-system/incident-command-system').then((m) => m.IncidentCommandSystemComponent),
+    canActivate: [authGuard],
+  },
   {
     path: 'volunteer-dashboard',
     component: VolunteerDashboardShell,
@@ -68,7 +71,12 @@ export const routes: Routes = [
       { path: 'performance', component: PerformanceComponent },
       { path: 'sms', component: SmsManagementComponent },
       { path: 'rsvps', component: RsvpsComponent },
-      { path: 'ics', component: IcsComponent },
+      {
+        path: 'ics',
+        loadComponent: () =>
+          import('./incident-command-system/incident-command-system').then((m) => m.IncidentCommandSystemComponent),
+        canActivate: [authGuard],
+      },
       { path: 'backup-recovery', component: BackupRecoveryComponent },
     ],
   },
