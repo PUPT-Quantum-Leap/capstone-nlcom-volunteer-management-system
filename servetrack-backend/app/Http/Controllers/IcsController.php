@@ -190,7 +190,9 @@ class IcsController extends Controller
                 $volunteer = $volunteers->get($suggestion['volunteer_id']);
                 $team = $teams->get($suggestion['team_id']);
 
-                if ($volunteer && $team) {
+                $isTeamInIcs = $team && $ics->teams()->whereKey($team->id)->exists();
+
+                if ($volunteer && $isTeamInIcs) {
                     $ics->volunteers()->syncWithoutDetaching([
                         $volunteer->volunteer_id => [
                             'team_id' => $team->id,
@@ -222,6 +224,12 @@ class IcsController extends Controller
 
         if (! $volunteer) {
             return response()->json(['message' => 'Volunteer not found.'], 404);
+        }
+
+        $isTeamInIcs = $ics->teams()->whereKey($request->input('team_id'))->exists();
+
+        if (! $isTeamInIcs) {
+            return response()->json(['message' => 'Team does not belong to this ICS.'], 422);
         }
 
         DB::transaction(function () use ($request, $ics, $volunteer): void {
