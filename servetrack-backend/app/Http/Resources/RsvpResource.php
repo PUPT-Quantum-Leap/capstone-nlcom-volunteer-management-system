@@ -11,6 +11,11 @@ class RsvpResource extends JsonResource
     {
         $volunteerId = $request->user()?->volunteer?->volunteer_id;
 
+        $frontendUrl = config('app.frontend_url');
+        if (! is_string($frontendUrl) || $frontendUrl === '') {
+            throw new \RuntimeException('Missing required configuration: app.frontend_url');
+        }
+
         return [
             'id' => $this->rsvp_id,
             'slug' => $this->slug,
@@ -22,7 +27,7 @@ class RsvpResource extends JsonResource
             'cutOffTime' => $this->cutoff_time ? date('g:i A', strtotime($this->cutoff_time)) : null,
             'status' => $this->status,
             'isCutoffPassed' => $this->isCutoffPassed(),
-            'shareUrl' => rtrim((string) config('app.frontend_url', 'http://localhost:4200'), '/').'/rsvp/'.$this->slug,
+            'shareUrl' => rtrim($frontendUrl, '/').'/rsvp/'.$this->slug,
             'totalResponses' => $this->responses_count ?? 0,
             'createdAt' => $this->created_at?->toDateString(),
             'shifts' => $this->whenLoaded('shifts', function () {
