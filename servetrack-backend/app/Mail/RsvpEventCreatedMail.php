@@ -15,7 +15,7 @@ class RsvpEventCreatedMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Rsvp $rsvp, public Volunteer $volunteer) {}
+    public function __construct(public Rsvp $rsvp, public Volunteer $volunteer): void {}
 
     /**
      * Get the message envelope.
@@ -36,13 +36,21 @@ class RsvpEventCreatedMail extends Mailable implements ShouldQueue
         if (! is_string($frontendUrl) || $frontendUrl === '') {
             throw new \RuntimeException('Missing required configuration: app.frontend_url');
         }
+        if (filter_var($frontendUrl, FILTER_VALIDATE_URL) === false) {
+            throw new \RuntimeException('Invalid app.frontend_url: must be a valid URL');
+        }
+        $parsed = parse_url($frontendUrl);
+        if (app()->environment('production') && ($parsed['scheme'] ?? '') !== 'https') {
+            throw new \RuntimeException('app.frontend_url must use HTTPS scheme in production');
+        }
+        $frontendUrl = rtrim($frontendUrl, '/');
 
         return new Content(
             view: 'emails.rsvp.event-created',
             with: [
                 'rsvp' => $this->rsvp,
                 'volunteer' => $this->volunteer,
-                'rsvpUrl' => rtrim($frontendUrl, '/').'/rsvp/'.$this->rsvp->slug,
+                'rsvpUrl' => $frontendUrl.'/rsvp/'.(string) $this->rsvp->slug,
             ],
         );
     }
