@@ -30,7 +30,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (app()->environment('production')) {
+        if ($this->app->environment('production')) {
+            Request::setTrustedProxies(
+                ['*'],
+                Request::HEADER_X_FORWARDED_FOR |
+                Request::HEADER_X_FORWARDED_HOST |
+                Request::HEADER_X_FORWARDED_PORT |
+                Request::HEADER_X_FORWARDED_PROTO |
+                Request::HEADER_X_FORWARDED_AWS_ELB
+            );
             URL::forceScheme('https');
         }
 
