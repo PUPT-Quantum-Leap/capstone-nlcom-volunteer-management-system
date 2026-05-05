@@ -22,7 +22,7 @@ class RsvpResource extends JsonResource
             'cutOffTime' => $this->cutoff_time ? date('g:i A', strtotime($this->cutoff_time)) : null,
             'status' => $this->status,
             'isCutoffPassed' => $this->isCutoffPassed(),
-            'shareUrl' => rtrim(config('app.frontend_url'), '/') . '/rsvp/' . $this->slug,
+            'shareUrl' => route('rsvp.show', ['identifier' => $this->slug]),
             'totalResponses' => $this->responses_count ?? 0,
             'createdAt' => $this->created_at?->toDateString(),
             'shifts' => $this->whenLoaded('shifts', function () {

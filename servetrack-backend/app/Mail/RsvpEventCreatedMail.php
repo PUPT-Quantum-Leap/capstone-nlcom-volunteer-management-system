@@ -37,7 +37,7 @@ class RsvpEventCreatedMail extends Mailable implements ShouldQueue
             with: [
                 'rsvp' => $this->rsvp,
                 'volunteer' => $this->volunteer,
-                'rsvpUrl' => rtrim(config('app.frontend_url'), '/') . '/rsvp/' . $this->rsvp->slug,
+                'rsvpUrl' => route('rsvp.show', ['slug' => $this->rsvp->slug]),
             ],
         );
     }
