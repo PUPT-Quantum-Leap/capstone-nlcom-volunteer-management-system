@@ -182,9 +182,10 @@
               <button
                 type="button"
                 class="icon-btn icon-btn-success"
+                [class.icon-btn-disabled]="rsvp.status !== 'active'"
                 (click)="openShareRsvpModal(rsvp)"
                 [attr.aria-label]="'Share RSVP for ' + rsvp.title"
-                title="Share">
+                [title]="rsvp.status !== 'active' ? 'Share not available for ' + rsvp.status + ' events' : 'Share'">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <circle cx="18" cy="5" r="3"/>
                   <circle cx="6" cy="12" r="3"/>

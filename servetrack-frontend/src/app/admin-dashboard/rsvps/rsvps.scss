@@ -553,6 +553,18 @@
     cursor: not-allowed;
   }
 
+  &.icon-btn-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    color: var(--gray-400);
+    background: var(--gray-50);
+    pointer-events: none;
+
+    &:hover {
+      background: var(--gray-50);
+    }
+  }
+
   &.icon-btn-success:hover {
     background: var(--success-50);
     color: var(--success-600);
