@@ -347,6 +347,10 @@ export class RsvpsComponent {
   }
 
   openShareRsvpModal(rsvp: Rsvp): void {
+    if (rsvp.status !== 'active') {
+      this.showFeedback('Cannot share draft or closed RSVP events.', 'error');
+      return;
+    }
     this.sharingRsvp.set(rsvp);
     this.lockBodyScroll();
     this.showShareRsvpModal.set(true);
