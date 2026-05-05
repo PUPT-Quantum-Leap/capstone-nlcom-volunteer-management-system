@@ -11,6 +11,19 @@ class RsvpResource extends JsonResource
     {
         $volunteerId = $request->user()?->volunteer?->volunteer_id;
 
+        $frontendUrl = config('app.frontend_url');
+        if (! is_string($frontendUrl) || $frontendUrl === '') {
+            throw new \RuntimeException('Missing required configuration: app.frontend_url');
+        }
+        if (filter_var($frontendUrl, FILTER_VALIDATE_URL) === false) {
+            throw new \RuntimeException('Invalid app.frontend_url: must be a valid URL');
+        }
+        $parsed = parse_url($frontendUrl);
+        if (app()->environment('production') && ($parsed['scheme'] ?? '') !== 'https') {
+            throw new \RuntimeException('app.frontend_url must use HTTPS scheme in production');
+        }
+        $frontendUrl = rtrim($frontendUrl, '/');
+
         return [
             'id' => $this->rsvp_id,
             'slug' => $this->slug,
@@ -22,7 +35,7 @@ class RsvpResource extends JsonResource
             'cutOffTime' => $this->cutoff_time ? date('g:i A', strtotime($this->cutoff_time)) : null,
             'status' => $this->status,
             'isCutoffPassed' => $this->isCutoffPassed(),
-            'shareUrl' => route('rsvp.show', ['identifier' => $this->slug]),
+            'shareUrl' => $frontendUrl.'/rsvp/'.(string) $this->slug,
             'totalResponses' => $this->responses_count ?? 0,
             'createdAt' => $this->created_at?->toDateString(),
             'shifts' => $this->whenLoaded('shifts', function () {
