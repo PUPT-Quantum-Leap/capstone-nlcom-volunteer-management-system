@@ -102,7 +102,10 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
       email: ['', [Validators.required, emailValidator(this.sanitizer), Validators.maxLength(100)]],
       mobileNumber: ['', [Validators.required, phoneNumberValidator(this.sanitizer)]],
       birthdate: ['', [Validators.required, dateValidator(this.sanitizer, 'Birthdate')]],
-      lastMedicalExam: ['', [Validators.required, dateValidator(this.sanitizer, 'Medical exam date')]],
+      lastMedicalExam: [
+        '',
+        [Validators.required, dateValidator(this.sanitizer, 'Medical exam date')],
+      ],
       completeAddress: ['', [Validators.required, addressValidator()]],
     });
 
@@ -123,7 +126,10 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
         lifegroupLeaderName: ['', [Validators.maxLength(100)]],
         leadingLifegroup: ['', [Validators.required]],
         emergencyContactName: ['', [Validators.required, Validators.maxLength(100)]],
-        emergencyContactNumber: ['', [Validators.required, emergencyContactValidator(this.sanitizer)]],
+        emergencyContactNumber: [
+          '',
+          [Validators.required, emergencyContactValidator(this.sanitizer)],
+        ],
         emergencyContactRelationship: ['', [Validators.required, Validators.maxLength(50)]],
         password: ['', [Validators.required, passwordStrengthValidator()]],
         confirmPassword: ['', [Validators.required]],
@@ -133,15 +139,13 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
       },
     );
 
-    this.preferencesForm.get('lifegroupLeaderName')?.setValidators([
-      Validators.maxLength(100),
-      lifegroupLeaderValidator()
-    ]);
+    this.preferencesForm
+      .get('lifegroupLeaderName')
+      ?.setValidators([Validators.maxLength(100), lifegroupLeaderValidator()]);
 
-    this.preferencesForm.get('otherAvailability')?.setValidators([
-      Validators.maxLength(100),
-      customAvailabilityValidator()
-    ]);
+    this.preferencesForm
+      .get('otherAvailability')
+      ?.setValidators([Validators.maxLength(100), customAvailabilityValidator()]);
 
     this.preferencesForm.get('volunteerPreference')?.valueChanges.subscribe((value) => {
       this.showOtherInput.set(value === 'other');
@@ -160,7 +164,7 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
     this.preferencesForm.get('partOfLifegroup')?.valueChanges.subscribe((value) => {
       const lifegroupLeaderControl = this.preferencesForm.get('lifegroupLeaderName');
       this.showLifegroupLeaderInput.set(value === 'yes');
-      
+
       if (value === 'yes') {
         lifegroupLeaderControl?.setValidators([Validators.required]);
       } else {
@@ -199,6 +203,7 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
     this.isAdminLoginPage.set(this.route.snapshot?.routeConfig?.path === 'admin-login');
 
     this.queryParamsSubscription = this.route.queryParams.subscribe((params) => {
+      this.returnUrl = params['returnUrl'] || null;
       const tab = params['tab'];
       if (tab === 'signup') {
         this.activeTab.set('signup');
@@ -210,7 +215,11 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
         this.registrationSuccessMessage.set(
           'Registration successful! Please log in with your new credentials.',
         );
-        this.router.navigate([], { queryParams: { registered: null }, queryParamsHandling: 'merge', replaceUrl: true });
+        this.router.navigate([], {
+          queryParams: { registered: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
       }
     });
   }
@@ -316,13 +325,16 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
 
     if (errors['required']) return 'This field is required';
     if (errors['email'] || errors['invalidEmail']) return 'Please enter a valid email address';
-    if (errors['minlength']) return `Minimum ${errors['minlength'].requiredLength} characters required`;
-    if (errors['maxLength']) return `Maximum ${errors['maxLength'].requiredLength} characters exceeded`;
-    if (errors['invalidPhone']) return 'Please enter a valid Philippine mobile number (e.g. 0917 123 4567)';
+    if (errors['minlength'])
+      return `Minimum ${errors['minlength'].requiredLength} characters required`;
+    if (errors['maxLength'])
+      return `Maximum ${errors['maxLength'].requiredLength} characters exceeded`;
+    if (errors['invalidPhone'])
+      return 'Please enter a valid Philippine mobile number (e.g. 0917 123 4567)';
     if (errors['invalidName']) return 'Name contains invalid characters';
     if (errors['futureDate']) return errors['futureDate'];
     if (errors['addressTooShort']) return 'Address is too short';
-    
+
     if (errors['pattern']) {
       if (fieldName === 'mobileNumber' || fieldName === 'emergencyContactNumber') {
         return 'Please enter a valid Philippine mobile number';
@@ -380,7 +392,11 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
           return;
         }
 
-        this.loginRedirectPath = userType === 'admin' ? '/admin-dashboard' : '/volunteer-dashboard';
+        this.loginRedirectPath = this.returnUrl
+          ? this.returnUrl
+          : userType === 'admin'
+            ? '/admin-dashboard'
+            : '/volunteer-dashboard';
         this.isLoginSuccess.set(true);
 
         setTimeout(async () => {
@@ -416,7 +432,9 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
         this.loginErrorMessage.set('Failed to initialize Facebook login.');
       }
     } catch (error) {
-      this.loginErrorMessage.set(this.authService.error() || 'An error occurred. Please try again.');
+      this.loginErrorMessage.set(
+        this.authService.error() || 'An error occurred. Please try again.',
+      );
     } finally {
       this.isLoginLoading.set(false);
     }
@@ -450,7 +468,7 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
-    Object.values(formGroup.controls).forEach(control => {
+    Object.values(formGroup.controls).forEach((control) => {
       control.markAsTouched();
       if (control instanceof FormGroup) {
         this.markFormGroupTouched(control);
@@ -461,9 +479,9 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
   onSignupSubmit(): void {
     if (this.personalInfoForm.valid && this.educationForm.valid && this.preferencesForm.valid) {
       this.isSignupSubmitting.set(true);
-      
+
       const formData = this.sanitizeAndValidateFormData();
-      
+
       if (!formData) {
         this.isSignupSubmitting.set(false);
         return;
@@ -518,7 +536,10 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
       leadingLifegroup: rawData.leadingLifegroup,
       emergencyContactName: this.sanitizer.sanitizeInput(rawData.emergencyContactName, 'both'),
       emergencyContactNumber: this.sanitizer.sanitizeInput(rawData.emergencyContactNumber, 'text'),
-      emergencyContactRelationship: this.sanitizer.sanitizeInput(rawData.emergencyContactRelationship, 'both'),
+      emergencyContactRelationship: this.sanitizer.sanitizeInput(
+        rawData.emergencyContactRelationship,
+        'both',
+      ),
       password: rawData.password,
       confirmPassword: rawData.confirmPassword,
     };
@@ -526,10 +547,14 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
     const errors: string[] = [];
 
     if (!this.sanitizer.validateEmail(sanitized.email)) errors.push('Invalid email format');
-    if (!this.sanitizer.validatePhoneNumber(sanitized.mobileNumber)) errors.push('Invalid mobile number format');
-    if (!this.sanitizer.validatePhoneNumber(sanitized.emergencyContactNumber)) errors.push('Invalid emergency contact number format');
-    if (this.sanitizer.isFutureDate(sanitized.birthdate)) errors.push('Birthdate cannot be in the future');
-    if (this.sanitizer.isFutureDate(sanitized.lastMedicalExam)) errors.push('Medical exam date cannot be in the future');
+    if (!this.sanitizer.validatePhoneNumber(sanitized.mobileNumber))
+      errors.push('Invalid mobile number format');
+    if (!this.sanitizer.validatePhoneNumber(sanitized.emergencyContactNumber))
+      errors.push('Invalid emergency contact number format');
+    if (this.sanitizer.isFutureDate(sanitized.birthdate))
+      errors.push('Birthdate cannot be in the future');
+    if (this.sanitizer.isFutureDate(sanitized.lastMedicalExam))
+      errors.push('Medical exam date cannot be in the future');
     if (!this.sanitizer.validateName(sanitized.firstName)) errors.push('Invalid first name');
     if (!this.sanitizer.validateName(sanitized.lastName)) errors.push('Invalid last name');
 
@@ -580,7 +605,9 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
   goToLoginNow(): void {
     this.closeSuccessModal();
     this.switchTab('login');
-    this.registrationSuccessMessage.set('Registration successful! Please log in with your new credentials.');
+    this.registrationSuccessMessage.set(
+      'Registration successful! Please log in with your new credentials.',
+    );
   }
 
   private clearCountdown(): void {

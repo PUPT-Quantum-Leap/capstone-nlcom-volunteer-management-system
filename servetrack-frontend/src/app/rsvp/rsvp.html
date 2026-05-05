@@ -45,12 +45,7 @@
       }
 
       <!-- ARIA Live Region for Closure Message (Screen Reader Only) -->
-      <div 
-        id="rsvp-closed-notice" 
-        aria-live="polite" 
-        aria-atomic="true" 
-        class="sr-only"
-      >
+      <div id="rsvp-closed-notice" aria-live="polite" aria-atomic="true" class="sr-only">
         @if (isClosed()) {
           {{ getClosureMessage() }}
         }
@@ -59,21 +54,29 @@
       <!-- RSVP Shifts -->
       <div class="rsvp-shifts">
         @for (shift of rsvp.shifts; track shift.id) {
-            <div
-              class="rsvp-shift"
-              [class.selected]="selectedShiftId() === shift.id"
-              [class.disabled]="isClosed() || isFull(shift) || hasSubmittedRsvp()"
-              [attr.aria-describedby]="isClosed() ? 'rsvp-closed-notice' : null"
-              [attr.aria-disabled]="isClosed() || isFull(shift) || hasSubmittedRsvp()"
-              (click)="!isClosed() && !isFull(shift) && !hasSubmittedRsvp() && selectShift(shift.id)"
-            >
+          <div
+            class="rsvp-shift"
+            [class.selected]="selectedShiftId() === shift.id"
+            [class.disabled]="isClosed() || isFull(shift) || hasSubmittedRsvp() || !isLoggedIn()"
+            [attr.aria-describedby]="isClosed() ? 'rsvp-closed-notice' : null"
+            [attr.aria-disabled]="
+              isClosed() || isFull(shift) || hasSubmittedRsvp() || !isLoggedIn()
+            "
+            (click)="
+              !isClosed() &&
+                !isFull(shift) &&
+                !hasSubmittedRsvp() &&
+                isLoggedIn() &&
+                selectShift(shift.id)
+            "
+          >
             <div class="shift-header">
               <div class="shift-info">
                 <input
                   type="radio"
                   [id]="'shift-' + shift.id"
                   [checked]="selectedShiftId() === shift.id"
-                  [disabled]="isClosed() || isFull(shift) || hasSubmittedRsvp()"
+                  [disabled]="isClosed() || isFull(shift) || hasSubmittedRsvp() || !isLoggedIn()"
                   [attr.aria-label]="`${shift.timeSlot} - ${shift.responses}/${shift.capacity} responses`"
                   class="shift-radio"
                   (change)="selectShift(shift.id)"
@@ -98,7 +101,9 @@
                 @if (isFull(shift)) {
                   <span class="slots-full">No slots available</span>
                 } @else {
-                  <span class="remaining-slots">{{ getRemainingSlots(shift) }} slots remaining</span>
+                  <span class="remaining-slots"
+                    >{{ getRemainingSlots(shift) }} slots remaining</span
+                  >
                 }
               </span>
             </div>
@@ -131,7 +136,15 @@
           <p class="error-message">{{ rsvpError() }}</p>
         }
 
-        @if (!hasSubmittedRsvp()) {
+        @if (!isLoggedIn()) {
+          <button class="btn-submit" [disabled]="isClosed() || isLoading()" (click)="goToLogin()">
+            @if (isClosed()) {
+              RSVP Closed
+            } @else {
+              Log in to RSVP
+            }
+          </button>
+        } @else if (!hasSubmittedRsvp()) {
           <button
             class="btn-submit"
             [disabled]="isClosed() || !hasSelectedShift() || isLoading()"
@@ -147,13 +160,7 @@
             }
           </button>
         } @else {
-          <button
-            class="btn-submit"
-            disabled
-            (click)="submitRsvp()"
-          >
-            RSVP Recorded
-          </button>
+          <button class="btn-submit" disabled (click)="submitRsvp()">RSVP Recorded</button>
         }
 
         <!-- Your Response Section -->
@@ -192,18 +199,22 @@
                   <div class="remaining-edits-info">
                     <span class="remaining-label">Edits remaining: {{ remainingEdits() }}</span>
                   </div>
-                  <button
-                    class="btn-edit"
-                    (click)="enterEditMode()"
-                    [disabled]="isLoading()"
-                  >
+                  <button class="btn-edit" (click)="enterEditMode()" [disabled]="isLoading()">
                     Edit Response
                   </button>
-                 } @else if (hasSubmittedRsvp() && !hasEditsRemaining()) {
-                   <p class="no-edits-message">You have reached the maximum number of edits (3) for this RSVP.</p>
-                 } @else if (hasSubmittedRsvp() && isClosed()) {
-                   <p class="no-edits-message">{{ getClosureReason() === 'cutoff' ? 'This RSVP has closed and is no longer accepting responses.' : `This RSVP is ${rsvp.status}. You can no longer edit your response.` }}</p>
-                 }
+                } @else if (hasSubmittedRsvp() && !hasEditsRemaining()) {
+                  <p class="no-edits-message">
+                    You have reached the maximum number of edits (3) for this RSVP.
+                  </p>
+                } @else if (hasSubmittedRsvp() && isClosed()) {
+                  <p class="no-edits-message">
+                    {{
+                      getClosureReason() === 'cutoff'
+                        ? 'This RSVP has closed and is no longer accepting responses.'
+                        : `This RSVP is ${rsvp.status}. You can no longer edit your response.`
+                    }}
+                  </p>
+                }
               </div>
             } @else {
               <!-- Edit Mode UI -->
@@ -262,7 +273,11 @@
                   </button>
                   <button
                     class="btn-save"
-                    [disabled]="editShiftId() === null || editShiftId() === response.timeSlotId || isEditSubmitting()"
+                    [disabled]="
+                      editShiftId() === null ||
+                      editShiftId() === response.timeSlotId ||
+                      isEditSubmitting()
+                    "
                     (click)="submitEditedResponse()"
                   >
                     @if (isEditSubmitting()) {
@@ -277,7 +292,6 @@
           </div>
         }
       </div>
-
     </div>
   }
 </div>

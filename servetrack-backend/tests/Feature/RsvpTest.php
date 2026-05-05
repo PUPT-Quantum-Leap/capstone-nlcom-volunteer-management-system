@@ -49,8 +49,8 @@ describe('GET /api/rsvp', function (): void {
             ->assertJsonPath('data.0.status', 'active');
     });
 
-    it('requires authentication', function (): void {
-        $this->getJson('/api/rsvp')->assertUnauthorized();
+    it('requires authentication for fetching RSVP list? No, it is public now.', function (): void {
+        $this->getJson('/api/rsvp')->assertSuccessful();
     });
 
     it('returns expected rsvp shape', function (): void {

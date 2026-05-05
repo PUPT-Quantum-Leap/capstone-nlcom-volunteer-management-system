@@ -10,6 +10,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../services/auth.service';
 import { RsvpService } from '../services/rsvp.service';
 import { Rsvp as RsvpModel, RsvpShift, RsvpResponse } from '../models/rsvp';
 
@@ -25,6 +26,7 @@ export class RsvpComponent implements OnInit {
   private router = inject(Router);
   private rsvpService = inject(RsvpService);
   private destroyRef = inject(DestroyRef);
+  private authService = inject(AuthService);
 
   rsvp = signal<RsvpModel | null>(null);
   rsvpResponse = signal<RsvpResponse | null>(null);
@@ -37,6 +39,7 @@ export class RsvpComponent implements OnInit {
   editShiftId = signal<number | null>(null);
   isEditSubmitting = signal(false);
   editError = signal<string | null>(null);
+  isLoggedIn = signal(false);
 
   totalResponses = computed(() => this.rsvp()?.totalResponses ?? 0);
   hasSelectedShift = computed(() => this.selectedShiftId() !== null);
@@ -76,8 +79,17 @@ export class RsvpComponent implements OnInit {
         next: (response) => {
           this.rsvp.set(response.data);
           this.isLoading.set(false);
-          // Try to load the volunteer's response
-          this.loadMyResponse(response.data.id);
+
+          // Check auth status before attempting to load user response
+          this.authService
+            .checkAuthStatus$()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((authStatus) => {
+              this.isLoggedIn.set(authStatus.success);
+              if (authStatus.success) {
+                this.loadMyResponse(response.data.id);
+              }
+            });
         },
         error: () => {
           this.error.set('RSVP not found or is no longer available.');
@@ -101,6 +113,11 @@ export class RsvpComponent implements OnInit {
           this.hasSubmittedRsvp.set(false);
         },
       });
+  }
+
+  goToLogin(): void {
+    const returnUrl = this.router.url;
+    this.router.navigate(['/volunteer-auth'], { queryParams: { returnUrl } });
   }
 
   getResponsePercentage(responses: number): number {

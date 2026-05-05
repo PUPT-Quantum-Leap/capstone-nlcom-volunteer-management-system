@@ -39,6 +39,10 @@ Route::post('/admin/register', [AdminController::class, 'register'])
 Route::post('/coordinator/register', [CoordinatorController::class, 'register'])
     ->middleware(['api', 'guest', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration']);
 
+// Public RSVP routes
+Route::get('/rsvp', [RsvpController::class, 'index']);
+Route::get('/rsvp/{identifier}', [RsvpController::class, 'show'])->name('rsvp.show')->where('identifier', '[\d\w\-]+');
+
 Route::get('/webhooks/facebook', [FacebookWebhookController::class, 'verify']);
 Route::post('/webhooks/facebook', [FacebookWebhookController::class, 'handle']);
 
@@ -60,8 +64,6 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
     Route::get('/volunteer/attendance/stats', [VolunteerController::class, 'attendanceStats']);
 
     // RSVP — read + vote available to all authenticated users
-    Route::get('/rsvp', [RsvpController::class, 'index']);
-    Route::get('/rsvp/{identifier}', [RsvpController::class, 'show'])->name('rsvp.show')->where('identifier', '[\d\w\-]+');
     Route::post('/rsvp/{id}/vote', [RsvpController::class, 'vote']);
     Route::get('/rsvp/{rsvpId}/my-response', [RsvpController::class, 'getMyResponse']);
     Route::put('/rsvp/{rsvpId}/response', [RsvpController::class, 'updateResponse']);

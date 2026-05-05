@@ -43,7 +43,7 @@ class RsvpEventCreatedMail extends Mailable implements ShouldQueue
         if (app()->environment('production') && ($parsed['scheme'] ?? '') !== 'https') {
             throw new \RuntimeException('app.frontend_url must use HTTPS scheme in production');
         }
-        $frontendUrl = rtrim($frontendUrl, '/');
+        $frontendUrl = rtrim((string) $frontendUrl, '/');
 
         return new Content(
             view: 'emails.rsvp.event-created',

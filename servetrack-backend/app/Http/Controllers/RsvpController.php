@@ -42,7 +42,7 @@ class RsvpController extends Controller
             ->with(['shifts', 'responses'])
             ->withCount('responses');
 
-        if ($request->user()->role !== 'admin') {
+        if (! $request->user() || $request->user()->role !== 'admin') {
             $query->where('status', 'active');
         }
 
