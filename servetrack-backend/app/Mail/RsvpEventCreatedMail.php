@@ -32,12 +32,17 @@ class RsvpEventCreatedMail extends Mailable implements ShouldQueue
      */
     public function content(): Content
     {
+        $frontendUrl = config('app.frontend_url');
+        if (! is_string($frontendUrl) || $frontendUrl === '') {
+            throw new \RuntimeException('Missing required configuration: app.frontend_url');
+        }
+
         return new Content(
             view: 'emails.rsvp.event-created',
             with: [
                 'rsvp' => $this->rsvp,
                 'volunteer' => $this->volunteer,
-                'rsvpUrl' => rtrim((string) config('app.frontend_url', 'http://localhost:4200'), '/').'/rsvp/'.$this->rsvp->slug,
+                'rsvpUrl' => rtrim($frontendUrl, '/').'/rsvp/'.$this->rsvp->slug,
             ],
         );
     }
