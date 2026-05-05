@@ -8,6 +8,8 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { RsvpService } from '../../services/rsvp.service';
+import { Rsvp } from '../../models/rsvp';
 import { VolunteerService } from '../../services/volunteer.service';
 import { AuthService } from '../../services/auth.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -39,6 +41,7 @@ interface Poll {
 export class OverviewComponent implements OnInit {
   private router = inject(Router);
   private volunteerService = inject(VolunteerService);
+  private rsvpService = inject(RsvpService);
   private authService = inject(AuthService);
   private destroyRef = inject(DestroyRef);
 
@@ -136,20 +139,39 @@ export class OverviewComponent implements OnInit {
   }
 
   private loadSamplePoll(): void {
-    this.activePoll.set({
-      id: 1,
-      title: 'May 2026 Outreach Assignment Preferences',
-      description: 'Select your preferred time slot for the upcoming community outreach event.',
-      date: '2026-05-15',
-      cutOffDay: '2026-05-10',
-      status: 'active',
-      options: [
-        { id: 1, timeSlot: 'Morning Shift (6:00 AM - 12:00 PM)', votes: 12, capacity: 20 },
-        { id: 2, timeSlot: 'Afternoon Shift (12:00 PM - 6:00 PM)', votes: 8, capacity: 15 },
-        { id: 3, timeSlot: 'Evening Shift (6:00 PM - 10:00 PM)', votes: 5, capacity: 10 },
-      ],
+    this.rsvpService.getRsvps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        const rsvps: Rsvp[] = response.data;
+        const activeRsvps = rsvps.filter((r: Rsvp) => r.status === 'active');
+
+        if (activeRsvps.length > 0) {
+          const rsvp = activeRsvps[0];
+          this.activePoll.set({
+            id: rsvp.id,
+            title: rsvp.title,
+            description: rsvp.description,
+            date: rsvp.date,
+            cutOffDay: rsvp.cutOffDay,
+            status: rsvp.status,
+            options: rsvp.shifts.map((shift) => ({
+              id: shift.id,
+              timeSlot: shift.timeSlot,
+              capacity: shift.capacity,
+              votes: shift.responses,
+            })),
+          });
+
+          if (rsvp.userVote) {
+            this.hasSubmittedVote.set(true);
+          }
+        }
+      },
+      error: (error) => {
+        console.error('[OverviewComponent] Failed to load RSVPs:', error);
+      }
     });
   }
+
 
   navigateTo(route: string): void {
     this.router.navigate(['/volunteer-dashboard', route]);

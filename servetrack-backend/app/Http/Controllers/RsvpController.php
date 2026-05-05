@@ -35,15 +35,20 @@ class RsvpController extends Controller
                 return response()->json(['message' => 'RSVP not found.'], 404);
             }
 
+            if ($request->user()->role !== 'admin' && $rsvp->status === 'draft') {
+                return response()->json(['message' => 'RSVP not found.'], 404);
+            }
+
             return new RsvpResource($rsvp);
         }
+
 
         $query = Rsvp::query()
             ->with(['shifts', 'responses'])
             ->withCount('responses');
 
         if ($request->user()->role !== 'admin') {
-            $query->where('status', 'active');
+            $query->whereIn('status', ['active', 'closed']);
         }
 
         $rsvps = $query->latest()->paginate(15);
@@ -70,7 +75,12 @@ class RsvpController extends Controller
             return response()->json(['message' => 'RSVP not found.'], 404);
         }
 
+        if ($request->user()->role !== 'admin' && $rsvp->status === 'draft') {
+            return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
         return new RsvpResource($rsvp);
+
     }
 
     public function store(StoreRsvpRequest $request): JsonResponse
