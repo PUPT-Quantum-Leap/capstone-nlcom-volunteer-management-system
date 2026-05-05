@@ -42,9 +42,9 @@ class RsvpController extends Controller
             return new RsvpResource($rsvp);
         }
 
-
         $query = Rsvp::query()
             ->with(['shifts', 'responses'])
+
             ->withCount('responses');
 
         if ($request->user()->role !== 'admin') {
@@ -80,7 +80,6 @@ class RsvpController extends Controller
         }
 
         return new RsvpResource($rsvp);
-
     }
 
     public function store(StoreRsvpRequest $request): JsonResponse
