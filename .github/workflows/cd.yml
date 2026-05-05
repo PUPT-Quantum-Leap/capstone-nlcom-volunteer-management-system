@@ -175,6 +175,7 @@ jobs:
             APP_DEBUG=false
             APP_KEY=${{ secrets.APP_KEY }}
             APP_URL=https://${{ secrets.APP_DOMAIN }}
+            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
 
             LOG_CHANNEL=stack
             LOG_LEVEL=info
