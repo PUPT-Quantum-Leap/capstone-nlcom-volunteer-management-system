@@ -31,6 +31,7 @@ export interface VolunteerUser {
   profile_photo_url: string | null;
   created_at: string;
   updated_at: string;
+  positions?: string[];
 }
 
 export interface VolunteersResponse {
