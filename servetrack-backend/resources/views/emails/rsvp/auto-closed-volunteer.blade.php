@@ -7,7 +7,7 @@
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
-        <h1 style="color: #198754; margin-bottom: 10px;">✅ RSVP Confirmed</h1>
+        <h1 style="color: #198754; margin-bottom: 10px;">✅ Event Registration Closed</h1>
         
         <p>Hello {{ $volunteer->first_name }},</p>
         
