@@ -351,6 +351,13 @@ $white: #ffffff;
       cursor: not-allowed;
     }
   }
+
+  .vote-help-text {
+    font-size: 0.875rem;
+    color: $text-muted;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
 }
 
 // Responsive Design

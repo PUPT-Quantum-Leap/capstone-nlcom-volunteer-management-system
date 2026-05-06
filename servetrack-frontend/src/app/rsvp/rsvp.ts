@@ -11,6 +11,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RsvpService } from '../services/rsvp.service';
+import { AuthService } from '../services/auth.service';
 import { Rsvp as RsvpModel, RsvpShift, RsvpResponse } from '../models/rsvp';
 
 @Component({
@@ -25,6 +26,9 @@ export class RsvpComponent implements OnInit {
   private router = inject(Router);
   private rsvpService = inject(RsvpService);
   private destroyRef = inject(DestroyRef);
+  private authService = inject(AuthService);
+
+  private currentRsvpSlug = '';
 
   rsvp = signal<RsvpModel | null>(null);
   rsvpResponse = signal<RsvpResponse | null>(null);
@@ -37,6 +41,9 @@ export class RsvpComponent implements OnInit {
   editShiftId = signal<number | null>(null);
   isEditSubmitting = signal(false);
   editError = signal<string | null>(null);
+
+  isAuthenticated = computed(() => this.authService.isAuthenticated());
+  canVote = computed(() => this.isAuthenticated() === true);
 
   totalResponses = computed(() => this.rsvp()?.totalResponses ?? 0);
   hasSelectedShift = computed(() => this.selectedShiftId() !== null);
@@ -51,6 +58,17 @@ export class RsvpComponent implements OnInit {
   );
 
   ngOnInit(): void {
+    // Track query params for redirect after login
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      if (params['logged_in'] === 'true' && this.rsvp()) {
+        // User just logged in, reload their response to enable voting
+        const rsvpData = this.rsvp();
+        if (rsvpData) {
+          this.loadMyResponse(rsvpData.id);
+        }
+      }
+    });
+
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const slug = params.get('slug');
       const id = this.route.snapshot.queryParamMap.get('id');
@@ -75,6 +93,7 @@ export class RsvpComponent implements OnInit {
       .subscribe({
         next: (response) => {
           this.rsvp.set(response.data);
+          this.currentRsvpSlug = response.data.slug || String(identifier);
           this.isLoading.set(false);
           // Try to load the volunteer's response
           this.loadMyResponse(response.data.id);
@@ -101,6 +120,20 @@ export class RsvpComponent implements OnInit {
           this.hasSubmittedRsvp.set(false);
         },
       });
+  }
+
+  /**
+   * Redirect unauthenticated users to login page with redirect parameter.
+   */
+  redirectToLogin(): void {
+    if (!this.currentRsvpSlug) {
+      return;
+    }
+    this.router.navigate(['/volunteer-auth'], {
+      queryParams: {
+        redirect: `/rsvp/${this.currentRsvpSlug}?logged_in=true`,
+      },
+    });
   }
 
   getResponsePercentage(responses: number): number {
