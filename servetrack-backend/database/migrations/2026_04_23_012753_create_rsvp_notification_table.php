@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id('notification_id');
             $table->unsignedBigInteger('volunteer_id');
             $table->unsignedBigInteger('rsvp_id');
-            $table->enum('type', ['event_created', 'event_updated', 'reminder', 'event_auto_closed'])->default('event_created');
+            $table->enum('type', ['event_created', 'event_updated', 'reminder'])->default('event_created');
             $table->text('message');
             $table->timestamp('read_at')->nullable();
             $table->boolean('email_sent')->default(false);
