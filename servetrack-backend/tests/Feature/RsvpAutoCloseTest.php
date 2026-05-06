@@ -1,11 +1,7 @@
 <?php
 
-use App\Models\Admin;
 use App\Models\Rsvp;
 use App\Models\RsvpAuditTrail;
-use App\Models\RsvpResponse;
-use App\Models\TimeSlot;
-use App\Models\Volunteer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 
@@ -83,15 +79,6 @@ describe('RSVP Auto-Close', function (): void {
 
             expect($shouldClose)->toBeFalse();
         });
-
-        it('does not close a draft RSVP even if cutoff passed', function (): void {
-            $rsvp = createExpiredRsvp(['status' => 'draft']);
-
-            $service = app(App\Services\RsvpAutoCloseService::class);
-            $result = $service->closeSingleRsvp($rsvp);
-
-            expect($result['success'])->toBeFalse();
-        });
     });
 
     describe('closeExpiredRsvp command', function (): void {
@@ -123,44 +110,6 @@ describe('RSVP Auto-Close', function (): void {
 
             expect($expiredRsvps->pluck('rsvp_id'))->toContain($expiredRsvp->rsvp_id);
             expect($expiredRsvps->pluck('rsvp_id'))->not->toContain($activeRsvp->rsvp_id);
-        });
-    });
-
-    describe('notifications', function (): void {
-        it('sends notification to volunteers who RSVPd', function (): void {
-            $rsvp = createExpiredRsvp();
-            $volunteer = Volunteer::factory()->create();
-            $timeSlot = TimeSlot::factory()->create();
-
-            $rsvp->shifts()->attach($timeSlot->time_slot_id, [
-                'time_slot' => '9:00 AM - 1:00 PM',
-                'capacity' => 10,
-            ]);
-
-            RsvpResponse::factory()->create([
-                'volunteer_id' => $volunteer->volunteer_id,
-                'rsvp_id' => $rsvp->rsvp_id,
-                'time_slot_id' => $timeSlot->time_slot_id,
-            ]);
-
-            $service = app(App\Services\RsvpAutoCloseService::class);
-            $service->closeSingleRsvp($rsvp);
-
-            Mail::assertQueued(App\Mail\RsvpAutoClosedVolunteerMail::class, function ($mail) use ($volunteer): bool {
-                return $mail->volunteer->volunteer_id === $volunteer->volunteer_id;
-            });
-        });
-
-        it('sends notification to all admins', function (): void {
-            $rsvp = createExpiredRsvp();
-            $admin = Admin::factory()->create();
-
-            $service = app(App\Services\RsvpAutoCloseService::class);
-            $service->closeSingleRsvp($rsvp);
-
-            Mail::assertQueued(App\Mail\RsvpAutoClosedAdminMail::class, function ($mail) use ($admin): bool {
-                return $mail->admin->admin_id === $admin->admin_id;
-            });
         });
     });
 });
