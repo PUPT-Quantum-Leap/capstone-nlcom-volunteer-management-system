@@ -18,7 +18,7 @@
             <p style="margin: 5px 0;"><strong>Event Date:</strong> {{ $rsvp->date->format('F d, Y') }}</p>
             <p style="margin: 5px 0;"><strong>Location:</strong> {{ $rsvp->event_location ?? 'TBA' }}</p>
             <p style="margin: 5px 0;"><strong>Original Cutoff:</strong> {{ $rsvp->cutoff_day->format('F d, Y') }} at {{ \Carbon\Carbon::parse($rsvp->cutoff_time)->format('g:i A') }}</p>
-            <p style="margin: 5px 0;"><strong>Closed At:</strong> {{ $rsvp->auto_closed_at->format('F d, Y g:i A') }}</p>
+            <p style="margin: 5px 0;"><strong>Closed At:</strong> {{ $rsvp->auto_closed_at?->format('F d, Y g:i A') ?? 'N/A' }}</p>
             <p style="margin: 5px 0;"><strong>Close Reason:</strong> {{ ucfirst($rsvp->auto_closed_reason ?? 'auto closed') }}</p>
         </div>
         

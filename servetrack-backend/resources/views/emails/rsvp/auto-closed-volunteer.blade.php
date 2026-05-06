@@ -17,7 +17,7 @@
             <h2 style="margin: 0 0 10px 0; color: #212529;">{{ $rsvp->title }}</h2>
             <p style="margin: 5px 0;"><strong>Event Date:</strong> {{ $rsvp->date->format('F d, Y') }}</p>
             <p style="margin: 5px 0;"><strong>Location:</strong> {{ $rsvp->event_location ?? 'TBA' }}</p>
-            <p style="margin: 5px 0;"><strong>Closed At:</strong> {{ $rsvp->auto_closed_at->format('F d, Y g:i A') }}</p>
+            <p style="margin: 5px 0;"><strong>Closed At:</strong> {{ $rsvp->auto_closed_at?->format('F d, Y g:i A') ?? 'N/A' }}</p>
         </div>
         
         <p>You can view your RSVP details:</p>
