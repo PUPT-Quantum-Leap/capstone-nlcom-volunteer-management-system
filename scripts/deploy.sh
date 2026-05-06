@@ -64,7 +64,8 @@ sudo mkdir -p "$SHARED_DIR/backend/storage/logs"
 sudo mkdir -p "$SHARED_DIR/backend/storage/app/public"
 sudo mkdir -p "$RELEASES_DIR"
 sudo chown -R "$USER":www-data "$APP_DIR"
-sudo chmod -R 775 "$SHARED_DIR/backend/storage" || true
+sudo chmod -R 775 "$SHARED_DIR/backend/storage"
+sudo chown -R www-data:www-data "$SHARED_DIR/backend/storage"
 
 # Check for .env file
 if [[ ! -f "$SHARED_DIR/.env" ]]; then
