@@ -13,7 +13,9 @@ use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -55,7 +57,6 @@ class AnalyticsController extends Controller
                     ->with([
                         'positions:position_id,name',
                         'attendances' => fn ($query) => $query
-                            ->where('status', 'approved')
                             ->where('date', '>=', $attendanceStartDate),
                     ])
                     ->get();
@@ -64,15 +65,16 @@ class AnalyticsController extends Controller
                     ->with([
                         'positions:position_id,name',
                         'attendances' => fn ($query) => $query
-                            ->where('status', 'approved')
                             ->where('date', '>=', $attendanceStartDate),
                     ])
                     ->get();
             }
         } catch (\Exception $e) {
+            Log::error($e);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Database query failed: '.$e->getMessage(),
+                'message' => 'Internal server error',
             ], 500);
         }
 
@@ -169,7 +171,7 @@ class AnalyticsController extends Controller
         return response()->json($responseData);
     }
 
-    public function exportPdf(Request $request): JsonResponse
+    public function exportPdf(Request $request): Response
     {
         $role = $request->user()?->role;
         if ($role !== 'admin') {
@@ -194,7 +196,7 @@ class AnalyticsController extends Controller
         ]);
     }
 
-    public function exportExcel(Request $request): JsonResponse
+    public function exportExcel(Request $request): Response
     {
         $role = $request->user()?->role;
         if ($role !== 'admin') {

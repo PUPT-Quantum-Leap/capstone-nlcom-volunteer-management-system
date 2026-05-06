@@ -77,7 +77,6 @@ export class AnalyticsComponent {
   });
 
   constructor() {
-    this.loadDepartmentOptions();
     this.loadAnalyticsData();
   }
 
@@ -162,9 +161,11 @@ export class AnalyticsComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
-          this.reportData.set(response.data);
-          if (response.success && !this.selectedDepartmentFilter()) {
-            this.departmentOptions.set(response.data.departmentBreakdown);
+          if (response.success) {
+            this.reportData.set(response.data);
+            if (!this.selectedDepartmentFilter()) {
+              this.departmentOptions.set(response.data.departmentBreakdown);
+            }
           }
           this.analyticsLoading.set(false);
         },
