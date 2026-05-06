@@ -15,6 +15,7 @@ class RsvpNotification extends Model
 
     protected $fillable = [
         'volunteer_id',
+        'admin_id',
         'rsvp_id',
         'type',
         'message',

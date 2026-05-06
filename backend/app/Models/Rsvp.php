@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -27,6 +28,9 @@ class Rsvp extends Model
         'status',
         'share_url',
         'slug',
+        'auto_closed_at',
+        'auto_closed_reason',
+        'closed_by',
     ];
 
     protected function casts(): array
@@ -35,6 +39,7 @@ class Rsvp extends Model
             'date' => 'date',
             'cutoff_day' => 'date',
             'status' => 'string',
+            'auto_closed_at' => 'datetime',
         ];
     }
 
@@ -47,6 +52,34 @@ class Rsvp extends Model
     public function responses(): HasMany
     {
         return $this->hasMany(RsvpResponse::class, 'rsvp_id');
+    }
+
+    public function auditTrails(): HasMany
+    {
+        return $this->hasMany(RsvpAuditTrail::class, 'rsvp_id');
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function scopeActiveAndNotAutoClosed(Builder $query): Builder
+    {
+        return $query->where('status', 'active')
+            ->whereNull('auto_closed_at');
+    }
+
+    public function isAutoClosed(): bool
+    {
+        return $this->auto_closed_at !== null;
+    }
+
+    public function shouldAutoClose(): bool
+    {
+        return $this->status === 'active'
+            && $this->auto_closed_at === null
+            && $this->isCutoffPassed();
     }
 
     public function isCutoffPassed(): bool
