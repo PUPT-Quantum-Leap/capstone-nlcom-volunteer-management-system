@@ -385,7 +385,10 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
 
         setTimeout(async () => {
           try {
-            await this.router.navigateByUrl(this.loginRedirectPath);
+            // Check if there's a redirect parameter from RSVP page
+            const redirectPath = this.route.snapshot.queryParams['redirect'];
+            const finalRedirect = redirectPath || this.loginRedirectPath;
+            await this.router.navigateByUrl(finalRedirect);
           } catch {
             this.loginErrorMessage.set('Redirect failed. Please try again.');
           } finally {

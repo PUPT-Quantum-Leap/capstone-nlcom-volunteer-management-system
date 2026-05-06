@@ -134,9 +134,10 @@
         @if (!hasSubmittedRsvp()) {
           <button
             class="btn-submit"
-            [disabled]="isClosed() || !hasSelectedShift() || isLoading()"
+            [disabled]="isClosed() || !hasSelectedShift() || isLoading() || !canVote()"
             [attr.aria-describedby]="isClosed() ? 'rsvp-closed-notice' : null"
-            (click)="submitRsvp()"
+            [title]="!canVote() ? 'Log in to RSVP for this event' : ''"
+            (click)="canVote() ? submitRsvp() : redirectToLogin()"
           >
             @if (isLoading()) {
               Submitting…
@@ -146,6 +147,9 @@
               Submit RSVP
             }
           </button>
+          @if (!canVote()) {
+            <p class="vote-help-text">Log in to RSVP for this event</p>
+          }
         } @else {
           <button
             class="btn-submit"
