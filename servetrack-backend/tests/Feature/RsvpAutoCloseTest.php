@@ -34,17 +34,7 @@ function createActiveRsvpWithFutureCutoff(array $attributes = []): Rsvp
 
 function getTestAdmin(): Admin
 {
-    $user = User::factory()->create([
-        'email' => 'test-admin@test.com',
-        'role' => 'admin',
-    ]);
-
-    return Admin::create([
-        'user_id' => $user->id,
-        'email' => 'test-admin@test.com',
-        'first_name' => 'Test',
-        'last_name' => 'Admin',
-    ]);
+    return Admin::factory()->create();
 }
 
 function getTestVolunteer(): Volunteer
@@ -70,7 +60,7 @@ function assertAdminNotificationExists(Rsvp $rsvp, Admin $admin): void
     expect(
         RsvpNotification::where('rsvp_id', $rsvp->rsvp_id)
             ->where('type', 'event_auto_closed')
-            ->where('admin_id', $admin->admin_id)
+            ->where('admin_id', $admin->id)
             ->whereNull('volunteer_id')
             ->exists()
     )->toBeTrue("Admin notification for RSVP {$rsvp->rsvp_id} not found");

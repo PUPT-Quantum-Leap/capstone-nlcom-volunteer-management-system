@@ -194,14 +194,14 @@ class RsvpAutoCloseService
 
                 RsvpNotification::create([
                     'volunteer_id' => null,
-                    'admin_id' => $admin->admin_id,
+                    'admin_id' => $admin->id,
                     'rsvp_id' => $rsvp->rsvp_id,
                     'type' => 'event_auto_closed',
                     'message' => "Event '{$rsvp->title}' has been automatically closed because the cutoff deadline has passed.",
                 ]);
             } catch (\Throwable $e) {
                 Log::error('Failed to notify admin', [
-                    'admin_id' => $admin->admin_id,
+                    'admin_id' => $admin->id,
                     'rsvp_id' => $rsvp->rsvp_id,
                     'error' => $e->getMessage(),
                 ]);
