@@ -27,21 +27,32 @@ class NotifyVolunteersOfNewRsvp implements ShouldQueue
             ->where('deleted_at', null)
             ->get();
 
+        $notifications = [];
+        $now = now();
+        $message = "{$this->rsvp->title} - {$this->rsvp->date->format('M d, Y')}";
+
         foreach ($volunteers as $volunteer) {
-            // Create dashboard notification
-            $notification = RsvpNotification::query()->create([
+            $emailSent = (bool) $volunteer->notify_rsvp_on_email;
+
+            $notifications[] = [
                 'volunteer_id' => $volunteer->volunteer_id,
                 'rsvp_id' => $this->rsvp->rsvp_id,
                 'type' => 'event_created',
-                'message' => "{$this->rsvp->title} - {$this->rsvp->date->format('M d, Y')}",
-                'email_sent' => false,
-            ]);
+                'message' => $message,
+                'email_sent' => $emailSent,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
 
             // Queue email if volunteer has notification preferences enabled
-            if ($volunteer->notify_rsvp_on_email) {
+            if ($emailSent) {
                 Mail::queue(new RsvpEventCreatedMail($this->rsvp, $volunteer));
-                $notification->update(['email_sent' => true]);
             }
+        }
+
+        // Bulk insert notifications in chunks to avoid parameter limits
+        foreach (array_chunk($notifications, 500) as $chunk) {
+            RsvpNotification::insert($chunk);
         }
     }
 }
