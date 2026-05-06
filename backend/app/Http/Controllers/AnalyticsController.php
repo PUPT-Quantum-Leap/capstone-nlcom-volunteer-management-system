@@ -15,7 +15,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class AnalyticsController extends Controller
@@ -41,25 +45,46 @@ class AnalyticsController extends Controller
             ? $startDate
             : $activeCutoff;
 
-        $volunteers = Volunteer::query()
-            ->with([
-                'positions:position_id,name',
-                'attendances' => fn ($query) => $query
-                    ->where('status', 'approved')
-                    ->where('date', '>=', $attendanceStartDate),
-            ])
-            ->when(
-                $resolvedDepartmentId,
-                fn ($q) => $q->whereHas('positions', fn ($pq) => $pq->where('position_id', $resolvedDepartmentId))
-            )
-            ->get();
+        try {
+            // Get volunteer IDs first if department filter is applied
+            if ($resolvedDepartmentId) {
+                $volunteerIds = DB::table('volunteer_position')
+                    ->where('position_id', $resolvedDepartmentId)
+                    ->pluck('volunteer_id');
+
+                $volunteers = Volunteer::query()
+                    ->whereIn('volunteer_id', $volunteerIds)
+                    ->with([
+                        'positions:position_id,name',
+                        'attendances' => fn ($query) => $query
+                            ->where('date', '>=', $attendanceStartDate),
+                    ])
+                    ->get();
+            } else {
+                $volunteers = Volunteer::query()
+                    ->with([
+                        'positions:position_id,name',
+                        'attendances' => fn ($query) => $query
+                            ->where('date', '>=', $attendanceStartDate),
+                    ])
+                    ->get();
+            }
+        } catch (\Exception $e) {
+            Log::error($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Internal server error',
+            ], 500);
+        }
 
         $volunteerIds = $volunteers->pluck('volunteer_id');
 
         $attendances = $volunteers
             ->flatMap->attendances
             ->when($startDate, fn ($collection) => $collection->filter(
-                fn ($attendance) => $attendance->date && $attendance->date->gte($startDate)
+                fn ($attendance) => $attendance->date &&
+                    $attendance->date->gte($startDate)
             ))
             ->values();
 
@@ -85,17 +110,18 @@ class AnalyticsController extends Controller
         $positions = Position::query()
             ->when($resolvedDepartmentId, fn ($q) => $q->where('position_id', $resolvedDepartmentId))
             ->withCount('volunteers')
+            ->orderByDesc('volunteers_count')
             ->get();
         $totalPositionVolunteers = $positions->sum('volunteers_count') ?: 1;
         $departmentBreakdown = $positions->map(function ($pos) use ($totalPositionVolunteers) {
-            return [
+            return (object) [
                 'name' => $pos->name,
                 'count' => $pos->volunteers_count,
                 'percentage' => $totalPositionVolunteers > 0
                     ? (int) round(($pos->volunteers_count / $totalPositionVolunteers) * 100)
                     : 0,
             ];
-        })->filter(fn ($d) => $d['count'] > 0)->values();
+        })->filter(fn ($d) => $d->count > 0)->values();
 
         $monthlyTrend = $this->getMonthlyTrend(
             $startDateString,
@@ -119,7 +145,7 @@ class AnalyticsController extends Controller
         $retentionMetrics = $this->getRetentionMetrics($volunteers);
         $hourlyTrends = $this->getHourlyTrends($startDate);
 
-        return response()->json([
+        $responseData = [
             'success' => true,
             'data' => [
                 'totalVolunteers' => $totalVolunteers,
@@ -140,7 +166,9 @@ class AnalyticsController extends Controller
                 'retentionMetrics' => $retentionMetrics,
                 'hourlyTrends' => $hourlyTrends,
             ],
-        ]);
+        ];
+
+        return response()->json($responseData);
     }
 
     public function exportPdf(Request $request): Response
@@ -189,13 +217,13 @@ class AnalyticsController extends Controller
         $sheet->setCellValue('A1', 'NLCOM x Metro World Child Feeding Operation');
         $sheet->mergeCells('A1:E1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(15);
-        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Date - 11pt Regular
         $sheet->setCellValue('A2', 'November 22, 2025');
         $sheet->mergeCells('A2:E2');
         $sheet->getStyle('A2')->getFont()->setSize(11);
-        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Headers - 10pt Bold
         $sheet->setCellValue('A4', 'TEAM & TIME DEPARTURE');
@@ -205,7 +233,7 @@ class AnalyticsController extends Controller
         $sheet->setCellValue('E4', 'DETAILS');
 
         $sheet->getStyle('A4:E4')->getFont()->setBold(true)->setSize(10);
-        $sheet->getStyle('A4:E4')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFe5e7eb');
+        $sheet->getStyle('A4:E4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFe5e7eb');
 
         // Data - 10pt Regular
         $row = 5;
@@ -350,7 +378,7 @@ class AnalyticsController extends Controller
         $sheet->getStyle("A{$row}:E{$row}")->getFont()->setBold(true)->setSize(10);
 
         // Borders
-        $sheet->getStyle("A4:E{$row}")->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheet->getStyle("A4:E{$row}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
         foreach (range('A', 'E') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
@@ -552,6 +580,15 @@ class AnalyticsController extends Controller
 
         $totalVolunteersWithSkills = DB::table('volunteer_skill')->distinct('volunteer_id')->count('volunteer_id');
 
+        // Check if there's any skills data
+        if ($skills->isEmpty()) {
+            return [
+                'totalSkills' => 0,
+                'volunteersWithSkills' => 0,
+                'skills' => [],
+            ];
+        }
+
         return [
             'totalSkills' => $skills->count(),
             'volunteersWithSkills' => $totalVolunteersWithSkills,
@@ -642,7 +679,7 @@ class AnalyticsController extends Controller
             ->where('status', 'approved')
             ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate))
             ->get()
-            ->groupBy(fn ($a) => $a->date?->format('N'));
+            ->groupBy(fn ($a) => Carbon::parse($a->date)->format('N'));
 
         $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         $dayData = collect($days)->map(function ($day, $index) use ($attendances) {
