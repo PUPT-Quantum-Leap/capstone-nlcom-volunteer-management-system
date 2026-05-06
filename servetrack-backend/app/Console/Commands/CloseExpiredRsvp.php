@@ -23,18 +23,6 @@ class CloseExpiredRsvp extends Command
 
         $results = $this->service->closeExpiredRsvps();
 
-        if ($results['closed_count'] === 0) {
-            $this->info('No RSVP events needed to be auto-closed.');
-
-            return self::SUCCESS;
-        }
-
-        $this->info("Auto-closed {$results['closed_count']} RSVP event(s).");
-
-        foreach ($results['rsvps'] as $rsvp) {
-            $this->line("  - {$rsvp['title']} (ID: {$rsvp['rsvp_id']}) - {$rsvp['volunteer_count']} volunteer(s) registered");
-        }
-
         if (! empty($results['errors'])) {
             $this->warn('Errors occurred while auto-closing:');
 
@@ -45,6 +33,18 @@ class CloseExpiredRsvp extends Command
             Log::error('RSVP auto-close errors', [
                 'errors' => $results['errors'],
             ]);
+        }
+
+        if ($results['closed_count'] === 0) {
+            $this->info('No RSVP events needed to be auto-closed.');
+
+            return empty($results['errors']) ? self::SUCCESS : self::FAILURE;
+        }
+
+        $this->info("Auto-closed {$results['closed_count']} RSVP event(s).");
+
+        foreach ($results['rsvps'] as $rsvp) {
+            $this->line("  - {$rsvp['title']} (ID: {$rsvp['rsvp_id']}) - {$rsvp['volunteer_count']} volunteer(s) registered");
         }
 
         Log::info('RSVP auto-close command completed', [
