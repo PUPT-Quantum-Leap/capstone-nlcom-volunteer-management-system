@@ -15,7 +15,7 @@ class RsvpAutoClosedAdminMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Rsvp $rsvp, public Admin $admin): void {}
+    public function __construct(public Rsvp $rsvp, public Admin $admin) {}
 
     public function envelope(): Envelope
     {
