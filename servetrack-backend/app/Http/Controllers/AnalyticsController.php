@@ -13,9 +13,11 @@ use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class AnalyticsController extends Controller
@@ -167,7 +169,7 @@ class AnalyticsController extends Controller
         return response()->json($responseData);
     }
 
-    public function exportPdf(Request $request): Response
+    public function exportPdf(Request $request): JsonResponse
     {
         $role = $request->user()?->role;
         if ($role !== 'admin') {
@@ -192,7 +194,7 @@ class AnalyticsController extends Controller
         ]);
     }
 
-    public function exportExcel(Request $request): Response
+    public function exportExcel(Request $request): JsonResponse
     {
         $role = $request->user()?->role;
         if ($role !== 'admin') {
@@ -213,13 +215,13 @@ class AnalyticsController extends Controller
         $sheet->setCellValue('A1', 'NLCOM x Metro World Child Feeding Operation');
         $sheet->mergeCells('A1:E1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(15);
-        $sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Date - 11pt Regular
         $sheet->setCellValue('A2', 'November 22, 2025');
         $sheet->mergeCells('A2:E2');
         $sheet->getStyle('A2')->getFont()->setSize(11);
-        $sheet->getStyle('A2')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         // Headers - 10pt Bold
         $sheet->setCellValue('A4', 'TEAM & TIME DEPARTURE');
@@ -229,7 +231,7 @@ class AnalyticsController extends Controller
         $sheet->setCellValue('E4', 'DETAILS');
 
         $sheet->getStyle('A4:E4')->getFont()->setBold(true)->setSize(10);
-        $sheet->getStyle('A4:E4')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setARGB('FFe5e7eb');
+        $sheet->getStyle('A4:E4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFe5e7eb');
 
         // Data - 10pt Regular
         $row = 5;
@@ -374,7 +376,7 @@ class AnalyticsController extends Controller
         $sheet->getStyle("A{$row}:E{$row}")->getFont()->setBold(true)->setSize(10);
 
         // Borders
-        $sheet->getStyle("A4:E{$row}")->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        $sheet->getStyle("A4:E{$row}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
         foreach (range('A', 'E') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
@@ -576,6 +578,15 @@ class AnalyticsController extends Controller
 
         $totalVolunteersWithSkills = DB::table('volunteer_skill')->distinct('volunteer_id')->count('volunteer_id');
 
+        // Check if there's any skills data
+        if ($skills->isEmpty()) {
+            return [
+                'totalSkills' => 0,
+                'volunteersWithSkills' => 0,
+                'skills' => [],
+            ];
+        }
+
         return [
             'totalSkills' => $skills->count(),
             'volunteersWithSkills' => $totalVolunteersWithSkills,
@@ -666,7 +677,7 @@ class AnalyticsController extends Controller
             ->where('status', 'approved')
             ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate))
             ->get()
-            ->groupBy(fn ($a) => $a->date?->format('N'));
+            ->groupBy(fn ($a) => Carbon::parse($a->date)->format('N'));
 
         $days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         $dayData = collect($days)->map(function ($day, $index) use ($attendances) {

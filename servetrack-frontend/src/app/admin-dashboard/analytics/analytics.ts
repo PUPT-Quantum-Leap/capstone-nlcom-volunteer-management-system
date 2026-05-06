@@ -38,18 +38,23 @@ export class AnalyticsComponent {
 
   readonly paginatedSkills = computed(() => {
     const data = this.reportData()?.skillsDistribution.skills ?? [];
+    const filteredData = data.filter(skill => skill.count > 0);
     const start = (this.skillsPage() - 1) * this.skillsPerPage();
-    return data.slice(start, start + this.skillsPerPage());
+    return filteredData.slice(start, start + this.skillsPerPage());
   });
 
   readonly totalSkillsPages = computed(() => {
-    const total = this.reportData()?.skillsDistribution.skills.length ?? 0;
+    const data = this.reportData()?.skillsDistribution.skills ?? [];
+    const filteredData = data.filter(skill => skill.count > 0);
+    const total = filteredData.length;
     return Math.max(1, Math.ceil(total / this.skillsPerPage()));
   });
 
-  readonly hasMoreSkills = computed(
-    () => (this.reportData()?.skillsDistribution.skills.length ?? 0) > this.skillsPerPage(),
-  );
+  readonly hasMoreSkills = computed(() => {
+    const data = this.reportData()?.skillsDistribution.skills ?? [];
+    const filteredData = data.filter(skill => skill.count > 0);
+    return filteredData.length > this.skillsPerPage();
+  });
 
   readonly paginatedDepartments = computed(() => {
     const data = this.reportData()?.departmentBreakdown ?? [];
