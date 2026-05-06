@@ -262,13 +262,11 @@ export class IncidentCommandSystemComponent implements OnInit {
   // Export to PDF - placeholder
   exportToPdf(): void {
     // Will be implemented later
-    console.log('Export to PDF clicked');
   }
 
   // Export to Excel - placeholder
   exportToExcel(): void {
     // Will be implemented later
-    console.log('Export to Excel clicked');
   }
 
   // Generate New ICS - populates all data including RSVP header and volunteer teams
@@ -278,11 +276,9 @@ export class IncidentCommandSystemComponent implements OnInit {
       this.mapRsvpToComponent(this.selectedRsvp);
       // Populate the sample volunteer and team data
       this.populateSampleData();
-      console.log('Generated ICS with data from:', this.selectedRsvp.title);
     } else {
       // Clear all fields if no RSVP selected
       this.clearAllData();
-      console.log('Generated blank ICS - no RSVP selected');
     }
   }
 
@@ -382,7 +378,6 @@ export class IncidentCommandSystemComponent implements OnInit {
 
     this.rsvpService.getRsvps().subscribe({
       next: (response) => {
-        console.log('RSVP list loaded:', response);
         this.rsvpList = response.data || [];
 
         if (this.rsvpList.length === 0) {
@@ -391,7 +386,6 @@ export class IncidentCommandSystemComponent implements OnInit {
           // Select first RSVP but DON'T display data yet
           this.selectedRsvp = this.rsvpList[0];
           this.rsvpId = this.rsvpList[0].id;
-          console.log('Selected RSVP (data not displayed yet):', this.selectedRsvp.title);
         }
       },
       error: (err) => {
@@ -411,7 +405,6 @@ export class IncidentCommandSystemComponent implements OnInit {
 
     this.rsvpService.getRsvpById(rsvpId).subscribe({
       next: (response) => {
-        console.log('RSVP data loaded:', response);
         this.selectedRsvp = response.data;
         this.mapRsvpToComponent(response.data);
         this.isLoading = false;
@@ -434,7 +427,6 @@ export class IncidentCommandSystemComponent implements OnInit {
       if (found) {
         this.selectedRsvp = found;
         this.rsvpId = id;
-        console.log('Selected RSVP for generation:', found.title);
       }
     }
   }
@@ -443,7 +435,6 @@ export class IncidentCommandSystemComponent implements OnInit {
    * Map RSVP data to component properties.
    */
   private mapRsvpToComponent(rsvp: Rsvp): void {
-    console.log('Mapping RSVP data:', rsvp);
 
     // DATE from RSVP date
     this.date = rsvp.date
@@ -465,12 +456,5 @@ export class IncidentCommandSystemComponent implements OnInit {
     // For now, use title as menu indicator
     this.menu = rsvp.title || rsvp.description || '';
 
-    console.log('Mapped values:', {
-      date: this.date,
-      volunteers: this.volunteers,
-      objective: this.objective,
-      menu: this.menu,
-      totalResponses: rsvp.totalResponses,
-    });
   }
 }
