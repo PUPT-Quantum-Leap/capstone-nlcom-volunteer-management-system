@@ -22,11 +22,17 @@ class UserController extends Controller
     public function index(Request $request): JsonResponse
     {
         $showArchived = $request->query('archived') === 'true';
+        $currentUser = auth()->user();
 
         if ($showArchived) {
             $query = User::onlyTrashed();
         } else {
             $query = User::query();
+        }
+
+        // Exclude current user from the list to prevent self-modification/deletion
+        if ($currentUser) {
+            $query->where('id', '!=', $currentUser->id);
         }
 
         // Search by name or email
