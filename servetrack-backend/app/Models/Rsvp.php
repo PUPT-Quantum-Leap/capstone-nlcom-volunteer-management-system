@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -58,12 +59,12 @@ class Rsvp extends Model
         return $this->hasMany(RsvpAuditTrail::class, 'rsvp_id');
     }
 
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', 'active');
     }
 
-    public function scopeActiveAndNotAutoClosed($query)
+    public function scopeActiveAndNotAutoClosed(Builder $query): Builder
     {
         return $query->where('status', 'active')
             ->whereNull('auto_closed_at');
