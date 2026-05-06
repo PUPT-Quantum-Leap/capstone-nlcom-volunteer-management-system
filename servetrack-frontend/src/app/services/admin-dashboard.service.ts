@@ -129,6 +129,26 @@ export class AdminDashboardService {
       );
   }
 
+
+  // Attendance Photo Management
+  uploadAttendancePhoto(file: File): Observable<ApiResponse<any>> {
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    return this.http.post<ApiResponse<any>>(`${environment.apiUrl}/attendance-photos`, formData, {
+      withCredentials: true,
+    }).pipe(
+      catchError((error) => {
+        console.error('Error uploading attendance photo:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Failed to upload photo',
+          data: error.error?.errors,
+        } as ApiResponse<any>);
+      })
+    );
+  }
+
   getVolunteers(): Observable<VolunteersResponse> {
     return this.http.get<VolunteersResponse>(`${environment.apiUrl}/volunteers?per_page=100`, {
       withCredentials: true,

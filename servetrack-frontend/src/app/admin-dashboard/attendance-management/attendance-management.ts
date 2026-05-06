@@ -54,6 +54,7 @@ export class AttendanceManagement {
   // Photo upload
   photoUploadProcessing = signal(false);
   photoUploadPreview = signal<string | null>(null);
+  selectedPhotoFile = signal<File | null>(null);
   detectedVolunteersFromPhoto = signal<DetectedVolunteer[]>([]);
  
   // Assignment
@@ -207,12 +208,14 @@ export class AttendanceManagement {
   openPhotoUploadModal(): void {
     this.showPhotoUploadModal.set(true);
     this.photoUploadPreview.set(null);
+    this.selectedPhotoFile.set(null);
     this.photoUploadProcessing.set(false);
   }
 
   closePhotoUploadModal(): void {
     this.showPhotoUploadModal.set(false);
     this.photoUploadPreview.set(null);
+    this.selectedPhotoFile.set(null);
     this.photoUploadProcessing.set(false);
   }
 
@@ -232,6 +235,8 @@ export class AttendanceManagement {
       return;
     }
 
+    this.selectedPhotoFile.set(file);
+
     const reader = new FileReader();
     reader.onload = () => {
       this.photoUploadPreview.set(reader.result as string);
@@ -239,21 +244,30 @@ export class AttendanceManagement {
     reader.readAsDataURL(file);
   }
 
-  async uploadPhoto(): Promise<void> {
-    if (!this.photoUploadPreview()) {
+  uploadPhoto(): void {
+    const file = this.selectedPhotoFile();
+    if (!file || !this.photoUploadPreview()) {
       this.showSnackbar.emit({ message: 'Please upload a photo first', type: 'error' });
       return;
     }
 
     this.photoUploadProcessing.set(true);
 
-    // TODO: Implement actual API call to upload photo
-    // For now, simulate upload
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    this.photoUploadProcessing.set(false);
-    this.closePhotoUploadModal();
-    this.showSnackbar.emit({ message: 'Photo uploaded successfully. It will be archived after 5 days.', type: 'success' });
+    this.adminDashboardService.uploadAttendancePhoto(file).subscribe({
+      next: (response) => {
+        this.photoUploadProcessing.set(false);
+        if (response.success) {
+          this.closePhotoUploadModal();
+          this.showSnackbar.emit({ message: response.message || 'Photo uploaded successfully.', type: 'success' });
+        } else {
+          this.showSnackbar.emit({ message: response.message || 'Failed to upload photo', type: 'error' });
+        }
+      },
+      error: () => {
+        this.photoUploadProcessing.set(false);
+        this.showSnackbar.emit({ message: 'An error occurred while uploading the photo', type: 'error' });
+      }
+    });
   }
 
   async processPhotoOCR(): Promise<void> {
