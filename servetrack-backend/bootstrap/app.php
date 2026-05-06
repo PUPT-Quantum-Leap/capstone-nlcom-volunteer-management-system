@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\CloseExpiredRsvp;
 use App\Http\Middleware\AdvancedRateLimit;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\NormalizeEmail;
@@ -8,6 +9,7 @@ use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SecurityAudit;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\StripTags;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -22,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command(CloseExpiredRsvp::class)->everyThreeMinutes();
+    })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(StripTags::class);
 
