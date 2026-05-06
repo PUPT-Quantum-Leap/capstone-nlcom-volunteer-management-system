@@ -71,15 +71,44 @@ class PollController extends Controller
                 'share_url' => $request->input('share_url'),
             ]);
 
-            foreach ($request->input('options') as $optionData) {
-                // Find existing option or create new one
-                $option = Option::query()->firstOrCreate(['text' => $optionData['text']]);
+            $optionTexts = array_map(function ($optionData) {
+                return $optionData['text'];
+            }, $request->input('options'));
 
-                $poll->options()->attach($option->option_id, [
-                    'time_slot' => $optionData['time_slot'],
-                    'capacity' => $optionData['capacity'],
-                ]);
+            $existingOptions = Option::query()
+                ->whereIn('text', $optionTexts)
+                ->pluck('option_id', 'text')
+                ->toArray();
+
+            $missingTexts = array_diff($optionTexts, array_keys($existingOptions));
+
+            if (! empty($missingTexts)) {
+                $newOptions = array_map(function ($text) {
+                    return ['text' => $text];
+                }, array_unique($missingTexts));
+
+                Option::query()->insert($newOptions);
+
+                $newlyCreatedOptions = Option::query()
+                    ->whereIn('text', $missingTexts)
+                    ->pluck('option_id', 'text')
+                    ->toArray();
+
+                $existingOptions = array_merge($existingOptions, $newlyCreatedOptions);
             }
+
+            $attachData = [];
+            foreach ($request->input('options') as $optionData) {
+                $text = $optionData['text'];
+                if (isset($existingOptions[$text])) {
+                    $attachData[$existingOptions[$text]] = [
+                        'time_slot' => $optionData['time_slot'],
+                        'capacity' => $optionData['capacity'],
+                    ];
+                }
+            }
+
+            $poll->options()->attach($attachData);
 
             return $poll->load('options');
         });
@@ -140,15 +169,44 @@ class PollController extends Controller
                 }
 
                 // Create and attach new options
-                foreach ($request->input('options') as $optionData) {
+                $optionTexts = array_map(function ($optionData) {
+                    return $optionData['text'];
+                }, $request->input('options'));
 
-                    $option = Option::query()->firstOrCreate(['text' => $optionData['text']]);
+                $existingOptions = Option::query()
+                    ->whereIn('text', $optionTexts)
+                    ->pluck('option_id', 'text')
+                    ->toArray();
 
-                    $poll->options()->syncWithoutDetaching([$option->option_id => [
-                        'time_slot' => $optionData['time_slot'],
-                        'capacity' => $optionData['capacity'],
-                    ]]);
+                $missingTexts = array_diff($optionTexts, array_keys($existingOptions));
+
+                if (! empty($missingTexts)) {
+                    $newOptions = array_map(function ($text) {
+                        return ['text' => $text];
+                    }, array_unique($missingTexts));
+
+                    Option::query()->insert($newOptions);
+
+                    $newlyCreatedOptions = Option::query()
+                        ->whereIn('text', $missingTexts)
+                        ->pluck('option_id', 'text')
+                        ->toArray();
+
+                    $existingOptions = array_merge($existingOptions, $newlyCreatedOptions);
                 }
+
+                $syncData = [];
+                foreach ($request->input('options') as $optionData) {
+                    $text = $optionData['text'];
+                    if (isset($existingOptions[$text])) {
+                        $syncData[$existingOptions[$text]] = [
+                            'time_slot' => $optionData['time_slot'],
+                            'capacity' => $optionData['capacity'],
+                        ];
+                    }
+                }
+
+                $poll->options()->syncWithoutDetaching($syncData);
             }
         });
 

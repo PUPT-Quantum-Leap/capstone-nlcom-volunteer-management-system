@@ -88,14 +88,44 @@ class RsvpController extends Controller
                 'share_url' => $request->input('share_url'),
             ]);
 
-            foreach ($request->input('shifts') as $shiftData) {
-                $timeSlot = TimeSlot::query()->firstOrCreate(['text' => $shiftData['text']]);
+            $shiftTexts = array_map(function ($shiftData) {
+                return Arr::get($shiftData, 'text') ?? Arr::get($shiftData, 'time_slot');
+            }, $request->input('shifts'));
 
-                $rsvp->shifts()->attach($timeSlot->time_slot_id, [
-                    'time_slot' => $shiftData['time_slot'],
-                    'capacity' => $shiftData['capacity'],
-                ]);
+            $existingTimeSlots = TimeSlot::query()
+                ->whereIn('text', $shiftTexts)
+                ->pluck('time_slot_id', 'text')
+                ->toArray();
+
+            $missingTexts = array_diff($shiftTexts, array_keys($existingTimeSlots));
+
+            if (! empty($missingTexts)) {
+                $newTimeSlots = array_map(function ($text) {
+                    return ['text' => $text];
+                }, array_unique($missingTexts));
+
+                TimeSlot::query()->insert($newTimeSlots);
+
+                $newlyCreatedTimeSlots = TimeSlot::query()
+                    ->whereIn('text', $missingTexts)
+                    ->pluck('time_slot_id', 'text')
+                    ->toArray();
+
+                $existingTimeSlots = array_merge($existingTimeSlots, $newlyCreatedTimeSlots);
             }
+
+            $attachData = [];
+            foreach ($request->input('shifts') as $shiftData) {
+                $text = Arr::get($shiftData, 'text') ?? Arr::get($shiftData, 'time_slot');
+                if (isset($existingTimeSlots[$text])) {
+                    $attachData[$existingTimeSlots[$text]] = [
+                        'time_slot' => $shiftData['time_slot'],
+                        'capacity' => $shiftData['capacity'],
+                    ];
+                }
+            }
+
+            $rsvp->shifts()->attach($attachData);
 
             return $rsvp->load('shifts');
         });
@@ -133,13 +163,40 @@ class RsvpController extends Controller
             if ($request->has('shifts')) {
                 $syncPayload = [];
 
+                $shiftTexts = array_map(function ($shiftData) {
+                    return Arr::get($shiftData, 'text') ?? Arr::get($shiftData, 'time_slot');
+                }, $request->input('shifts'));
+
+                $existingTimeSlots = TimeSlot::query()
+                    ->whereIn('text', $shiftTexts)
+                    ->pluck('time_slot_id', 'text')
+                    ->toArray();
+
+                $missingTexts = array_diff($shiftTexts, array_keys($existingTimeSlots));
+
+                if (! empty($missingTexts)) {
+                    $newTimeSlots = array_map(function ($text) {
+                        return ['text' => $text];
+                    }, array_unique($missingTexts));
+
+                    TimeSlot::query()->insert($newTimeSlots);
+
+                    $newlyCreatedTimeSlots = TimeSlot::query()
+                        ->whereIn('text', $missingTexts)
+                        ->pluck('time_slot_id', 'text')
+                        ->toArray();
+
+                    $existingTimeSlots = array_merge($existingTimeSlots, $newlyCreatedTimeSlots);
+                }
+
                 foreach ($request->input('shifts') as $shiftData) {
-                    $shiftText = Arr::get($shiftData, 'text') ?? Arr::get($shiftData, 'time_slot');
-                    $timeSlot = TimeSlot::query()->firstOrCreate(['text' => $shiftText]);
-                    $syncPayload[$timeSlot->time_slot_id] = [
-                        'time_slot' => $shiftData['time_slot'],
-                        'capacity' => $shiftData['capacity'],
-                    ];
+                    $text = Arr::get($shiftData, 'text') ?? Arr::get($shiftData, 'time_slot');
+                    if (isset($existingTimeSlots[$text])) {
+                        $syncPayload[$existingTimeSlots[$text]] = [
+                            'time_slot' => $shiftData['time_slot'],
+                            'capacity' => $shiftData['capacity'],
+                        ];
+                    }
                 }
 
                 foreach ($rsvp->shifts as $shift) {
