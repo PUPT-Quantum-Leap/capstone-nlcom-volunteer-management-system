@@ -8,7 +8,9 @@ use App\Models\Admin;
 use App\Models\Rsvp;
 use App\Models\RsvpAuditTrail;
 use App\Models\RsvpNotification;
+use App\Models\Volunteer;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -91,7 +93,7 @@ class RsvpAutoCloseService
      */
     public function closeSingleRsvp(Rsvp $rsvp): array
     {
-        $volunteersAtClose = $rsvp->responses->pluck('volunteer')->flatten();
+        $volunteersAtClose = $rsvp->responses->pluck('volunteer')->flatten()->unique('volunteer_id')->values();
 
         $wasAutoClosed = $rsvp->update([
             'status' => 'closed',
@@ -147,8 +149,10 @@ class RsvpAutoCloseService
 
     /**
      * Send notifications to admins and volunteers.
+     *
+     * @param  Collection<int, Volunteer>  $volunteers
      */
-    protected function sendNotifications(Rsvp $rsvp, $volunteers): void
+    protected function sendNotifications(Rsvp $rsvp, Collection $volunteers): void
     {
         $this->notifyAdmins($rsvp);
         $this->notifyVolunteers($rsvp, $volunteers);
