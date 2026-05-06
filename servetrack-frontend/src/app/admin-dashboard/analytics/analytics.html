@@ -153,7 +153,7 @@
         <div class="department-item">
           <div class="department-info">
             <span class="department-name">{{ department.name }}</span>
-            <span class="department-count">{{ department.count }} volunteers</span>
+            <span class="department-count">{{ department.count }} {{ department.count === 1 ? 'volunteer' : 'volunteers' }}</span>
           </div>
           <div class="department-bar" role="progressbar" [attr.aria-valuenow]="department.percentage" aria-valuemin="0"
             aria-valuemax="100">

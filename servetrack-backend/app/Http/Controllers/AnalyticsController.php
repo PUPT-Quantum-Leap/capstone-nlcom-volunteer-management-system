@@ -106,6 +106,7 @@ class AnalyticsController extends Controller
         $positions = Position::query()
             ->when($resolvedDepartmentId, fn ($q) => $q->where('position_id', $resolvedDepartmentId))
             ->withCount('volunteers')
+            ->orderByDesc('volunteers_count')
             ->get();
         $totalPositionVolunteers = $positions->sum('volunteers_count') ?: 1;
         $departmentBreakdown = $positions->map(function ($pos) use ($totalPositionVolunteers) {
