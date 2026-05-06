@@ -148,7 +148,7 @@
             }
           </button>
           @if (!canVote()) {
-            <p class="vote-help-text">Log in to RSVP for this event</p>
+            <p class="vote-help-text"><a class="login-link" (click)="redirectToLogin()">Log in</a> to RSVP for this event</p>
           }
         } @else {
           <button

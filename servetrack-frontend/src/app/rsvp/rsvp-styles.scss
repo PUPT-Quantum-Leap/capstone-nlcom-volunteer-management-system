@@ -357,6 +357,19 @@ $white: #ffffff;
     color: $text-muted;
     margin-top: 0.5rem;
     text-align: center;
+
+    .login-link {
+      color: $primary;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+
+      &:hover {
+        color: $primary-dark;
+        text-decoration: underline;
+      }
+    }
   }
 }
 
