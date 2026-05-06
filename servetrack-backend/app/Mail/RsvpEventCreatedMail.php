@@ -15,7 +15,7 @@ class RsvpEventCreatedMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Rsvp $rsvp, public Volunteer $volunteer): void {}
+    public function __construct(public Rsvp $rsvp, public Volunteer $volunteer) {}
 
     /**
      * Get the message envelope.
