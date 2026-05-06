@@ -33,13 +33,18 @@ class RsvpAutoClosedAdminMail extends Mailable implements ShouldQueue
         if (filter_var($frontendUrl, FILTER_VALIDATE_URL) === false) {
             throw new \RuntimeException('Invalid app.frontend_url: must be a valid URL');
         }
+        $parsed = parse_url($frontendUrl);
+        if (app()->environment('production') && ($parsed['scheme'] ?? '') !== 'https') {
+            throw new \RuntimeException('app.frontend_url must use HTTPS scheme in production');
+        }
+        $frontendUrl = rtrim($frontendUrl, '/');
 
         return new Content(
             view: 'emails.rsvp.auto-closed-admin',
             with: [
                 'rsvp' => $this->rsvp,
                 'admin' => $this->admin,
-                'adminDashboardUrl' => rtrim($frontendUrl, '/').'/admin-dashboard/rsvps',
+                'adminDashboardUrl' => $frontendUrl.'/admin-dashboard/rsvps',
             ],
         );
     }

@@ -33,13 +33,18 @@ class RsvpAutoClosedVolunteerMail extends Mailable implements ShouldQueue
         if (filter_var($frontendUrl, FILTER_VALIDATE_URL) === false) {
             throw new \RuntimeException('Invalid app.frontend_url: must be a valid URL');
         }
+        $parsed = parse_url($frontendUrl);
+        if (app()->environment('production') && ($parsed['scheme'] ?? '') !== 'https') {
+            throw new \RuntimeException('app.frontend_url must use HTTPS scheme in production');
+        }
+        $frontendUrl = rtrim($frontendUrl, '/');
 
         return new Content(
             view: 'emails.rsvp.auto-closed-volunteer',
             with: [
                 'rsvp' => $this->rsvp,
                 'volunteer' => $this->volunteer,
-                'rsvpUrl' => rtrim($frontendUrl, '/').'/rsvp/'.(string) $this->rsvp->slug,
+                'rsvpUrl' => $frontendUrl.'/rsvp/'.(string) $this->rsvp->slug,
             ],
         );
     }
