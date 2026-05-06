@@ -129,7 +129,9 @@ export class VolunteerManagement implements OnInit {
               email: v.email,
               phone: v.mobile_number,
               facebookName: v.facebook_name,
-              department: 'Unassigned',
+              department: v.positions && v.positions.length > 0
+                ? v.positions.join(', ')
+                : 'Unassigned',
               status: 'active',
               joined_date: v.created_at,
             }));
@@ -158,7 +160,9 @@ export class VolunteerManagement implements OnInit {
               email: v.email,
               phone: v.mobile_number,
               facebookName: v.facebook_name,
-              department: 'Unassigned',
+              department: v.positions && v.positions.length > 0
+                ? v.positions.join(', ')
+                : 'Unassigned',
               status: 'inactive',
               joined_date: v.created_at,
             }));
