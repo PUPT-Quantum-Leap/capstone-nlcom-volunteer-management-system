@@ -1,8 +1,8 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, SecurityContext } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class InputSanitizerService {
   private sanitizer = inject(DomSanitizer);
@@ -12,16 +12,10 @@ export class InputSanitizerService {
    */
   sanitizeText(input: string): string {
     if (!input) return '';
-    
+
     // Remove potentially dangerous HTML/JS patterns
-    const sanitized = input.trim()
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-      .replace(/<img\b[^>]*onerror\s*=/gi, '')
-      .replace(/<img\b[^>]*onload\s*=/gi, '')
-      .replace(/javascript:/gi, '')
-      .replace(/on\w+\s*=/gi, '')
-      .replace(/<[^>]*>/g, '');
+    const htmlSanitized = this.sanitizer.sanitize(SecurityContext.HTML, input.trim()) || '';
+    const sanitized = htmlSanitized.replace(/<[^>]*>/g, '');
 
     return sanitized;
   }
@@ -31,7 +25,7 @@ export class InputSanitizerService {
    */
   sanitizeForSQL(input: string): string {
     if (!input) return '';
-    
+
     // Keep valid characters like hyphens and single quotes
     return input.trim();
   }
@@ -41,17 +35,17 @@ export class InputSanitizerService {
    */
   sanitizeInput(input: string, context: 'text' | 'sql' | 'both' = 'both'): string {
     if (!input) return '';
-    
+
     let sanitized = input;
-    
+
     if (context === 'text' || context === 'both') {
       sanitized = this.sanitizeText(sanitized);
     }
-    
+
     if (context === 'sql' || context === 'both') {
       sanitized = this.sanitizeForSQL(sanitized);
     }
-    
+
     return sanitized;
   }
 
@@ -102,26 +96,26 @@ export class InputSanitizerService {
     errors: string[];
   } {
     const errors: string[] = [];
-    
+
     if (password.length < 8) {
       errors.push('Password must be at least 8 characters long');
     }
-    
+
     if (!/[A-Z]/.test(password)) {
       errors.push('Password must contain at least one uppercase letter');
     }
-    
+
     if (!/[a-z]/.test(password)) {
       errors.push('Password must contain at least one lowercase letter');
     }
-    
+
     if (!/[0-9]/.test(password)) {
       errors.push('Password must contain at least one number');
     }
-    
+
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }
