@@ -30,7 +30,7 @@
       <span class="filter-label">DEPT</span>
       <select class="filter-dropdown filter-dropdown-compact" (change)="onDepartmentFilterChange($any($event.target).value)">
         <option value="">All</option>
-        @for (department of reportData()?.departmentBreakdown ?? []; track department.name) {
+        @for (department of departmentOptions(); track department.name) {
         <option [value]="department.name">{{ department.name }}</option>
         }
       </select>

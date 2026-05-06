@@ -41,25 +41,46 @@ class AnalyticsController extends Controller
             ? $startDate
             : $activeCutoff;
 
-        $volunteers = Volunteer::query()
-            ->with([
-                'positions:position_id,name',
-                'attendances' => fn ($query) => $query
-                    ->where('status', 'approved')
-                    ->where('date', '>=', $attendanceStartDate),
-            ])
-            ->when(
-                $resolvedDepartmentId,
-                fn ($q) => $q->whereHas('positions', fn ($pq) => $pq->where('position_id', $resolvedDepartmentId))
-            )
-            ->get();
+        try {
+            // Get volunteer IDs first if department filter is applied
+            if ($resolvedDepartmentId) {
+                $volunteerIds = DB::table('volunteer_position')
+                    ->where('position_id', $resolvedDepartmentId)
+                    ->pluck('volunteer_id');
+
+                $volunteers = Volunteer::query()
+                    ->whereIn('volunteer_id', $volunteerIds)
+                    ->with([
+                        'positions:position_id,name',
+                        'attendances' => fn ($query) => $query
+                            ->where('status', 'approved')
+                            ->where('date', '>=', $attendanceStartDate),
+                    ])
+                    ->get();
+            } else {
+                $volunteers = Volunteer::query()
+                    ->with([
+                        'positions:position_id,name',
+                        'attendances' => fn ($query) => $query
+                            ->where('status', 'approved')
+                            ->where('date', '>=', $attendanceStartDate),
+                    ])
+                    ->get();
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Database query failed: '.$e->getMessage(),
+            ], 500);
+        }
 
         $volunteerIds = $volunteers->pluck('volunteer_id');
 
         $attendances = $volunteers
             ->flatMap->attendances
             ->when($startDate, fn ($collection) => $collection->filter(
-                fn ($attendance) => $attendance->date && $attendance->date->gte($startDate)
+                fn ($attendance) => $attendance->date &&
+                    $attendance->date->gte($startDate)
             ))
             ->values();
 
@@ -88,14 +109,14 @@ class AnalyticsController extends Controller
             ->get();
         $totalPositionVolunteers = $positions->sum('volunteers_count') ?: 1;
         $departmentBreakdown = $positions->map(function ($pos) use ($totalPositionVolunteers) {
-            return [
+            return (object) [
                 'name' => $pos->name,
                 'count' => $pos->volunteers_count,
                 'percentage' => $totalPositionVolunteers > 0
                     ? (int) round(($pos->volunteers_count / $totalPositionVolunteers) * 100)
                     : 0,
             ];
-        })->filter(fn ($d) => $d['count'] > 0)->values();
+        })->filter(fn ($d) => $d->count > 0)->values();
 
         $monthlyTrend = $this->getMonthlyTrend(
             $startDateString,
@@ -119,7 +140,7 @@ class AnalyticsController extends Controller
         $retentionMetrics = $this->getRetentionMetrics($volunteers);
         $hourlyTrends = $this->getHourlyTrends($startDate);
 
-        return response()->json([
+        $responseData = [
             'success' => true,
             'data' => [
                 'totalVolunteers' => $totalVolunteers,
@@ -140,7 +161,9 @@ class AnalyticsController extends Controller
                 'retentionMetrics' => $retentionMetrics,
                 'hourlyTrends' => $hourlyTrends,
             ],
-        ]);
+        ];
+
+        return response()->json($responseData);
     }
 
     public function exportPdf(Request $request): Response
