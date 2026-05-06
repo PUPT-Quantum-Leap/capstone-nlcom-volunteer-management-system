@@ -93,23 +93,46 @@ class RsvpAutoCloseService
      */
     public function closeSingleRsvp(Rsvp $rsvp): array
     {
-        $volunteersAtClose = $rsvp->responses->pluck('volunteer')->flatten()->unique('volunteer_id')->values();
-
-        $wasAutoClosed = $rsvp->update([
-            'status' => 'closed',
-            'auto_closed_at' => now(),
-            'auto_closed_reason' => 'cutoff_passed',
-            'closed_by' => 'system',
-        ]);
-
-        if (! $wasAutoClosed) {
+        if ($rsvp->auto_closed_at !== null) {
             return [
                 'success' => false,
                 'rsvp_id' => $rsvp->rsvp_id,
                 'title' => $rsvp->title,
-                'error' => 'Failed to update status',
+                'error' => 'RSVP is already closed',
             ];
         }
+
+        if (! $rsvp->shouldAutoClose()) {
+            return [
+                'success' => false,
+                'rsvp_id' => $rsvp->rsvp_id,
+                'title' => $rsvp->title,
+                'error' => 'RSVP is not eligible for auto-close',
+            ];
+        }
+
+        $volunteersAtClose = $rsvp->responses->pluck('volunteer')->flatten()->unique('volunteer_id')->values();
+
+        $affectedRows = Rsvp::where('rsvp_id', $rsvp->rsvp_id)
+            ->where('status', 'active')
+            ->whereNull('auto_closed_at')
+            ->update([
+                'status' => 'closed',
+                'auto_closed_at' => now(),
+                'auto_closed_reason' => 'cutoff_passed',
+                'closed_by' => 'system',
+            ]);
+
+        if ($affectedRows === 0) {
+            return [
+                'success' => false,
+                'rsvp_id' => $rsvp->rsvp_id,
+                'title' => $rsvp->title,
+                'error' => 'RSVP was already closed or state changed',
+            ];
+        }
+
+        $rsvp->refresh();
 
         $this->createAuditTrail($rsvp, $volunteersAtClose->count());
         $this->sendNotifications($rsvp, $volunteersAtClose);
@@ -170,7 +193,8 @@ class RsvpAutoCloseService
                 Mail::to($admin->email)->queue(new RsvpAutoClosedAdminMail($rsvp, $admin));
 
                 RsvpNotification::create([
-                    'volunteer_id' => 0,
+                    'volunteer_id' => null,
+                    'admin_id' => $admin->admin_id,
                     'rsvp_id' => $rsvp->rsvp_id,
                     'type' => 'event_auto_closed',
                     'message' => "Event '{$rsvp->title}' has been automatically closed because the cutoff deadline has passed.",
