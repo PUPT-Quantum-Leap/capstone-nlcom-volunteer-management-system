@@ -42,6 +42,9 @@ Route::post('/coordinator/register', [CoordinatorController::class, 'register'])
 Route::get('/webhooks/facebook', [FacebookWebhookController::class, 'verify']);
 Route::post('/webhooks/facebook', [FacebookWebhookController::class, 'handle']);
 
+// Public RSVP view — accessible to all users (authenticated and unauthenticated)
+Route::get('/rsvp/{identifier}', [RsvpController::class, 'show'])->name('rsvp.show')->where('identifier', '[\d\w\-]+');
+
 // Auth-required routes (all authenticated users)
 Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
     Route::post('/logout', [LoginController::class, 'destroy']);
@@ -59,9 +62,8 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
     Route::get('/volunteer/attendance', [VolunteerController::class, 'listAttendance']);
     Route::get('/volunteer/attendance/stats', [VolunteerController::class, 'attendanceStats']);
 
-    // RSVP — read + vote available to all authenticated users
+    // RSVP — voting actions available to all authenticated users
     Route::get('/rsvp', [RsvpController::class, 'index']);
-    Route::get('/rsvp/{identifier}', [RsvpController::class, 'show'])->name('rsvp.show')->where('identifier', '[\d\w\-]+');
     Route::post('/rsvp/{id}/vote', [RsvpController::class, 'vote']);
     Route::get('/rsvp/{rsvpId}/my-response', [RsvpController::class, 'getMyResponse']);
     Route::put('/rsvp/{rsvpId}/response', [RsvpController::class, 'updateResponse']);
