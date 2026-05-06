@@ -150,11 +150,8 @@ export class AnalyticsService {
       })
       .pipe(
         catchError((error) => {
-          console.error('API call failed, falling back to mock data. Error:', error);
-          return of({
-            success: false,
-            data: this.getMockReportData(),
-          });
+          console.error('API call failed:', error);
+          return throwError(() => error);
         })
       );
   }
