@@ -9,7 +9,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AnalyticsService, ReportData } from '../../services/analytics.service';
+import { AnalyticsService, ReportData, DepartmentStat } from '../../services/analytics.service';
 
 @Component({
   selector: 'app-analytics',
@@ -25,6 +25,7 @@ export class AnalyticsComponent {
 
   readonly analyticsLoading = signal(false);
   readonly reportData = signal<ReportData | null>(null);
+  readonly departmentOptions = signal<DepartmentStat[]>([]);
   readonly selectedReportType = signal<
     'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'
   >('volunteers');
@@ -71,6 +72,7 @@ export class AnalyticsComponent {
   });
 
   constructor() {
+    this.loadDepartmentOptions();
     this.loadAnalyticsData();
   }
 
@@ -128,15 +130,37 @@ export class AnalyticsComponent {
     void this.router.navigate(['/admin-dashboard', 'analytics', 'feeding-operation']);
   }
 
+  private loadDepartmentOptions(): void {
+    this.analyticsService
+      .getReportData('all')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.departmentOptions.set(response.data.departmentBreakdown);
+          }
+        },
+        error: (error: Error) => {
+          console.error('Error loading department options:', error);
+        },
+      });
+  }
+
   private loadAnalyticsData(): void {
     this.analyticsLoading.set(true);
 
+    const dateRange = this.dateRangeFilter();
+    const department = this.selectedDepartmentFilter() || undefined;
+
     this.analyticsService
-      .getReportData(this.dateRangeFilter(), this.selectedDepartmentFilter() || undefined)
+      .getReportData(dateRange, department)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
           this.reportData.set(response.data);
+          if (response.success && !this.selectedDepartmentFilter()) {
+            this.departmentOptions.set(response.data.departmentBreakdown);
+          }
           this.analyticsLoading.set(false);
         },
         error: (error: Error) => {
