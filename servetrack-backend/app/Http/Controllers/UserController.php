@@ -18,11 +18,12 @@ class UserController extends Controller
 {
     /**
      * Display a listing of the users.
+     * Excludes the current authenticated user to prevent self-modification/deletion.
      */
     public function index(Request $request): JsonResponse
     {
         $showArchived = $request->query('archived') === 'true';
-        $currentUser = auth()->user();
+        $currentUserId = auth()->id();
 
         if ($showArchived) {
             $query = User::onlyTrashed();
@@ -30,9 +31,8 @@ class UserController extends Controller
             $query = User::query();
         }
 
-        // Exclude current user from the list to prevent self-modification/deletion
-        if ($currentUser) {
-            $query->where('id', '!=', $currentUser->id);
+        if ($currentUserId) {
+            $query->where('id', '!=', $currentUserId);
         }
 
         // Search by name or email
