@@ -1,7 +1,8 @@
 <?php
 
+use App\Models\Attendance;
+use App\Models\Rsvp;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
@@ -15,14 +16,14 @@ return new class extends Migration {
             return;
         }
 
-        $rows = DB::table('attendances')
+        $rows = Attendance::query()
             ->whereNull('location')
             ->whereNotNull('rsvp_id')
             ->select('attendance_id', 'rsvp_id')
             ->get();
 
         foreach ($rows as $row) {
-            $rsvp = DB::table('rsvp')
+            $rsvp = Rsvp::query()
                 ->where('rsvp_id', $row->rsvp_id)
                 ->select('event_location')
                 ->first();
@@ -33,7 +34,7 @@ return new class extends Migration {
 
             $location = $rsvp->event_location;
             if (! empty($location)) {
-                DB::table('attendances')
+                Attendance::query()
                     ->where('attendance_id', $row->attendance_id)
                     ->update(['location' => $location]);
             }

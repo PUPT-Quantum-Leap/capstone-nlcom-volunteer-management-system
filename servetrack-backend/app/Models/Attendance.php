@@ -18,6 +18,7 @@ class Attendance extends Model
         'hours',
         'description',
         'location',
+        'location_id',
         'rsvp_id',
         'status',
         'created_by',
@@ -28,25 +29,37 @@ class Attendance extends Model
     {
         return [
             'date' => 'date',
-            'hours' => 'decimal:1',
+            'hours' => 'decimal:2',
         ];
     }
 
+    /**
+     * @return BelongsTo<Volunteer, $this>
+     */
     public function volunteer(): BelongsTo
     {
         return $this->belongsTo(Volunteer::class, 'volunteer_id', 'volunteer_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function createdBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by', 'id');
     }
 
+    /**
+     * @return BelongsTo<Rsvp, $this>
+     */
     public function rsvp(): BelongsTo
     {
         return $this->belongsTo(Rsvp::class, 'rsvp_id', 'rsvp_id');
     }
 
+    /**
+     * @return BelongsTo<RsvpResponse, $this>
+     */
     public function rsvpResponse(): BelongsTo
     {
         return $this->belongsTo(RsvpResponse::class, 'rsvp_response_id', 'rsvp_response_id');

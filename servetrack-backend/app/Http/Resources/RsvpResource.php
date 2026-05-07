@@ -34,8 +34,8 @@ class RsvpResource extends JsonResource
             'location' => $this->whenLoaded('location', fn () => [
                 'id' => $this->location->location_id,
                 'name' => $this->location->name,
-                'address' => $this->location->getFullAddressAttribute(),
-                'displayName' => $this->location->getDisplayNameAttribute(),
+                'address' => $this->location->full_address,
+                'displayName' => $this->location->display_name,
             ]),
             'cutOffDay' => $this->cutoff_day?->format('M d, Y'),
             'cutOffTime' => $this->cutoff_time ? date('g:i A', strtotime($this->cutoff_time)) : null,

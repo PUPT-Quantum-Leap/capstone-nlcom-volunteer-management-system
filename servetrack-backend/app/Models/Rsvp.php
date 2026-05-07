@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -47,22 +48,42 @@ class Rsvp extends Model
         ];
     }
 
+    /**
+     * @return BelongsToMany<TimeSlot, $this>
+     */
     public function shifts(): BelongsToMany
     {
         return $this->belongsToMany(TimeSlot::class, 'rsvp_shift', 'rsvp_id', 'time_slot_id')
             ->withPivot('time_slot', 'capacity');
     }
 
+    /**
+     * @return BelongsTo<Location, $this>
+     */
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class, 'location_id', 'location_id');
     }
 
+    /**
+     * @return HasMany<RsvpResponse, $this>
+     */
     public function responses(): HasMany
     {
         return $this->hasMany(RsvpResponse::class, 'rsvp_id');
     }
 
+    /**
+     * @return HasOne<RsvpResponse, $this>
+     */
+    public function rsvpResponse(): HasOne
+    {
+        return $this->hasOne(RsvpResponse::class, 'rsvp_id')->latestOfMany();
+    }
+
+    /**
+     * @return HasMany<RsvpAuditTrail, $this>
+     */
     public function auditTrails(): HasMany
     {
         return $this->hasMany(RsvpAuditTrail::class, 'rsvp_id');

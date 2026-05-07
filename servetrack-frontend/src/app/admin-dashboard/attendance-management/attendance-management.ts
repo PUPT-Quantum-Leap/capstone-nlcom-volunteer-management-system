@@ -1,13 +1,6 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-  output,
-  OnInit,
-} from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, output, OnInit, DestroyRef } from '@angular/core';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AdminDashboardService, VolunteerUser } from '../../services/admin-dashboard.service';
 
 interface AttendanceRecord {
@@ -42,6 +35,7 @@ interface DetectedVolunteer {
 })
 export class AttendanceManagement implements OnInit {
   private adminDashboardService = inject(AdminDashboardService);
+  private destroyRef = inject(DestroyRef);
 
   // Outputs
   showSnackbar = output<{ message: string; type: 'success' | 'error' | 'info' }>();
@@ -85,24 +79,20 @@ export class AttendanceManagement implements OnInit {
 
   loadAttendanceFromRsvp(): void {
     this.isLoading.set(true);
-    console.log('Loading attendance from RSVP...', this.selectedRsvpId());
-    this.adminDashboardService.getAttendanceFromRsvp(this.selectedRsvpId() ?? undefined).subscribe({
-      next: (response) => {
-        console.log('Attendance API response:', response);
-        if (response.success) {
-          this.attendanceRecords.set(response.data ?? []);
-          console.log('Attendance records set:', response.data?.length ?? 0, 'records');
-          this.loadAvailableRsvps();
-        } else {
-          console.error('API returned success=false:', response.message);
+    this.adminDashboardService.getAttendanceFromRsvp(this.selectedRsvpId() ?? undefined)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.attendanceRecords.set(response.data ?? []);
+            this.loadAvailableRsvps();
+          }
+          this.isLoading.set(false);
+        },
+        error: () => {
+          this.isLoading.set(false);
         }
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        console.error('Error loading attendance:', err);
-        this.isLoading.set(false);
-      }
-    });
+      });
   }
 
   loadAvailableRsvps(): void {
@@ -118,18 +108,17 @@ export class AttendanceManagement implements OnInit {
       }
     });
     this.availableRsvps.set(Array.from(uniqueRsvps.values()));
-    console.log('Available RSVPs loaded:', this.availableRsvps().length, 'events');
   }
 
   onRsvpFilterChange(value: string): void {
-    this.selectedRsvpId.set(value === 'null' ? null : parseInt(value, 10));
+    this.selectedRsvpId.set(value === '' ? null : parseInt(value, 10));
     this.loadAttendanceFromRsvp();
   }
 
-  getSelectedRsvpTitle(): string {
+  selectedRsvpTitle = computed(() => {
     const rsvp = this.availableRsvps().find(r => r.id === this.selectedRsvpId());
     return rsvp ? rsvp.title : 'All Events';
-  }
+  });
 
   // Computed signals for stats cards
   presentCount = computed(() =>
@@ -234,22 +223,25 @@ export class AttendanceManagement implements OnInit {
 
   // Status update
   updateAttendanceStatus(recordId: number, status: 'present' | 'absent'): void {
-    this.adminDashboardService.updateAttendanceStatus(recordId, status).subscribe({
-      next: (response) => {
-        if (response.success) {
-          // Update local state
-          this.attendanceRecords.update((records) =>
-            records.map((r) => (r.id === recordId ? { ...r, attendance_status: status } : r)),
-          );
-          this.showSnackbar.emit({ message: `Attendance status updated to ${status}`, type: 'success' });
-        } else {
-          this.showSnackbar.emit({ message: response.message || 'Failed to update status', type: 'error' });
+    const apiStatus = status === 'present' ? 'checked_in' : 'no_show';
+    this.adminDashboardService.updateAttendanceStatus(recordId, status)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            // Update local state
+            this.attendanceRecords.update((records) =>
+              records.map((r) => (r.id === recordId ? { ...r, attendance_status: apiStatus } : r)),
+            );
+            this.showSnackbar.emit({ message: `Attendance status updated to ${status}`, type: 'success' });
+          } else {
+            this.showSnackbar.emit({ message: response.message || 'Failed to update status', type: 'error' });
+          }
+        },
+        error: () => {
+          this.showSnackbar.emit({ message: 'Failed to update attendance status', type: 'error' });
         }
-      },
-      error: () => {
-        this.showSnackbar.emit({ message: 'Failed to update attendance status', type: 'error' });
-      }
-    });
+      });
   }
 
   // View details
@@ -345,15 +337,38 @@ export class AttendanceManagement implements OnInit {
 
   markDetectedVolunteersAsPresent(): void {
     const detectedNames = this.detectedVolunteersFromPhoto().map(v => v.name);
-
-    this.attendanceRecords.update(records =>
-      records.map(r =>
-        detectedNames.includes(r.volunteer_name) ? { ...r, attendance_status: 'checked_in' } : r
-      )
+    const recordsToUpdate = this.attendanceRecords().filter(r => 
+      detectedNames.includes(r.volunteer_name) && 
+      r.attendance_status !== 'checked_in' && 
+      r.attendance_status !== 'checked_out'
     );
 
+    if (recordsToUpdate.length === 0) {
+      this.showSnackbar.emit({ message: 'No new volunteers to mark as present', type: 'info' });
+      return;
+    }
+
+    // Persist each update to the API
+    let successCount = 0;
+    recordsToUpdate.forEach(record => {
+      this.adminDashboardService.updateAttendanceStatus(record.id, 'present')
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.attendanceRecords.update(records =>
+                records.map(r => r.id === record.id ? { ...r, attendance_status: 'checked_in' } : r)
+              );
+              successCount++;
+              if (successCount === recordsToUpdate.length) {
+                this.showSnackbar.emit({ message: `Successfully marked ${successCount} volunteers as present`, type: 'success' });
+              }
+            }
+          }
+        });
+    });
+
     this.detectedVolunteersFromPhoto.set([]);
-    this.showSnackbar.emit({ message: 'Detected volunteers marked as present', type: 'success' });
   }
 
   // Assignment modal

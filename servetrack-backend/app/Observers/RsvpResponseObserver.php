@@ -58,13 +58,13 @@ class RsvpResponseObserver
         // Calculate hours worked
         $hours = 0;
         if ($rsvpResponse->checked_in_at && $rsvpResponse->checked_out_at) {
-            $hours = round($rsvpResponse->checked_in_at->diffInMinutes($rsvpResponse->checked_out_at) / 60, 1);
+            $hours = round($rsvpResponse->checked_in_at->diffInMinutes($rsvpResponse->checked_out_at) / 60, 2);
         }
 
         // Determine location name
         $locationName = null;
         if ($rsvp->location) {
-            $locationName = $rsvp->location->getFullAddressAttribute();
+            $locationName = $rsvp->location->full_address;
         } elseif ($rsvp->event_location) {
             $locationName = $rsvp->event_location;
         }
@@ -81,7 +81,9 @@ class RsvpResponseObserver
             $existingAttendance->update([
                 'hours' => $hours,
                 'location' => $locationName,
+                'location_id' => $rsvp->location_id,
                 'description' => $rsvp->title,
+                'rsvp_response_id' => $rsvpResponse->rsvp_response_id,
             ]);
         } else {
             // Create new attendance record
@@ -91,9 +93,11 @@ class RsvpResponseObserver
                 'hours' => $hours,
                 'description' => $rsvp->title,
                 'location' => $locationName,
+                'location_id' => $rsvp->location_id,
                 'rsvp_id' => $rsvp->rsvp_id,
                 'status' => 'pending',
                 'created_by' => null,
+                'rsvp_response_id' => $rsvpResponse->rsvp_response_id,
             ]);
         }
     }

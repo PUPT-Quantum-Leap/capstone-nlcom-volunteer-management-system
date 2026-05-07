@@ -70,7 +70,7 @@ class IcsController extends Controller
             if (! $location) {
                 $rsvp->load('location');
                 if ($rsvp->location) {
-                    $location = $rsvp->location->getFullAddressAttribute();
+                    $location = $rsvp->location->full_address;
                 } else {
                     $location = $rsvp->event_location;
                 }

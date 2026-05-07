@@ -70,6 +70,8 @@ class AppServiceProvider extends ServiceProvider
         User::observe(UserObserver::class);
 
         // Register RsvpResponse observer for ICS auto-availability
-        RsvpResponse::observe(RsvpResponseObserver::class);
+        if (! $this->app->runningUnitTests()) {
+            RsvpResponse::observe(RsvpResponseObserver::class);
+        }
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Attendance;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -25,13 +26,14 @@ return new class extends Migration {
             DB::statement('
                 UPDATE attendances a
                 JOIN rsvp_response rr ON a.rsvp_response_id = rr.rsvp_response_id
-                SET a.hours = ROUND(TIMESTAMPDIFF(MINUTE, rr.checked_in_at, rr.checked_out_at) / 60, 1)
+                SET a.hours = ROUND(TIMESTAMPDIFF(MINUTE, rr.checked_in_at, rr.checked_out_at) / 60, 2)
                 WHERE a.hours = 0
                   AND rr.checked_in_at IS NOT NULL
                   AND rr.checked_out_at IS NOT NULL
             ');
         } else {
-            $rows = DB::table('attendances as a')
+            $rows = Attendance::query()
+                ->from('attendances', 'a')
                 ->join('rsvp_response as rr', 'a.rsvp_response_id', '=', 'rr.rsvp_response_id')
                 ->where('a.hours', 0)
                 ->whereNotNull('rr.checked_in_at')
@@ -43,10 +45,10 @@ return new class extends Migration {
                 $checkedInAt = Carbon::parse($row->checked_in_at);
                 $checkedOutAt = Carbon::parse($row->checked_out_at);
 
-                $hours = round($checkedInAt->diffInMinutes($checkedOutAt) / 60, 1);
+                $hours = round($checkedInAt->diffInMinutes($checkedOutAt) / 60, 2);
 
                 if ($hours > 0) {
-                    DB::table('attendances')
+                    Attendance::query()
                         ->where('attendance_id', $row->attendance_id)
                         ->update(['hours' => $hours]);
                 }
@@ -55,7 +57,8 @@ return new class extends Migration {
 
         // For records without check-in/check-out, use time_slot text to calculate hours
         // time_slot text format: "8:00 AM - 12:00 PM"
-        $attendances = DB::table('attendances as a')
+        $attendances = Attendance::query()
+            ->from('attendances', 'a')
             ->join('rsvp_response as rr', 'a.rsvp_response_id', '=', 'rr.rsvp_response_id')
             ->join('time_slot as ts', 'rr.time_slot_id', '=', 'ts.time_slot_id')
             ->where('a.hours', 0)
@@ -65,7 +68,7 @@ return new class extends Migration {
         foreach ($attendances as $attendance) {
             $hours = $this->parseHoursFromTimeSlot($attendance->time_slot_text);
             if ($hours > 0) {
-                DB::table('attendances')
+                Attendance::query()
                     ->where('attendance_id', $attendance->attendance_id)
                     ->update(['hours' => $hours]);
             }
@@ -77,7 +80,7 @@ return new class extends Migration {
             DB::statement('
                 UPDATE attendances a
                 JOIN rsvp_response rr ON a.rsvp_id = rr.rsvp_id AND a.volunteer_id = rr.volunteer_id
-                SET a.hours = ROUND(TIMESTAMPDIFF(MINUTE, rr.checked_in_at, rr.checked_out_at) / 60, 1),
+                SET a.hours = ROUND(TIMESTAMPDIFF(MINUTE, rr.checked_in_at, rr.checked_out_at) / 60, 2),
                     a.rsvp_response_id = rr.rsvp_response_id
                 WHERE a.hours = 0
                   AND a.rsvp_response_id IS NULL
@@ -85,7 +88,8 @@ return new class extends Migration {
                   AND rr.checked_out_at IS NOT NULL
             ');
         } else {
-            $rows = DB::table('attendances as a')
+            $rows = Attendance::query()
+                ->from('attendances', 'a')
                 ->join('rsvp_response as rr', function ($join) {
                     $join->on('a.rsvp_id', '=', 'rr.rsvp_id')
                         ->on('a.volunteer_id', '=', 'rr.volunteer_id');
@@ -101,9 +105,9 @@ return new class extends Migration {
                 $checkedInAt = Carbon::parse($row->checked_in_at);
                 $checkedOutAt = Carbon::parse($row->checked_out_at);
 
-                $hours = round($checkedInAt->diffInMinutes($checkedOutAt) / 60, 1);
+                $hours = round($checkedInAt->diffInMinutes($checkedOutAt) / 60, 2);
 
-                DB::table('attendances')
+                Attendance::query()
                     ->where('attendance_id', $row->attendance_id)
                     ->update([
                         'hours' => $hours,
@@ -189,7 +193,7 @@ return new class extends Migration {
 
         $hours = ($endMinutes - $startMinutes) / 60;
 
-        return round($hours, 1);
+        return round($hours, 2);
     }
 
     /**

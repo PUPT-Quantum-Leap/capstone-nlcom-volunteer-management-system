@@ -96,7 +96,7 @@ class AnalyticsController extends Controller
         })->count();
         $inactiveVolunteers = $totalVolunteers - $activeVolunteers;
 
-        $totalHoursServed = round((float) $attendances->sum('hours'), 1);
+        $totalHoursServed = round((float) $attendances->sum('hours'), 2);
         $totalTasksCompleted = $attendances->count();
 
         $totalAttendanceRecords = Attendance::query()
@@ -135,7 +135,7 @@ class AnalyticsController extends Controller
         $recentActivity = $this->getRecentActivity();
 
         $averageRating = $topPerformers->isNotEmpty()
-            ? round($topPerformers->avg('rating'), 1)
+            ? round($topPerformers->avg('rating'), 2)
             : 0;
 
         $eventParticipation = $this->getEventParticipation($startDate);
@@ -451,7 +451,7 @@ class AnalyticsController extends Controller
             return [
                 'month' => $month->format('M'),
                 'volunteers' => $newVolunteers,
-                'hours' => round((float) $attendances->sum('hours'), 1),
+                'hours' => round((float) $attendances->sum('hours'), 2),
                 'tasks' => $attendances->count(),
             ];
         })->toArray();
@@ -463,7 +463,7 @@ class AnalyticsController extends Controller
             $allAttendances = $volunteer->attendances;
             $approvedAttendances = $allAttendances->where('status', 'approved');
 
-            $hoursServed = round((float) $approvedAttendances->sum('hours'), 1);
+            $hoursServed = round((float) $approvedAttendances->sum('hours'), 2);
             $tasksCompleted = $approvedAttendances->count();
             $totalEntries = $allAttendances->count();
             $attendanceRate = $totalEntries > 0
@@ -471,7 +471,7 @@ class AnalyticsController extends Controller
                 : 0;
 
             $ratingBase = min(5, max(0, 2.5 + ($attendanceRate / 40) + min($hoursServed / 120, 1)));
-            $rating = round($ratingBase, 1);
+            $rating = round($ratingBase, 2);
 
             return [
                 'id' => $volunteer->volunteer_id,
@@ -689,7 +689,7 @@ class AnalyticsController extends Controller
 
             return [
                 'day' => $day,
-                'hours' => round((float) $hours, 1),
+                'hours' => round((float) $hours, 2),
                 'entries' => $dayAttendances->count(),
             ];
         });

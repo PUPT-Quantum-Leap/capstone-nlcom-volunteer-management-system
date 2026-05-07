@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -41,31 +42,44 @@ class Location extends Model
         return $this->hasMany(Rsvp::class, 'location_id', 'location_id');
     }
 
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class, 'location_id', 'location_id');
+    }
+
     /**
      * Get the full address as a formatted string.
      */
-    public function getFullAddressAttribute(): string
+    protected function fullAddress(): Attribute
     {
-        $parts = array_filter([
-            $this->address,
-            $this->city,
-            $this->state,
-            $this->zip_code,
-            $this->country,
-        ]);
+        return Attribute::make(
+            get: function () {
+                $parts = array_filter([
+                    $this->address,
+                    $this->city,
+                    $this->state,
+                    $this->zip_code,
+                    $this->country,
+                ]);
 
-        return implode(', ', $parts);
+                return implode(', ', $parts);
+            }
+        );
     }
 
     /**
      * Get a display name with city for the location.
      */
-    public function getDisplayNameAttribute(): string
+    protected function displayName(): Attribute
     {
-        if ($this->city) {
-            return "{$this->name} ({$this->city})";
-        }
+        return Attribute::make(
+            get: function () {
+                if ($this->city) {
+                    return "{$this->name} ({$this->city})";
+                }
 
-        return $this->name;
+                return $this->name;
+            }
+        );
     }
 }

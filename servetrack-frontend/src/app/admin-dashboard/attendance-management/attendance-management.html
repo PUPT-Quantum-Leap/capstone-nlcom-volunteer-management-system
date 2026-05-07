@@ -12,7 +12,7 @@
         <span class="report-label">ATTENDANCE MANAGEMENT</span>
         <h2 class="report-title">
           @if (selectedRsvpId()) {
-            {{ getSelectedRsvpTitle() }}
+            {{ selectedRsvpTitle() }}
           } @else {
             Track Attendance & Participation
           }
@@ -21,8 +21,8 @@
     </div>
     <div class="report-header-right">
       <span class="filter-label">EVENT</span>
-      <select class="filter-dropdown" [value]="selectedRsvpId()" (change)="onRsvpFilterChange($any($event.target).value)">
-        <option [value]="null">All Events</option>
+      <select class="filter-dropdown" [value]="selectedRsvpId() ?? ''" (change)="onRsvpFilterChange($any($event.target).value)">
+        <option value="">All Events</option>
         @for (rsvp of availableRsvps(); track rsvp.id) {
           <option [value]="rsvp.id">{{ rsvp.title }} ({{ rsvp.date }})</option>
         }
@@ -384,7 +384,7 @@
             </div>
           } @else {
             <div class="preview-container">
-              <img [src]="photoUploadPreview()" alt="Uploaded photo" />
+              <img [src]="photoUploadPreview()" alt="Uploaded photo" width="800" height="600" />
               <button type="button" class="remove-photo-btn" (click)="photoUploadPreview.set(null)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -439,23 +439,24 @@
               </div>
             </div>
 
-            <div class="attendance-summary-stats">
+            <!-- TODO: Replace hard-coded stats with reactive bindings once historical API is wired -->
+            <div class="attendance-summary-stats" style="opacity: 0.6; filter: grayscale(1);">
               <div class="stat-box present-stat">
-                <span class="stat-number">12</span>
+                <span class="stat-number">—</span>
                 <span class="stat-label">Present</span>
               </div>
               <div class="stat-box absent-stat">
-                <span class="stat-number">2</span>
+                <span class="stat-number">—</span>
                 <span class="stat-label">Absent</span>
               </div>
               <div class="stat-box total-stat">
-                <span class="stat-number">14</span>
+                <span class="stat-number">—</span>
                 <span class="stat-label">Total Events</span>
               </div>
             </div>
 
-            <div class="attendance-history-section">
-              <h5>Event Attendance History</h5>
+            <div class="attendance-history-section" style="opacity: 0.6; filter: grayscale(1);">
+              <h5>Event Attendance History (Placeholder)</h5>
               <div class="attendance-table-wrapper">
                 <table class="attendance-history-table">
                   <thead>
@@ -468,34 +469,9 @@
                   </thead>
                   <tbody>
                     <tr>
-                      <td>Apr 20, 2026</td>
-                      <td>Mobile Kitchen Relief</td>
-                      <td><span class="status-badge status-active">Present</span></td>
-                      <td>Food preparation, Distribution</td>
-                    </tr>
-                    <tr>
-                      <td>Apr 18, 2026</td>
-                      <td>Community Outreach</td>
-                      <td><span class="status-badge status-active">Present</span></td>
-                      <td>Registration, Coordination</td>
-                    </tr>
-                    <tr>
-                      <td>Apr 15, 2026</td>
-                      <td>Emergency Response Training</td>
-                      <td><span class="status-badge status-active">Present</span></td>
-                      <td>Training participation</td>
-                    </tr>
-                    <tr>
-                      <td>Apr 12, 2026</td>
-                      <td>Fundraising Event</td>
-                      <td><span class="status-badge status-inactive">Absent</span></td>
-                      <td>—</td>
-                    </tr>
-                    <tr>
-                      <td>Apr 10, 2026</td>
-                      <td>Disaster Relief Operation</td>
-                      <td><span class="status-badge status-active">Present</span></td>
-                      <td>Supply packing, Logistics</td>
+                      <td colspan="4" style="text-align: center; padding: 2rem;">
+                        Detailed historical data is currently unavailable.
+                      </td>
                     </tr>
                   </tbody>
                 </table>
