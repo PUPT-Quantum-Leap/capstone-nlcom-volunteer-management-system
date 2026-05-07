@@ -15,11 +15,12 @@ import { CommonModule } from '@angular/common';
 import { RsvpService } from '../services/rsvp.service';
 import { AuthService } from '../services/auth.service';
 import { Rsvp as RsvpModel, RsvpShift, RsvpResponse } from '../models/rsvp';
+import { UserBadgeComponent } from '../components/user-badge/user-badge.component';
 
 @Component({
   selector: 'app-rsvp',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, UserBadgeComponent],
   templateUrl: './rsvp.html',
   styleUrl: './rsvp-styles.scss',
 })
