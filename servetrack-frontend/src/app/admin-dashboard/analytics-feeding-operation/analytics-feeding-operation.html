@@ -36,6 +36,9 @@
 
   <article class="operations-section">
     <div class="table-wrapper">
+      @if (saving()) {
+        <div class="saving-indicator">Saving...</div>
+      }
       <table class="operations-table">
         <thead>
           <tr>
@@ -44,21 +47,110 @@
             <th>Time</th>
             <th>No. of Pax</th>
             <th>Details</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          @for (operation of operationsData; track operation.id) {
+          @for (operation of operationsData(); track operation.id) {
             <tr>
               @if (operation.showTeamCell) {
                 <td class="team-cell" [attr.rowspan]="operation.teamRowSpan">
-                  <span class="team-name">{{ operation.team }}</span>
-                  <span class="team-departure">{{ operation.departureNote }}</span>
+                  @if (operation.isEditing) {
+                    <select [(ngModel)]="operation.team" class="edit-select">
+                      @for (team of teams(); track team) {
+                        <option [value]="team">{{ team }}</option>
+                      }
+                    </select>
+                    <span class="team-departure">{{ operation.departureNote }}</span>
+                  } @else {
+                    <span class="team-name">{{ operation.team }}</span>
+                    <span class="team-departure">{{ operation.departureNote }}</span>
+                  }
                 </td>
               }
-              <td>{{ operation.location }}</td>
-              <td>{{ operation.time }}</td>
-              <td class="pax-cell">{{ operation.participants }}</td>
-              <td>{{ operation.details }}</td>
+              <td>
+                @if (operation.isEditing) {
+                  <div class="location-edit">
+                    <select
+                      [ngModel]="operation.location"
+                      (ngModelChange)="onLocationChange(operation, $event)"
+                      class="edit-select">
+                      @for (loc of locations(); track loc) {
+                        <option [value]="loc">{{ loc }}</option>
+                      }
+                      <option [value]="addLocationOptionValue">+ Add new location</option>
+                    </select>
+                  </div>
+                } @else {
+                  {{ operation.location }}
+                }
+              </td>
+              <td>
+                @if (operation.isEditing) {
+                  <input
+                    type="text"
+                    class="edit-input"
+                    [(ngModel)]="operation.time" />
+                } @else {
+                  {{ operation.time }}
+                }
+              </td>
+              <td class="pax-cell">
+                @if (operation.isEditing) {
+                  <input
+                    type="number"
+                    class="edit-input pax-input"
+                    [(ngModel)]="operation.participants" />
+                } @else {
+                  {{ operation.participants }}
+                }
+              </td>
+              <td class="details-cell">
+                @if (operation.isEditing) {
+                  <textarea
+                    class="edit-textarea"
+                    [(ngModel)]="operation.details"></textarea>
+                } @else {
+                  {{ operation.details }}
+                }
+              </td>
+              <td class="actions-cell">
+                @if (operation.isEditing) {
+                  <button
+                    type="button"
+                    class="icon-action-btn btn-save"
+                    (click)="saveOperation(operation)"
+                    title="Save"
+                    aria-label="Save operation">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-action-btn btn-cancel"
+                    (click)="toggleEdit(operation)"
+                    title="Cancel"
+                    aria-label="Cancel editing operation">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="icon-action-btn btn-edit"
+                    (click)="toggleEdit(operation)"
+                    title="Edit"
+                    aria-label="Edit operation">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/>
+                    </svg>
+                  </button>
+                }
+              </td>
             </tr>
           }
         </tbody>
