@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Attendance;
-use App\Models\Rsvp;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\Schema;
 
@@ -16,27 +15,31 @@ return new class extends Migration {
             return;
         }
 
-        $rows = Attendance::query()
-            ->whereNull('location')
-            ->whereNotNull('rsvp_id')
-            ->select('attendance_id', 'rsvp_id')
-            ->get();
+        $driver = DB::connection()->getDriverName();
 
-        foreach ($rows as $row) {
-            $rsvp = Rsvp::query()
-                ->where('rsvp_id', $row->rsvp_id)
-                ->select('event_location')
-                ->first();
+        if ($driver === 'mysql') {
+            DB::statement('
+                UPDATE attendances a
+                JOIN rsvp r ON a.rsvp_id = r.rsvp_id
+                SET a.location = r.event_location
+                WHERE a.location IS NULL 
+                  AND r.event_location IS NOT NULL
+                  AND a.rsvp_id IS NOT NULL
+            ');
+        } else {
+            // Fallback for non-MySQL drivers if needed, but since the project uses MySQL 8.0...
+            $rows = Attendance::query()
+                ->from('attendances', 'a')
+                ->join('rsvp as r', 'a.rsvp_id', '=', 'r.rsvp_id')
+                ->whereNull('a.location')
+                ->whereNotNull('r.event_location')
+                ->select('a.attendance_id', 'r.event_location')
+                ->get();
 
-            if (! $rsvp) {
-                continue;
-            }
-
-            $location = $rsvp->event_location;
-            if (! empty($location)) {
+            foreach ($rows as $row) {
                 Attendance::query()
                     ->where('attendance_id', $row->attendance_id)
-                    ->update(['location' => $location]);
+                    ->update(['location' => $row->event_location]);
             }
         }
     }

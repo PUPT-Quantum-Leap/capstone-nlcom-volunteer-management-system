@@ -84,8 +84,12 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
 // Admin-only routes — requires authentication AND admin role
 Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): void {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-    Route::get('/admin/attendance-from-rsvp', [AdminController::class, 'attendanceFromRsvp'])->name('admin.attendance.from-rsvp');
-    Route::post('/admin/attendance-status', [AdminController::class, 'updateAttendanceStatus'])->name('admin.attendance.status.update');
+    Route::get('/admin/attendance-from-rsvp', [AdminController::class, 'attendanceFromRsvp'])
+        ->middleware('throttle:120,1')
+        ->name('admin.attendance.from-rsvp');
+    Route::post('/admin/attendance-status', [AdminController::class, 'updateAttendanceStatus'])
+        ->middleware('throttle:60,1')
+        ->name('admin.attendance.status.update');
 
     // Analytics & Reports
     Route::get('/analytics/reports', [AnalyticsController::class, 'reports'])->name('analytics.reports');

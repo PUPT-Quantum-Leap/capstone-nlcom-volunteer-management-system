@@ -201,8 +201,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        // Cannot easily reverse this operation as we don't know the original values
-        // Set all hours back to 0 as a safe rollback
-        DB::statement('UPDATE attendances SET hours = 0 WHERE hours > 0');
+        // This change is irreversible as we cannot know the original hours values.
     }
 };

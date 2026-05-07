@@ -73,9 +73,22 @@ class RsvpResponse extends Model
         return $this->belongsTo(TimeSlot::class, 'time_slot_id');
     }
 
+    /**
+     * @return HasMany<SmsNotification, $this>
+     */
     public function smsNotifications(): HasMany
     {
         return $this->hasMany(SmsNotification::class, 'rsvp_response_id');
+    }
+
+    /**
+     * Get the attendance record associated with this RSVP response.
+     *
+     * @return HasMany<Attendance, $this>
+     */
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class, 'rsvp_response_id', 'rsvp_response_id');
     }
 
     public function checkIn(): void

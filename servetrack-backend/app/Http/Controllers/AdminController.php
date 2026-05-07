@@ -485,7 +485,7 @@ class AdminController extends Controller
             ], 403);
         }
 
-        $rsvpId = $request->query('rsvp_id');
+        $rsvpId = $request->query('rsvp_id') ? (int) $request->query('rsvp_id') : null;
 
         $query = Rsvp::query()
             ->where('status', 'active')
@@ -557,7 +557,7 @@ class AdminController extends Controller
             ], 404);
         }
 
-        Log::info('RSVP response loaded', [
+        Log::debug('RSVP response loaded', [
             'rsvp_response_id' => $rsvpResponse->rsvp_response_id,
             'time_slot_id' => $rsvpResponse->time_slot_id,
             'time_slot_text' => $rsvpResponse->timeSlot?->text ?? 'NULL',
@@ -573,9 +573,10 @@ class AdminController extends Controller
                 if (! $rsvpResponse->checked_in_at) {
                     $rsvpResponse->checked_in_at = now();
                 }
-                // Set checkout time to 4 hours after check-in if not already set
+                // Set checkout time to the configured default window after check-in if not already set
                 if (! $rsvpResponse->checked_out_at) {
-                    $rsvpResponse->checked_out_at = $rsvpResponse->checked_in_at->copy()->addHours(4);
+                    $defaultHours = (int) config('app.attendance_default_hours', 4);
+                    $rsvpResponse->checked_out_at = $rsvpResponse->checked_in_at->copy()->addHours($defaultHours);
                 }
             }
 
@@ -589,14 +590,14 @@ class AdminController extends Controller
             $timeSlotText = $rsvpResponse->timeSlot?->text ?? null;
             if ($timeSlotText) {
                 $hours = $this->calculateHoursFromTimeSlot($timeSlotText);
-                Log::info('Hours calculated from time_slot', ['time_slot' => $timeSlotText, 'hours' => $hours]);
+                Log::debug('Hours calculated from time_slot', ['time_slot' => $timeSlotText, 'hours' => $hours]);
             }
 
             // Fallback to check_in/check_out times if time_slot didn't give us hours
             if ($hours == 0 && $rsvpResponse->checked_in_at && $rsvpResponse->checked_out_at) {
                 $diffMinutes = $rsvpResponse->checked_in_at->diffInMinutes($rsvpResponse->checked_out_at);
                 $hours = round($diffMinutes / 60, 2);
-                Log::info('Hours calculated from check_in/check_out', [
+                Log::debug('Hours calculated from check_in/check_out', [
                     'checked_in' => $rsvpResponse->checked_in_at,
                     'checked_out' => $rsvpResponse->checked_out_at,
                     'diff_minutes' => $diffMinutes,
@@ -623,7 +624,7 @@ class AdminController extends Controller
                     ]
                 );
 
-                Log::info('Attendance record saved', [
+                Log::debug('Attendance record saved', [
                     'attendance_id' => $attendance->attendance_id,
                     'hours' => $attendance->hours,
                     'status' => $attendance->status,
