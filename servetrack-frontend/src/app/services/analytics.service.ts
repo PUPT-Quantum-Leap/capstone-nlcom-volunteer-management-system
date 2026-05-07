@@ -122,6 +122,18 @@ export interface HourlyTrend {
   entries: number;
 }
 
+export interface IcsTeamFeedingOperation {
+  id: number;
+  team: string;
+  departure_note: string;
+  location: string;
+  time: string;
+  no_of_pax: number;
+  details: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AnalyticsResponse {
   success: boolean;
   data: ReportData;
@@ -229,6 +241,58 @@ exportPdf(dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all', department?: 
         console.error('Excel export failed:', err);
       },
     });
+  }
+
+  getFeedingOperations(): Observable<IcsTeamFeedingOperation[]> {
+    return this.http
+      .get<IcsTeamFeedingOperation[]>(`${environment.apiUrl}/ics-team`, {
+        withCredentials: true,
+      })
+      .pipe(
+        catchError((error) => {
+          console.error('Failed to fetch feeding operations:', error);
+          return of([]);
+        })
+      );
+  }
+
+  getTeams(): Observable<string[]> {
+    return this.http
+      .get<string[]>(`${environment.apiUrl}/teams`, {
+        withCredentials: true,
+      })
+      .pipe(
+        catchError((error) => {
+          console.error('Failed to fetch teams:', error);
+          return of([]);
+        })
+      );
+  }
+
+  createFeedingOperation(data: Partial<IcsTeamFeedingOperation>): Observable<IcsTeamFeedingOperation> {
+    return this.http
+      .post<IcsTeamFeedingOperation>(`${environment.apiUrl}/ics-team`, data, {
+        withCredentials: true,
+      })
+      .pipe(
+        catchError((error) => {
+          console.error('Failed to create operation:', error);
+          throw error;
+        })
+      );
+  }
+
+  updateFeedingOperation(id: number, data: Partial<IcsTeamFeedingOperation>): Observable<IcsTeamFeedingOperation> {
+    return this.http
+      .put<IcsTeamFeedingOperation>(`${environment.apiUrl}/ics-team/${id}`, data, {
+        withCredentials: true,
+      })
+      .pipe(
+        catchError((error) => {
+          console.error('Failed to update operation:', error);
+          throw error;
+        })
+      );
   }
 
   private getMockReportData(): ReportData {
