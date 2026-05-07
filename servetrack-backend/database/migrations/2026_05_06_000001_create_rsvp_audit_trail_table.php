@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('rsvp_audit_trail', function (Blueprint $table) {
             $table->id('audit_id');
             $table->unsignedBigInteger('rsvp_id');
-            $table->enum('action', ['auto_closed', 'manual_closed', 'status_changed', 'edited'])->default('auto_closed');
+            $table->enum('action', ['auto_closed', 'manual_closed', 'status_changed', 'edited', 'deleted', 'restored'])->default('auto_closed');
             $table->string('triggered_by', 50)->nullable();
             $table->text('reason')->nullable();
             $table->json('metadata')->nullable();
