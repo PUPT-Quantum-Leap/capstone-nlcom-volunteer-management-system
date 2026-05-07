@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Rsvp extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'rsvp';
 
@@ -40,6 +41,7 @@ class Rsvp extends Model
             'cutoff_day' => 'date',
             'status' => 'string',
             'auto_closed_at' => 'datetime',
+            'deleted_at' => 'datetime',
         ];
     }
 
@@ -170,5 +172,35 @@ class Rsvp extends Model
         }
 
         return self::where('slug', $identifier)->first();
+    }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::deleting(function (Rsvp $rsvp): void {
+            RsvpAuditTrail::create([
+                'rsvp_id' => $rsvp->rsvp_id,
+                'action' => 'deleted',
+                'triggered_by' => 'admin',
+                'reason' => '_deleted_by_admin',
+                'metadata' => [
+                    'deleted_at' => now()->toIso8601String(),
+                    'rsvp_title' => $rsvp->title,
+                ],
+            ]);
+        });
+
+        static::restoring(function (Rsvp $rsvp): void {
+            RsvpAuditTrail::create([
+                'rsvp_id' => $rsvp->rsvp_id,
+                'action' => 'restored',
+                'triggered_by' => 'admin',
+                'reason' => '_restored_by_admin',
+                'metadata' => [
+                    'restored_at' => now()->toIso8601String(),
+                ],
+            ]);
+        });
     }
 }
