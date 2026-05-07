@@ -136,6 +136,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
+  table-layout: fixed;
 
   thead {
     background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%);
@@ -150,8 +151,181 @@
       font-size: 0.75rem;
       letter-spacing: 0.05em;
       white-space: nowrap;
+
+      &:nth-child(1) { width: 200px; }  // Team & Departure
+      &:nth-child(2) { width: 200px; }  // Location
+      &:nth-child(3) { width: 120px; }  // Time
+      &:nth-child(4) { width: 110px; }  // Pax
+      &:nth-child(5) { width: auto; }   // Details
+      &:nth-child(6) { width: 120px; }  // Actions
     }
   }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid var(--gray-200);
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: var(--gray-50);
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+
+  td {
+    padding: 1rem;
+    color: var(--gray-700);
+    vertical-align: top;
+    word-wrap: break-word;
+  }
+
+  .team-cell {
+    font-weight: 600;
+    color: var(--gray-900);
+    background-color: var(--gray-50);
+    min-width: 200px;
+    border-right: 1px solid var(--gray-200);
+
+    .team-name {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+      white-space: nowrap;
+    }
+
+    .team-departure {
+      display: block;
+      font-weight: 500;
+      font-size: 0.75rem;
+      line-height: 1.35;
+      color: var(--gray-600);
+      white-space: normal;
+    }
+  }
+
+  .pax-cell {
+    font-weight: 700;
+    color: var(--primary-600);
+    text-align: center;
+    white-space: nowrap;
+    padding-right: 1.5rem;
+  }
+
+  .details-cell {
+    padding-left: 1.5rem;
+  }
+}
+
+.edit-select,
+.edit-input,
+.edit-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-family: inherit;
+  background: var(--white);
+  color: var(--gray-800);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+  }
+}
+
+.edit-input:not(.pax-input) {
+  min-width: 120px;
+}
+
+.pax-input {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.edit-textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.location-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.actions-cell {
+  white-space: nowrap;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.icon-action-btn {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+
+  svg {
+    width: 0.95rem;
+    height: 0.95rem;
+    flex-shrink: 0;
+  }
+}
+
+.btn-edit {
+  background: var(--primary-600);
+  color: #fff;
+
+  &:hover {
+    background: var(--primary-700);
+  }
+}
+
+.btn-save {
+  background: #16a34a;
+  color: #fff;
+
+  &:hover {
+    background: #15803d;
+  }
+}
+
+.btn-cancel {
+  background: var(--gray-200);
+  color: var(--gray-700);
+
+  &:hover {
+    background: var(--gray-300);
+  }
+}
+
+.saving-indicator {
+  padding: 0.5rem;
+  background: var(--gray-100);
+  border-radius: 4px;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 860px) {
 
   tbody {
     tr {
@@ -203,6 +377,7 @@
     text-align: center;
     white-space: nowrap;
   }
+
 }
 
 @media (max-width: 860px) {
