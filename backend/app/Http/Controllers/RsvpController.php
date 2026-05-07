@@ -28,7 +28,6 @@ class RsvpController extends Controller
             $rsvp = Rsvp::query()
                 ->with(['shifts', 'responses'])
                 ->withCount('responses')
-                ->withoutTrashed()
                 ->where(fn ($query) => is_numeric($id) ? $query->where('rsvp_id', $id) : $query->where('slug', $id))
                 ->first();
 
@@ -41,8 +40,7 @@ class RsvpController extends Controller
 
         $query = Rsvp::query()
             ->with(['shifts', 'responses'])
-            ->withCount('responses')
-            ->withoutTrashed();
+            ->withCount('responses');
 
         if ($request->user()->role !== 'admin') {
             $query->where('status', 'active');
@@ -65,7 +63,6 @@ class RsvpController extends Controller
         $rsvp = Rsvp::query()
             ->with(['shifts', 'responses'])
             ->withCount('responses')
-            ->withoutTrashed()
             ->where(fn ($query) => is_numeric($id) ? $query->where('rsvp_id', $id) : $query->where('slug', $id))
             ->first();
 
@@ -115,10 +112,14 @@ class RsvpController extends Controller
 
     public function update(UpdateRsvpRequest $request, int $id): RsvpResource|JsonResponse
     {
-        $rsvp = Rsvp::query()->with('shifts')->withoutTrashed()->find($id);
+        $rsvp = Rsvp::query()->withTrashed()->with('shifts')->find($id);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        if ($rsvp->trashed()) {
+            return response()->json(['message' => 'RSVP is in trash.'], 409);
         }
 
         DB::transaction(function () use ($request, $rsvp): void {
@@ -168,10 +169,14 @@ class RsvpController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        $rsvp = Rsvp::query()->withoutTrashed()->find($id);
+        $rsvp = Rsvp::query()->withTrashed()->find($id);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        if ($rsvp->trashed()) {
+            return response()->json(['message' => 'RSVP is already in trash.'], 409);
         }
 
         $rsvp->delete();
@@ -199,10 +204,14 @@ class RsvpController extends Controller
      */
     public function restore(int $id): JsonResponse
     {
-        $rsvp = Rsvp::query()->onlyTrashed()->find($id);
+        $rsvp = Rsvp::withTrashed()->find($id);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        if (! $rsvp->trashed()) {
+            return response()->json(['message' => 'RSVP is not in trash.'], 409);
         }
 
         $rsvp->restore();
@@ -215,10 +224,14 @@ class RsvpController extends Controller
      */
     public function forceDelete(int $id): JsonResponse
     {
-        $rsvp = Rsvp::query()->onlyTrashed()->find($id);
+        $rsvp = Rsvp::withTrashed()->find($id);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        if (! $rsvp->trashed()) {
+            return response()->json(['message' => 'RSVP is not in trash.'], 409);
         }
 
         $rsvp->forceDelete();
@@ -232,9 +245,13 @@ class RsvpController extends Controller
             'status' => ['required', 'in:draft,active,closed'],
         ]);
 
-        $rsvp = Rsvp::query()->withoutTrashed()->find($id);
+        $rsvp = Rsvp::query()->withTrashed()->find($id);
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        if ($rsvp->trashed()) {
+            return response()->json(['message' => 'RSVP is in trash.'], 409);
         }
 
         $newStatus = $request->input('status');
@@ -268,10 +285,14 @@ class RsvpController extends Controller
             'time_slot_id' => ['required', 'integer'],
         ]);
 
-        $rsvp = Rsvp::query()->with('shifts')->withoutTrashed()->find($id);
+        $rsvp = Rsvp::query()->withTrashed()->with('shifts')->find($id);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        if ($rsvp->trashed()) {
+            return response()->json(['message' => 'This RSVP is no longer available.'], 409);
         }
 
         if ($rsvp->status !== 'active') {
@@ -293,9 +314,15 @@ class RsvpController extends Controller
         $alreadyResponded = false;
 
         DB::transaction(function () use ($id, $request, $volunteer, &$capacityReached, &$invalidShift, &$alreadyResponded): void {
-            $lockedRsvp = Rsvp::query()->withoutTrashed()->find($id);
+            $lockedRsvp = Rsvp::query()->withTrashed()->find($id);
 
             if (! $lockedRsvp) {
+                $invalidShift = true;
+
+                return;
+            }
+
+            if ($lockedRsvp->trashed()) {
                 $invalidShift = true;
 
                 return;
@@ -416,7 +443,15 @@ class RsvpController extends Controller
 
     public function attendance(int $id): JsonResponse
     {
-        Rsvp::query()->withoutTrashed()->findOrFail($id);
+        $rsvp = Rsvp::query()->withTrashed()->find($id);
+
+        if (! $rsvp) {
+            return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        if ($rsvp->trashed()) {
+            return response()->json(['message' => 'RSVP is in trash.'], 409);
+        }
 
         $responses = RsvpResponse::where('rsvp_id', $id)->paginate(50);
 
@@ -486,10 +521,14 @@ class RsvpController extends Controller
      */
     public function getMyResponse(Request $request, int $rsvpId): JsonResponse
     {
-        $rsvp = Rsvp::query()->withoutTrashed()->find($rsvpId);
+        $rsvp = Rsvp::query()->withTrashed()->find($rsvpId);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        if ($rsvp->trashed()) {
+            return response()->json(['message' => 'RSVP is in trash.'], 409);
         }
 
         $volunteer = $request->user()->volunteer;
@@ -528,10 +567,14 @@ class RsvpController extends Controller
      */
     public function updateResponse(UpdateRsvpResponseRequest $request, int $rsvpId): JsonResponse
     {
-        $rsvp = Rsvp::query()->withoutTrashed()->find($rsvpId);
+        $rsvp = Rsvp::query()->withTrashed()->find($rsvpId);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        if ($rsvp->trashed()) {
+            return response()->json(['message' => 'RSVP is in trash.'], 409);
         }
 
         $volunteer = $request->user()->volunteer;
