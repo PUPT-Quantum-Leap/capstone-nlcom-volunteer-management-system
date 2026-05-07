@@ -231,7 +231,7 @@ describe('DELETE /api/rsvp/{id}', function (): void {
         $this->assertDatabaseHas('rsvp_audit_trail', [
             'rsvp_id' => $rsvp->rsvp_id,
             'action' => 'deleted',
-            'triggered_by' => 'admin',
+            'triggered_by' => $admin->email,
         ]);
     });
 
