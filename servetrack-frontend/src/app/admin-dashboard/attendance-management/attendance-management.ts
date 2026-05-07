@@ -5,19 +5,27 @@ import {
   inject,
   signal,
   output,
+  OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AdminDashboardService, VolunteerUser } from '../../services/admin-dashboard.service';
 
 interface AttendanceRecord {
   id: number;
-  volunteerName: string;
-  email: string;
-  department: string;
-  checkInTime: string | null;
-  checkOutTime: string | null;
-  duration: string | null;
-  status: 'present' | 'absent';
+  rsvp_id: number;
+  rsvp_title: string;
+  rsvp_date: string;
+  rsvp_location: string | null;
+  cutoff_passed: boolean;
+  volunteer_id: number;
+  volunteer_name: string;
+  volunteer_email: string;
+  volunteer_department: string;
+  time_slot: string | null;
+  voted_at: string;
+  checked_in_at: string | null;
+  checked_out_at: string | null;
+  attendance_status: string;
 }
 
 interface DetectedVolunteer {
@@ -32,7 +40,7 @@ interface DetectedVolunteer {
   templateUrl: './attendance-management.html',
   styleUrl: './attendance-management.scss',
 })
-export class AttendanceManagement {
+export class AttendanceManagement implements OnInit {
   private adminDashboardService = inject(AdminDashboardService);
 
   // Outputs
@@ -44,6 +52,8 @@ export class AttendanceManagement {
   attendancePerPage = signal(5);
   attendanceSearchQuery = signal('');
   attendanceDateFilter = signal(new Date().toISOString().split('T')[0]);
+  selectedRsvpId = signal<number | null>(null);
+  isLoading = signal(false);
 
   // Modal states
   showAssignVolunteerModal = signal(false);
@@ -55,38 +65,85 @@ export class AttendanceManagement {
   photoUploadProcessing = signal(false);
   photoUploadPreview = signal<string | null>(null);
   detectedVolunteersFromPhoto = signal<DetectedVolunteer[]>([]);
- 
+
   // Assignment
   availableVolunteersForAssignment = signal<VolunteerUser[]>([]);
   selectedVolunteersForAssignment = signal<number[]>([]);
   isAssigningVolunteers = signal(false);
 
-  // Mock attendance data (will be replaced with API call)
-  attendanceRecords = signal<AttendanceRecord[]>([
-    { id: 1, volunteerName: 'Agnes Felix', email: 'agnes.felix@example.com', department: 'Mobile Kitchen Operations', checkInTime: '08:30 AM', checkOutTime: '12:00 PM', duration: '3h 30m', status: 'present' },
-    { id: 2, volunteerName: 'Robbie Panaligan', email: 'robbie.panaligan@example.com', department: 'Relief Operations', checkInTime: '09:00 AM', checkOutTime: '11:30 AM', duration: '2h 30m', status: 'present' },
-    { id: 3, volunteerName: 'Natasya Angelina Lim', email: 'natasya.lim@example.com', department: 'Mobile Kitchen Operations', checkInTime: '08:45 AM', checkOutTime: '01:00 PM', duration: '4h 15m', status: 'present' },
-    { id: 4, volunteerName: 'Lea Therese Chua', email: 'lea.chua@example.com', department: 'Individual & Corporate Partnerships', checkInTime: '09:15 AM', checkOutTime: null, duration: null, status: 'present' },
-    { id: 5, volunteerName: 'George Arvin Ventura', email: 'george.ventura@example.com', department: 'Mobile Kitchen Operations', checkInTime: null, checkOutTime: null, duration: null, status: 'absent' },
-  ]);
+  // RSVP attendance data
+  attendanceRecords = signal<AttendanceRecord[]>([]);
+  availableRsvps = signal<{id: number, title: string, date: string}[]>([]);
 
   constructor() {}
 
   readonly Math = Math;
 
+  ngOnInit(): void {
+    this.loadAttendanceFromRsvp();
+  }
+
+  loadAttendanceFromRsvp(): void {
+    this.isLoading.set(true);
+    console.log('Loading attendance from RSVP...', this.selectedRsvpId());
+    this.adminDashboardService.getAttendanceFromRsvp(this.selectedRsvpId() ?? undefined).subscribe({
+      next: (response) => {
+        console.log('Attendance API response:', response);
+        if (response.success) {
+          this.attendanceRecords.set(response.data ?? []);
+          console.log('Attendance records set:', response.data?.length ?? 0, 'records');
+          this.loadAvailableRsvps();
+        } else {
+          console.error('API returned success=false:', response.message);
+        }
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading attendance:', err);
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  loadAvailableRsvps(): void {
+    // Extract unique RSVPs from the attendance records
+    const uniqueRsvps = new Map<number, {id: number, title: string, date: string}>();
+    this.attendanceRecords().forEach(record => {
+      if (!uniqueRsvps.has(record.rsvp_id)) {
+        uniqueRsvps.set(record.rsvp_id, {
+          id: record.rsvp_id,
+          title: record.rsvp_title,
+          date: record.rsvp_date
+        });
+      }
+    });
+    this.availableRsvps.set(Array.from(uniqueRsvps.values()));
+    console.log('Available RSVPs loaded:', this.availableRsvps().length, 'events');
+  }
+
+  onRsvpFilterChange(value: string): void {
+    this.selectedRsvpId.set(value === 'null' ? null : parseInt(value, 10));
+    this.loadAttendanceFromRsvp();
+  }
+
+  getSelectedRsvpTitle(): string {
+    const rsvp = this.availableRsvps().find(r => r.id === this.selectedRsvpId());
+    return rsvp ? rsvp.title : 'All Events';
+  }
+
   // Computed signals for stats cards
   presentCount = computed(() =>
-    this.attendanceRecords().filter((r) => r.status === 'present').length
+    this.attendanceRecords().filter((r) => r.attendance_status === 'checked_in' || r.attendance_status === 'checked_out').length
   );
 
   absentCount = computed(() =>
-    this.attendanceRecords().filter((r) => r.status === 'absent').length
+    this.attendanceRecords().filter((r) => r.attendance_status === 'no_show').length
   );
 
   totalAttendanceCount = computed(() => this.attendanceRecords().length);
 
   departmentCount = computed(() => {
-    const departments = new Set(this.attendanceRecords().map((r) => r.department));
+    const departments = new Set(this.attendanceRecords().map((r) => r.volunteer_department));
     return departments.size;
   });
 
@@ -100,9 +157,9 @@ export class AttendanceManagement {
 
     return records.filter(
       (r) =>
-        r.volunteerName.toLowerCase().includes(search) ||
-        r.email.toLowerCase().includes(search) ||
-        r.department.toLowerCase().includes(search),
+        r.volunteer_name.toLowerCase().includes(search) ||
+        r.volunteer_email.toLowerCase().includes(search) ||
+        r.volunteer_department.toLowerCase().includes(search),
     );
   });
 
@@ -177,10 +234,22 @@ export class AttendanceManagement {
 
   // Status update
   updateAttendanceStatus(recordId: number, status: 'present' | 'absent'): void {
-    this.attendanceRecords.update((records) =>
-      records.map((r) => (r.id === recordId ? { ...r, status } : r)),
-    );
-    this.showSnackbar.emit({ message: `Attendance status updated to ${status}`, type: 'success' });
+    this.adminDashboardService.updateAttendanceStatus(recordId, status).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Update local state
+          this.attendanceRecords.update((records) =>
+            records.map((r) => (r.id === recordId ? { ...r, attendance_status: status } : r)),
+          );
+          this.showSnackbar.emit({ message: `Attendance status updated to ${status}`, type: 'success' });
+        } else {
+          this.showSnackbar.emit({ message: response.message || 'Failed to update status', type: 'error' });
+        }
+      },
+      error: () => {
+        this.showSnackbar.emit({ message: 'Failed to update attendance status', type: 'error' });
+      }
+    });
   }
 
   // View details
@@ -276,13 +345,13 @@ export class AttendanceManagement {
 
   markDetectedVolunteersAsPresent(): void {
     const detectedNames = this.detectedVolunteersFromPhoto().map(v => v.name);
-    
-    this.attendanceRecords.update(records => 
-      records.map(r => 
-        detectedNames.includes(r.volunteerName) ? { ...r, status: 'present' } : r
+
+    this.attendanceRecords.update(records =>
+      records.map(r =>
+        detectedNames.includes(r.volunteer_name) ? { ...r, attendance_status: 'checked_in' } : r
       )
     );
-    
+
     this.detectedVolunteersFromPhoto.set([]);
     this.showSnackbar.emit({ message: 'Detected volunteers marked as present', type: 'success' });
   }
@@ -327,5 +396,19 @@ export class AttendanceManagement {
     this.isAssigningVolunteers.set(false);
     this.closeAssignVolunteerModal();
     this.showSnackbar.emit({ message: 'Volunteers assigned successfully', type: 'success' });
+  }
+
+  getAttendanceStatusClass(status: string): string {
+    if (status === 'checked_in' || status === 'checked_out' || status === 'present') return 'dropdown-present';
+    if (status === 'no_show' || status === 'absent') return 'dropdown-absent';
+    return '';
+  }
+
+  getDisplayStatus(attendanceStatus: string | null | undefined): 'present' | 'absent' {
+    if (attendanceStatus === 'no_show' || attendanceStatus === 'absent') {
+      return 'absent';
+    }
+    // Default to present for null, undefined, empty, checked_in, checked_out, or present
+    return 'present';
   }
 }

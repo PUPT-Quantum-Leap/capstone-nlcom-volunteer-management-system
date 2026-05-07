@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, switchMap } from 'rxjs';
+import { Observable, catchError, switchMap, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Attendance, AttendanceStats } from '../models/attendance';
 import { VolunteerPoll } from '../models/volunteer-poll';
@@ -72,6 +72,9 @@ export class VolunteerService {
         params,
       })
       .pipe(
+        tap((response) => {
+          console.log('[VolunteerService] getAttendance raw response:', response);
+        }),
         catchError((error) => {
           console.error('[VolunteerService] getAttendance failed:', error);
           throw error;

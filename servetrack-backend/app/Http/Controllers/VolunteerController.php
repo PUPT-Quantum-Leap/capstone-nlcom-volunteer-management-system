@@ -507,7 +507,7 @@ class VolunteerController extends Controller
             return response()->json(['success' => false, 'message' => 'Volunteer profile not found.'], 404);
         }
 
-        $query = $volunteer->attendances()->orderBy('date', 'desc');
+        $query = $volunteer->attendances()->with(['rsvp', 'rsvpResponse.rsvp', 'rsvpResponse.timeSlot'])->orderBy('date', 'desc');
 
         // Period filter
         $period = $request->query('period');
@@ -525,10 +525,42 @@ class VolunteerController extends Controller
             $query->where('description', 'like', '%'.$search.'%');
         }
 
-        return response()->json([
+        $attendances = $query->get()->map(function ($attendance) {
+            $location = $attendance->location;
+            if (empty($location) && $attendance->rsvp) {
+                $location = $attendance->rsvp->event_location;
+            }
+            if (empty($location) && $attendance->rsvpResponse && $attendance->rsvpResponse->rsvp) {
+                $location = $attendance->rsvpResponse->rsvp->event_location;
+            }
+            $attendance->location = $location;
+
+            // Add time_slot from rsvp_response
+            $timeSlot = null;
+            if ($attendance->rsvpResponse && $attendance->rsvpResponse->timeSlot) {
+                $timeSlot = $attendance->rsvpResponse->timeSlot->text;
+            }
+            $attendance->time_slot = $timeSlot;
+
+            Log::info('Volunteer attendance item', [
+                'attendance_id' => $attendance->attendance_id,
+                'hours_raw' => $attendance->getAttributes()['hours'] ?? null,
+                'hours_cast' => $attendance->hours,
+                'description' => $attendance->description,
+                'time_slot' => $attendance->time_slot,
+            ]);
+
+            return $attendance;
+        });
+
+        $response = [
             'success' => true,
-            'data' => $query->get(),
-        ]);
+            'data' => $attendances,
+        ];
+
+        Log::info('Volunteer attendance response', ['count' => count($attendances), 'sample' => $attendances->first()?->toArray()]);
+
+        return response()->json($response);
     }
 
     /**

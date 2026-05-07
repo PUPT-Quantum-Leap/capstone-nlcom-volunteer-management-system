@@ -417,6 +417,24 @@ table {
       background: var(--danger-500);
     }
   }
+
+  &.status-present {
+    background: var(--success-50);
+    color: var(--success-500);
+
+    &::before {
+      background: var(--success-500);
+    }
+  }
+
+  &.status-absent {
+    background: var(--danger-50);
+    color: var(--danger-500);
+
+    &::before {
+      background: var(--danger-500);
+    }
+  }
 }
 
 // Loading State

@@ -10,14 +10,22 @@
       </div>
       <div class="report-title-group">
         <span class="report-label">ATTENDANCE MANAGEMENT</span>
-        <h2 class="report-title">Track Attendance & Participation</h2>
+        <h2 class="report-title">
+          @if (selectedRsvpId()) {
+            {{ getSelectedRsvpTitle() }}
+          } @else {
+            Track Attendance & Participation
+          }
+        </h2>
       </div>
     </div>
     <div class="report-header-right">
-      <span class="filter-label">VIEW</span>
-      <select class="filter-dropdown" [value]="attendanceView()" (change)="setAttendanceView($any($event.target).value)">
-        <option value="daily">Daily Attendance</option>
-        <option value="history">History</option>
+      <span class="filter-label">EVENT</span>
+      <select class="filter-dropdown" [value]="selectedRsvpId()" (change)="onRsvpFilterChange($any($event.target).value)">
+        <option [value]="null">All Events</option>
+        @for (rsvp of availableRsvps(); track rsvp.id) {
+          <option [value]="rsvp.id">{{ rsvp.title }} ({{ rsvp.date }})</option>
+        }
       </select>
       <button type="button" class="action-btn" (click)="exportAttendanceToPDF()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -107,7 +115,6 @@
   </div>
 
   <!-- Search Bar -->
-  @if (attendanceView() === 'daily') {
   <div class="search-bar">
     <div class="search-wrapper">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -122,23 +129,7 @@
         placeholder="Search volunteers by name, email, or department..."
         aria-label="Search attendance records" />
     </div>
-    <div class="date-filter-wrapper">
-      <svg class="calendar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-        <line x1="16" y1="2" x2="16" y2="6"/>
-        <line x1="8" y1="2" x2="8" y2="6"/>
-        <line x1="3" y1="10" x2="21" y2="10"/>
-      </svg>
-      <input
-        type="date"
-        class="filter-date-input"
-        [value]="attendanceDateFilter()"
-        (change)="setAttendanceDateFilter(dateInput.value)"
-        #dateInput
-        aria-label="Filter by date" />
-    </div>
   </div>
-  }
 
   <!-- Daily Attendance Table -->
   @if (attendanceView() === 'daily') {
@@ -148,58 +139,59 @@
         <tr>
           <th scope="col">VOLUNTEER</th>
           <th scope="col">DEPARTMENT</th>
-          <th scope="col">CHECK-IN</th>
-          <th scope="col">CHECK-OUT</th>
-          <th scope="col">DURATION</th>
+          <th scope="col">EVENT</th>
+          <th scope="col">TIME SLOT</th>
           <th scope="col">STATUS</th>
-          <th scope="col" class="actions-header">ACTIONS</th>
         </tr>
       </thead>
       <tbody>
-        @for (record of paginatedAttendance(); track record.id) {
+        @if (isLoading()) {
         <tr>
-          <td>
-            <div class="volunteer-info-cell">
-              <div class="volunteer-avatar">{{ record.volunteerName.charAt(0).toUpperCase() }}</div>
-              <div class="volunteer-details">
-                <span class="volunteer-name">{{ record.volunteerName }}</span>
-                <span class="volunteer-meta">{{ record.email }}</span>
-              </div>
-            </div>
-          </td>
-          <td>{{ record.department }}</td>
-          <td>{{ record.checkInTime || '—' }}</td>
-          <td>{{ record.checkOutTime || '—' }}</td>
-          <td>{{ record.duration || '—' }}</td>
-          <td>
-            <select
-              class="attendance-dropdown"
-              [class.dropdown-present]="record.status === 'present'"
-              [class.dropdown-absent]="record.status === 'absent'"
-              [value]="record.status"
-              (change)="updateAttendanceStatus(record.id, $any($event.target).value)"
-              [attr.aria-label]="'Attendance status for ' + record.volunteerName">
-              <option value="present">Present</option>
-              <option value="absent">Absent</option>
-            </select>
-          </td>
-          <td class="actions-cell">
-            <div class="action-buttons">
-              <button type="button" class="icon-btn icon-btn-info"
-                (click)="viewAttendanceDetails(record)" [attr.aria-label]="'View details for ' + record.volunteerName"
-                title="View Details">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </button>
+          <td colspan="5">
+            <div class="loading-state">
+              <p>Loading attendance records...</p>
             </div>
           </td>
         </tr>
-        } @empty {
-        <tr>
-          <td colspan="7">
-            <div class="empty-state">
+        } @else {
+          @for (record of paginatedAttendance(); track record.id) {
+          <tr>
+            <td>
+              <div class="volunteer-info-cell">
+                <div class="volunteer-avatar">{{ record.volunteer_name.charAt(0).toUpperCase() }}</div>
+                <div class="volunteer-details">
+                  <span class="volunteer-name">{{ record.volunteer_name }}</span>
+                  <span class="volunteer-meta">{{ record.volunteer_email }}</span>
+                </div>
+              </div>
+            </td>
+            <td>{{ record.volunteer_department }}</td>
+            <td>
+              <div class="event-info">
+                <span class="event-name">{{ record.rsvp_title }}</span>
+                <span class="event-date">{{ record.rsvp_date }}</span>
+                @if (record.rsvp_location) {
+                  <span class="event-location">{{ record.rsvp_location }}</span>
+                }
+              </div>
+            </td>
+            <td>{{ record.time_slot || '—' }}</td>
+            <td>
+              <select
+                class="attendance-dropdown"
+                [class.dropdown-present]="getDisplayStatus(record.attendance_status) === 'present'"
+                [class.dropdown-absent]="getDisplayStatus(record.attendance_status) === 'absent'"
+                [value]="getDisplayStatus(record.attendance_status)"
+                (change)="updateAttendanceStatus(record.id, $any($event.target).value)">
+                <option value="present">Present</option>
+                <option value="absent">Absent</option>
+              </select>
+            </td>
+          </tr>
+          } @empty {
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8V12M12 16H12.01" stroke-linecap="round" />
@@ -209,6 +201,7 @@
           </td>
         </tr>
         }
+      }
       </tbody>
     </table>
   </div>
@@ -265,41 +258,36 @@
           <th scope="col">VOLUNTEER</th>
           <th scope="col">DEPARTMENT</th>
           <th scope="col">STATUS</th>
-          <th scope="col">DURATION</th>
+          <th scope="col">CHECK-IN</th>
+          <th scope="col">CHECK-OUT</th>
         </tr>
       </thead>
       <tbody>
         @for (record of paginatedAttendance(); track record.id) {
         <tr>
-          <td>{{ attendanceDateFilter() }}</td>
-          <td>Volunteer Shift</td>
+          <td>{{ record.rsvp_date }}</td>
+          <td>{{ record.rsvp_title }}</td>
           <td>
             <div class="volunteer-info-cell">
-              <div class="volunteer-avatar">{{ record.volunteerName.charAt(0).toUpperCase() }}</div>
+              <div class="volunteer-avatar">{{ record.volunteer_name.charAt(0).toUpperCase() }}</div>
               <div class="volunteer-details">
-                <span class="volunteer-name">{{ record.volunteerName }}</span>
-                <span class="volunteer-meta">{{ record.email }}</span>
+                <span class="volunteer-name">{{ record.volunteer_name }}</span>
+                <span class="volunteer-meta">{{ record.volunteer_email }}</span>
               </div>
             </div>
           </td>
-          <td>{{ record.department }}</td>
+          <td>{{ record.volunteer_department }}</td>
           <td>
-            <select
-              class="attendance-dropdown"
-              [class.dropdown-present]="record.status === 'present'"
-              [class.dropdown-absent]="record.status === 'absent'"
-              [value]="record.status"
-              (change)="updateAttendanceStatus(record.id, $any($event.target).value)"
-              [attr.aria-label]="'Attendance status for ' + record.volunteerName">
-              <option value="present">Present</option>
-              <option value="absent">Absent</option>
-            </select>
+            <span class="status-badge" [class]="getAttendanceStatusClass(record.attendance_status)">
+              {{ record.attendance_status | titlecase }}
+            </span>
           </td>
-          <td>{{ record.duration || '—' }}</td>
+          <td>{{ record.checked_in_at ? (record.checked_in_at | date:'shortTime') : '—' }}</td>
+          <td>{{ record.checked_out_at ? (record.checked_out_at | date:'shortTime') : '—' }}</td>
         </tr>
         } @empty {
         <tr>
-          <td colspan="6">
+          <td colspan="7">
             <div class="empty-state">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
@@ -443,11 +431,11 @@
         @if (selectedAttendanceRecord(); as record) {
           <div class="attendance-details-content">
             <div class="detail-section volunteer-profile">
-              <div class="volunteer-avatar-lg">{{ record.volunteerName.charAt(0) }}</div>
+              <div class="volunteer-avatar-lg">{{ record.volunteer_name.charAt(0).toUpperCase() }}</div>
               <div class="volunteer-profile-info">
-                <h4 class="volunteer-name">{{ record.volunteerName }}</h4>
-                <span class="volunteer-email">{{ record.email }}</span>
-                <span class="volunteer-dept">{{ record.department }}</span>
+                <h4 class="volunteer-name">{{ record.volunteer_name }}</h4>
+                <span class="volunteer-email">{{ record.volunteer_email }}</span>
+                <span class="volunteer-dept">{{ record.volunteer_department }}</span>
               </div>
             </div>
 

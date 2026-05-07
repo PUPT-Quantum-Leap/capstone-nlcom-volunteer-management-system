@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Models\Attendance;
 use App\Models\Ics;
 use App\Models\RsvpResponse;
 
@@ -26,6 +27,73 @@ class RsvpResponseObserver
                     'role' => null,
                     'assigned_at' => null,
                 ],
+            ]);
+        }
+    }
+
+    /**
+     * Handle the RsvpResponse "updated" event.
+     * Create attendance record when volunteer checks out.
+     */
+    public function updated(RsvpResponse $rsvpResponse): void
+    {
+        // Check if checked_out_at was just set (volunteer checked out)
+        if ($rsvpResponse->wasChanged('checked_out_at') && $rsvpResponse->checked_out_at !== null) {
+            $this->createAttendanceRecord($rsvpResponse);
+        }
+    }
+
+    /**
+     * Create an attendance record for the RSVP response.
+     */
+    private function createAttendanceRecord(RsvpResponse $rsvpResponse): void
+    {
+        // Load RSVP with location relationship
+        $rsvp = $rsvpResponse->rsvp()->with('location')->first();
+
+        if (! $rsvp) {
+            return;
+        }
+
+        // Calculate hours worked
+        $hours = 0;
+        if ($rsvpResponse->checked_in_at && $rsvpResponse->checked_out_at) {
+            $hours = round($rsvpResponse->checked_in_at->diffInMinutes($rsvpResponse->checked_out_at) / 60, 1);
+        }
+
+        // Determine location name
+        $locationName = null;
+        if ($rsvp->location) {
+            $locationName = $rsvp->location->getFullAddressAttribute();
+        } elseif ($rsvp->event_location) {
+            $locationName = $rsvp->event_location;
+        }
+
+        // Check if attendance record already exists for this RSVP response
+        $existingAttendance = Attendance::query()
+            ->where('volunteer_id', $rsvpResponse->volunteer_id)
+            ->where('rsvp_id', $rsvp->rsvp_id)
+            ->whereDate('date', $rsvp->date)
+            ->first();
+
+        if ($existingAttendance) {
+            // Update existing record
+            $existingAttendance->update([
+                'hours' => $hours,
+                'location' => $locationName,
+                'description' => $rsvp->title,
+            ]);
+        } else {
+            // Create new attendance record
+            Attendance::query()->create([
+                'volunteer_id' => $rsvpResponse->volunteer_id,
+                'date' => $rsvp->date,
+                'hours' => $hours,
+                'description' => $rsvp->title,
+                'location' => $locationName,
+                'rsvp_id' => $rsvp->rsvp_id,
+                'status' => 'pending',
+                'created_by' => null,
             ]);
         }
     }

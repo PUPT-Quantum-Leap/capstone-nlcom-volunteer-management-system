@@ -9,6 +9,7 @@ export interface Attendance {
   hours: number;
   description: string | null;
   location?: string | null;
+  time_slot?: string | null;
   status: AttendanceStatus;
   created_by: number | null;
   created_at: string;

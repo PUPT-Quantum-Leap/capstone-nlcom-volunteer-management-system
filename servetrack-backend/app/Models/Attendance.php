@@ -17,8 +17,11 @@ class Attendance extends Model
         'date',
         'hours',
         'description',
+        'location',
+        'rsvp_id',
         'status',
         'created_by',
+        'rsvp_response_id',
     ];
 
     protected function casts(): array
@@ -37,5 +40,15 @@ class Attendance extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function rsvp(): BelongsTo
+    {
+        return $this->belongsTo(Rsvp::class, 'rsvp_id', 'rsvp_id');
+    }
+
+    public function rsvpResponse(): BelongsTo
+    {
+        return $this->belongsTo(RsvpResponse::class, 'rsvp_response_id', 'rsvp_response_id');
     }
 }

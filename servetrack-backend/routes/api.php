@@ -79,6 +79,8 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
 // Admin-only routes — requires authentication AND admin role
 Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): void {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
+    Route::get('/admin/attendance-from-rsvp', [AdminController::class, 'attendanceFromRsvp']);
+    Route::post('/admin/attendance-status', [AdminController::class, 'updateAttendanceStatus']);
 
     // Analytics & Reports
     Route::get('/analytics/reports', [AnalyticsController::class, 'reports']);
