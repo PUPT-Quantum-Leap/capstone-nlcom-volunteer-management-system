@@ -179,11 +179,17 @@ class Rsvp extends Model
         parent::boot();
 
         static::deleting(function (Rsvp $rsvp): void {
+            if ($rsvp->isForceDeleting()) {
+                return;
+            }
+
+            $adminEmail = auth()->user()?->email ?? 'system';
+
             RsvpAuditTrail::create([
                 'rsvp_id' => $rsvp->rsvp_id,
                 'action' => 'deleted',
-                'triggered_by' => 'admin',
-                'reason' => '_deleted_by_admin',
+                'triggered_by' => $adminEmail,
+                'reason' => 'deleted_by_admin',
                 'metadata' => [
                     'deleted_at' => now()->toIso8601String(),
                     'rsvp_title' => $rsvp->title,
@@ -192,11 +198,13 @@ class Rsvp extends Model
         });
 
         static::restoring(function (Rsvp $rsvp): void {
+            $adminEmail = auth()->user()?->email ?? 'system';
+
             RsvpAuditTrail::create([
                 'rsvp_id' => $rsvp->rsvp_id,
                 'action' => 'restored',
-                'triggered_by' => 'admin',
-                'reason' => '_restored_by_admin',
+                'triggered_by' => $adminEmail,
+                'reason' => 'restored_by_admin',
                 'metadata' => [
                     'restored_at' => now()->toIso8601String(),
                 ],
