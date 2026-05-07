@@ -1,68 +1,70 @@
 @if (isAuthenticated()) {
   <div class="relative">
-    <!-- Desktop + Mobile Badge (clickable) -->
+    <!-- Desktop + Mobile Badge -->
     <button
       (click)="toggleDropdown()"
-      class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+      class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 transition-all cursor-pointer border border-transparent hover:border-gray-200"
     >
       <!-- Profile Photo -->
       <img
         [src]="getProfilePhotoUrl()"
         [alt]="getUserName()"
-        [ngClass]="isSvgImage() ? '' : 'object-cover'"
-        class="w-8 h-8 md:w-10 md:h-10 rounded-full flex-shrink-0"
+        [ngClass]="isSvgImage() ? 'bg-blue-600 p-1' : 'object-cover'"
+        class="w-9 h-9 rounded-full flex-shrink-0 border-2 border-white shadow-sm"
       />
 
-      <!-- Name (hidden on mobile, shown on desktop) -->
-      <span class="hidden md:inline text-sm font-medium text-gray-700">
-        {{ getUserName() }}
-      </span>
+      <!-- Name & Role (hidden on mobile, shown on desktop) -->
+      <div class="hidden md:flex flex-col items-start mr-2">
+        <span class="text-sm font-semibold text-gray-900 leading-tight">
+          {{ getUserName() }}
+        </span>
+        <span class="text-xs text-gray-500 leading-tight">
+          {{ getUserRole() }}
+        </span>
+      </div>
 
-      <!-- Chevron Icon (visible on mobile) -->
+      <!-- Chevron Icon -->
       <svg
-        class="w-4 h-4 text-gray-500 flex-shrink-0 transition-transform"
+        class="w-4 h-4 text-gray-400 transition-transform"
         [class.rotate-180]="isDropdownOpen()"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M19 14l-7 7m0 0l-7-7m7 7V3"
-        />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
       </svg>
     </button>
 
     <!-- Dropdown Menu -->
     @if (isDropdownOpen()) {
-      <!-- Backdrop (closes dropdown on click) -->
+      <!-- Backdrop -->
       <div (click)="closeDropdown()" class="fixed inset-0 z-40 cursor-default"></div>
 
       <!-- Dropdown Content -->
       <div
-        class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50 py-2 border border-gray-200"
+        class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg z-50 py-2 border border-gray-100 overflow-hidden"
       >
         <!-- User Info Header -->
-        <div class="px-4 py-3 border-b border-gray-100">
-          <p class="text-sm font-semibold text-gray-900 truncate">{{ getUserName() }}</p>
+        <div class="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+          <p class="text-sm font-bold text-gray-900 truncate">
+            {{ getUserName() }}
+          </p>
           <p class="text-xs text-gray-500 truncate">{{ getUserEmail() }}</p>
         </div>
 
         <!-- Menu Items -->
         <button
           (click)="switchAccount()"
-          class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+          class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
         >
           Switch Account
         </button>
 
         <button
           (click)="logout()"
-          class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+          class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
         >
-          Logout
+          Sign Out
         </button>
       </div>
     }

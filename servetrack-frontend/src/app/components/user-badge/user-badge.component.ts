@@ -64,6 +64,19 @@ export class UserBadgeComponent {
     return user.name ?? user.email ?? 'User';
   }
 
+  getUserRole(): string {
+    const user = this.currentUser();
+    if (!user) return 'Volunteer';
+
+    const roleMap: Record<string, string> = {
+      volunteer: 'Volunteer',
+      admin: 'Administrator',
+      coordinator: 'Coordinator',
+    };
+
+    return roleMap[user.role?.toLowerCase() ?? ''] ?? 'User';
+  }
+
   getUserEmail(): string {
     const user = this.currentUser();
     return user?.email ?? '';
