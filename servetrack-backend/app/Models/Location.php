@@ -37,11 +37,17 @@ class Location extends Model
         ];
     }
 
+    /**
+     * @return HasMany<Rsvp, $this>
+     */
     public function rsvps(): HasMany
     {
         return $this->hasMany(Rsvp::class, 'location_id', 'location_id');
     }
 
+    /**
+     * @return HasMany<Attendance, $this>
+     */
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class, 'location_id', 'location_id');

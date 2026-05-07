@@ -31,11 +31,11 @@ class RsvpResource extends JsonResource
             'description' => $this->description,
             'date' => $this->date?->format('M d, Y'),
             'eventLocation' => $this->event_location,
-            'location' => $this->whenLoaded('location', fn () => [
-                'id' => $this->location->location_id,
-                'name' => $this->location->name,
-                'address' => $this->location->full_address,
-                'displayName' => $this->location->display_name,
+            'location' => $this->whenLoaded('location', fn ($location) => [
+                'id' => $location->location_id,
+                'name' => $location->name,
+                'address' => $location->full_address,
+                'displayName' => $location->display_name,
             ]),
             'cutOffDay' => $this->cutoff_day?->format('M d, Y'),
             'cutOffTime' => $this->cutoff_time ? date('g:i A', strtotime($this->cutoff_time)) : null,
