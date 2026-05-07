@@ -7,6 +7,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -62,28 +63,28 @@ export class RsvpComponent implements OnInit {
 
   constructor() {
     // Effect: Watch for auth changes and reload response when user logs in
+    // Use untracked() for rsvp to prevent effect from re-running on rsvp signal changes
     effect(() => {
       const isAuthenticated = this.authService.isAuthenticated();
-      const rsvpData = this.rsvp();
+      const rsvpData = untracked(() => this.rsvp());
       const hasLoggedIn = this.queryParams['logged_in'] === 'true';
 
       if (isAuthenticated && rsvpData && hasLoggedIn) {
         this.loadMyResponse(rsvpData.id);
+        // Remove logged_in query param to prevent retriggering
+        this.router.navigate([], {
+          queryParams: { logged_in: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
       }
     });
   }
 
   ngOnInit(): void {
-    // Track query params for redirect after login and effect
+    // Track query params for effect (login redirect detection)
     this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       this.queryParams = params;
-      if (params['logged_in'] === 'true' && this.rsvp()) {
-        // User just logged in, reload their response to enable voting
-        const rsvpData = this.rsvp();
-        if (rsvpData) {
-          this.loadMyResponse(rsvpData.id);
-        }
-      }
     });
 
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
