@@ -52,8 +52,8 @@ export class UserBadgeComponent {
   }
 
   isSvgImage(): boolean {
-    const photoUrl = this.currentUser()?.profile_photo_url;
-    return photoUrl?.toLowerCase().endsWith('.svg') ?? false;
+    const photoUrl = this.getProfilePhotoUrl();
+    return photoUrl.toLowerCase().endsWith('.svg');
   }
 
   getUserName(): string {
