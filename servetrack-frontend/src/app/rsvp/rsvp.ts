@@ -4,6 +4,7 @@ import {
   DestroyRef,
   OnInit,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -57,9 +58,25 @@ export class RsvpComponent implements OnInit {
     () => this.hasSubmittedRsvp() && this.hasEditsRemaining() && !this.isClosed(),
   );
 
+  private queryParams: Record<string, string> = {};
+
+  constructor() {
+    // Effect: Watch for auth changes and reload response when user logs in
+    effect(() => {
+      const isAuthenticated = this.authService.isAuthenticated();
+      const rsvpData = this.rsvp();
+      const hasLoggedIn = this.queryParams['logged_in'] === 'true';
+
+      if (isAuthenticated && rsvpData && hasLoggedIn) {
+        this.loadMyResponse(rsvpData.id);
+      }
+    });
+  }
+
   ngOnInit(): void {
-    // Track query params for redirect after login
+    // Track query params for redirect after login and effect
     this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.queryParams = params;
       if (params['logged_in'] === 'true' && this.rsvp()) {
         // User just logged in, reload their response to enable voting
         const rsvpData = this.rsvp();
