@@ -118,6 +118,9 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::get('/rsvp/{id}/attendance', [RsvpController::class, 'attendance']);
     Route::post('/rsvp/{id}/notify-facebook', [RsvpController::class, 'notifyFacebook']);
     Route::post('/rsvp/{id}/notify-sms', [RsvpController::class, 'notifySms']);
+    Route::get('/rsvp-trashed', [RsvpController::class, 'trashed']);
+    Route::post('/rsvp/{id}/restore', [RsvpController::class, 'restore']);
+    Route::delete('/rsvp/{id}/force-delete', [RsvpController::class, 'forceDelete']);
 
     // Backup management — full CRUD + operations (admin only)
     Route::get('/backups', [BackupController::class, 'index']);
