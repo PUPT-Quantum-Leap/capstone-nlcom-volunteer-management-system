@@ -213,7 +213,7 @@ describe('PUT /api/rsvp/{id}', function (): void {
 });
 
 describe('DELETE /api/rsvp/{id}', function (): void {
-    it('allows admins to delete an rsvp', function (): void {
+    it('soft deletes an rsvp and logs audit trail', function (): void {
         $admin = User::factory()->admin()->create();
         $rsvp = Rsvp::factory()->create();
 
@@ -222,7 +222,33 @@ describe('DELETE /api/rsvp/{id}', function (): void {
             ->assertSuccessful()
             ->assertJsonPath('message', 'RSVP deleted successfully.');
 
-        $this->assertDatabaseMissing('rsvp', ['rsvp_id' => $rsvp->rsvp_id]);
+        // Verify soft delete - record still exists but has deleted_at
+        $this->assertDatabaseHas('rsvp', ['rsvp_id' => $rsvp->rsvp_id]);
+        $rsvp->refresh();
+        expect($rsvp->deleted_at)->not->toBeNull();
+
+        // Verify audit trail was created
+        $this->assertDatabaseHas('rsvp_audit_trail', [
+            'rsvp_id' => $rsvp->rsvp_id,
+            'action' => 'deleted',
+            'triggered_by' => 'admin',
+        ]);
+    });
+
+    it('soft deleted rsvp is excluded from index', function (): void {
+        $admin = User::factory()->admin()->create();
+        $rsvp = Rsvp::factory()->active()->create(['title' => 'Active RSVP']);
+        Rsvp::factory()->create(['title' => 'Other RSVP']);
+
+        // Delete one RSVP
+        $this->actingAs($admin)->deleteJson("/api/rsvp/{$rsvp->rsvp_id}");
+
+        // Verify only non-deleted RSVPs are returned
+        $this->actingAs($admin)
+            ->getJson('/api/rsvp')
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'Other RSVP');
     });
 
     it('returns 404 when deleting a missing rsvp', function (): void {
