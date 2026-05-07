@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\Api\IcsTeamController;
+use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BackupController;
@@ -143,6 +145,12 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
 
     // SMS configuration status check
     Route::get('/sms/config-status', [SmsController::class, 'configStatus']);
+
+    // ICS Team management — feeding operation data (admin only)
+    Route::get('/ics-team', [IcsTeamController::class, 'index']);
+    Route::post('/ics-team', [IcsTeamController::class, 'store']);
+    Route::put('/ics-team/{id}', [IcsTeamController::class, 'update']);
+    Route::get('/teams', [TeamController::class, 'index']);
 
     // ICS management — full CRUD + AI suggestions (admin only)
     Route::get('/ics', [IcsController::class, 'index']);
