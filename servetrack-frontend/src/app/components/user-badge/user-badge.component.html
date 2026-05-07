@@ -9,7 +9,9 @@
       <img
         [src]="getProfilePhotoUrl()"
         [alt]="getUserName()"
-        [ngClass]="isSvgImage() ? 'bg-blue-600 p-1' : 'object-cover'"
+        [class.bg-blue-600]="isSvgImage()"
+        [class.p-1]="isSvgImage()"
+        [class.object-cover]="!isSvgImage()"
         class="w-9 h-9 rounded-full flex-shrink-0 border-2 border-white shadow-sm"
       />
 

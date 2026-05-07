@@ -66,7 +66,7 @@ export class UserBadgeComponent {
 
   getUserRole(): string {
     const user = this.currentUser();
-    if (!user) return 'Volunteer';
+    if (!user) return 'User';
 
     const roleMap: Record<string, string> = {
       volunteer: 'Volunteer',
