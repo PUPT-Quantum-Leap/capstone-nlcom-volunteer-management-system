@@ -28,6 +28,7 @@ class RsvpController extends Controller
             $rsvp = Rsvp::query()
                 ->with(['shifts', 'responses'])
                 ->withCount('responses')
+                ->withoutTrashed()
                 ->where(fn ($query) => is_numeric($id) ? $query->where('rsvp_id', $id) : $query->where('slug', $id))
                 ->first();
 
@@ -40,7 +41,8 @@ class RsvpController extends Controller
 
         $query = Rsvp::query()
             ->with(['shifts', 'responses'])
-            ->withCount('responses');
+            ->withCount('responses')
+            ->withoutTrashed();
 
         if ($request->user()->role !== 'admin') {
             $query->where('status', 'active');
@@ -63,6 +65,7 @@ class RsvpController extends Controller
         $rsvp = Rsvp::query()
             ->with(['shifts', 'responses'])
             ->withCount('responses')
+            ->withoutTrashed()
             ->where(fn ($query) => is_numeric($id) ? $query->where('rsvp_id', $id) : $query->where('slug', $id))
             ->first();
 
@@ -112,7 +115,7 @@ class RsvpController extends Controller
 
     public function update(UpdateRsvpRequest $request, int $id): RsvpResource|JsonResponse
     {
-        $rsvp = Rsvp::query()->with('shifts')->find($id);
+        $rsvp = Rsvp::query()->with('shifts')->withoutTrashed()->find($id);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
@@ -165,7 +168,7 @@ class RsvpController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        $rsvp = Rsvp::query()->find($id);
+        $rsvp = Rsvp::query()->withoutTrashed()->find($id);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
@@ -176,13 +179,60 @@ class RsvpController extends Controller
         return response()->json(['message' => 'RSVP deleted successfully.']);
     }
 
+    /**
+     * Get trashed (soft-deleted) RSVPs for admin audit.
+     */
+    public function trashed(Request $request): AnonymousResourceCollection|JsonResponse
+    {
+        $rsvps = Rsvp::query()
+            ->onlyTrashed()
+            ->with(['shifts', 'responses'])
+            ->withCount('responses')
+            ->latest('deleted_at')
+            ->paginate(15);
+
+        return RsvpResource::collection($rsvps);
+    }
+
+    /**
+     * Restore a soft-deleted RSVP.
+     */
+    public function restore(int $id): JsonResponse
+    {
+        $rsvp = Rsvp::query()->onlyTrashed()->find($id);
+
+        if (! $rsvp) {
+            return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        $rsvp->restore();
+
+        return response()->json(['message' => 'RSVP restored successfully.']);
+    }
+
+    /**
+     * Permanently delete a soft-deleted RSVP.
+     */
+    public function forceDelete(int $id): JsonResponse
+    {
+        $rsvp = Rsvp::query()->onlyTrashed()->find($id);
+
+        if (! $rsvp) {
+            return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        $rsvp->forceDelete();
+
+        return response()->json(['message' => 'RSVP permanently deleted.']);
+    }
+
     public function updateStatus(Request $request, int $id): JsonResponse
     {
         $request->validate([
             'status' => ['required', 'in:draft,active,closed'],
         ]);
 
-        $rsvp = Rsvp::query()->find($id);
+        $rsvp = Rsvp::query()->withoutTrashed()->find($id);
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
         }
@@ -218,7 +268,7 @@ class RsvpController extends Controller
             'time_slot_id' => ['required', 'integer'],
         ]);
 
-        $rsvp = Rsvp::query()->with('shifts')->find($id);
+        $rsvp = Rsvp::query()->with('shifts')->withoutTrashed()->find($id);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
@@ -243,7 +293,7 @@ class RsvpController extends Controller
         $alreadyResponded = false;
 
         DB::transaction(function () use ($id, $request, $volunteer, &$capacityReached, &$invalidShift, &$alreadyResponded): void {
-            $lockedRsvp = Rsvp::query()->find($id);
+            $lockedRsvp = Rsvp::query()->withoutTrashed()->find($id);
 
             if (! $lockedRsvp) {
                 $invalidShift = true;
@@ -366,7 +416,7 @@ class RsvpController extends Controller
 
     public function attendance(int $id): JsonResponse
     {
-        Rsvp::query()->findOrFail($id);
+        Rsvp::query()->withoutTrashed()->findOrFail($id);
 
         $responses = RsvpResponse::where('rsvp_id', $id)->paginate(50);
 
@@ -436,7 +486,7 @@ class RsvpController extends Controller
      */
     public function getMyResponse(Request $request, int $rsvpId): JsonResponse
     {
-        $rsvp = Rsvp::query()->find($rsvpId);
+        $rsvp = Rsvp::query()->withoutTrashed()->find($rsvpId);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
@@ -478,7 +528,7 @@ class RsvpController extends Controller
      */
     public function updateResponse(UpdateRsvpResponseRequest $request, int $rsvpId): JsonResponse
     {
-        $rsvp = Rsvp::query()->find($rsvpId);
+        $rsvp = Rsvp::query()->withoutTrashed()->find($rsvpId);
 
         if (! $rsvp) {
             return response()->json(['message' => 'RSVP not found.'], 404);
