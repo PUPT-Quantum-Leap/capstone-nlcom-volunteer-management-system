@@ -2,11 +2,18 @@ import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  heroUser,
+  heroArrowRightOnRectangle,
+  heroArrowsRightLeft,
+} from '@ng-icons/heroicons/outline';
 
 @Component({
   selector: 'app-user-badge',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgIcon],
+  viewProviders: [provideIcons({ heroUser, heroArrowRightOnRectangle, heroArrowsRightLeft })],
   templateUrl: './user-badge.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -75,6 +82,22 @@ export class UserBadgeComponent {
     };
 
     return roleMap[user.role?.toLowerCase() ?? ''] ?? 'User';
+  }
+
+  isAdminUser(): boolean {
+    return this.currentUser()?.role?.toLowerCase() === 'admin';
+  }
+
+  getRoleColorClass(): string {
+    const role = this.currentUser()?.role?.toLowerCase();
+    switch (role) {
+      case 'admin':
+        return 'admin-role';
+      case 'coordinator':
+        return 'coordinator-role';
+      default:
+        return 'volunteer-role';
+    }
   }
 
   getUserEmail(): string {

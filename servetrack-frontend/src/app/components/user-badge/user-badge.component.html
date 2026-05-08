@@ -1,33 +1,31 @@
 @if (isAuthenticated()) {
-  <div class="relative">
-    <!-- Desktop + Mobile Badge -->
-    <button
-      (click)="toggleDropdown()"
-      class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 transition-all cursor-pointer border border-transparent hover:border-gray-200"
-    >
+  <div class="user-bar-content">
+    <span class="signed-in-label hidden md:inline">Signed in as</span>
+
+    <button (click)="toggleDropdown()" class="user-badge-btn">
       <!-- Profile Photo -->
       <img
         [src]="getProfilePhotoUrl()"
         [alt]="getUserName()"
-        [class.bg-blue-600]="isSvgImage()"
+        [class.admin-bg]="isAdminUser()"
         [class.p-1]="isSvgImage()"
         [class.object-cover]="!isSvgImage()"
-        class="w-9 h-9 rounded-full flex-shrink-0 border-2 border-white shadow-sm"
+        class="flex-shrink-0"
       />
 
-      <!-- Name & Role (hidden on mobile, shown on desktop) -->
-      <div class="hidden md:flex flex-col items-start mr-2">
-        <span class="text-sm font-semibold text-gray-900 leading-tight">
+      <!-- Name & Role -->
+      <div class="user-info hidden md:flex">
+        <span class="user-name">
           {{ getUserName() }}
         </span>
-        <span class="text-xs text-gray-500 leading-tight">
+        <span class="user-role" [class]="getRoleColorClass()">
           {{ getUserRole() }}
         </span>
       </div>
 
       <!-- Chevron Icon -->
       <svg
-        class="w-4 h-4 text-gray-400 transition-transform"
+        class="chevron-icon"
         [class.rotate-180]="isDropdownOpen()"
         fill="none"
         stroke="currentColor"
@@ -43,29 +41,24 @@
       <div (click)="closeDropdown()" class="fixed inset-0 z-40 cursor-default"></div>
 
       <!-- Dropdown Content -->
-      <div
-        class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg z-50 py-2 border border-gray-100 overflow-hidden"
-      >
+      <div class="user-dropdown">
         <!-- User Info Header -->
-        <div class="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
-          <p class="text-sm font-bold text-gray-900 truncate">
-            {{ getUserName() }}
-          </p>
-          <p class="text-xs text-gray-500 truncate">{{ getUserEmail() }}</p>
+        <div class="dropdown-header">
+          <ng-icon name="heroUser" class="icon-md"></ng-icon>
+          <div>
+            <span class="name">{{ getUserName() }}</span>
+            <span class="email">{{ getUserEmail() }}</span>
+          </div>
         </div>
 
         <!-- Menu Items -->
-        <button
-          (click)="switchAccount()"
-          class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
-        >
+        <button (click)="switchAccount()" class="dropdown-item">
+          <ng-icon name="heroArrowsRightLeft" class="icon-sm"></ng-icon>
           Switch Account
         </button>
 
-        <button
-          (click)="logout()"
-          class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
-        >
+        <button (click)="logout()" class="dropdown-item logout-item">
+          <ng-icon name="heroArrowRightOnRectangle" class="icon-sm"></ng-icon>
           Sign Out
         </button>
       </div>

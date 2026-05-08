@@ -36,19 +36,19 @@ describe('RsvpComponent - Closed State Logic', () => {
     component.hasSubmittedRsvp = signal(false);
     component.remainingEdits = signal(0);
     component.rsvpResponse = signal<any>(null);
-    
+
     // Add the isClosed computed signal
     component.isClosed = computed(() => {
       const rsvp = component.rsvp();
       return rsvp?.status !== 'active' || rsvp?.isCutoffPassed;
     });
-    
+
     // Add remainingEdits as a computed signal
     component.remainingEdits = computed(() => component.rsvpResponse()?.remainingEdits ?? 0);
-    
+
     // Add hasEditsRemaining computed signal
     component.hasEditsRemaining = computed(() => component.remainingEdits() > 0);
-    
+
     // Add the canEditResponse computed signal
     component.canEditResponse = computed(
       () => component.hasSubmittedRsvp() && component.hasEditsRemaining() && !component.isClosed(),
@@ -125,19 +125,25 @@ describe('RsvpComponent - Closed State Logic', () => {
     it('should return cutoff message when cutoff has passed', () => {
       const rsvp = createMockRsvp({ status: 'active', isCutoffPassed: true });
       component.rsvp.set(rsvp);
-      expect(component.getClosureMessage()).toBe('This RSVP has closed and is no longer accepting responses.');
+      expect(component.getClosureMessage()).toBe(
+        'This RSVP has closed and is no longer accepting responses.',
+      );
     });
 
     it('should return manual closure message when status is closed', () => {
       const rsvp = createMockRsvp({ status: 'closed', isCutoffPassed: false });
       component.rsvp.set(rsvp);
-      expect(component.getClosureMessage()).toBe('This RSVP is closed and no longer accepting responses.');
+      expect(component.getClosureMessage()).toBe(
+        'This RSVP is closed and no longer accepting responses.',
+      );
     });
 
     it('should return draft message when status is draft', () => {
       const rsvp = createMockRsvp({ status: 'draft', isCutoffPassed: false });
       component.rsvp.set(rsvp);
-      expect(component.getClosureMessage()).toBe('This RSVP is draft and no longer accepting responses.');
+      expect(component.getClosureMessage()).toBe(
+        'This RSVP is draft and no longer accepting responses.',
+      );
     });
 
     it('should return empty string when RSVP is open', () => {
