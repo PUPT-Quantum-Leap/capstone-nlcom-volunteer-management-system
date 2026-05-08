@@ -14,10 +14,12 @@ import { VolunteerService } from '../../services/volunteer.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NotificationItem } from '../../models/notification-item';
 
+import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
+
 @Component({
   selector: 'app-volunteer-dashboard-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, NgTemplateOutlet, NgOptimizedImage],
+  imports: [RouterOutlet, NgTemplateOutlet, NgOptimizedImage, LoadingScreenComponent],
   templateUrl: './volunteer-dashboard-shell.html',
   styleUrl: './volunteer-dashboard-shell.scss',
 })
@@ -36,6 +38,7 @@ export class VolunteerDashboardShell implements OnInit {
   mobileSidebarOpen = signal(false);
   isMobile = signal(false);
   isLoading = signal(false);
+  pageLoading = signal(true);
 
   // ── Real-time Clock ──────────────────────────────────────────────────────
   currentTime = signal(new Date());
@@ -75,6 +78,11 @@ export class VolunteerDashboardShell implements OnInit {
     this.updateIsMobile();
     this.startRealTimeClock();
     this.loadProfile();
+    
+    // Initial 4-second loading screen
+    setTimeout(() => {
+      this.pageLoading.set(false);
+    }, 4000);
   }
 
   private startRealTimeClock(): void {
