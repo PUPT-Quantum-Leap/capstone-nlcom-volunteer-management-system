@@ -22,9 +22,31 @@
 
     <!-- Content States -->
     @if (isLoading()) {
-    <div class="poll-loading-state">
-      <div class="loader-spinner" aria-hidden="true"></div>
-      <p>Fetching the latest community polls...</p>
+    <div class="polls-skeleton" aria-hidden="true">
+      <!-- Tab Skeleton -->
+      <div class="skeleton-tabs">
+        <div class="skeleton-tab active"></div>
+        <div class="skeleton-tab"></div>
+      </div>
+
+      <!-- Card Skeleton -->
+      <div class="skeleton-card">
+        <div class="skeleton-badge"></div>
+        <div class="skeleton-title"></div>
+        <div class="skeleton-meta">
+          <div class="skeleton-meta-item"></div>
+          <div class="skeleton-meta-item"></div>
+          <div class="skeleton-meta-item"></div>
+        </div>
+        
+        <div class="skeleton-options">
+          <div class="skeleton-option"></div>
+          <div class="skeleton-option"></div>
+          <div class="skeleton-option"></div>
+        </div>
+
+        <div class="skeleton-action"></div>
+      </div>
     </div>
     } @else if (pollError()) {
     <div class="empty-state poll-error-global">
