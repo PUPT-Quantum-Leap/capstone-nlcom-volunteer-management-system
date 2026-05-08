@@ -584,6 +584,10 @@ class VolunteerController extends Controller
         $stats = [
             'total_hours' => (float) $base->sum('hours'),
             'total_entries' => $base->count(),
+            'all_time' => [
+                'hours' => (float) (clone $base)->sum('hours'),
+                'entries' => (clone $base)->count(),
+            ],
             'daily' => [
                 'hours' => (float) (clone $base)->whereDate('date', today())->sum('hours'),
                 'entries' => (clone $base)->whereDate('date', today())->count(),
