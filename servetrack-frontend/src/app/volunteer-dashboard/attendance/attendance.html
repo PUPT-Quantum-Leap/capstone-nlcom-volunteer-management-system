@@ -66,7 +66,10 @@
                 All Time
               </button>
               <div class="divider"></div>
-              <button type="button" class="preset-btn custom" [class.active]="attendancePeriod() === 'custom'" (click)="attendancePeriod.set('custom')">
+              <button type="button" class="preset-btn custom" 
+                [class.active]="attendancePeriod() === 'custom'" 
+                (click)="onCustomRangeClick()"
+                aria-label="Select custom date range">
                 <span>Custom Range</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="9 18 15 12 9 6" />
@@ -92,6 +95,7 @@
                     [class.today]="isToday(day)" 
                     [class.selected]="isDaySelected(day)"
                     [class.in-range]="isDayInRange(day)"
+                    [style.grid-column-start]="day === 1 ? firstDayOffset() + 1 : 'auto'"
                     (click)="onDayClick(day)">
                     {{ day }}
                   </button>

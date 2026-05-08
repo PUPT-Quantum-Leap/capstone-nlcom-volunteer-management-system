@@ -507,6 +507,7 @@ class VolunteerController extends Controller
             return response()->json(['success' => false, 'message' => 'Volunteer profile not found.'], 404);
         }
 
+        /** @var \Illuminate\Database\Eloquent\Builder<\App\Models\Attendance> $query */
         $query = $volunteer->attendances()->orderBy('date', 'desc');
 
         // Period filter
@@ -517,12 +518,18 @@ class VolunteerController extends Controller
             $query->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()]);
         } elseif ($period === 'monthly') {
             $query->whereMonth('date', now()->month)->whereYear('date', now()->year);
-        } elseif ($period === 'custom' || ($request->has('start_date') && $request->has('end_date'))) {
-            $startDate = $request->query('start_date');
-            $endDate = $request->query('end_date');
-            if ($startDate && $endDate) {
-                $query->whereBetween('date', [$startDate, $endDate]);
-            }
+        } elseif ($period === 'custom' || $request->has('start_date') || $request->has('end_date')) {
+            // Validate dates for custom period or when dates are provided
+            $request->validate([
+                'start_date' => 'required|date|date_format:Y-m-d',
+                'end_date' => 'required|date|date_format:Y-m-d|after_or_equal:start_date',
+            ], [
+                'start_date.required' => 'The start date is required for a custom range.',
+                'end_date.required' => 'The end date is required for a custom range.',
+                'end_date.after_or_equal' => 'The end date must be after or equal to the start date.',
+            ]);
+
+            $query->whereBetween('date', [$request->query('start_date'), $request->query('end_date')]);
         }
 
         // Search filter on description

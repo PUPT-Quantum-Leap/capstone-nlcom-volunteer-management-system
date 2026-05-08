@@ -24,6 +24,10 @@ import { VolunteerProfile, VolunteerProfileResponse } from '../../models/volunte
   imports: [ReactiveFormsModule, FormsModule],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
+  host: {
+    '(document:click)': 'onDocumentClick($event)',
+    '(document:keydown.escape)': 'closeAllCalendars()'
+  }
 })
 export class ProfileComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -46,6 +50,10 @@ export class ProfileComponent implements OnInit {
   isBirthdateCalendarOpen = signal(false);
   isMedicalExamCalendarOpen = signal(false);
   calendarViewDate = signal(new Date());
+  firstDayOffset = computed(() => {
+    const date = this.calendarViewDate();
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  });
 
   toggleCalendar(type: 'birthdate' | 'medical'): void {
     if (!this.isEditMode()) return;
@@ -61,7 +69,7 @@ export class ProfileComponent implements OnInit {
     // Initialize view date to current value or today
     const currentValue = this.profileForm.get(type === 'birthdate' ? 'birthdate' : 'lastMedicalExam')?.value;
     if (currentValue) {
-      this.calendarViewDate.set(new Date(currentValue));
+      this.calendarViewDate.set(this.parseLocalISO(currentValue));
     } else {
       this.calendarViewDate.set(new Date());
     }
@@ -70,7 +78,7 @@ export class ProfileComponent implements OnInit {
   selectDate(type: 'birthdate' | 'medical', day: number): void {
     const date = new Date(this.calendarViewDate());
     date.setDate(day);
-    const formattedDate = date.toISOString().split('T')[0];
+    const formattedDate = this.formatDateToLocalISO(date);
     
     this.profileForm.patchValue({
       [type === 'birthdate' ? 'birthdate' : 'lastMedicalExam']: formattedDate
@@ -81,9 +89,30 @@ export class ProfileComponent implements OnInit {
   }
 
   changeMonth(delta: number): void {
-    const date = new Date(this.calendarViewDate());
-    date.setMonth(date.getMonth() + delta);
-    this.calendarViewDate.set(date);
+    const current = this.calendarViewDate();
+    // Anchor to day 1 before changing month to prevent skipping on short months
+    const nextMonth = new Date(current.getFullYear(), current.getMonth() + delta, 1);
+    this.calendarViewDate.set(nextMonth);
+  }
+
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.isBirthdateCalendarOpen() && !this.isMedicalExamCalendarOpen()) return;
+    
+    const target = event.target as HTMLElement;
+    const bdPicker = document.querySelector('.birthdate-field');
+    const mePicker = document.querySelector('.medical-exam-field');
+    
+    if (this.isBirthdateCalendarOpen() && bdPicker && !bdPicker.contains(target)) {
+      this.isBirthdateCalendarOpen.set(false);
+    }
+    if (this.isMedicalExamCalendarOpen() && mePicker && !mePicker.contains(target)) {
+      this.isMedicalExamCalendarOpen.set(false);
+    }
+  }
+
+  closeAllCalendars(): void {
+    this.isBirthdateCalendarOpen.set(false);
+    this.isMedicalExamCalendarOpen.set(false);
   }
 
   getDaysInMonth(): number[] {
@@ -101,21 +130,30 @@ export class ProfileComponent implements OnInit {
 
   formatDateLabel(value: string | null | undefined): string {
     if (!value) return 'Select Date';
-    return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return this.parseLocalISO(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
   isDaySelected(type: 'birthdate' | 'medical', day: number): boolean {
     const value = this.profileForm.get(type === 'birthdate' ? 'birthdate' : 'lastMedicalExam')?.value;
     if (!value) return false;
     
-    const parts = value.split('-');
-    if (parts.length < 3) return false;
-    
     const viewDate = this.calendarViewDate();
-    const currentYear = viewDate.getFullYear().toString();
-    const currentMonth = (viewDate.getMonth() + 1).toString().padStart(2, '0');
+    const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+    const dateStr = this.formatDateToLocalISO(date);
     
-    return parts[0] === currentYear && parts[1] === currentMonth && parts[2] === day.toString().padStart(2, '0');
+    return value === dateStr;
+  }
+
+  private parseLocalISO(dateStr: string): Date {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  private formatDateToLocalISO(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   // ── Modal States ─────────────────────────────────────────────────────────
