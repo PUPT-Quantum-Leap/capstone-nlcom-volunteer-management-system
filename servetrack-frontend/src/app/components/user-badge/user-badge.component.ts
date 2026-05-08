@@ -15,6 +15,7 @@ import {
   imports: [CommonModule, NgIcon],
   viewProviders: [provideIcons({ heroUser, heroArrowRightOnRectangle, heroArrowsRightLeft })],
   templateUrl: './user-badge.component.html',
+  styleUrl: './user-badge.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'relative',
