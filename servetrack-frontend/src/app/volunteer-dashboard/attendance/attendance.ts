@@ -20,6 +20,10 @@ import { Attendance } from '../../models/attendance';
   imports: [DatePipe, TitleCasePipe],
   templateUrl: './attendance.html',
   styleUrl: './attendance.scss',
+  host: {
+    '(document:click)': 'onDocumentClick($event)',
+    '(document:keydown.escape)': 'isDateDropdownOpen.set(false)'
+  }
 })
 export class AttendanceComponent implements OnInit {
   private volunteerService = inject(VolunteerService);
@@ -47,6 +51,11 @@ export class AttendanceComponent implements OnInit {
     return Array.from({ length: daysInMonth }, (_, i) => i + 1);
   });
 
+  firstDayOffset = computed(() => {
+    const date = this.currentCalendarMonth();
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  });
+
   monthLabel = computed(() => {
     return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' })
       .format(this.currentCalendarMonth());
@@ -59,8 +68,8 @@ export class AttendanceComponent implements OnInit {
   getSelectedPeriodLabel(): string {
     const period = this.attendancePeriod();
     if (period === 'custom' && this.customStartDate() && this.customEndDate()) {
-      const start = new Date(this.customStartDate()!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const end = new Date(this.customEndDate()!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const start = this.parseLocalISO(this.customStartDate()!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const end = this.parseLocalISO(this.customEndDate()!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       return `${start} - ${end}`;
     }
 
@@ -123,9 +132,13 @@ export class AttendanceComponent implements OnInit {
     this.loadAttendance();
   }
 
-  onPeriodChange(period: string): void {
-    this.setAttendancePeriod(period as AttendancePeriod);
+  onPeriodChange(period: AttendancePeriod): void {
+    this.setAttendancePeriod(period);
     this.isDateDropdownOpen.set(false);
+  }
+
+  onCustomRangeClick(): void {
+    this.attendancePeriod.set('custom');
   }
 
   onSearchInput(event: Event): void {
@@ -138,7 +151,7 @@ export class AttendanceComponent implements OnInit {
     const year = this.currentCalendarMonth().getFullYear();
     const month = this.currentCalendarMonth().getMonth();
     const selectedDate = new Date(year, month, day);
-    const dateStr = selectedDate.toISOString().split('T')[0];
+    const dateStr = this.formatDateToLocalISO(selectedDate);
 
     if (!this.customStartDate() || (this.customStartDate() && this.customEndDate())) {
       // Start new range
@@ -147,7 +160,7 @@ export class AttendanceComponent implements OnInit {
       this.attendancePeriod.set('custom');
     } else {
       // Set end date
-      const start = new Date(this.customStartDate()!);
+      const start = this.parseLocalISO(this.customStartDate()!);
       if (selectedDate < start) {
         // Swap if backward
         this.customEndDate.set(this.customStartDate());
@@ -164,7 +177,8 @@ export class AttendanceComponent implements OnInit {
   isDaySelected(day: number): boolean {
     const year = this.currentCalendarMonth().getFullYear();
     const month = this.currentCalendarMonth().getMonth();
-    const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+    const date = new Date(year, month, day);
+    const dateStr = this.formatDateToLocalISO(date);
     
     return dateStr === this.customStartDate() || dateStr === this.customEndDate();
   }
@@ -175,10 +189,22 @@ export class AttendanceComponent implements OnInit {
     const year = this.currentCalendarMonth().getFullYear();
     const month = this.currentCalendarMonth().getMonth();
     const date = new Date(year, month, day);
-    const start = new Date(this.customStartDate()!);
-    const end = new Date(this.customEndDate()!);
+    const start = this.parseLocalISO(this.customStartDate()!);
+    const end = this.parseLocalISO(this.customEndDate()!);
     
     return date > start && date < end;
+  }
+
+  private formatDateToLocalISO(date: Date): string {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private parseLocalISO(dateStr: string): Date {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
   }
 
   isToday(day: number): boolean {
@@ -190,9 +216,20 @@ export class AttendanceComponent implements OnInit {
   }
 
   changeMonth(delta: number): void {
-    const nextMonth = new Date(this.currentCalendarMonth());
-    nextMonth.setMonth(nextMonth.getMonth() + delta);
+    const current = this.currentCalendarMonth();
+    // Anchor to day 1 before changing month to prevent skipping on short months (e.g., Jan 31 -> Mar)
+    const nextMonth = new Date(current.getFullYear(), current.getMonth() + delta, 1);
     this.currentCalendarMonth.set(nextMonth);
+  }
+
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.isDateDropdownOpen()) return;
+    
+    const target = event.target as HTMLElement;
+    const dropdown = document.querySelector('.date-filter-dropdown');
+    if (dropdown && !dropdown.contains(target)) {
+      this.isDateDropdownOpen.set(false);
+    }
   }
 
   getAttendanceStatusClass(status: string): string {

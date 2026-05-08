@@ -38,7 +38,7 @@
       </div>
       <h3>Failed to Load Polls</h3>
       <p>{{ pollError() }}</p>
-      <button type="button" class="retry-btn" (click)="ngOnInit()">
+      <button type="button" class="retry-btn" (click)="reloadPolls()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
           stroke-linejoin="round" aria-hidden="true">
           <path d="M21 2v6h-6" />
@@ -343,7 +343,7 @@
     <div class="past-polls-list" role="tabpanel">
       @for (poll of pastPolls(); track poll.id) {
       <article class="past-poll-card" (click)="selectPastPoll(poll)" role="button" tabindex="0"
-        (keydown.enter)="selectPastPoll(poll)" [attr.aria-label]="'View details for ' + poll.title">
+        (keydown.enter)="selectPastPoll(poll)" (keydown.space)="selectPastPoll(poll)" [attr.aria-label]="'View details for ' + poll.title">
         
         <div class="past-poll-badge-row">
           <span class="past-poll-status-tag">Completed</span>

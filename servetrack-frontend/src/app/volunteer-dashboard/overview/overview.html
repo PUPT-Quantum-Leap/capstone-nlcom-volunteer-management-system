@@ -60,7 +60,7 @@
     <!-- Community Engagement Section -->
     <div class="engagement-section">
       @if (activePoll(); as poll) {
-      <article class="poll-summary-card" (click)="navigateToPolls()" role="button" tabindex="0" (keydown.enter)="navigateToPolls()">
+      <article class="poll-summary-card" (click)="navigateToPolls()" role="button" tabindex="0" (keydown.enter)="navigateToPolls()" (keydown.space)="navigateToPolls()">
         <div class="card-header">
           <div class="title-wrap">
             <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -97,7 +97,7 @@
 
           <div class="poll-card-footer">
             <div class="participation-stats">
-              <div class="avatars-group">
+              <div class="avatars-group" aria-hidden="true">
                 <!-- Decorative avatars -->
                 <div class="avatar" style="background: #3b82f6;"></div>
                 <div class="avatar" style="background: #8b5cf6;"></div>

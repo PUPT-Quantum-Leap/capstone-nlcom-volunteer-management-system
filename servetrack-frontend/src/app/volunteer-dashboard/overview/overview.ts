@@ -103,7 +103,7 @@ export class OverviewComponent implements OnInit {
           // Find the active RSVP that the user has voted for
           // Sorting by date to get the closest upcoming/current one
           const activeAssignments = response.data
-            .filter(r => r.userVote && r.status === 'active')
+            .filter(r => r.userVote != null && r.status === 'active')
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
           if (activeAssignments.length > 0) {
@@ -176,7 +176,7 @@ export class OverviewComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('[VolunteerService] loadProfile failed:', error);
+        console.error('[OverviewComponent] loadProfile failed:', error);
         this.taskAssigned.set('—');
       }
     });

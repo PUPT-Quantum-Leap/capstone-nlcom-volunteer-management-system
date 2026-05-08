@@ -64,6 +64,10 @@ export class PollsComponent implements OnInit {
   remainingEdits = computed(() => this.activePoll()?.remainingEdits ?? 0);
 
   ngOnInit(): void {
+    this.reloadPolls();
+  }
+
+  reloadPolls(): void {
     this.loadRsvpEvents();
   }
 
@@ -228,9 +232,14 @@ export class PollsComponent implements OnInit {
 
   getDaysUntilClosing(cutOffDay: string | undefined, date: string | undefined): string {
     if (!cutOffDay && !date) return '';
-    const targetDate = new Date(cutOffDay || date || '');
+    const targetDate = this.parseLocalISO(cutOffDay || date || '');
     const today = new Date();
-    const diffTime = targetDate.getTime() - today.getTime();
+    // Reset today to midnight for accurate day difference calculation
+    today.setHours(0, 0, 0, 0);
+    const targetDateMidnight = new Date(targetDate);
+    targetDateMidnight.setHours(0, 0, 0, 0);
+    
+    const diffTime = targetDateMidnight.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) return 'Poll has closed';
@@ -245,5 +254,12 @@ export class PollsComponent implements OnInit {
     if (!poll || optionId === null) return '';
     const option = poll.options.find((o) => o.id === optionId);
     return option?.timeSlot ?? '';
+  }
+
+  private parseLocalISO(dateStr: string): Date {
+    if (!dateStr) return new Date();
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return new Date(dateStr);
+    return new Date(year, month - 1, day);
   }
 }

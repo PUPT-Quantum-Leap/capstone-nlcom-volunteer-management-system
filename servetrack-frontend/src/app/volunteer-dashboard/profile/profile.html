@@ -103,6 +103,7 @@
                         @for (day of getDaysInMonth(); track day) {
                           <button type="button" class="day-btn" 
                             [class.selected]="isDaySelected('birthdate', day)"
+                            [style.grid-column-start]="day === 1 ? firstDayOffset() + 1 : 'auto'"
                             (click)="selectDate('birthdate', day)">
                             {{ day }}
                           </button>
@@ -145,6 +146,7 @@
                         @for (day of getDaysInMonth(); track day) {
                           <button type="button" class="day-btn" 
                             [class.selected]="isDaySelected('medical', day)"
+                            [style.grid-column-start]="day === 1 ? firstDayOffset() + 1 : 'auto'"
                             (click)="selectDate('medical', day)">
                             {{ day }}
                           </button>
