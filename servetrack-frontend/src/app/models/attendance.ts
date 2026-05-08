@@ -1,6 +1,6 @@
 export type AttendanceStatus = 'pending' | 'approved' | 'rejected';
 
-export type AttendancePeriod = 'daily' | 'weekly' | 'monthly';
+export type AttendancePeriod = 'daily' | 'weekly' | 'monthly' | 'all' | 'custom';
 
 export interface Attendance {
   attendance_id: number;

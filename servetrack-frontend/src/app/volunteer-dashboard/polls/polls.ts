@@ -7,10 +7,9 @@ import {
   computed,
   DestroyRef,
 } from '@angular/core';
-import { TitleCasePipe } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RsvpService } from '../../services/rsvp.service';
 import { Rsvp, UserVote } from '../../models/rsvp';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface PollOption {
   id: number;
@@ -27,6 +26,7 @@ interface Poll {
   date?: string;
   cutOffDay?: string;
   status: 'draft' | 'active' | 'closed';
+  isCutoffPassed: boolean;
   options: PollOption[];
   totalResponses?: number;
   userVote?: UserVote | null;
@@ -36,7 +36,7 @@ interface Poll {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TitleCasePipe],
+  imports: [],
   templateUrl: './polls.html',
   styleUrl: './polls.scss',
 })
@@ -110,6 +110,7 @@ export class PollsComponent implements OnInit {
       date: rsvp.date,
       cutOffDay: rsvp.cutOffDay,
       status: rsvp.status,
+      isCutoffPassed: rsvp.isCutoffPassed,
       totalResponses: rsvp.totalResponses,
       options: rsvp.shifts.map((shift) => ({
         id: shift.id,
