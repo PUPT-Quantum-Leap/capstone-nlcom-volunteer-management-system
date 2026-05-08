@@ -504,6 +504,7 @@ class AdminController extends Controller
             $isCutoffPassed = $rsvp->isCutoffPassed();
 
             foreach ($rsvp->responses as $response) {
+                $v = $response->volunteer;
                 $attendanceData[] = [
                     'id' => $response->rsvp_response_id,
                     'rsvp_id' => $rsvp->rsvp_id,
@@ -512,9 +513,9 @@ class AdminController extends Controller
                     'rsvp_location' => $rsvp->event_location,
                     'cutoff_passed' => $isCutoffPassed,
                     'volunteer_id' => $response->volunteer_id,
-                    'volunteer_name' => trim($response->volunteer->first_name.' '.$response->volunteer->last_name),
-                    'volunteer_email' => $response->volunteer->email,
-                    'volunteer_department' => $response->volunteer->positions->first()->name ?? 'Unassigned',
+                    'volunteer_name' => trim(($v?->first_name ?? '').' '.($v?->last_name ?? '')),
+                    'volunteer_email' => $v?->email ?? '',
+                    'volunteer_department' => $v?->positions?->first()?->name ?? 'Unassigned',
                     'time_slot' => $response->timeSlot->text ?? null,
                     'voted_at' => $response->voted_at,
                     'checked_in_at' => $response->checked_in_at,
@@ -549,7 +550,7 @@ class AdminController extends Controller
             'status' => ['required', 'in:present,absent'],
         ]);
 
-        $rsvpResponse = RsvpResponse::query()->with('timeSlot')->find($validated['rsvp_response_id']);
+        $rsvpResponse = RsvpResponse::query()->with(['timeSlot', 'rsvp'])->find($validated['rsvp_response_id']);
         if (! $rsvpResponse) {
             return response()->json([
                 'success' => false,
@@ -566,6 +567,7 @@ class AdminController extends Controller
         // Map present/absent to attendance_status values
         $attendanceStatus = $validated['status'] === 'present' ? 'checked_in' : 'no_show';
 
+        $hours = 0;
         DB::transaction(function () use ($validated, $rsvpResponse, $attendanceStatus, &$hours) {
             // Update RSVP response
             $rsvpResponse->attendance_status = $attendanceStatus;
@@ -639,6 +641,7 @@ class AdminController extends Controller
                 'rsvp_response_id' => $rsvpResponse->rsvp_response_id,
                 'status' => $validated['status'],
                 'attendance_status' => $attendanceStatus,
+                'hours' => $hours,
             ],
         ]);
     }

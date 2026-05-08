@@ -47,13 +47,26 @@ describe('Admin Attendance Management', function (): void {
             ->assertJsonPath('data.0.rsvp_title', $this->rsvp->title);
     });
 
+    it('handles missing volunteer in attendance list', function (): void {
+        // Soft delete the volunteer record to simulate a missing relation
+        $this->volunteer->delete();
+
+        $this->getJson("/api/admin/attendance-from-rsvp?rsvp_id={$this->rsvp->rsvp_id}")
+            ->assertSuccessful()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.volunteer_name', '')
+            ->assertJsonPath('data.0.volunteer_email', '')
+            ->assertJsonPath('data.0.volunteer_department', 'Unassigned');
+    });
+
     it('updates attendance status to present', function (): void {
         $this->postJson('/api/admin/attendance-status', [
             'rsvp_response_id' => $this->rsvpResponse->rsvp_response_id,
             'status' => 'present',
         ])
             ->assertSuccessful()
-            ->assertJsonPath('data.status', 'present');
+            ->assertJsonPath('data.status', 'present')
+            ->assertJsonPath('data.hours', 4);
 
         $this->rsvpResponse->refresh();
         expect($this->rsvpResponse->attendance_status)->toBe('checked_in');
@@ -70,12 +83,14 @@ describe('Admin Attendance Management', function (): void {
             'status' => 'absent',
         ])
             ->assertSuccessful()
-            ->assertJsonPath('data.status', 'absent');
+            ->assertJsonPath('data.status', 'absent')
+            ->assertJsonPath('data.hours', 4);
 
         $this->rsvpResponse->refresh();
         expect($this->rsvpResponse->attendance_status)->toBe('no_show');
 
         $attendance = Attendance::where('rsvp_response_id', $this->rsvpResponse->rsvp_response_id)->first();
+        expect($attendance)->not->toBeNull();
         expect($attendance->status)->toBe('rejected');
     });
 });

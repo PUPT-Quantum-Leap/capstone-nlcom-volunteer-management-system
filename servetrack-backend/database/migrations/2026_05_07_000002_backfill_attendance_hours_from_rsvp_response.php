@@ -26,7 +26,7 @@ return new class extends Migration {
             DB::statement('
                 UPDATE attendances a
                 JOIN rsvp_response rr ON a.rsvp_response_id = rr.rsvp_response_id
-                SET a.hours = ROUND(TIMESTAMPDIFF(MINUTE, rr.checked_in_at, rr.checked_out_at) / 60, 2)
+                SET a.hours = ROUND(GREATEST(0, TIMESTAMPDIFF(MINUTE, rr.checked_in_at, rr.checked_out_at)) / 60, 2)
                 WHERE a.hours = 0
                   AND rr.checked_in_at IS NOT NULL
                   AND rr.checked_out_at IS NOT NULL
@@ -80,7 +80,7 @@ return new class extends Migration {
             DB::statement('
                 UPDATE attendances a
                 JOIN rsvp_response rr ON a.rsvp_id = rr.rsvp_id AND a.volunteer_id = rr.volunteer_id
-                SET a.hours = ROUND(TIMESTAMPDIFF(MINUTE, rr.checked_in_at, rr.checked_out_at) / 60, 2),
+                SET a.hours = ROUND(GREATEST(0, TIMESTAMPDIFF(MINUTE, rr.checked_in_at, rr.checked_out_at)) / 60, 2),
                     a.rsvp_response_id = rr.rsvp_response_id
                 WHERE a.hours = 0
                   AND a.rsvp_response_id IS NULL
