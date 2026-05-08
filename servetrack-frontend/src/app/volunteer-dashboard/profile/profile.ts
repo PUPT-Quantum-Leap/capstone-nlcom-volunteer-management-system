@@ -115,12 +115,18 @@ export class ProfileComponent implements OnInit {
     this.isMedicalExamCalendarOpen.set(false);
   }
 
-  getDaysInMonth(): number[] {
+  getCalendarCells(): (number | null)[] {
     const date = this.calendarViewDate();
     const year = date.getFullYear();
     const month = date.getMonth();
     const daysCount = new Date(year, month + 1, 0).getDate();
-    return Array.from({ length: daysCount }, (_, i) => i + 1);
+    const firstDay = new Date(year, month, 1).getDay();
+    
+    const cells: (number | null)[] = Array(firstDay).fill(null);
+    for (let i = 1; i <= daysCount; i++) {
+      cells.push(i);
+    }
+    return cells;
   }
 
   getMonthYearLabel(): string {
@@ -368,6 +374,7 @@ export class ProfileComponent implements OnInit {
   exitEditMode(cancel: boolean = false): void {
     this.isEditMode.set(false);
     this.profileForm.disable();
+    this.closeAllCalendars();
     if (cancel) {
       const savedData = this.savedProfileData();
       if (savedData) {
@@ -506,6 +513,7 @@ export class ProfileComponent implements OnInit {
           // Exit edit mode and disable form
           this.isEditMode.set(false);
           this.profileForm.disable();
+          this.closeAllCalendars();
 
           // Show success message
           this.showProfileSuccess.set(true);

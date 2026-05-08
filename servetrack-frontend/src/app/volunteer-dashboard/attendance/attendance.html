@@ -90,15 +90,18 @@
               <div class="calendar-grid">
                 <span class="day-name">S</span><span class="day-name">M</span><span class="day-name">T</span>
                 <span class="day-name">W</span><span class="day-name">T</span><span class="day-name">F</span><span class="day-name">S</span>
-                @for (day of calendarDays(); track day) {
-                  <button type="button" class="day-btn" 
-                    [class.today]="isToday(day)" 
-                    [class.selected]="isDaySelected(day)"
-                    [class.in-range]="isDayInRange(day)"
-                    [style.grid-column-start]="day === 1 ? firstDayOffset() + 1 : 'auto'"
-                    (click)="onDayClick(day)">
-                    {{ day }}
-                  </button>
+                @for (cell of calendarCells(); track $index) {
+                  @if (cell) {
+                    <button type="button" class="day-btn" 
+                      [class.today]="isToday(cell)" 
+                      [class.selected]="isDaySelected(cell)"
+                      [class.in-range]="isDayInRange(cell)"
+                      (click)="onDayClick(cell)">
+                      {{ cell }}
+                    </button>
+                  } @else {
+                    <span class="day-btn empty" aria-hidden="true"></span>
+                  }
                 }
               </div>
             </div>

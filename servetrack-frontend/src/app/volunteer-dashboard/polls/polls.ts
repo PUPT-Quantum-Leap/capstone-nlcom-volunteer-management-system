@@ -64,10 +64,10 @@ export class PollsComponent implements OnInit {
   remainingEdits = computed(() => this.activePoll()?.remainingEdits ?? 0);
 
   ngOnInit(): void {
-    this.reloadPolls();
+    this.reload();
   }
 
-  reloadPolls(): void {
+  reload(): void {
     this.loadRsvpEvents();
   }
 
