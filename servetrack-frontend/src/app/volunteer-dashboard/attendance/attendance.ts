@@ -8,7 +8,8 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { DatePipe, TitleCasePipe } from '@angular/common';
-import { VolunteerService, AttendancePeriod } from '../../services/volunteer.service';
+import { VolunteerService } from '../../services/volunteer.service';
+import { AttendancePeriod } from '../../models/attendance';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { Attendance } from '../../models/attendance';
@@ -72,10 +73,15 @@ export class AttendanceComponent implements OnInit {
 
   getSelectedPeriodLabel(): string {
     const period = this.attendancePeriod();
-    if (period === 'custom' && this.customStartDate() && this.customEndDate()) {
-      const start = this.parseLocalISO(this.customStartDate()!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const end = this.parseLocalISO(this.customEndDate()!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      return `${start} - ${end}`;
+    if (period === 'custom') {
+      const startDate = this.customStartDate();
+      const endDate = this.customEndDate();
+      if (startDate && endDate) {
+        const start = this.parseLocalISO(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const end = this.parseLocalISO(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return `${start} - ${end}`;
+      }
+      return 'Custom Range';
     }
 
     switch (period) {
@@ -83,7 +89,6 @@ export class AttendanceComponent implements OnInit {
       case 'weekly': return 'This Week';
       case 'monthly': return 'This Month';
       case 'all': return 'All Time';
-      case 'custom': return 'Custom Range';
       default: return 'Select Period';
     }
   }

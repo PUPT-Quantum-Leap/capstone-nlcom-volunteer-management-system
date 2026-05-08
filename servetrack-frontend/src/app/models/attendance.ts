@@ -18,6 +18,7 @@ export interface Attendance {
 export interface AttendanceStats {
   total_hours: number;
   total_entries: number;
+  all_time: { hours: number; entries: number };
   daily: { hours: number; entries: number };
   weekly: { hours: number; entries: number };
   monthly: { hours: number; entries: number };
