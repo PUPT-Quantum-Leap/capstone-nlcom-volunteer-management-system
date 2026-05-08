@@ -215,7 +215,13 @@
   background: var(--surface-primary);
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-xl);
-  overflow: hidden;
+  overflow: visible; // Critical for calendar dropdown visibility
+  position: relative; // Essential for z-index layering
+  transition: z-index 0.2s ease;
+
+  &.has-open-calendar {
+    z-index: 50; // Float above subsequent accordion items
+  }
 }
 
 .accordion-trigger {
@@ -228,6 +234,7 @@
   background: transparent;
   cursor: pointer;
   transition: background-color var(--transition-fast);
+  border-radius: var(--radius-xl);
 
   &:hover {
     background: var(--gray-50);
@@ -319,6 +326,172 @@
     resize: vertical;
     min-height: 80px;
   }
+}
+
+// Calendar Dropdown for Profile
+.date-dropdown-container {
+  position: relative;
+  width: 100%;
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.9;
+  }
+}
+
+.date-dropdown-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.875rem;
+  width: 100%;
+  background: var(--surface-primary);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  min-height: 42px;
+
+  &:hover:not(:disabled) {
+    border-color: var(--primary-400);
+    background: var(--primary-50);
+  }
+
+  &:disabled {
+    background: var(--gray-100);
+    cursor: not-allowed;
+    border-color: var(--gray-300);
+  }
+
+  .trigger-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+    background: var(--primary-50);
+    color: var(--primary-600);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+  }
+
+  .trigger-label {
+    flex: 1;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    text-align: left;
+  }
+
+  .chevron-icon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--gray-400);
+    transition: transform var(--transition-base);
+
+    &.open {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.calendar-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: 300px;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  z-index: 101;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+.mini-calendar {
+  padding: 1.25rem;
+
+  .calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+
+    .month-label {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+
+    .nav-btn {
+      width: 2rem;
+      height: 2rem;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--gray-500);
+
+      &:hover {
+        background: var(--gray-50);
+        color: var(--gray-900);
+      }
+
+      svg {
+        width: 1rem;
+        height: 1rem;
+      }
+    }
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+
+    .day-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--gray-400);
+      text-align: center;
+      padding-bottom: 0.5rem;
+    }
+
+    .day-btn {
+      aspect-ratio: 1;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-md);
+      font-size: 0.8125rem;
+      color: var(--gray-700);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+
+      &:hover {
+        background: var(--primary-50);
+        color: var(--primary-600);
+      }
+
+      &.selected {
+        background: var(--primary-600);
+        color: white;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .error-text {

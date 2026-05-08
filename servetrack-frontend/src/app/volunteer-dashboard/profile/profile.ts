@@ -43,6 +43,80 @@ export class ProfileComponent implements OnInit {
   expandedSection = signal<'personal' | 'service' | 'emergency' | null>('personal');
   showOtherPreference = signal(false);
   isLoading = signal(false);
+  isBirthdateCalendarOpen = signal(false);
+  isMedicalExamCalendarOpen = signal(false);
+  calendarViewDate = signal(new Date());
+
+  toggleCalendar(type: 'birthdate' | 'medical'): void {
+    if (!this.isEditMode()) return;
+    
+    if (type === 'birthdate') {
+      this.isBirthdateCalendarOpen.update(v => !v);
+      this.isMedicalExamCalendarOpen.set(false);
+    } else {
+      this.isMedicalExamCalendarOpen.update(v => !v);
+      this.isBirthdateCalendarOpen.set(false);
+    }
+    
+    // Initialize view date to current value or today
+    const currentValue = this.profileForm.get(type === 'birthdate' ? 'birthdate' : 'lastMedicalExam')?.value;
+    if (currentValue) {
+      this.calendarViewDate.set(new Date(currentValue));
+    } else {
+      this.calendarViewDate.set(new Date());
+    }
+  }
+
+  selectDate(type: 'birthdate' | 'medical', day: number): void {
+    const date = new Date(this.calendarViewDate());
+    date.setDate(day);
+    const formattedDate = date.toISOString().split('T')[0];
+    
+    this.profileForm.patchValue({
+      [type === 'birthdate' ? 'birthdate' : 'lastMedicalExam']: formattedDate
+    });
+    
+    if (type === 'birthdate') this.isBirthdateCalendarOpen.set(false);
+    else this.isMedicalExamCalendarOpen.set(false);
+  }
+
+  changeMonth(delta: number): void {
+    const date = new Date(this.calendarViewDate());
+    date.setMonth(date.getMonth() + delta);
+    this.calendarViewDate.set(date);
+  }
+
+  getDaysInMonth(): number[] {
+    const date = this.calendarViewDate();
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const daysCount = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: daysCount }, (_, i) => i + 1);
+  }
+
+  getMonthYearLabel(): string {
+    const date = this.calendarViewDate();
+    return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(date);
+  }
+
+  formatDateLabel(value: string | null | undefined): string {
+    if (!value) return 'Select Date';
+    return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  isDaySelected(type: 'birthdate' | 'medical', day: number): boolean {
+    const value = this.profileForm.get(type === 'birthdate' ? 'birthdate' : 'lastMedicalExam')?.value;
+    if (!value) return false;
+    
+    const parts = value.split('-');
+    if (parts.length < 3) return false;
+    
+    const viewDate = this.calendarViewDate();
+    const currentYear = viewDate.getFullYear().toString();
+    const currentMonth = (viewDate.getMonth() + 1).toString().padStart(2, '0');
+    
+    return parts[0] === currentYear && parts[1] === currentMonth && parts[2] === day.toString().padStart(2, '0');
+  }
 
   // ── Modal States ─────────────────────────────────────────────────────────
   showSaveConfirmModal = signal(false);

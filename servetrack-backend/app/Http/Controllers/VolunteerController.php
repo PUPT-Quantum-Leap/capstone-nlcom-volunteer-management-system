@@ -517,6 +517,12 @@ class VolunteerController extends Controller
             $query->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()]);
         } elseif ($period === 'monthly') {
             $query->whereMonth('date', now()->month)->whereYear('date', now()->year);
+        } elseif ($period === 'custom' || ($request->has('start_date') && $request->has('end_date'))) {
+            $startDate = $request->query('start_date');
+            $endDate = $request->query('end_date');
+            if ($startDate && $endDate) {
+                $query->whereBetween('date', [$startDate, $endDate]);
+            }
         }
 
         // Search filter on description

@@ -13,7 +13,7 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-export type AttendancePeriod = 'daily' | 'weekly' | 'monthly';
+export type AttendancePeriod = 'daily' | 'weekly' | 'monthly' | 'all' | 'custom';
 
 @Injectable({
   providedIn: 'root',
@@ -57,13 +57,24 @@ export class VolunteerService {
   /**
    * List attendance records with optional period filter and search term.
    */
-  getAttendance(period?: AttendancePeriod, search?: string): Observable<ApiResponse<Attendance[]>> {
+  getAttendance(
+    period?: AttendancePeriod,
+    search?: string,
+    startDate?: string,
+    endDate?: string
+  ): Observable<ApiResponse<Attendance[]>> {
     let params = new HttpParams();
     if (period) {
       params = params.set('period', period);
     }
     if (search) {
       params = params.set('search', search);
+    }
+    if (startDate) {
+      params = params.set('start_date', startDate);
+    }
+    if (endDate) {
+      params = params.set('end_date', endDate);
     }
 
     return this.http
