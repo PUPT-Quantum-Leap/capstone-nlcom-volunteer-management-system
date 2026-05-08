@@ -1,6 +1,5 @@
 import {
   ChangeDetectionStrategy,
-  // Re-compile trigger
   Component,
   inject,
   OnInit,
@@ -42,13 +41,19 @@ export class AttendanceComponent implements OnInit {
   
   // ── Calendar Display State ──────────────────────────────────────────────
   currentCalendarMonth = signal(new Date());
-  calendarDays = computed(() => {
+  calendarCells = computed(() => {
     const date = this.currentCalendarMonth();
-    const year = date.getFullYear();
-    const month = date.getMonth();
+    const y = date.getFullYear();
+    const m = date.getMonth();
     
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    return Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const firstDay = new Date(y, m, 1).getDay();
+    
+    const cells: (number | null)[] = Array(firstDay).fill(null);
+    for (let i = 1; i <= daysInMonth; i++) {
+      cells.push(i);
+    }
+    return cells;
   });
 
   firstDayOffset = computed(() => {
@@ -133,12 +138,17 @@ export class AttendanceComponent implements OnInit {
   }
 
   onPeriodChange(period: AttendancePeriod): void {
+    if (period === 'custom') {
+      this.attendancePeriod.set('custom');
+      // Keep dropdown open for range selection
+      return;
+    }
     this.setAttendancePeriod(period);
     this.isDateDropdownOpen.set(false);
   }
 
   onCustomRangeClick(): void {
-    this.attendancePeriod.set('custom');
+    this.onPeriodChange('custom');
   }
 
   onSearchInput(event: Event): void {
@@ -151,34 +161,33 @@ export class AttendanceComponent implements OnInit {
     const year = this.currentCalendarMonth().getFullYear();
     const month = this.currentCalendarMonth().getMonth();
     const selectedDate = new Date(year, month, day);
-    const dateStr = this.formatDateToLocalISO(selectedDate);
+    const dateStr = this.toLocalYMD(selectedDate);
 
-    if (!this.customStartDate() || (this.customStartDate() && this.customEndDate())) {
+    if (!this.customStartDate() || this.customEndDate()) {
       // Start new range
       this.customStartDate.set(dateStr);
       this.customEndDate.set(null);
-      this.attendancePeriod.set('custom');
     } else {
       // Set end date
-      const start = this.parseLocalISO(this.customStartDate()!);
-      if (selectedDate < start) {
+      const startStr = this.customStartDate()!;
+      if (dateStr < startStr) {
         // Swap if backward
-        this.customEndDate.set(this.customStartDate());
+        this.customEndDate.set(startStr);
         this.customStartDate.set(dateStr);
+      } else if (dateStr === startStr) {
+        // Reset if same day
+        return;
       } else {
         this.customEndDate.set(dateStr);
       }
       this.loadAttendance();
-      // Optional: close dropdown after range selected
-      // this.isDateDropdownOpen.set(false);
     }
   }
 
   isDaySelected(day: number): boolean {
     const year = this.currentCalendarMonth().getFullYear();
     const month = this.currentCalendarMonth().getMonth();
-    const date = new Date(year, month, day);
-    const dateStr = this.formatDateToLocalISO(date);
+    const dateStr = this.toLocalYMD(new Date(year, month, day));
     
     return dateStr === this.customStartDate() || dateStr === this.customEndDate();
   }
@@ -188,14 +197,12 @@ export class AttendanceComponent implements OnInit {
     
     const year = this.currentCalendarMonth().getFullYear();
     const month = this.currentCalendarMonth().getMonth();
-    const date = new Date(year, month, day);
-    const start = this.parseLocalISO(this.customStartDate()!);
-    const end = this.parseLocalISO(this.customEndDate()!);
+    const dateStr = this.toLocalYMD(new Date(year, month, day));
     
-    return date > start && date < end;
+    return dateStr > this.customStartDate()! && dateStr < this.customEndDate()!;
   }
 
-  private formatDateToLocalISO(date: Date): string {
+  private toLocalYMD(date: Date): string {
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
@@ -217,9 +224,8 @@ export class AttendanceComponent implements OnInit {
 
   changeMonth(delta: number): void {
     const current = this.currentCalendarMonth();
-    // Anchor to day 1 before changing month to prevent skipping on short months (e.g., Jan 31 -> Mar)
-    const nextMonth = new Date(current.getFullYear(), current.getMonth() + delta, 1);
-    this.currentCalendarMonth.set(nextMonth);
+    // Anchor to day 1 to avoid overflow (e.g. Jan 31 -> Mar 3)
+    this.currentCalendarMonth.set(new Date(current.getFullYear(), current.getMonth() + delta, 1));
   }
 
   onDocumentClick(event: MouseEvent): void {

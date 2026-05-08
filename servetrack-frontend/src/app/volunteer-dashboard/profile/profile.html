@@ -100,13 +100,16 @@
                       <div class="calendar-grid">
                         <span class="day-name">S</span><span class="day-name">M</span><span class="day-name">T</span>
                         <span class="day-name">W</span><span class="day-name">T</span><span class="day-name">F</span><span class="day-name">S</span>
-                        @for (day of getDaysInMonth(); track day) {
-                          <button type="button" class="day-btn" 
-                            [class.selected]="isDaySelected('birthdate', day)"
-                            [style.grid-column-start]="day === 1 ? firstDayOffset() + 1 : 'auto'"
-                            (click)="selectDate('birthdate', day)">
-                            {{ day }}
-                          </button>
+                        @for (cell of getCalendarCells(); track $index) {
+                          @if (cell) {
+                            <button type="button" class="day-btn" 
+                              [class.selected]="isDaySelected('birthdate', cell)"
+                              (click)="selectDate('birthdate', cell)">
+                              {{ cell }}
+                            </button>
+                          } @else {
+                            <span class="day-btn empty" aria-hidden="true"></span>
+                          }
                         }
                       </div>
                     </div>
@@ -143,13 +146,16 @@
                       <div class="calendar-grid">
                         <span class="day-name">S</span><span class="day-name">M</span><span class="day-name">T</span>
                         <span class="day-name">W</span><span class="day-name">T</span><span class="day-name">F</span><span class="day-name">S</span>
-                        @for (day of getDaysInMonth(); track day) {
-                          <button type="button" class="day-btn" 
-                            [class.selected]="isDaySelected('medical', day)"
-                            [style.grid-column-start]="day === 1 ? firstDayOffset() + 1 : 'auto'"
-                            (click)="selectDate('medical', day)">
-                            {{ day }}
-                          </button>
+                        @for (cell of getCalendarCells(); track $index) {
+                          @if (cell) {
+                            <button type="button" class="day-btn" 
+                              [class.selected]="isDaySelected('medical', cell)"
+                              (click)="selectDate('medical', cell)">
+                              {{ cell }}
+                            </button>
+                          } @else {
+                            <span class="day-btn empty" aria-hidden="true"></span>
+                          }
                         }
                       </div>
                     </div>

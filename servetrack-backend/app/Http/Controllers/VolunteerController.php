@@ -518,18 +518,35 @@ class VolunteerController extends Controller
             $query->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()]);
         } elseif ($period === 'monthly') {
             $query->whereMonth('date', now()->month)->whereYear('date', now()->year);
-        } elseif ($period === 'custom' || $request->has('start_date') || $request->has('end_date')) {
-            // Validate dates for custom period or when dates are provided
-            $request->validate([
-                'start_date' => 'required|date|date_format:Y-m-d',
-                'end_date' => 'required|date|date_format:Y-m-d|after_or_equal:start_date',
-            ], [
-                'start_date.required' => 'The start date is required for a custom range.',
-                'end_date.required' => 'The end date is required for a custom range.',
-                'end_date.after_or_equal' => 'The end date must be after or equal to the start date.',
-            ]);
+        } elseif ($period === 'custom') {
+            $startDate = $request->query('start_date');
+            $endDate = $request->query('end_date');
 
-            $query->whereBetween('date', [$request->query('start_date'), $request->query('end_date')]);
+            if (! $startDate || ! $endDate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Both start_date and end_date are required for custom period.',
+                ], 422);
+            }
+
+            try {
+                $start = \Carbon\Carbon::createFromFormat('Y-m-d', $startDate)->startOfDay();
+                $end = \Carbon\Carbon::createFromFormat('Y-m-d', $endDate)->endOfDay();
+
+                if ($start->gt($end)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The start date must be before or equal to the end date.',
+                    ], 422);
+                }
+
+                $query->whereBetween('date', [$start, $end]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid date format. Please use Y-m-d.',
+                ], 422);
+            }
         }
 
         // Search filter on description
