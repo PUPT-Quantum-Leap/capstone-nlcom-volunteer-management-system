@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Attendance, AttendanceStats } from '../models/attendance';
+import { Attendance, AttendanceStats, AttendancePeriod } from '../models/attendance';
 import { VolunteerPoll } from '../models/volunteer-poll';
 import { VolunteerProfileResponse } from '../models/volunteer-profile';
 import { AuthService } from './auth.service';
@@ -12,8 +12,6 @@ export interface ApiResponse<T> {
   message?: string;
   data: T;
 }
-
-export type AttendancePeriod = 'daily' | 'weekly' | 'monthly' | 'all' | 'custom';
 
 @Injectable({
   providedIn: 'root',
