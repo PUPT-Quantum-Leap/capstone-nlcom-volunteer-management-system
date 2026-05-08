@@ -1,9 +1,8 @@
-<div class="rsvp-container">
-  <!-- User Badge Header -->
-  <div class="flex justify-end mb-4">
-    <app-user-badge></app-user-badge>
-  </div>
+<div class="user-bar">
+  <app-user-badge></app-user-badge>
+</div>
 
+<div class="rsvp-container">
   @if (isLoading() && !rsvp()) {
     <div class="rsvp-card">
       <p class="loading-text">Loading RSVP…</p>
