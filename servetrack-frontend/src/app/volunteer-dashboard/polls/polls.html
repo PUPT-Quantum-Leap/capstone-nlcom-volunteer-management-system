@@ -161,8 +161,13 @@
         </div>
       </div>
       } @else if (!hasSubmittedVote() || isEditMode()) {
-      <p class="poll-prompt">{{ isEditMode() ? 'Change your vote (' + remainingEdits() + ' left):' : 'Select your
-        preferred option:' }}</p>
+      <p class="poll-prompt">
+        @if (isEditMode()) {
+        Change your vote ({{ remainingEdits() }} left):
+        } @else {
+        Select your preferred option:
+        }
+      </p>
       <div class="poll-options">
         @for (option of poll.options; track option.id) {
         <label class="poll-option" [class.selected]="selectedOptionId() === option.id" [class.disabled]="isOptionFull(option)">
