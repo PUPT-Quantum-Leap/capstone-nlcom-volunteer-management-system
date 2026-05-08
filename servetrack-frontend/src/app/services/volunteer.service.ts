@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, catchError, switchMap, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Attendance, AttendanceStats } from '../models/attendance';
+import { Attendance, AttendanceStats, AttendancePeriod } from '../models/attendance';
 import { VolunteerPoll } from '../models/volunteer-poll';
 import { VolunteerProfileResponse } from '../models/volunteer-profile';
 import { AuthService } from './auth.service';
@@ -12,8 +12,6 @@ export interface ApiResponse<T> {
   message?: string;
   data: T;
 }
-
-export type AttendancePeriod = 'daily' | 'weekly' | 'monthly';
 
 @Injectable({
   providedIn: 'root',
@@ -57,13 +55,24 @@ export class VolunteerService {
   /**
    * List attendance records with optional period filter and search term.
    */
-  getAttendance(period?: AttendancePeriod, search?: string): Observable<ApiResponse<Attendance[]>> {
+  getAttendance(
+    period?: AttendancePeriod,
+    search?: string,
+    startDate?: string,
+    endDate?: string
+  ): Observable<ApiResponse<Attendance[]>> {
     let params = new HttpParams();
     if (period) {
       params = params.set('period', period);
     }
     if (search) {
       params = params.set('search', search);
+    }
+    if (startDate) {
+      params = params.set('start_date', startDate);
+    }
+    if (endDate) {
+      params = params.set('end_date', endDate);
     }
 
     return this.http

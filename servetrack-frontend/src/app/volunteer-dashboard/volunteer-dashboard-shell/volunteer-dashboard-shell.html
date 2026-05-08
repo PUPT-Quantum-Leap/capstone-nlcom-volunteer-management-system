@@ -1,3 +1,7 @@
+@if (pageLoading()) {
+  <app-loading-screen></app-loading-screen>
+}
+
 <div class="dashboard-container">
   <!-- Sidebar Navigation Template (shared between desktop and mobile) -->
   <ng-template #sidebarNav>

@@ -7,10 +7,9 @@ import {
   computed,
   DestroyRef,
 } from '@angular/core';
-import { TitleCasePipe } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RsvpService } from '../../services/rsvp.service';
 import { Rsvp, UserVote } from '../../models/rsvp';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface PollOption {
   id: number;
@@ -27,6 +26,7 @@ interface Poll {
   date?: string;
   cutOffDay?: string;
   status: 'draft' | 'active' | 'closed';
+  isCutoffPassed: boolean;
   options: PollOption[];
   totalResponses?: number;
   userVote?: UserVote | null;
@@ -36,7 +36,7 @@ interface Poll {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TitleCasePipe],
+  imports: [],
   templateUrl: './polls.html',
   styleUrl: './polls.scss',
 })
@@ -64,6 +64,10 @@ export class PollsComponent implements OnInit {
   remainingEdits = computed(() => this.activePoll()?.remainingEdits ?? 0);
 
   ngOnInit(): void {
+    this.reload();
+  }
+
+  reload(): void {
     this.loadRsvpEvents();
   }
 
@@ -110,6 +114,7 @@ export class PollsComponent implements OnInit {
       date: rsvp.date,
       cutOffDay: rsvp.cutOffDay,
       status: rsvp.status,
+      isCutoffPassed: rsvp.isCutoffPassed,
       totalResponses: rsvp.totalResponses,
       options: rsvp.shifts.map((shift) => ({
         id: shift.id,
@@ -227,9 +232,14 @@ export class PollsComponent implements OnInit {
 
   getDaysUntilClosing(cutOffDay: string | undefined, date: string | undefined): string {
     if (!cutOffDay && !date) return '';
-    const targetDate = new Date(cutOffDay || date || '');
+    const targetDate = this.parseLocalISO(cutOffDay || date || '');
     const today = new Date();
-    const diffTime = targetDate.getTime() - today.getTime();
+    // Reset today to midnight for accurate day difference calculation
+    today.setHours(0, 0, 0, 0);
+    const targetDateMidnight = new Date(targetDate);
+    targetDateMidnight.setHours(0, 0, 0, 0);
+    
+    const diffTime = targetDateMidnight.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) return 'Poll has closed';
@@ -244,5 +254,12 @@ export class PollsComponent implements OnInit {
     if (!poll || optionId === null) return '';
     const option = poll.options.find((o) => o.id === optionId);
     return option?.timeSlot ?? '';
+  }
+
+  private parseLocalISO(dateStr: string): Date {
+    if (!dateStr) return new Date();
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return new Date(dateStr);
+    return new Date(year, month - 1, day);
   }
 }

@@ -1,91 +1,138 @@
 <section class="overview-layout">
-  <article class="dashboard-clock-card">
-    <div class="clock-display">
-      <div class="clock-time-large">{{ currentTimeFormatted() }}</div>
-      <div class="clock-date-large">{{ currentDateFormatted() }}</div>
+  <!-- Dashboard Header -->
+  <header class="overview-header">
+    <div class="header-welcome">
+      <h1>Dashboard Overview</h1>
+      <p>Welcome back! Here's a snapshot of your volunteer activity.</p>
     </div>
-  </article>
+    <div class="clock-glass-container">
+      <div class="clock-time">{{ currentTimeFormatted() }}</div>
+      <div class="clock-date">{{ currentDateFormatted() }}</div>
+    </div>
+  </header>
 
-  <div class="stats-grid">
-    <article class="stat-card">
-      <div class="stat-header">
-        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
-        <div class="label">Attendance Goal</div>
+  @if (isLoading()) {
+    <div class="overview-skeleton" aria-hidden="true">
+      <div class="skeleton-stats-row">
+        <div class="skeleton-stat-card"></div>
+        <div class="skeleton-stat-card"></div>
+        <div class="skeleton-stat-card"></div>
       </div>
-      <div class="value">{{ attendanceTotalHours() }} / {{ attendanceGoalHours() }} hrs</div>
-      <div class="meter">
-        <div class="fill" [style.width.%]="attendanceRate()"></div>
+      
+      <div class="skeleton-engagement-section">
+        <div class="skeleton-poll-card">
+          <div class="skeleton-poll-header"></div>
+          <div class="skeleton-poll-body">
+            <div class="skeleton-poll-line large"></div>
+            <div class="skeleton-poll-line medium"></div>
+            <div class="skeleton-poll-results">
+              <div class="skeleton-result-row"></div>
+              <div class="skeleton-result-row"></div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="meta">{{ attendanceRate() }}% of monthly goal reached</div>
-    </article>
+    </div>
+  } @else {
+    <div class="dashboard-content-grid">
+      <!-- Essential Stats Row -->
+      <div class="stats-row">
+        <article class="stat-card-modern accent-blue">
+          <div class="icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="label">Attendance Goal</span>
+            <span class="value">{{ attendanceTotalHours() }} / {{ attendanceGoalHours() }} <small>hrs</small></span>
+            <div class="progress-container">
+              <div class="progress-bar" [style.width.%]="attendanceRate()"></div>
+            </div>
+            <span class="meta">{{ attendanceRate() }}% of monthly goal</span>
+          </div>
+        </article>
 
-    <article class="stat-card">
-      <div class="stat-header">
-        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-        </svg>
-        <div class="label">Current Location</div>
-      </div>
-      <div class="value">{{ locationAssigned() }}</div>
-      <div class="meta">Your active deployment area</div>
-    </article>
+        <article class="stat-card-modern accent-purple">
+          <div class="icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="label">Active Assignment</span>
+            <span class="value">{{ locationAssigned() }}</span>
+            <span class="meta">Current deployment location</span>
+          </div>
+        </article>
 
-    <article class="stat-card">
-      <div class="stat-header">
-        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/>
-        </svg>
-        <div class="label">Assigned Task</div>
+        <article class="stat-card-modern accent-indigo">
+          <div class="icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="8" y2="18"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="label">Primary Task</span>
+            <span class="value">{{ taskAssigned() }}</span>
+            <span class="meta">Your assigned responsibility</span>
+          </div>
+        </article>
       </div>
-      <div class="value">{{ taskAssigned() }}</div>
-      <div class="meta">Your primary responsibility</div>
-    </article>
 
-    <article class="stat-card">
-      <div class="stat-header">
-        <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14l2 2 4-4"/>
-        </svg>
-        <div class="label">Assignment Poll Status</div>
-      </div>
-      <div class="value">
-        @if (hasSubmittedVote()) { Voted }
-        @else if (activePoll()) { Action Required }
-        @else { No Active Polls }
-      </div>
-      <div class="meta">Vote on assignments & availability</div>
-    </article>
-  </div>
+      <!-- Community Engagement Section -->
+      <div class="engagement-section">
+        @if (activePoll(); as poll) {
+        <article class="poll-summary-card" (click)="navigateToPolls()" role="button" tabindex="0" (keydown.enter)="navigateToPolls()" (keydown.space)="navigateToPolls()">
+          <div class="card-header">
+            <div class="title-wrap">
+              <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <h3>Community Poll Insights</h3>
+            </div>
+            <div class="header-actions">
+              <div class="status-badge" [class.action]="!hasSubmittedVote()">
+                {{ hasSubmittedVote() ? 'Vote Recorded' : 'Pending Vote' }}
+              </div>
+            </div>
+          </div>
 
-  <div class="quick-actions">
-    <button type="button" class="action-card" (click)="navigateTo('profile')">
-      <div class="action-header">
-        <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-        </svg>
-        <h3>Update Profile</h3>
+          <div class="poll-body">
+            <div class="poll-info">
+              <h4>{{ poll.title }}</h4>
+              <p>{{ poll.description }}</p>
+            </div>
+
+            <div class="results-preview">
+              @for (option of poll.options; track option.id) {
+              <div class="result-row" [class.most-voted]="isMostVoted(option, poll)">
+                <div class="result-labels">
+                  <span class="opt-text">{{ option.timeSlot }}</span>
+                  <span class="opt-val">{{ getVotePercentage(option, poll) }}%</span>
+                </div>
+                <div class="track">
+                  <div class="fill" [style.width.%]="getVotePercentage(option, poll)"></div>
+                </div>
+              </div>
+              }
+            </div>
+
+            <div class="poll-card-footer">
+              <div class="participation-stats">
+                <div class="avatars-group" aria-hidden="true">
+                  <!-- Decorative avatars -->
+                  <div class="avatar" style="background: #3b82f6;"></div>
+                  <div class="avatar" style="background: #8b5cf6;"></div>
+                  <div class="avatar" style="background: #10b981;"></div>
+                </div>
+                <span>{{ getTotalVotes(poll) }} community members participated</span>
+              </div>
+            </div>
+          </div>
+        </article>
+        }
       </div>
-      <p>Keep your contact information and preferences up to date.</p>
-    </button>
-    <button type="button" class="action-card" (click)="navigateTo('polls')">
-      <div class="action-header">
-        <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14l2 2 4-4"/>
-        </svg>
-        <h3>Vote on Assignments</h3>
-      </div>
-      <p>Express your preferences for assignments and availability.</p>
-    </button>
-    <button type="button" class="action-card" (click)="navigateTo('attendance')">
-      <div class="action-header">
-        <svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-        <h3>View Schedule</h3>
-      </div>
-      <p>Check your upcoming shifts and service assignments.</p>
-    </button>
-  </div>
+    </div>
+  }
 </section>

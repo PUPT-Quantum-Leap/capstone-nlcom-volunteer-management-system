@@ -1,5 +1,6 @@
 # Node modules
 node_modules/
+vendor/
 
 # Lock files - IMPORTANT: Lock files should be committed for reproducible builds
 # Only ignore lock files in vendor/node_modules subdirectories

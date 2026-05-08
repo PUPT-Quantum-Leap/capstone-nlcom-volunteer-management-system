@@ -1,26 +1,112 @@
 <section class="attendance-section">
   <!-- Main Attendance Panel -->
   <article class="panel">
-    <div class="panel-header">
-      <h2>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-        </svg>
-        Attendance History
-      </h2>
-      <div class="panel-actions">
-        <div class="search-wrapper">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    <!-- Panel Header (Synced with Polls Basis) -->
+    <div class="container-header">
+      <div class="header-title-row">
+        <div class="header-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
           </svg>
-          <input type="text" class="search-input" placeholder="Search records..." (input)="onSearchInput($event)" />
         </div>
-        <select [value]="attendancePeriod()" (change)="onPeriodChange($event)" class="period-select">
-          <option value="monthly">This Month</option>
-          <option value="weekly">This Week</option>
-          <option value="daily">Today</option>
-          <option value="all">All Time</option>
-        </select>
+        <div class="header-text">
+          <h2>Attendance History</h2>
+          <p>Review your participation and track your volunteer contributions</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions Bar -->
+    <div class="panel-actions-bar">
+      <div class="search-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input type="text" class="search-input" placeholder="Search records..." (input)="onSearchInput($event)" />
+      </div>
+      <div class="date-dropdown-container">
+        <button type="button" class="date-dropdown-trigger" (click)="toggleDateDropdown()">
+          <div class="trigger-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
+          <span class="trigger-label">
+            {{ getSelectedPeriodLabel() }}
+          </span>
+          <svg class="chevron-icon" [class.open]="isDateDropdownOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+
+        @if (isDateDropdownOpen()) {
+          <div class="calendar-dropdown-panel">
+            <div class="dropdown-presets">
+              <button type="button" class="preset-btn" [class.active]="attendancePeriod() === 'daily'" (click)="onPeriodChange('daily')">
+                Today
+              </button>
+              <button type="button" class="preset-btn" [class.active]="attendancePeriod() === 'weekly'" (click)="onPeriodChange('weekly')">
+                This Week
+              </button>
+              <button type="button" class="preset-btn" [class.active]="attendancePeriod() === 'monthly'" (click)="onPeriodChange('monthly')">
+                This Month
+              </button>
+              <button type="button" class="preset-btn" [class.active]="attendancePeriod() === 'all'" (click)="onPeriodChange('all')">
+                All Time
+              </button>
+              <div class="divider"></div>
+              <button type="button" class="preset-btn custom" 
+                [class.active]="attendancePeriod() === 'custom'" 
+                (click)="onCustomRangeClick()"
+                aria-label="Select custom date range">
+                <span>Custom Range</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
+            
+            <div class="mini-calendar">
+              <div class="calendar-header">
+                <button type="button" class="nav-btn" (click)="changeMonth(-1)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <span class="month-label">{{ monthLabel() }}</span>
+                <button type="button" class="nav-btn" (click)="changeMonth(1)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+              <div class="calendar-grid">
+                <span class="day-name">S</span><span class="day-name">M</span><span class="day-name">T</span>
+                <span class="day-name">W</span><span class="day-name">T</span><span class="day-name">F</span><span class="day-name">S</span>
+                @for (cell of calendarCells(); track $index) {
+                  @if (cell) {
+                    <button type="button" class="day-btn" 
+                      [class.today]="isToday(cell)" 
+                      [class.selected]="isDaySelected(cell)"
+                      [class.in-range]="isDayInRange(cell)"
+                      (click)="onDayClick(cell)">
+                      {{ cell }}
+                    </button>
+                  } @else {
+                    <span class="day-btn empty" aria-hidden="true"></span>
+                  }
+                }
+              </div>
+            </div>
+          </div>
+        }
       </div>
     </div>
 

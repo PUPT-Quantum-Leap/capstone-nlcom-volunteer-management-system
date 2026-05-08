@@ -507,7 +507,8 @@ class VolunteerController extends Controller
             return response()->json(['success' => false, 'message' => 'Volunteer profile not found.'], 404);
         }
 
-        $query = $volunteer->attendances()->with(['rsvp', 'rsvpResponse.rsvp', 'rsvpResponse.timeSlot'])->orderBy('date', 'desc');
+        /** @var \Illuminate\Database\Eloquent\Builder<\App\Models\Attendance> $query */
+        $query = $volunteer->attendances()->orderBy('date', 'desc');
 
         // Period filter
         $period = $request->query('period');
@@ -517,6 +518,35 @@ class VolunteerController extends Controller
             $query->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()]);
         } elseif ($period === 'monthly') {
             $query->whereMonth('date', now()->month)->whereYear('date', now()->year);
+        } elseif ($period === 'custom') {
+            $startDate = $request->query('start_date');
+            $endDate = $request->query('end_date');
+
+            if (! $startDate || ! $endDate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Both start_date and end_date are required for custom period.',
+                ], 422);
+            }
+
+            try {
+                $start = \Carbon\Carbon::createFromFormat('Y-m-d', $startDate)->startOfDay();
+                $end = \Carbon\Carbon::createFromFormat('Y-m-d', $endDate)->endOfDay();
+
+                if ($start->gt($end)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'The start date must be before or equal to the end date.',
+                    ], 422);
+                }
+
+                $query->whereBetween('date', [$start, $end]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid date format. Please use Y-m-d.',
+                ], 422);
+            }
         }
 
         // Search filter on description
@@ -586,6 +616,10 @@ class VolunteerController extends Controller
         $stats = [
             'total_hours' => (float) round($base->sum('hours'), 2),
             'total_entries' => $base->count(),
+            'all_time' => [
+                'hours' => (float) (clone $base)->sum('hours'),
+                'entries' => (clone $base)->count(),
+            ],
             'daily' => [
                 'hours' => (float) round((clone $base)->whereDate('date', today())->sum('hours'), 2),
                 'entries' => (clone $base)->whereDate('date', today())->count(),
