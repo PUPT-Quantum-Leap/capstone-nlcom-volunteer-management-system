@@ -9,7 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RsvpService } from '../services/rsvp.service';
@@ -20,7 +20,7 @@ import { UserBadgeComponent } from '../components/user-badge/user-badge.componen
 @Component({
   selector: 'app-rsvp',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, UserBadgeComponent],
+  imports: [CommonModule, UserBadgeComponent, RouterLink],
   templateUrl: './rsvp.html',
   styleUrl: './rsvp-styles.scss',
 })
@@ -103,16 +103,22 @@ export class RsvpComponent implements OnInit {
     });
   }
 
-  private loadRsvp(identifier: string | number): void {
+  /**
+   * Loads the RSVP data by identifier.
+   */
+  loadRsvp(identifier?: string | number): void {
+    const rsvpId = identifier || this.currentRsvpSlug;
+    if (!rsvpId) return;
+
     this.isLoading.set(true);
     this.error.set(null);
     this.rsvpService
-      .getRsvpById(identifier)
+      .getRsvpById(rsvpId)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
           this.rsvp.set(response.data);
-          this.currentRsvpSlug = response.data.slug || String(identifier);
+          this.currentRsvpSlug = response.data.slug || String(rsvpId);
           this.isLoading.set(false);
           // Try to load the volunteer's response
           this.loadMyResponse(response.data.id);
