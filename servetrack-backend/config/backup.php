@@ -47,7 +47,7 @@ return [
         'enabled' => env('BACKUP_SCHEDULE_ENABLED', false),
         'frequency' => env('BACKUP_SCHEDULE_FREQUENCY', 'weekly'), // daily, weekly, monthly
         'time' => env('BACKUP_SCHEDULE_TIME', '02:00'), // Time of day to run
-        'timezone' => env('BACKUP_SCHEDULE_TIMEZONE', 'UTC'),
+        'timezone' => env('BACKUP_SCHEDULE_TIMEZONE', 'Asia/Manila'),
     ],
 
     /*
