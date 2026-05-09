@@ -54,12 +54,11 @@
           <p>Enable recurring backups and control how frequently they run.</p>
           <div class="backup-schedule-controls">
             <select
+              #freqSelect
               class="form-input"
               [value]="scheduledBackupFrequency()"
               [disabled]="scheduleSettingsSaving()"
-              (change)="
-                onScheduledFrequencyChange($any($event.target).value)
-              "
+              (change)="onScheduledFrequencyChange(freqSelect.value)"
               aria-label="Backup frequency"
             >
               <option value="daily">Daily</option>

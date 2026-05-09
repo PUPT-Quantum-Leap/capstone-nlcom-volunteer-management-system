@@ -311,6 +311,13 @@ export class BackupRecoveryComponent {
 
   // Scheduled backup settings
   onScheduledFrequencyChange(value: string): void {
+    // Type guard to validate frequency value
+    const validFrequencies: readonly ('daily' | 'weekly' | 'monthly')[] = ['daily', 'weekly', 'monthly'];
+    if (!validFrequencies.includes(value as 'daily' | 'weekly' | 'monthly')) {
+      console.warn('Invalid frequency value received:', value);
+      return;
+    }
+    
     const frequency = value as 'daily' | 'weekly' | 'monthly';
     const previous = this.scheduledBackupFrequency();
     if (frequency === previous) {

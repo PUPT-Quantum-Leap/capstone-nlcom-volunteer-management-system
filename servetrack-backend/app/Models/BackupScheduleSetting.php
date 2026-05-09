@@ -24,16 +24,13 @@ class BackupScheduleSetting extends Model
      */
     public static function current(): self
     {
-        $existing = static::query()->first();
-
-        if ($existing !== null) {
-            return $existing;
-        }
-
-        return static::query()->create([
-            'enabled' => (bool) config('backup.schedule.enabled', false),
-            'frequency' => config('backup.schedule.frequency', 'weekly'),
-        ]);
+        return static::query()->firstOrCreate(
+            [],
+            [
+                'enabled' => (bool) config('backup.schedule.enabled', false),
+                'frequency' => config('backup.schedule.frequency', 'weekly'),
+            ]
+        );
     }
 
     /**
