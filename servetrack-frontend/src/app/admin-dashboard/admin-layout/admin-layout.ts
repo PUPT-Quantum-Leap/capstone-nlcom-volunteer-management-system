@@ -14,6 +14,19 @@ import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+type AdminView =
+  | 'dashboard'
+  | 'analytics'
+  | 'users'
+  | 'volunteers'
+  | 'attendance'
+  | 'performance'
+  | 'operations'
+  | 'sms'
+  | 'rsvps'
+  | 'ics'
+  | 'backup';
+
 @Component({
   selector: 'app-admin-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,7 +73,7 @@ export class AdminLayout implements OnInit {
     return 0;
   });
 
-  currentView = computed(() => {
+  currentView = computed<AdminView>(() => {
     // Derive current view from router URL
     const url = this.currentUrl();
     if (url.includes('/analytics')) return 'analytics';
@@ -68,6 +81,7 @@ export class AdminLayout implements OnInit {
     if (url.includes('/volunteers')) return 'volunteers';
     if (url.includes('/attendance')) return 'attendance';
     if (url.includes('/performance')) return 'performance';
+    if (url.includes('/operations')) return 'operations';
     if (url.includes('/sms')) return 'sms';
     if (url.includes('/rsvps')) return 'rsvps';
     if (url.includes('/ics')) return 'ics';
@@ -90,6 +104,8 @@ export class AdminLayout implements OnInit {
         return 'Attendance';
       case 'performance':
         return 'Performance';
+      case 'operations':
+        return 'Operations';
       case 'sms':
         return 'SMS Notifications';
       case 'rsvps':
@@ -134,14 +150,15 @@ export class AdminLayout implements OnInit {
     this.mobileSidebarOpen.set(false);
   }
 
-  navigateTo(view: string, isSearch: boolean = false): void {
-    const routeMap: Record<string, string> = {
+  navigateTo(view: AdminView, isSearch: boolean = false): void {
+    const routeMap: Record<AdminView, string> = {
       dashboard: 'dashboard',
       analytics: 'analytics',
       users: 'user-management',
       volunteers: 'volunteers',
       attendance: 'attendance',
       performance: 'performance',
+      operations: 'operations',
       sms: 'sms',
       rsvps: 'rsvps',
       ics: 'ics',
@@ -164,7 +181,7 @@ export class AdminLayout implements OnInit {
     }
   }
 
-  isActive(view: string): boolean {
+  isActive(view: AdminView): boolean {
     return this.currentView() === view;
   }
 
@@ -331,6 +348,16 @@ export class AdminLayout implements OnInit {
 
     if (lowerQuery.includes('performance') || lowerQuery.includes('rating')) {
       this.navigateTo('performance', true);
+      return;
+    }
+
+    if (
+      lowerQuery.includes('operations') ||
+      lowerQuery.includes('operation') ||
+      lowerQuery.includes('planning') ||
+      lowerQuery.includes('plan')
+    ) {
+      this.navigateTo('operations', true);
       return;
     }
 
