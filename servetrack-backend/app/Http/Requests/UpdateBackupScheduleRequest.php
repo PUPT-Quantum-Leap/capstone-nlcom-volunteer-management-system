@@ -22,4 +22,17 @@ class UpdateBackupScheduleRequest extends FormRequest
             'frequency' => ['required', 'in:daily,weekly,monthly'],
         ];
     }
+
+    /**
+     * Get custom error messages for validation rules.
+     */
+    public function messages(): array
+    {
+        return [
+            'enabled.required' => 'The schedule enabled status is required.',
+            'enabled.boolean' => 'The schedule enabled status must be true or false.',
+            'frequency.required' => 'The backup frequency is required.',
+            'frequency.in' => 'The backup frequency must be one of: daily, weekly, or monthly.',
+        ];
+    }
 }
