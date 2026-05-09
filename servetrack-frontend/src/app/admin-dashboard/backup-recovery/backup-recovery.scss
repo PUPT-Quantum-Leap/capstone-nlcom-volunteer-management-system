@@ -132,6 +132,12 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1rem;
+  align-items: start;
+}
+
+.backup-actions-grid > .backup-card {
+  align-self: start;
+  height: fit-content;
 }
 
 // Backup Card
@@ -212,6 +218,7 @@
     }
   }
 }
+
 
 // Backup History Section
 .backup-history {
