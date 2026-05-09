@@ -1,8 +1,15 @@
-@if (isAuthenticated()) {
-  <div class="user-bar-content">
+<div class="user-bar-content">
+  @if (isAuthenticated()) {
     <span class="signed-in-label hidden md:inline">Signed in as</span>
 
-    <button (click)="toggleDropdown()" class="user-badge-btn">
+    <button
+      (click)="toggleDropdown()"
+      (keydown)="handleDropdownKeydown($event)"
+      class="user-badge-btn"
+      [attr.aria-expanded]="isDropdownOpen()"
+      aria-haspopup="true"
+      aria-label="User menu, press enter to open options"
+    >
       <!-- Profile Photo -->
       <img
         [src]="getProfilePhotoUrl()"
@@ -30,6 +37,7 @@
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
+        aria-hidden="true"
       >
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
       </svg>
@@ -38,13 +46,23 @@
     <!-- Dropdown Menu -->
     @if (isDropdownOpen()) {
       <!-- Backdrop -->
-      <div (click)="closeDropdown()" class="fixed inset-0 z-40 cursor-default"></div>
+      <div
+        (click)="closeDropdown()"
+        (keydown.escape)="closeDropdown()"
+        class="fixed inset-0 z-40 cursor-default"
+        aria-hidden="true"
+      ></div>
 
       <!-- Dropdown Content -->
-      <div class="user-dropdown">
+      <div
+        class="user-dropdown"
+        role="menu"
+        aria-label="User options"
+        (keydown)="handleDropdownMenuKeydown($event)"
+      >
         <!-- User Info Header -->
-        <div class="dropdown-header">
-          <ng-icon name="heroUser" class="icon-md"></ng-icon>
+        <div class="dropdown-header" role="none">
+          <ng-icon name="heroUser" class="icon-md" aria-hidden="true"></ng-icon>
           <div>
             <span class="name">{{ getUserName() }}</span>
             <span class="email">{{ getUserEmail() }}</span>
@@ -52,16 +70,28 @@
         </div>
 
         <!-- Menu Items -->
-        <button (click)="switchAccount()" class="dropdown-item">
-          <ng-icon name="heroArrowsRightLeft" class="icon-sm"></ng-icon>
+        <button (click)="switchAccount()" class="dropdown-item" role="menuitem">
+          <ng-icon name="heroArrowsRightLeft" class="icon-sm" aria-hidden="true"></ng-icon>
           Switch Account
         </button>
 
-        <button (click)="logout()" class="dropdown-item logout-item">
-          <ng-icon name="heroArrowRightOnRectangle" class="icon-sm"></ng-icon>
+        <button (click)="logout()" class="dropdown-item logout-item" role="menuitem">
+          <ng-icon name="heroArrowRightOnRectangle" class="icon-sm" aria-hidden="true"></ng-icon>
           Sign Out
         </button>
       </div>
     }
-  </div>
-}
+  } @else {
+    <div class="guest-badge">
+      <div class="guest-info">
+        <div class="guest-avatar" aria-hidden="true">
+          <ng-icon name="heroUser"></ng-icon>
+        </div>
+        <span class="guest-text hidden sm:inline">Guest Mode</span>
+      </div>
+      <button (click)="redirectToLogin()" class="login-btn">
+        Sign In
+      </button>
+    </div>
+  }
+</div>
