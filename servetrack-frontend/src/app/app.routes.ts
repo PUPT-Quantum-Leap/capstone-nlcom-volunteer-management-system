@@ -63,12 +63,13 @@ export const routes: Routes = [
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
-      { path: 'analytics/feeding-operation', component: AnalyticsFeedingOperationComponent },
+      { path: 'analytics/feeding-operation', redirectTo: 'operations', pathMatch: 'full' },
       { path: 'analytics', component: AnalyticsComponent },
       { path: 'user-management', component: UserManagementComponent },
       { path: 'volunteers', component: VolunteerManagement },
       { path: 'attendance', component: AttendanceManagement },
       { path: 'performance', component: PerformanceComponent },
+      { path: 'operations', component: AnalyticsFeedingOperationComponent },
       { path: 'sms', component: SmsManagementComponent },
       { path: 'rsvps', component: RsvpsComponent },
       {
