@@ -88,6 +88,13 @@ export interface BackupListResponse {
   };
 }
 
+export interface BackupScheduleSettings {
+  enabled: boolean;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  run_time: string;
+  timezone: string;
+}
+
 export interface BackupStats {
   total_backups: number;
   completed_backups: number;
@@ -346,54 +353,65 @@ export class AdminDashboardService {
   }
 
   // Scheduled backup management methods
-  getScheduledBackupSettings(): Observable<ApiResponse<{
-    enabled: boolean;
-    frequency: 'daily' | 'weekly' | 'monthly';
-  }>> {
-    return this.http.get<ApiResponse<{
-      enabled: boolean;
-      frequency: 'daily' | 'weekly' | 'monthly';
-    }>>(`${environment.apiUrl}/backups/schedule`, {
-      withCredentials: true,
-    }).pipe(
-      catchError((error) => {
-        console.error(
-          'Error fetching scheduled backup settings:',
-          error
-        );
-        return of({
-          success: false,
-          message: 'Failed to fetch scheduled backup settings',
-          data: {
-            enabled: false,
-            frequency: 'weekly' as 'daily' | 'weekly' | 'monthly',
-          },
-        });
+  getScheduledBackupSettings(): Observable<
+    ApiResponse<BackupScheduleSettings>
+  > {
+    const url = `${environment.apiUrl}/backups/schedule`;
+    return this.http
+      .get<ApiResponse<BackupScheduleSettings>>(url, {
+        withCredentials: true,
       })
-    );
+      .pipe(
+        catchError((error) => {
+          console.error(
+            'Error fetching scheduled backup settings:',
+            error,
+          );
+          const fallback: ApiResponse<BackupScheduleSettings> = {
+            success: false,
+            message: 'Failed to fetch scheduled backup settings',
+            data: {
+              enabled: false,
+              frequency: 'weekly',
+              run_time: '02:00',
+              timezone: 'UTC',
+            },
+          };
+          return of(fallback);
+        }),
+      );
   }
 
   updateScheduledBackupSettings(
     enabled: boolean,
-    frequency: 'daily' | 'weekly' | 'monthly'
-  ): Observable<ApiResponse<void>> {
+    frequency: 'daily' | 'weekly' | 'monthly',
+  ): Observable<ApiResponse<BackupScheduleSettings>> {
     const body = { enabled, frequency };
+    const url = `${environment.apiUrl}/backups/schedule`;
 
-    return this.http.put<ApiResponse<void>>(
-      `${environment.apiUrl}/backups/schedule`,
-      body,
-      {
+    return this.http
+      .put<ApiResponse<BackupScheduleSettings>>(url, body, {
         withCredentials: true,
-      }
-    ).pipe(
-      catchError((error) => {
-        console.error('Error updating scheduled backup settings:', error);
-        return of({
-          success: false,
-          message: 'Failed to update scheduled backup settings',
-        } as ApiResponse<void>);
       })
-    );
+      .pipe(
+        catchError((error) => {
+          console.error(
+            'Error updating scheduled backup settings:',
+            error,
+          );
+          const fallback: ApiResponse<BackupScheduleSettings> = {
+            success: false,
+            message: 'Failed to update scheduled backup settings',
+            data: {
+              enabled,
+              frequency,
+              run_time: '02:00',
+              timezone: 'UTC',
+            },
+          };
+          return of(fallback);
+        }),
+      );
   }
 
   // SMS configuration check
