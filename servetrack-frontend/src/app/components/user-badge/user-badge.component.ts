@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy, ElementRef, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -24,22 +24,42 @@ import {
 export class UserBadgeComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private triggerButton: HTMLElement | null = null;
 
   currentUser = this.authService.currentUser;
   isAuthenticated = this.authService.isAuthenticated;
   isDropdownOpen = signal(false);
 
   toggleDropdown(): void {
+    const wasOpen = this.isDropdownOpen();
     this.isDropdownOpen.update((open) => !open);
+
+    // Focus first menu item when opening
+    if (!wasOpen) {
+      setTimeout(() => {
+        const firstMenuItem = document.querySelector('.user-dropdown button[role="menuitem"]') as HTMLElement;
+        firstMenuItem?.focus();
+      }, 0);
+    }
   }
 
   closeDropdown(): void {
     this.isDropdownOpen.set(false);
+    // Return focus to trigger button
+    const trigger = document.querySelector('.user-badge-btn') as HTMLElement;
+    trigger?.focus();
   }
 
   async logout(): Promise<void> {
     this.closeDropdown();
     await this.authService.logout();
+  }
+
+  redirectToLogin(): void {
+    const currentUrl = this.router.url;
+    this.router.navigate(['/volunteer-auth'], {
+      queryParams: { redirect: currentUrl },
+    });
   }
 
   switchAccount(): void {
@@ -104,5 +124,51 @@ export class UserBadgeComponent {
   getUserEmail(): string {
     const user = this.currentUser();
     return user?.email ?? '';
+  }
+
+  handleDropdownKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.toggleDropdown();
+    }
+  }
+
+  handleDropdownMenuKeydown(event: KeyboardEvent): void {
+    const dropdownEl = event.currentTarget as HTMLElement;
+    const menuItems = dropdownEl.querySelectorAll<HTMLElement>('button[role="menuitem"]');
+    const firstItem = menuItems[0];
+    const lastItem = menuItems[menuItems.length - 1];
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closeDropdown();
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (document.activeElement === lastItem && firstItem) {
+        firstItem.focus();
+      } else {
+        const nextIndex = Array.from(menuItems).findIndex((item) => item === document.activeElement) + 1;
+        const nextItem = menuItems[nextIndex] || firstItem;
+        nextItem?.focus();
+      }
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (document.activeElement === firstItem && lastItem) {
+        lastItem.focus();
+      } else {
+        const prevIndex = Array.from(menuItems).findIndex((item) => item === document.activeElement) - 1;
+        const prevItem = menuItems[prevIndex] || lastItem;
+        prevItem?.focus();
+      }
+    }
+
+    if (event.key === 'Tab') {
+      this.closeDropdown();
+    }
   }
 }
