@@ -53,15 +53,30 @@
           <h3>Scheduled Backups</h3>
           <p>Enable recurring backups and control how frequently they run.</p>
           <div class="backup-schedule-controls">
-            <select class="form-input" [value]="scheduledBackupFrequency()"
-              (change)="setScheduledBackupFrequency($any($event.target).value)"
-              aria-label="Backup frequency">
+            <select
+              class="form-input"
+              [value]="scheduledBackupFrequency()"
+              [disabled]="scheduleSettingsSaving()"
+              (change)="
+                onScheduledFrequencyChange($any($event.target).value)
+              "
+              aria-label="Backup frequency"
+            >
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
             </select>
-            <button type="button" class="outline-btn" (click)="toggleScheduledBackups()">
-              @if (scheduledBackupEnabled()) { Disable Schedule } @else { Enable Schedule }
+            <button
+              type="button"
+              class="outline-btn"
+              [disabled]="scheduleSettingsSaving()"
+              (click)="toggleScheduledBackups()"
+            >
+              @if (scheduledBackupEnabled()) {
+                Disable Schedule
+              } @else {
+                Enable Schedule
+              }
             </button>
           </div>
         </div>

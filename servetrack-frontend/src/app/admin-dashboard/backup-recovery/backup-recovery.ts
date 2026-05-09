@@ -38,6 +38,9 @@ export class BackupRecoveryComponent {
   backupActionLoading = signal(false);
   scheduledBackupEnabled = signal(false);
   scheduledBackupFrequency = signal<'daily' | 'weekly' | 'monthly'>('weekly');
+  scheduledBackupRunTime = signal<string>('02:00');
+  scheduledBackupTimezone = signal<string>('UTC');
+  scheduleSettingsSaving = signal(false);
 
   // Confirmation dialog signals
   showConfirmationDialog = signal(false);
@@ -154,6 +157,8 @@ export class BackupRecoveryComponent {
         if (response.success && response.data) {
           this.scheduledBackupEnabled.set(response.data.enabled);
           this.scheduledBackupFrequency.set(response.data.frequency);
+          this.scheduledBackupRunTime.set(response.data.run_time);
+          this.scheduledBackupTimezone.set(response.data.timezone);
         }
       });
   }
@@ -305,21 +310,75 @@ export class BackupRecoveryComponent {
   }
 
   // Scheduled backup settings
-  setScheduledBackupFrequency(frequency: 'daily' | 'weekly' | 'monthly'): void {
+  onScheduledFrequencyChange(value: string): void {
+    const frequency = value as 'daily' | 'weekly' | 'monthly';
+    const previous = this.scheduledBackupFrequency();
+    if (frequency === previous) {
+      return;
+    }
+
     this.scheduledBackupFrequency.set(frequency);
+    this.scheduleSettingsSaving.set(true);
+
+    this.adminDashboardService
+      .updateScheduledBackupSettings(
+        this.scheduledBackupEnabled(),
+        frequency,
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.scheduleSettingsSaving.set(false);
+          if (response.success && response.data) {
+            this.scheduledBackupRunTime.set(response.data.run_time);
+            this.scheduledBackupTimezone.set(response.data.timezone);
+            this.showSnackbar.emit({
+              message: 'Backup frequency saved.',
+              type: 'success',
+            });
+          } else {
+            this.scheduledBackupFrequency.set(previous);
+            this.showSnackbar.emit({
+              message:
+                response.message || 'Failed to save backup frequency',
+              type: 'error',
+            });
+          }
+        },
+        error: (error: Error) => {
+          console.error(
+            'Error updating backup frequency:',
+            error,
+          );
+          this.scheduleSettingsSaving.set(false);
+          this.scheduledBackupFrequency.set(previous);
+          this.showSnackbar.emit({
+            message: 'Failed to save backup frequency',
+            type: 'error',
+          });
+        },
+      });
   }
 
   toggleScheduledBackups(): void {
     const newEnabled = !this.scheduledBackupEnabled();
     const frequency = this.scheduledBackupFrequency();
 
+    this.scheduleSettingsSaving.set(true);
+
     this.adminDashboardService
-      .updateScheduledBackupSettings(newEnabled, frequency)
+      .updateScheduledBackupSettings(
+        newEnabled,
+        frequency,
+      )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
-          if (response.success) {
+          this.scheduleSettingsSaving.set(false);
+          if (response.success && response.data) {
             this.scheduledBackupEnabled.set(newEnabled);
+            this.scheduledBackupRunTime.set(response.data.run_time);
+            this.scheduledBackupTimezone.set(response.data.timezone);
             this.showSnackbar.emit({
               message: newEnabled
                 ? 'Scheduled backups enabled successfully.'
@@ -328,13 +387,19 @@ export class BackupRecoveryComponent {
             });
           } else {
             this.showSnackbar.emit({
-              message: response.message || 'Failed to update scheduled backup settings',
+              message:
+                response.message
+                || 'Failed to update scheduled backup settings',
               type: 'error',
             });
           }
         },
         error: (error: Error) => {
-          console.error('Error updating scheduled backup settings:', error);
+          console.error(
+            'Error updating scheduled backup settings:',
+            error,
+          );
+          this.scheduleSettingsSaving.set(false);
           this.showSnackbar.emit({
             message: 'Failed to update scheduled backup settings',
             type: 'error',
