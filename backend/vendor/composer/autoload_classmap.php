@@ -8,6 +8,7 @@ $baseDir = dirname($vendorDir);
 return array(
     'App\\Console\\Commands\\ArchiveOldAttendancePhotos' => $baseDir . '/app/Console/Commands/ArchiveOldAttendancePhotos.php',
     'App\\Console\\Commands\\CloseExpiredRsvp' => $baseDir . '/app/Console/Commands/CloseExpiredRsvp.php',
+    'App\\Console\\Commands\\RunScheduledBackup' => $baseDir . '/app/Console/Commands/RunScheduledBackup.php',
     'App\\Console\\Commands\\SetupDatabase' => $baseDir . '/app/Console/Commands/SetupDatabase.php',
     'App\\Constants\\TokenAbilities' => $baseDir . '/app/Constants/TokenAbilities.php',
     'App\\Http\\Controllers\\AdminController' => $baseDir . '/app/Http/Controllers/AdminController.php',
@@ -43,6 +44,7 @@ return array(
     'App\\Http\\Requests\\RemoveVolunteerRequest' => $baseDir . '/app/Http/Requests/RemoveVolunteerRequest.php',
     'App\\Http\\Requests\\StoreIcsRequest' => $baseDir . '/app/Http/Requests/StoreIcsRequest.php',
     'App\\Http\\Requests\\StoreRsvpRequest' => $baseDir . '/app/Http/Requests/StoreRsvpRequest.php',
+    'App\\Http\\Requests\\UpdateBackupScheduleRequest' => $baseDir . '/app/Http/Requests/UpdateBackupScheduleRequest.php',
     'App\\Http\\Requests\\UpdateIcsRequest' => $baseDir . '/app/Http/Requests/UpdateIcsRequest.php',
     'App\\Http\\Requests\\UpdateProfilePhotoRequest' => $baseDir . '/app/Http/Requests/UpdateProfilePhotoRequest.php',
     'App\\Http\\Requests\\UpdateRsvpRequest' => $baseDir . '/app/Http/Requests/UpdateRsvpRequest.php',
@@ -64,6 +66,7 @@ return array(
     'App\\Models\\AttendancePhoto' => $baseDir . '/app/Models/AttendancePhoto.php',
     'App\\Models\\Availability' => $baseDir . '/app/Models/Availability.php',
     'App\\Models\\Backup' => $baseDir . '/app/Models/Backup.php',
+    'App\\Models\\BackupScheduleSetting' => $baseDir . '/app/Models/BackupScheduleSetting.php',
     'App\\Models\\Coordinator' => $baseDir . '/app/Models/Coordinator.php',
     'App\\Models\\EmergencyContact' => $baseDir . '/app/Models/EmergencyContact.php',
     'App\\Models\\Experience' => $baseDir . '/app/Models/Experience.php',

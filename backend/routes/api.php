@@ -128,15 +128,13 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::get('/backups', [BackupController::class, 'index']);
     Route::post('/backups', [BackupController::class, 'store']);
     Route::get('/backups/stats', [BackupController::class, 'stats']);
+    Route::get('/backups/schedule', [BackupController::class, 'getSchedule']);
+    Route::put('/backups/schedule', [BackupController::class, 'updateSchedule']);
+    Route::post('/backups/cleanup', [BackupController::class, 'cleanup']);
     Route::get('/backups/{backup}', [BackupController::class, 'show']);
     Route::delete('/backups/{backup}', [BackupController::class, 'destroy']);
     Route::get('/backups/{backup}/download', [BackupController::class, 'download']);
     Route::post('/backups/{backup}/restore', [BackupController::class, 'restore']);
-    Route::post('/backups/cleanup', [BackupController::class, 'cleanup']);
-
-    // Scheduled backup settings
-    Route::get('/backups/schedule', [BackupController::class, 'getSchedule']);
-    Route::put('/backups/schedule', [BackupController::class, 'updateSchedule']);
 
     // Admin profile routes
     Route::get('/admin/profile', [AdminController::class, 'profile']);

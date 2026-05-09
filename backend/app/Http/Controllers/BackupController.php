@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateBackupScheduleRequest;
 use App\Models\Backup;
+use App\Models\BackupScheduleSetting;
 use App\Services\BackupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -280,14 +282,16 @@ class BackupController extends Controller
     public function getSchedule(): JsonResponse
     {
         try {
-            $settings = [
-                'enabled' => config('backup.schedule.enabled', false),
-                'frequency' => config('backup.schedule.frequency', 'weekly'),
-            ];
+            $stored = BackupScheduleSetting::current();
 
             return response()->json([
                 'success' => true,
-                'data' => $settings,
+                'data' => [
+                    'enabled' => $stored->enabled,
+                    'frequency' => $stored->frequency,
+                    'run_time' => config('backup.schedule.time'),
+                    'timezone' => config('backup.schedule.timezone'),
+                ],
             ]);
 
         } catch (\Exception $e) {
@@ -297,7 +301,8 @@ class BackupController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch scheduled backup settings: '.$e->getMessage(),
+                'message' => 'Failed to fetch scheduled backup settings: '
+                    .$e->getMessage(),
             ], 500);
         }
     }
@@ -305,25 +310,29 @@ class BackupController extends Controller
     /**
      * Update scheduled backup settings
      */
-    public function updateSchedule(Request $request): JsonResponse
-    {
+    public function updateSchedule(
+        UpdateBackupScheduleRequest $request,
+    ): JsonResponse {
         try {
-            $request->validate([
-                'enabled' => 'required|boolean',
-                'frequency' => 'required|in:daily,weekly,monthly',
-            ]);
-
-            $enabled = $request->input('enabled');
-            $frequency = $request->input('frequency');
+            $stored = BackupScheduleSetting::current();
+            $stored->enabled = $request->boolean('enabled');
+            $stored->frequency = $request->validated('frequency');
+            $stored->save();
 
             Log::info('Scheduled backup settings updated', [
-                'enabled' => $enabled,
-                'frequency' => $frequency,
+                'enabled' => $stored->enabled,
+                'frequency' => $stored->frequency,
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Scheduled backup settings updated successfully.',
+                'data' => [
+                    'enabled' => $stored->enabled,
+                    'frequency' => $stored->frequency,
+                    'run_time' => config('backup.schedule.time'),
+                    'timezone' => config('backup.schedule.timezone'),
+                ],
             ]);
 
         } catch (\Exception $e) {
@@ -333,7 +342,8 @@ class BackupController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update scheduled backup settings: '.$e->getMessage(),
+                'message' => 'Failed to update scheduled backup settings: '
+                    .$e->getMessage(),
             ], 500);
         }
     }

@@ -570,6 +570,7 @@ class ComposerStaticInit0c9d4db65b61539bd5c03a576ffba7d3
     public static $classMap = array (
         'App\\Console\\Commands\\ArchiveOldAttendancePhotos' => __DIR__ . '/../..' . '/app/Console/Commands/ArchiveOldAttendancePhotos.php',
         'App\\Console\\Commands\\CloseExpiredRsvp' => __DIR__ . '/../..' . '/app/Console/Commands/CloseExpiredRsvp.php',
+        'App\\Console\\Commands\\RunScheduledBackup' => __DIR__ . '/../..' . '/app/Console/Commands/RunScheduledBackup.php',
         'App\\Console\\Commands\\SetupDatabase' => __DIR__ . '/../..' . '/app/Console/Commands/SetupDatabase.php',
         'App\\Constants\\TokenAbilities' => __DIR__ . '/../..' . '/app/Constants/TokenAbilities.php',
         'App\\Http\\Controllers\\AdminController' => __DIR__ . '/../..' . '/app/Http/Controllers/AdminController.php',
@@ -605,6 +606,7 @@ class ComposerStaticInit0c9d4db65b61539bd5c03a576ffba7d3
         'App\\Http\\Requests\\RemoveVolunteerRequest' => __DIR__ . '/../..' . '/app/Http/Requests/RemoveVolunteerRequest.php',
         'App\\Http\\Requests\\StoreIcsRequest' => __DIR__ . '/../..' . '/app/Http/Requests/StoreIcsRequest.php',
         'App\\Http\\Requests\\StoreRsvpRequest' => __DIR__ . '/../..' . '/app/Http/Requests/StoreRsvpRequest.php',
+        'App\\Http\\Requests\\UpdateBackupScheduleRequest' => __DIR__ . '/../..' . '/app/Http/Requests/UpdateBackupScheduleRequest.php',
         'App\\Http\\Requests\\UpdateIcsRequest' => __DIR__ . '/../..' . '/app/Http/Requests/UpdateIcsRequest.php',
         'App\\Http\\Requests\\UpdateProfilePhotoRequest' => __DIR__ . '/../..' . '/app/Http/Requests/UpdateProfilePhotoRequest.php',
         'App\\Http\\Requests\\UpdateRsvpRequest' => __DIR__ . '/../..' . '/app/Http/Requests/UpdateRsvpRequest.php',
@@ -626,6 +628,7 @@ class ComposerStaticInit0c9d4db65b61539bd5c03a576ffba7d3
         'App\\Models\\AttendancePhoto' => __DIR__ . '/../..' . '/app/Models/AttendancePhoto.php',
         'App\\Models\\Availability' => __DIR__ . '/../..' . '/app/Models/Availability.php',
         'App\\Models\\Backup' => __DIR__ . '/../..' . '/app/Models/Backup.php',
+        'App\\Models\\BackupScheduleSetting' => __DIR__ . '/../..' . '/app/Models/BackupScheduleSetting.php',
         'App\\Models\\Coordinator' => __DIR__ . '/../..' . '/app/Models/Coordinator.php',
         'App\\Models\\EmergencyContact' => __DIR__ . '/../..' . '/app/Models/EmergencyContact.php',
         'App\\Models\\Experience' => __DIR__ . '/../..' . '/app/Models/Experience.php',

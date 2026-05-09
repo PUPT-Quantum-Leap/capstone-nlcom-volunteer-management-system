@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\CloseExpiredRsvp;
+use App\Console\Commands\RunScheduledBackup;
 use App\Http\Middleware\AdvancedRateLimit;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\NormalizeEmail;
@@ -26,6 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command(CloseExpiredRsvp::class)->everyThreeMinutes();
+
+        $schedule->command(RunScheduledBackup::class)
+            ->dailyAt(config('backup.schedule.time'))
+            ->timezone(config('backup.schedule.timezone'));
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(StripTags::class);
