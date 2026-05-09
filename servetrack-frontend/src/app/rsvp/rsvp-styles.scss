@@ -535,6 +535,7 @@
 
     &.btn-success {
       background: t.$color-success;
+      color: t.$color-white;
       box-shadow: 0 4px 14px 0 rgba(t.$color-success, 0.3);
       display: flex;
       align-items: center;
