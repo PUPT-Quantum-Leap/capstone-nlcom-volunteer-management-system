@@ -7,7 +7,6 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AnalyticsService, ReportData, DepartmentStat } from '../../services/analytics.service';
 
@@ -20,7 +19,6 @@ import { AnalyticsService, ReportData, DepartmentStat } from '../../services/ana
 })
 export class AnalyticsComponent {
   private readonly analyticsService = inject(AnalyticsService);
-  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly analyticsLoading = signal(false);
@@ -128,10 +126,6 @@ export class AnalyticsComponent {
     if (this.departmentsPage() > 1) {
       this.departmentsPage.update((page) => page - 1);
     }
-  }
-
-  openFeedingOperationPage(): void {
-    void this.router.navigate(['/admin-dashboard', 'analytics', 'feeding-operation']);
   }
 
   private loadDepartmentOptions(): void {
