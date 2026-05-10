@@ -16,6 +16,19 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ServeBotComponent } from '../serve-bot/serve-bot';
 import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
 
+type AdminView =
+  | 'dashboard'
+  | 'analytics'
+  | 'users'
+  | 'volunteers'
+  | 'attendance'
+  | 'performance'
+  | 'operations'
+  | 'sms'
+  | 'rsvps'
+  | 'ics'
+  | 'backup';
+
 @Component({
   selector: 'app-admin-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,11 +53,10 @@ export class AdminLayout implements OnInit {
   showNotifications = signal(false);
   showLogoutModal = signal(false);
   isLoading = signal(false);
-  isInitialLoading = signal(true);
+  pageLoading = signal(true);
   showServeBot = signal(false);
   searchQuery = signal('');
   currentUrl = signal(this.router.url);
-  pageLoading = signal(true);
  
   // Profile Edit Signals
   showProfileModal = signal(false);
@@ -121,11 +133,6 @@ export class AdminLayout implements OnInit {
       .subscribe((event) => {
         this.currentUrl.set(event.urlAfterRedirects);
       });
-
-    // Handle initial loading sequence for professional startup experience
-    setTimeout(() => {
-      this.isInitialLoading.set(false);
-    }, 2000);
   }
 
   toggleSidebar(): void {
