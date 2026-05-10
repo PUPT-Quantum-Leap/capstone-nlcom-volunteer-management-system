@@ -284,7 +284,10 @@ export class AttendanceManagement {
     ]);
     
     this.photoUploadProcessing.set(false);
-    this.showSnackbar.emit({ message: 'Photo processed. Detected 3 volunteers.', type: 'success' });
+    this.showSnackbar.emit({ 
+      message: `Photo processed. Detected ${this.detectedVolunteersFromPhoto().length} volunteers.`, 
+      type: 'success' 
+    });
   }
 
   markDetectedVolunteersAsPresent(): void {

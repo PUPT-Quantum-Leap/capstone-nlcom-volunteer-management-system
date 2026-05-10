@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { AdminLayout } from './admin-layout';
 import { NavigationEnd } from '@angular/router';
 import { signal } from '@angular/core';
@@ -51,6 +51,10 @@ describe('AdminLayout - Logic Tests', () => {
     (component as any).adminService = adminServiceMock;
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('should have pageLoading signal initially set to true', () => {
     expect(component.pageLoading()).toBe(true);
   });
@@ -65,7 +69,6 @@ describe('AdminLayout - Logic Tests', () => {
     
     vi.advanceTimersByTime(2500);
     expect(component.pageLoading()).toBe(false);
-    vi.useRealTimers();
   });
 
   it('should toggle sidebarCollapsed state', () => {
