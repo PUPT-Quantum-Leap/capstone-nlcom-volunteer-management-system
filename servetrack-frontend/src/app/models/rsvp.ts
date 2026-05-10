@@ -1,9 +1,17 @@
+export interface Location {
+  id: number;
+  name: string;
+  address: string;
+  displayName: string;
+}
+
 export interface Rsvp {
   id: number;
   slug: string;
   title: string;
   date: string;
   eventLocation?: string;
+  location?: Location | null;
   shareUrl?: string;
   cutOffDay: string;
   cutOffTime: string;

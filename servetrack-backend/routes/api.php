@@ -20,111 +20,134 @@ use Illuminate\Support\Facades\Route;
 
 // Guest-only routes — audit logging + exponential backoff rate limiting
 Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(function (): void {
-    Route::post('/login', [LoginController::class, 'store']);
-    Route::post('/admin/login', [LoginController::class, 'adminStore']);
-    Route::get('/auth/facebook', [LoginController::class, 'redirectToFacebook']);
-    Route::get('/auth/facebook/callback', [LoginController::class, 'handleFacebookCallback']);
+    Route::post('/login', [LoginController::class, 'store'])->name('auth.login');
+    Route::post('/admin/login', [LoginController::class, 'adminStore'])->name('auth.admin-login');
+    Route::get('/auth/facebook', [LoginController::class, 'redirectToFacebook'])->name('auth.facebook');
+    Route::get('/auth/facebook/callback', [LoginController::class, 'handleFacebookCallback'])->name('auth.facebook.callback');
 
     // Invite validation (public)
-    Route::post('/invites/validate', [InviteController::class, 'validate']);
+    Route::post('/invites/validate', [InviteController::class, 'validate'])->name('invites.validate');
 });
 
 // Volunteer registration - public signup with registration rate limit + email normalization
 Route::post('/volunteer/register', [VolunteerController::class, 'register'])
-    ->middleware(['api', 'guest', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration']);
+    ->middleware(['api', 'guest', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration'])
+    ->name('volunteer.register');
 
 // Admin registration - public signup with registration rate limit + email normalization
 Route::post('/admin/register', [AdminController::class, 'register'])
-    ->middleware(['api', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration']);
+    ->middleware(['api', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration'])
+    ->name('admin.register');
 
 // Coordinator registration - public signup with registration rate limit + email normalization
 Route::post('/coordinator/register', [CoordinatorController::class, 'register'])
-    ->middleware(['api', 'guest', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration']);
+    ->middleware(['api', 'guest', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration'])
+    ->name('coordinator.register');
 
-Route::get('/webhooks/facebook', [FacebookWebhookController::class, 'verify']);
-Route::post('/webhooks/facebook', [FacebookWebhookController::class, 'handle']);
+Route::get('/webhooks/facebook', [FacebookWebhookController::class, 'verify'])->name('webhooks.facebook.verify');
+Route::post('/webhooks/facebook', [FacebookWebhookController::class, 'handle'])->name('webhooks.facebook.handle');
 
 // Public RSVP view — accessible to all users (authenticated and unauthenticated)
 Route::get('/rsvp/{identifier}', [RsvpController::class, 'show'])->name('rsvp.show')->where('identifier', '[\d\w\-]+');
 
 // Auth-required routes (all authenticated users)
 Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
-    Route::post('/logout', [LoginController::class, 'destroy']);
-    Route::get('/user', fn (Request $request) => $request->user());
+    Route::post('/logout', [LoginController::class, 'destroy'])->name('auth.logout');
+    Route::get('/user', fn (Request $request) => $request->user())->name('auth.user');
 
     // Volunteer profile (volunteer role only — enforced in controller)
-    Route::get('/volunteer/profile', [VolunteerController::class, 'profile']);
+    Route::get('/volunteer/profile', [VolunteerController::class, 'profile'])->name('volunteer.profile');
     Route::put('/volunteer/profile', [VolunteerController::class, 'updateProfile'])
-        ->middleware('throttle:profile-update');
-    Route::post('/volunteer/profile/photo', [VolunteerController::class, 'updateProfilePhoto']);
+        ->middleware('throttle:profile-update')
+        ->name('volunteer.profile.update');
+    Route::post('/volunteer/profile/photo', [VolunteerController::class, 'updateProfilePhoto'])->name('volunteer.profile.photo');
     Route::post('/volunteer/change-password', [VolunteerController::class, 'changePassword'])
-        ->middleware('throttle:password-change');
+        ->middleware('throttle:password-change')
+        ->name('volunteer.password.change');
 
     // Volunteer attendance (volunteer role only — enforced in controller)
-    Route::get('/volunteer/attendance', [VolunteerController::class, 'listAttendance']);
-    Route::get('/volunteer/attendance/stats', [VolunteerController::class, 'attendanceStats']);
+    Route::get('/volunteer/attendance', [VolunteerController::class, 'listAttendance'])->name('volunteer.attendance.index');
+    Route::get('/volunteer/attendance/stats', [VolunteerController::class, 'attendanceStats'])->name('volunteer.attendance.stats');
 
     // RSVP — voting actions available to all authenticated users
-    Route::get('/rsvp', [RsvpController::class, 'index']);
-    Route::post('/rsvp/{id}/vote', [RsvpController::class, 'vote']);
-    Route::get('/rsvp/{rsvpId}/my-response', [RsvpController::class, 'getMyResponse']);
-    Route::put('/rsvp/{rsvpId}/response', [RsvpController::class, 'updateResponse']);
+    Route::get('/rsvp', [RsvpController::class, 'index'])->name('rsvp.index');
+    Route::post('/rsvp/{id}/vote', [RsvpController::class, 'vote'])->name('rsvp.vote');
+    Route::get('/rsvp/{rsvpId}/my-response', [RsvpController::class, 'getMyResponse'])->name('rsvp.my-response');
+    Route::put('/rsvp/{rsvpId}/response', [RsvpController::class, 'updateResponse'])->name('rsvp.response.update');
 
     // RSVP Notifications — for volunteers
-    Route::get('/notifications/rsvp', [RsvpController::class, 'getNotifications']);
-    Route::patch('/notifications/{notificationId}/read', [RsvpController::class, 'markNotificationAsRead']);
-    Route::patch('/notifications/rsvp/read-all', [RsvpController::class, 'markAllNotificationsAsRead']);
+    Route::get('/notifications/rsvp', [RsvpController::class, 'getNotifications'])->name('notifications.rsvp');
+    Route::patch('/notifications/{notificationId}/read', [RsvpController::class, 'markNotificationAsRead'])->name('notifications.read');
+    Route::patch('/notifications/rsvp/read-all', [RsvpController::class, 'markAllNotificationsAsRead'])->name('notifications.read-all');
 });
 
 // Admin-only routes — requires authentication AND admin role
 Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): void {
-    Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
+    Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/attendance-from-rsvp', [AdminController::class, 'attendanceFromRsvp'])
+        ->middleware('throttle:120,1')
+        ->name('admin.attendance.from-rsvp');
+    Route::post('/admin/attendance-status', [AdminController::class, 'updateAttendanceStatus'])
+        ->middleware('throttle:60,1')
+        ->name('admin.attendance.status.update');
 
     // Analytics & Reports
-    Route::get('/analytics/reports', [AnalyticsController::class, 'reports']);
-    Route::get('/analytics/export/pdf', [AnalyticsController::class, 'exportPdf']);
-    Route::get('/analytics/export/excel', [AnalyticsController::class, 'exportExcel']);
+    Route::get('/analytics/reports', [AnalyticsController::class, 'reports'])->name('analytics.reports');
+    Route::get('/analytics/export/pdf', [AnalyticsController::class, 'exportPdf'])->name('analytics.export.pdf');
+    Route::get('/analytics/export/excel', [AnalyticsController::class, 'exportExcel'])->name('analytics.export.excel');
 
-    Route::get('/volunteers', [VolunteerController::class, 'index']);
-    Route::get('/volunteers/{id}', [VolunteerController::class, 'show']);
-    Route::put('/volunteers/{id}', [VolunteerController::class, 'update']);
-    Route::patch('/volunteers/{id}/soft-delete', [VolunteerController::class, 'softDelete']);
-    Route::patch('/volunteers/{id}/restore', [VolunteerController::class, 'restore']);
-    Route::delete('/volunteers/{id}', [VolunteerController::class, 'destroy']);
-    Route::get('/admin/volunteers/{id}/change-history', [VolunteerController::class, 'changeHistory']);
+    Route::get('/volunteers', [VolunteerController::class, 'index'])->name('volunteers.index');
+    Route::get('/volunteers/{id}', [VolunteerController::class, 'show'])->name('volunteers.show');
+    Route::put('/volunteers/{id}', [VolunteerController::class, 'update'])->name('volunteers.update');
+    Route::patch('/volunteers/{id}/soft-delete', [VolunteerController::class, 'softDelete'])->name('volunteers.soft-delete');
+    Route::patch('/volunteers/{id}/restore', [VolunteerController::class, 'restore'])->name('volunteers.restore');
+    Route::delete('/volunteers/{id}', [VolunteerController::class, 'destroy'])->name('volunteers.destroy');
+    Route::get('/admin/volunteers/{id}/change-history', [VolunteerController::class, 'changeHistory'])->name('admin.volunteers.change-history');
 
     // User management — CRUD for users (admin only)
     Route::apiResource('/users', UserController::class);
-    Route::patch('/users/{id}/soft-delete', [UserController::class, 'softDelete']);
-    Route::patch('/users/{id}/restore', [UserController::class, 'restore']);
-    Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword']);
+    Route::patch('/users/{id}/soft-delete', [UserController::class, 'softDelete'])->name('users.soft-delete');
+    Route::patch('/users/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
+    Route::post('/users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
 
     // Invite management — create, list, delete (admin only)
-    Route::post('/invites', [InviteController::class, 'store']);
-    Route::get('/invites', [InviteController::class, 'index']);
-    Route::delete('/invites/{id}', [InviteController::class, 'destroy']);
+    Route::post('/invites', [InviteController::class, 'store'])->name('invites.store');
+    Route::get('/invites', [InviteController::class, 'index'])->name('invites.index');
+    Route::delete('/invites/{id}', [InviteController::class, 'destroy'])->name('invites.destroy');
 
     // Attendance photo management — upload, list, delete (admin only)
-    Route::post('/attendance-photos', [AttendancePhotoController::class, 'store']);
-    Route::get('/attendance-photos', [AttendancePhotoController::class, 'index']);
-    Route::post('/attendance-photos/archive-old', [AttendancePhotoController::class, 'archiveOldPhotos']);
-    Route::delete('/attendance-photos/{id}', [AttendancePhotoController::class, 'destroy']);
+    Route::post('/attendance-photos', [AttendancePhotoController::class, 'store'])->name('attendance-photos.store');
+    Route::get('/attendance-photos', [AttendancePhotoController::class, 'index'])->name('attendance-photos.index');
+    Route::post('/attendance-photos/archive-old', [AttendancePhotoController::class, 'archiveOldPhotos'])->name('attendance-photos.archive-old');
+    Route::delete('/attendance-photos/{id}', [AttendancePhotoController::class, 'destroy'])->name('attendance-photos.destroy');
 
     // RSVP management — full CRUD + status toggle (admin only)
-    Route::post('/rsvp', [RsvpController::class, 'store']);
-    Route::put('/rsvp/{id}', [RsvpController::class, 'update']);
-    Route::delete('/rsvp/{id}', [RsvpController::class, 'destroy']);
-    Route::patch('/rsvp/{id}/status', [RsvpController::class, 'updateStatus']);
-    Route::post('/rsvp/{id}/check-in', [RsvpController::class, 'checkIn']);
-    Route::post('/rsvp/{id}/check-out', [RsvpController::class, 'checkOut']);
-    Route::get('/rsvp/{id}/attendance', [RsvpController::class, 'attendance']);
-    Route::post('/rsvp/{id}/notify-facebook', [RsvpController::class, 'notifyFacebook']);
-    Route::post('/rsvp/{id}/notify-sms', [RsvpController::class, 'notifySms']);
+    Route::post('/rsvp', [RsvpController::class, 'store'])->name('rsvp.store');
+    Route::put('/rsvp/{id}', [RsvpController::class, 'update'])->name('rsvp.update');
+    Route::delete('/rsvp/{id}', [RsvpController::class, 'destroy'])->name('rsvp.destroy');
+    Route::patch('/rsvp/{id}/status', [RsvpController::class, 'updateStatus'])->name('rsvp.status.update');
+    Route::post('/rsvp/{id}/check-in', [RsvpController::class, 'checkIn'])->name('rsvp.check-in');
+    Route::post('/rsvp/{id}/check-out', [RsvpController::class, 'checkOut'])->name('rsvp.check-out');
+    Route::get('/rsvp/{id}/attendance', [RsvpController::class, 'attendance'])->name('rsvp.attendance');
+    Route::post('/rsvp/{id}/notify-facebook', [RsvpController::class, 'notifyFacebook'])->name('rsvp.notify.facebook');
+    Route::post('/rsvp/{id}/notify-sms', [RsvpController::class, 'notifySms'])->name('rsvp.notify.sms');
     Route::get('/rsvp-trashed', [RsvpController::class, 'trashed'])->name('rsvp.trashed');
     Route::post('/rsvp/{id}/restore', [RsvpController::class, 'restore'])->name('rsvp.restore');
     Route::delete('/rsvp/{id}/force-delete', [RsvpController::class, 'forceDelete'])->name('rsvp.force-delete');
 
     // Backup management — full CRUD + operations (admin only)
+    Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
+    Route::post('/backups', [BackupController::class, 'store'])->name('backups.store');
+    Route::get('/backups/stats', [BackupController::class, 'stats'])->name('backups.stats');
+    Route::get('/backups/{backup}', [BackupController::class, 'show'])->name('backups.show');
+    Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
+    Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
+    Route::post('/backups/{backup}/restore', [BackupController::class, 'restore'])->name('backups.restore');
+    Route::post('/backups/cleanup', [BackupController::class, 'cleanup'])->name('backups.cleanup');
+
+    // Scheduled backup settings
+    Route::get('/backups/schedule', [BackupController::class, 'getSchedule'])->name('backups.schedule.get');
+    Route::put('/backups/schedule', [BackupController::class, 'updateSchedule'])->name('backups.schedule.update');
     Route::get('/backups', [BackupController::class, 'index']);
     Route::post('/backups', [BackupController::class, 'store']);
     Route::get('/backups/stats', [BackupController::class, 'stats']);
@@ -137,12 +160,13 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::post('/backups/{backup}/restore', [BackupController::class, 'restore']);
 
     // Admin profile routes
-    Route::get('/admin/profile', [AdminController::class, 'profile']);
+    Route::get('/admin/profile', [AdminController::class, 'profile'])->name('admin.profile');
     Route::put('/admin/profile', [AdminController::class, 'updateProfile'])
-        ->middleware('throttle:profile-update');
+        ->middleware('throttle:profile-update')
+        ->name('admin.profile.update');
 
     // SMS configuration status check
-    Route::get('/sms/config-status', [SmsController::class, 'configStatus']);
+    Route::get('/sms/config-status', [SmsController::class, 'configStatus'])->name('sms.config-status');
 
     // ICS Team management — feeding operation data (admin only)
     Route::get('/ics-team', [IcsTeamController::class, 'index']);
@@ -151,14 +175,14 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::get('/teams', [TeamController::class, 'index']);
 
     // ICS management — full CRUD + AI suggestions (admin only)
-    Route::get('/ics', [IcsController::class, 'index']);
-    Route::get('/ics/{id}', [IcsController::class, 'show']);
-    Route::post('/ics', [IcsController::class, 'store']);
-    Route::put('/ics/{id}', [IcsController::class, 'update']);
-    Route::delete('/ics/{id}', [IcsController::class, 'destroy']);
-    Route::get('/ics/{rsvpId}/rsvp-volunteers', [IcsController::class, 'getRsvpVolunteers']);
-    Route::get('/ics/{icsId}/ai-suggestions', [IcsController::class, 'getAiSuggestions']);
-    Route::post('/ics/{icsId}/apply-suggestions', [IcsController::class, 'applyAiSuggestions']);
-    Route::post('/ics/{icsId}/assign-volunteer', [IcsController::class, 'assignVolunteer']);
-    Route::post('/ics/{icsId}/remove-volunteer', [IcsController::class, 'removeVolunteer']);
+    Route::get('/ics', [IcsController::class, 'index'])->name('ics.index');
+    Route::get('/ics/{id}', [IcsController::class, 'show'])->name('ics.show');
+    Route::post('/ics', [IcsController::class, 'store'])->name('ics.store');
+    Route::put('/ics/{id}', [IcsController::class, 'update'])->name('ics.update');
+    Route::delete('/ics/{id}', [IcsController::class, 'destroy'])->name('ics.destroy');
+    Route::get('/ics/{rsvpId}/rsvp-volunteers', [IcsController::class, 'getRsvpVolunteers'])->name('ics.rsvp-volunteers');
+    Route::get('/ics/{icsId}/ai-suggestions', [IcsController::class, 'getAiSuggestions'])->name('ics.ai-suggestions');
+    Route::post('/ics/{icsId}/apply-suggestions', [IcsController::class, 'applyAiSuggestions'])->name('ics.apply-suggestions');
+    Route::post('/ics/{icsId}/assign-volunteer', [IcsController::class, 'assignVolunteer'])->name('ics.assign-volunteer');
+    Route::post('/ics/{icsId}/remove-volunteer', [IcsController::class, 'removeVolunteer'])->name('ics.remove-volunteer');
 });

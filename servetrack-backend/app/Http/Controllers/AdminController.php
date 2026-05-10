@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Constants\TokenAbilities;
 use App\Models\Admin;
 use App\Models\Attendance;
+use App\Models\Rsvp;
+use App\Models\RsvpResponse;
 use App\Models\User;
 use App\Models\Volunteer;
 use Illuminate\Http\JsonResponse;
@@ -87,7 +89,7 @@ class AdminController extends Controller
             $allAttendances = $volunteer->attendances;
             $approvedAttendances = $allAttendances->where('status', 'approved');
 
-            $hoursServed = round((float) $approvedAttendances->sum('hours'), 1);
+            $hoursServed = round((float) $approvedAttendances->sum('hours'), 2);
             $tasksCompleted = $approvedAttendances->count();
             $totalEntries = $allAttendances->count();
             $attendanceRate = $totalEntries > 0
@@ -96,7 +98,7 @@ class AdminController extends Controller
 
             // Derived rating based on measured participation when explicit rating data is unavailable.
             $ratingBase = min(5, max(0, 2.5 + ($attendanceRate / 40) + min($hoursServed / 120, 1)));
-            $rating = round($ratingBase, 1);
+            $rating = round($ratingBase, 2);
 
             $lastAttendance = $allAttendances->sortByDesc('date')->first();
 
@@ -466,6 +468,208 @@ class AdminController extends Controller
                 'success' => false,
                 'message' => 'Failed to update profile.',
             ], 500);
+        }
+    }
+
+    /**
+     * Get attendance from RSVP responses after cutoff.
+     * Supports filtering by specific RSVP/event.
+     */
+    public function attendanceFromRsvp(Request $request): JsonResponse
+    {
+        $role = $request->user()?->role;
+        if ($role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden. Admin access only.',
+            ], 403);
+        }
+
+        $rsvpId = $request->query('rsvp_id') ? (int) $request->query('rsvp_id') : null;
+
+        $query = Rsvp::query()
+            ->where('status', 'active')
+            ->with(['responses.volunteer.positions', 'responses.timeSlot', 'location']);
+
+        // Filter by specific RSVP if provided
+        if ($rsvpId) {
+            $query->where('rsvp_id', $rsvpId);
+        }
+
+        $rsvps = $query->get();
+
+        $attendanceData = [];
+
+        foreach ($rsvps as $rsvp) {
+            $isCutoffPassed = $rsvp->isCutoffPassed();
+
+            foreach ($rsvp->responses as $response) {
+                $v = $response->volunteer;
+                $attendanceData[] = [
+                    'id' => $response->rsvp_response_id,
+                    'rsvp_id' => $rsvp->rsvp_id,
+                    'rsvp_title' => $rsvp->title,
+                    'rsvp_date' => $rsvp->date,
+                    'rsvp_location' => $rsvp->event_location,
+                    'cutoff_passed' => $isCutoffPassed,
+                    'volunteer_id' => $response->volunteer_id,
+                    'volunteer_name' => trim(($v?->first_name ?? '').' '.($v?->last_name ?? '')),
+                    'volunteer_email' => $v?->email ?? '',
+                    'volunteer_department' => $v?->positions?->first()?->name ?? 'Unassigned',
+                    'time_slot' => $response->timeSlot->text ?? null,
+                    'voted_at' => $response->voted_at,
+                    'checked_in_at' => $response->checked_in_at,
+                    'checked_out_at' => $response->checked_out_at,
+                    'attendance_status' => $response->attendance_status,
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $attendanceData,
+        ]);
+    }
+
+    /**
+     * Update attendance status for an RSVP response.
+     * This updates both the RSVP response and creates/updates the Attendance record.
+     */
+    public function updateAttendanceStatus(Request $request): JsonResponse
+    {
+        $role = $request->user()?->role;
+        if ($role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden. Admin access only.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'rsvp_response_id' => ['required', 'exists:rsvp_response,rsvp_response_id'],
+            'status' => ['required', 'in:present,absent'],
+        ]);
+
+        $rsvpResponse = RsvpResponse::query()->with(['timeSlot', 'rsvp'])->find($validated['rsvp_response_id']);
+        if (! $rsvpResponse) {
+            return response()->json([
+                'success' => false,
+                'message' => 'RSVP response not found.',
+            ], 404);
+        }
+
+        Log::debug('RSVP response loaded', [
+            'rsvp_response_id' => $rsvpResponse->rsvp_response_id,
+            'time_slot_id' => $rsvpResponse->time_slot_id,
+            'time_slot_text' => $rsvpResponse->timeSlot?->text ?? 'NULL',
+        ]);
+
+        // Map present/absent to attendance_status values
+        $attendanceStatus = $validated['status'] === 'present' ? 'checked_in' : 'no_show';
+
+        $hours = 0;
+        DB::transaction(function () use ($validated, $rsvpResponse, $attendanceStatus, &$hours) {
+            // Update RSVP response
+            $rsvpResponse->attendance_status = $attendanceStatus;
+            if ($validated['status'] === 'present') {
+                if (! $rsvpResponse->checked_in_at) {
+                    $rsvpResponse->checked_in_at = now();
+                }
+                // Set checkout time to the configured default window after check-in if not already set
+                if (! $rsvpResponse->checked_out_at) {
+                    $defaultHours = (int) config('app.attendance_default_hours', 4);
+                    $rsvpResponse->checked_out_at = $rsvpResponse->checked_in_at->copy()->addHours($defaultHours);
+                }
+            }
+
+            // Suppress observer events because we will handle Attendance creation/update manually here
+            RsvpResponse::withoutEvents(fn () => $rsvpResponse->save());
+
+            // Calculate hours from time_slot if available, otherwise use check_in/check_out
+            $hours = 0;
+
+            // Try to get hours from rsvp_shift time_slot (e.g., "8:00 AM - 12:00 PM")
+            $timeSlotText = $rsvpResponse->timeSlot?->text ?? null;
+            if ($timeSlotText) {
+                $hours = $this->calculateHoursFromTimeSlot($timeSlotText);
+                Log::debug('Hours calculated from time_slot', ['time_slot' => $timeSlotText, 'hours' => $hours]);
+            }
+
+            // Fallback to check_in/check_out times if time_slot didn't give us hours
+            if ($hours == 0 && $rsvpResponse->checked_in_at && $rsvpResponse->checked_out_at) {
+                $diffMinutes = $rsvpResponse->checked_in_at->diffInMinutes($rsvpResponse->checked_out_at);
+                $hours = round($diffMinutes / 60, 2);
+                Log::debug('Hours calculated from check_in/check_out', [
+                    'checked_in' => $rsvpResponse->checked_in_at,
+                    'checked_out' => $rsvpResponse->checked_out_at,
+                    'diff_minutes' => $diffMinutes,
+                    'hours' => $hours,
+                ]);
+            }
+
+            // Update or create Attendance record
+            $rsvp = $rsvpResponse->rsvp;
+            if ($rsvp) {
+                $attendance = Attendance::query()->updateOrCreate(
+                    [
+                        'rsvp_response_id' => $rsvpResponse->rsvp_response_id,
+                    ],
+                    [
+                        'volunteer_id' => $rsvpResponse->volunteer_id,
+                        'rsvp_id' => $rsvp->rsvp_id,
+                        'date' => $rsvp->date,
+                        'hours' => $hours,
+                        'description' => $rsvp->title,
+                        'location' => $rsvp->event_location,
+                        'location_id' => $rsvp->location_id,
+                        'status' => $validated['status'] === 'present' ? 'approved' : 'rejected',
+                    ]
+                );
+
+                Log::debug('Attendance record saved', [
+                    'attendance_id' => $attendance->attendance_id,
+                    'hours' => $attendance->hours,
+                    'status' => $attendance->status,
+                ]);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attendance status updated successfully.',
+            'data' => [
+                'rsvp_response_id' => $rsvpResponse->rsvp_response_id,
+                'status' => $validated['status'],
+                'attendance_status' => $attendanceStatus,
+                'hours' => $hours,
+            ],
+        ]);
+    }
+
+    /**
+     * Calculate hours from time slot text (e.g., "8:00 AM - 12:00 PM")
+     */
+    private function calculateHoursFromTimeSlot(string $timeSlotText): float
+    {
+        // Pattern: "8:00 AM - 12:00 PM" or "8:00AM - 12:00PM"
+        if (! preg_match('/(\d{1,2}:\d{2}\s*[AP]M)\s*-\s*(\d{1,2}:\d{2}\s*[AP]M)/i', $timeSlotText, $matches)) {
+            return 0;
+        }
+
+        $start = $matches[1];
+        $end = $matches[2];
+
+        try {
+            $startTime = \Carbon\Carbon::parse($start);
+            $endTime = \Carbon\Carbon::parse($end);
+
+            $diffMinutes = $startTime->diffInMinutes($endTime);
+
+            return round($diffMinutes / 60, 2);
+        } catch (\Exception $e) {
+            Log::error('Failed to parse time slot', ['time_slot' => $timeSlotText, 'error' => $e->getMessage()]);
+
+            return 0;
         }
     }
 }

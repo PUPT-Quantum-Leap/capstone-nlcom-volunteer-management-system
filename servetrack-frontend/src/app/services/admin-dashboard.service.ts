@@ -480,5 +480,41 @@ export class AdminDashboardService {
       })
     );
   }
+
+  getAttendanceFromRsvp(rsvpId?: number): Observable<ApiResponse<any[]>> {
+    let url = `${environment.apiUrl}/admin/attendance-from-rsvp`;
+    if (rsvpId) {
+      url += `?rsvp_id=${rsvpId}`;
+    }
+    return this.http.get<ApiResponse<any[]>>(url, {
+      withCredentials: true,
+    }).pipe(
+      catchError((error) => {
+        console.error('Error fetching attendance from RSVP:', error);
+        return of({
+          success: false,
+          message: 'Failed to fetch attendance from RSVP',
+          data: [],
+        });
+      })
+    );
+  }
+
+  updateAttendanceStatus(rsvpResponseId: number, status: 'present' | 'absent'): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(
+      `${environment.apiUrl}/admin/attendance-status`,
+      { rsvp_response_id: rsvpResponseId, status },
+      { withCredentials: true }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error updating attendance status:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Failed to update attendance status',
+          data: null,
+        });
+      })
+    );
+  }
 }
 

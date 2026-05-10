@@ -135,4 +135,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Attendance Default Hours
+    |--------------------------------------------------------------------------
+    |
+    | When an admin marks a volunteer as "present" and no checked_out_at time
+    | exists, this value (in hours) is used as the default checkout window.
+    | Override via APP_ATTENDANCE_DEFAULT_HOURS in .env.
+    |
+    */
+
+    'attendance_default_hours' => (int) env('APP_ATTENDANCE_DEFAULT_HOURS', 4),
+
 ];

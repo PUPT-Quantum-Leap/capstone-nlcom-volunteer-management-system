@@ -65,12 +65,23 @@ class IcsController extends Controller
         }
 
         $ics = DB::transaction(function () use ($request, $rsvp): Ics {
+            // Determine location: use request location, or RSVP's linked location, or event_location
+            $location = $request->input('location');
+            if (! $location) {
+                $rsvp->load('location');
+                if ($rsvp->location) {
+                    $location = $rsvp->location->full_address;
+                } else {
+                    $location = $rsvp->event_location;
+                }
+            }
+
             $ics = Ics::query()->create([
                 'rsvp_id' => $rsvp->rsvp_id,
                 'name' => $request->input('name'),
                 'description' => $request->input('description'),
                 'date' => $rsvp->date,
-                'location' => $request->input('location') ?? $rsvp->event_location,
+                'location' => $location,
                 'status' => $request->input('status', 'draft'),
             ]);
 

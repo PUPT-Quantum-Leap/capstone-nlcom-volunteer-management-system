@@ -3,44 +3,92 @@
   <header class="report-header">
     <div class="report-header-left">
       <div class="report-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-          <path d="M12 6v6l4 2"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+          <path d="M12 6v6l4 2" />
         </svg>
       </div>
       <div class="report-title-group">
         <span class="report-label">ATTENDANCE MANAGEMENT</span>
-        <h2 class="report-title">Track Attendance & Participation</h2>
+        <h2 class="report-title">
+          @if (selectedRsvpId()) {
+            {{ selectedRsvpTitle() }}
+          } @else {
+            Track Attendance & Participation
+          }
+        </h2>
       </div>
     </div>
     <div class="report-header-right">
-      <span class="filter-label">VIEW</span>
-      <select class="filter-dropdown" [value]="attendanceView()" (change)="setAttendanceView($any($event.target).value)">
-        <option value="daily">Daily Attendance</option>
-        <option value="history">History</option>
+      <span class="filter-label">EVENT</span>
+      <select
+        class="filter-dropdown"
+        [value]="selectedRsvpId() ?? ''"
+        (change)="onRsvpFilterChange($any($event.target).value)"
+      >
+        <option value="">All Events</option>
+        @for (rsvp of availableRsvps(); track rsvp.id) {
+          <option [value]="rsvp.id">{{ rsvp.title }} ({{ rsvp.date }})</option>
+        }
       </select>
       <button type="button" class="action-btn" (click)="exportAttendanceToPDF()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M13 3V9H19" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9 13H15" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9 17H15" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path
+            d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path d="M13 3V9H19" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M9 13H15" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M9 17H15" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         Export PDF
       </button>
       <button type="button" class="action-btn" (click)="exportAttendanceToExcel()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M13 3V9H19" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9 17L11 15L9 13" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M12 15H15" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path
+            d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path d="M13 3V9H19" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M9 17L11 15L9 13" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M12 15H15" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         Export Excel
       </button>
       <button type="button" class="action-btn" (click)="openPhotoUploadModal()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="12" cy="13" r="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path
+            d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <circle cx="12" cy="13" r="4" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         Upload Photo
       </button>
@@ -51,9 +99,17 @@
   <div class="attendance-stats-grid">
     <article class="stat-card stat-card-blue">
       <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
         </svg>
       </div>
       <div class="stat-content">
@@ -64,10 +120,18 @@
 
     <article class="stat-card stat-card-red">
       <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="15" y1="9" x2="9" y2="15"/>
-          <line x1="9" y1="9" x2="15" y2="15"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="15" y1="9" x2="9" y2="15" />
+          <line x1="9" y1="9" x2="15" y2="15" />
         </svg>
       </div>
       <div class="stat-content">
@@ -78,9 +142,17 @@
 
     <article class="stat-card stat-card-green">
       <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-          <polyline points="22 4 12 14.01 9 11.01"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
       </div>
       <div class="stat-content">
@@ -91,12 +163,20 @@
 
     <article class="stat-card stat-card-purple">
       <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
         </svg>
       </div>
       <div class="stat-content">
@@ -107,10 +187,16 @@
   </div>
 
   <!-- Search Bar -->
-  @if (attendanceView() === 'daily') {
   <div class="search-bar">
     <div class="search-wrapper">
-      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <svg
+        class="search-icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        aria-hidden="true"
+      >
         <circle cx="11" cy="11" r="8" />
         <path d="m21 21-4.35-4.35" />
       </svg>
@@ -120,259 +206,358 @@
         (input)="setAttendanceSearchQuery(attendanceSearchInput.value)"
         #attendanceSearchInput
         placeholder="Search volunteers by name, email, or department..."
-        aria-label="Search attendance records" />
-    </div>
-    <div class="date-filter-wrapper">
-      <svg class="calendar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-        <line x1="16" y1="2" x2="16" y2="6"/>
-        <line x1="8" y1="2" x2="8" y2="6"/>
-        <line x1="3" y1="10" x2="21" y2="10"/>
-      </svg>
-      <input
-        type="date"
-        class="filter-date-input"
-        [value]="attendanceDateFilter()"
-        (change)="setAttendanceDateFilter(dateInput.value)"
-        #dateInput
-        aria-label="Filter by date" />
+        aria-label="Search attendance records"
+      />
     </div>
   </div>
-  }
 
   <!-- Daily Attendance Table -->
   @if (attendanceView() === 'daily') {
-  <div class="report-table-container">
-    <table class="report-table">
-      <thead>
-        <tr>
-          <th scope="col">VOLUNTEER</th>
-          <th scope="col">DEPARTMENT</th>
-          <th scope="col">CHECK-IN</th>
-          <th scope="col">CHECK-OUT</th>
-          <th scope="col">DURATION</th>
-          <th scope="col">STATUS</th>
-          <th scope="col" class="actions-header">ACTIONS</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (record of paginatedAttendance(); track record.id) {
-        <tr>
-          <td>
-            <div class="volunteer-info-cell">
-              <div class="volunteer-avatar">{{ record.volunteerName.charAt(0).toUpperCase() }}</div>
-              <div class="volunteer-details">
-                <span class="volunteer-name">{{ record.volunteerName }}</span>
-                <span class="volunteer-meta">{{ record.email }}</span>
-              </div>
-            </div>
-          </td>
-          <td>{{ record.department }}</td>
-          <td>{{ record.checkInTime || '—' }}</td>
-          <td>{{ record.checkOutTime || '—' }}</td>
-          <td>{{ record.duration || '—' }}</td>
-          <td>
-            <select
-              class="attendance-dropdown"
-              [class.dropdown-present]="record.status === 'present'"
-              [class.dropdown-absent]="record.status === 'absent'"
-              [value]="record.status"
-              (change)="updateAttendanceStatus(record.id, $any($event.target).value)"
-              [attr.aria-label]="'Attendance status for ' + record.volunteerName">
-              <option value="present">Present</option>
-              <option value="absent">Absent</option>
-            </select>
-          </td>
-          <td class="actions-cell">
-            <div class="action-buttons">
-              <button type="button" class="icon-btn icon-btn-info"
-                (click)="viewAttendanceDetails(record)" [attr.aria-label]="'View details for ' + record.volunteerName"
-                title="View Details">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </button>
-            </div>
-          </td>
-        </tr>
-        } @empty {
-        <tr>
-          <td colspan="7">
-            <div class="empty-state">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 8V12M12 16H12.01" stroke-linecap="round" />
-              </svg>
-              <p>No attendance records found for this date.</p>
-            </div>
-          </td>
-        </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Pagination -->
-  <div class="pagination-container">
-    <div class="pagination-info">
-      @if (filteredAttendance().length > 0) {
-        Showing <strong>{{ (attendancePage() - 1) * attendancePerPage() + 1 }}</strong> to
-        <strong>{{ Math.min(attendancePage() * attendancePerPage(), filteredAttendance().length) }}</strong>
-        of <strong>{{ filteredAttendance().length }}</strong> record(s)
-      } @else {
-        No records found
-      }
-    </div>
-
-    @if (attendanceTotalPages() > 1) {
-      <nav class="pagination-controls" aria-label="Attendance list pages">
-        <button type="button" class="pagination-btn" [disabled]="attendancePage() === 1" (click)="previousAttendancePage()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
-        <div class="pagination-numbers">
-          @for (page of getAttendancePageNumbers(); track page) {
-            @if (page === -1) {
-              <span class="pagination-ellipsis">...</span>
-            } @else {
-              <button type="button" class="pagination-number" [class.active]="attendancePage() === page"
-                (click)="goToAttendancePage(page)" [attr.aria-current]="attendancePage() === page ? 'page' : null">
-                {{ page }}
-              </button>
+    <div class="report-table-container">
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th scope="col">VOLUNTEER</th>
+            <th scope="col">DEPARTMENT</th>
+            <th scope="col">EVENT</th>
+            <th scope="col">TIME SLOT</th>
+            <th scope="col">STATUS</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (isLoading()) {
+            <tr>
+              <td colspan="5">
+                <div class="loading-state">
+                  <p>Loading attendance records...</p>
+                </div>
+              </td>
+            </tr>
+          } @else {
+            @for (record of paginatedAttendance(); track record.id) {
+              <tr>
+                <td>
+                  <div class="volunteer-info-cell">
+                    <div class="volunteer-avatar">
+                      {{ (record.volunteer_name?.charAt(0) || '').toUpperCase() }}
+                    </div>
+                    <div class="volunteer-details">
+                      <span class="volunteer-name">{{ record.volunteer_name }}</span>
+                      <span class="volunteer-meta">{{ record.volunteer_email }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ record.volunteer_department }}</td>
+                <td>
+                  <div class="event-info">
+                    <span class="event-name">{{ record.rsvp_title }}</span>
+                    <span class="event-date">{{ record.rsvp_date }}</span>
+                    @if (record.rsvp_location) {
+                      <span class="event-location">{{ record.rsvp_location }}</span>
+                    }
+                  </div>
+                </td>
+                <td>{{ record.time_slot || '—' }}</td>
+                <td>
+                  <select
+                    class="attendance-dropdown"
+                    [class.dropdown-present]="
+                      getDisplayStatus(record.attendance_status) === 'present'
+                    "
+                    [class.dropdown-absent]="
+                      getDisplayStatus(record.attendance_status) === 'absent'
+                    "
+                    [value]="getDisplayStatus(record.attendance_status)"
+                    (change)="updateAttendanceStatus(record.id, $any($event.target).value)"
+                  >
+                    <option value="present">Present</option>
+                    <option value="absent">Absent</option>
+                  </select>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">
+                  <div class="empty-state">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 8V12M12 16H12.01" stroke-linecap="round" />
+                    </svg>
+                    <p>No attendance records found for this date.</p>
+                  </div>
+                </td>
+              </tr>
             }
           }
-        </div>
-        <button type="button" class="pagination-btn" [disabled]="attendancePage() === attendanceTotalPages()" (click)="nextAttendancePage()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </button>
-      </nav>
-    }
-  </div>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container">
+      <div class="pagination-info">
+        @if (filteredAttendance().length > 0) {
+          Showing <strong>{{ (attendancePage() - 1) * attendancePerPage() + 1 }}</strong> to
+          <strong>{{
+            Math.min(attendancePage() * attendancePerPage(), filteredAttendance().length)
+          }}</strong>
+          of <strong>{{ filteredAttendance().length }}</strong> record(s)
+        } @else {
+          No records found
+        }
+      </div>
+
+      @if (attendanceTotalPages() > 1) {
+        <nav class="pagination-controls" aria-label="Attendance list pages">
+          <button
+            type="button"
+            class="pagination-btn"
+            [disabled]="attendancePage() === 1"
+            (click)="previousAttendancePage()"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <div class="pagination-numbers">
+            @for (page of getAttendancePageNumbers(); track page) {
+              @if (page === -1) {
+                <span class="pagination-ellipsis">...</span>
+              } @else {
+                <button
+                  type="button"
+                  class="pagination-number"
+                  [class.active]="attendancePage() === page"
+                  (click)="goToAttendancePage(page)"
+                  [attr.aria-current]="attendancePage() === page ? 'page' : null"
+                >
+                  {{ page }}
+                </button>
+              }
+            }
+          </div>
+          <button
+            type="button"
+            class="pagination-btn"
+            [disabled]="attendancePage() === attendanceTotalPages()"
+            (click)="nextAttendancePage()"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </nav>
+      }
+    </div>
   }
 
   <!-- History View -->
   @if (attendanceView() === 'history') {
-  <div class="report-table-container">
-    <table class="report-table">
-      <thead>
-        <tr>
-          <th scope="col">DATE</th>
-          <th scope="col">EVENT</th>
-          <th scope="col">VOLUNTEER</th>
-          <th scope="col">DEPARTMENT</th>
-          <th scope="col">STATUS</th>
-          <th scope="col">DURATION</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (record of paginatedAttendance(); track record.id) {
-        <tr>
-          <td>{{ attendanceDateFilter() }}</td>
-          <td>Volunteer Shift</td>
-          <td>
-            <div class="volunteer-info-cell">
-              <div class="volunteer-avatar">{{ record.volunteerName.charAt(0).toUpperCase() }}</div>
-              <div class="volunteer-details">
-                <span class="volunteer-name">{{ record.volunteerName }}</span>
-                <span class="volunteer-meta">{{ record.email }}</span>
-              </div>
-            </div>
-          </td>
-          <td>{{ record.department }}</td>
-          <td>
-            <select
-              class="attendance-dropdown"
-              [class.dropdown-present]="record.status === 'present'"
-              [class.dropdown-absent]="record.status === 'absent'"
-              [value]="record.status"
-              (change)="updateAttendanceStatus(record.id, $any($event.target).value)"
-              [attr.aria-label]="'Attendance status for ' + record.volunteerName">
-              <option value="present">Present</option>
-              <option value="absent">Absent</option>
-            </select>
-          </td>
-          <td>{{ record.duration || '—' }}</td>
-        </tr>
-        } @empty {
-        <tr>
-          <td colspan="6">
-            <div class="empty-state">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 8V12M12 16H12.01" stroke-linecap="round" />
-              </svg>
-              <p>No attendance history found.</p>
-            </div>
-          </td>
-        </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Pagination for History -->
-  <div class="pagination-container">
-    <div class="pagination-info">
-      @if (filteredAttendance().length > 0) {
-        Showing <strong>{{ (attendancePage() - 1) * attendancePerPage() + 1 }}</strong> to
-        <strong>{{ Math.min(attendancePage() * attendancePerPage(), filteredAttendance().length) }}</strong>
-        of <strong>{{ filteredAttendance().length }}</strong> record(s)
-      } @else {
-        No records found
-      }
+    <div class="report-table-container">
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th scope="col">DATE</th>
+            <th scope="col">EVENT</th>
+            <th scope="col">VOLUNTEER</th>
+            <th scope="col">DEPARTMENT</th>
+            <th scope="col">STATUS</th>
+            <th scope="col">CHECK-IN</th>
+            <th scope="col">CHECK-OUT</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (record of paginatedAttendance(); track record.id) {
+            <tr>
+              <td>{{ record.rsvp_date }}</td>
+              <td>{{ record.rsvp_title }}</td>
+              <td>
+                <div class="volunteer-info-cell">
+                  <div class="volunteer-avatar">
+                    {{ (record.volunteer_name?.charAt(0) || '').toUpperCase() }}
+                  </div>
+                  <div class="volunteer-details">
+                    <span class="volunteer-name">{{ record.volunteer_name }}</span>
+                    <span class="volunteer-meta">{{ record.volunteer_email }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>{{ record.volunteer_department }}</td>
+              <td>
+                <span
+                  class="status-badge"
+                  [class]="getAttendanceStatusClass(record.attendance_status)"
+                >
+                  {{ record.attendance_status | titlecase }}
+                </span>
+              </td>
+              <td>{{ record.checked_in_at ? (record.checked_in_at | date: 'shortTime') : '—' }}</td>
+              <td>
+                {{ record.checked_out_at ? (record.checked_out_at | date: 'shortTime') : '—' }}
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8V12M12 16H12.01" stroke-linecap="round" />
+                  </svg>
+                  <p>No attendance history found.</p>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
 
-    @if (attendanceTotalPages() > 1) {
-      <nav class="pagination-controls" aria-label="History list pages">
-        <button type="button" class="pagination-btn" [disabled]="attendancePage() === 1" (click)="previousAttendancePage()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-        </button>
-        <div class="pagination-numbers">
-          @for (page of getAttendancePageNumbers(); track page) {
-            @if (page === -1) {
-              <span class="pagination-ellipsis">...</span>
-            } @else {
-              <button type="button" class="pagination-number" [class.active]="attendancePage() === page"
-                (click)="goToAttendancePage(page)" [attr.aria-current]="attendancePage() === page ? 'page' : null">
-                {{ page }}
-              </button>
+    <!-- Pagination for History -->
+    <div class="pagination-container">
+      <div class="pagination-info">
+        @if (filteredAttendance().length > 0) {
+          Showing <strong>{{ (attendancePage() - 1) * attendancePerPage() + 1 }}</strong> to
+          <strong>{{
+            Math.min(attendancePage() * attendancePerPage(), filteredAttendance().length)
+          }}</strong>
+          of <strong>{{ filteredAttendance().length }}</strong> record(s)
+        } @else {
+          No records found
+        }
+      </div>
+
+      @if (attendanceTotalPages() > 1) {
+        <nav class="pagination-controls" aria-label="History list pages">
+          <button
+            type="button"
+            class="pagination-btn"
+            [disabled]="attendancePage() === 1"
+            (click)="previousAttendancePage()"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+          <div class="pagination-numbers">
+            @for (page of getAttendancePageNumbers(); track page) {
+              @if (page === -1) {
+                <span class="pagination-ellipsis">...</span>
+              } @else {
+                <button
+                  type="button"
+                  class="pagination-number"
+                  [class.active]="attendancePage() === page"
+                  (click)="goToAttendancePage(page)"
+                  [attr.aria-current]="attendancePage() === page ? 'page' : null"
+                >
+                  {{ page }}
+                </button>
+              }
             }
-          }
-        </div>
-        <button type="button" class="pagination-btn" [disabled]="attendancePage() === attendanceTotalPages()" (click)="nextAttendancePage()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </button>
-      </nav>
-    }
-  </div>
+          </div>
+          <button
+            type="button"
+            class="pagination-btn"
+            [disabled]="attendancePage() === attendanceTotalPages()"
+            (click)="nextAttendancePage()"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </nav>
+      }
+    </div>
   }
 </section>
 
 <!-- Photo Upload Modal -->
 @if (showPhotoUploadModal()) {
   <div class="modal-backdrop" (click)="closePhotoUploadModal()">
-    <section class="modal-card modal-lg" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
-      aria-labelledby="photo-upload-title">
+    <section
+      class="modal-card modal-lg"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="photo-upload-title"
+    >
       <header class="modal-header header-primary">
         <div class="modal-title-wrapper">
           <div class="modal-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4"/>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+              />
+              <circle cx="12" cy="13" r="4" />
             </svg>
           </div>
           <h3 id="photo-upload-title">Upload Attendance Photo</h3>
         </div>
-        <button type="button" class="modal-close-btn" (click)="closePhotoUploadModal()" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <button
+          type="button"
+          class="modal-close-btn"
+          (click)="closePhotoUploadModal()"
+          aria-label="Close"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
             <path d="M18 6L6 18M6 6L18 18" />
           </svg>
         </button>
@@ -386,17 +571,24 @@
         <div class="photo-upload-area">
           @if (!photoUploadPreview()) {
             <div class="upload-placeholder">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
               <p>Click to upload or drag and drop</p>
               <input type="file" accept="image/*" (change)="onPhotoSelected($event)" />
             </div>
           } @else {
             <div class="preview-container">
-              <img [src]="photoUploadPreview()" alt="Uploaded photo" />
+              <img [src]="photoUploadPreview()" alt="Uploaded photo" width="800" height="600" />
               <button type="button" class="remove-photo-btn" (click)="photoUploadPreview.set(null)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
@@ -410,8 +602,17 @@
 
       <div class="modal-footer">
         <button type="button" class="outline-btn" (click)="closePhotoUploadModal()">Cancel</button>
-        <button type="button" class="primary-btn" (click)="uploadPhoto()" [disabled]="photoUploadProcessing() || !photoUploadPreview()">
-          @if (photoUploadProcessing()) { Uploading... } @else { Upload Photo }
+        <button
+          type="button"
+          class="primary-btn"
+          (click)="uploadPhoto()"
+          [disabled]="photoUploadProcessing() || !photoUploadPreview()"
+        >
+          @if (photoUploadProcessing()) {
+            Uploading...
+          } @else {
+            Upload Photo
+          }
         </button>
       </div>
     </section>
@@ -421,19 +622,44 @@
 <!-- Attendance Details Modal -->
 @if (showAttendanceDetailsModal()) {
   <div class="modal-backdrop" (click)="closeAttendanceDetailsModal()">
-    <section class="modal-card modal-lg" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
-      aria-labelledby="attendance-details-title">
+    <section
+      class="modal-card modal-lg"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="attendance-details-title"
+    >
       <header class="modal-header header-info">
         <div class="modal-title-wrapper">
           <div class="modal-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4m-4 0V9a2 2 0 1 1 4 0v2m-4 0a2 2 0 1 0 4 0"/>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M9 11H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2h-4m-4 0V9a2 2 0 1 1 4 0v2m-4 0a2 2 0 1 0 4 0"
+              />
             </svg>
           </div>
           <h3 id="attendance-details-title">Attendance History</h3>
         </div>
-        <button type="button" class="modal-close-btn" (click)="closeAttendanceDetailsModal()" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <button
+          type="button"
+          class="modal-close-btn"
+          (click)="closeAttendanceDetailsModal()"
+          aria-label="Close"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
             <path d="M18 6L6 18M6 6L18 18" />
           </svg>
         </button>
@@ -443,31 +669,34 @@
         @if (selectedAttendanceRecord(); as record) {
           <div class="attendance-details-content">
             <div class="detail-section volunteer-profile">
-              <div class="volunteer-avatar-lg">{{ record.volunteerName.charAt(0) }}</div>
+              <div class="volunteer-avatar-lg">
+                {{ (record.volunteer_name?.charAt(0) || '').toUpperCase() }}
+              </div>
               <div class="volunteer-profile-info">
-                <h4 class="volunteer-name">{{ record.volunteerName }}</h4>
-                <span class="volunteer-email">{{ record.email }}</span>
-                <span class="volunteer-dept">{{ record.department }}</span>
+                <h4 class="volunteer-name">{{ record.volunteer_name }}</h4>
+                <span class="volunteer-email">{{ record.volunteer_email }}</span>
+                <span class="volunteer-dept">{{ record.volunteer_department }}</span>
               </div>
             </div>
 
-            <div class="attendance-summary-stats">
+            <!-- TODO: Replace hard-coded stats with reactive bindings once historical API is wired -->
+            <div class="attendance-summary-stats" style="opacity: 0.6; filter: grayscale(1)">
               <div class="stat-box present-stat">
-                <span class="stat-number">12</span>
+                <span class="stat-number">—</span>
                 <span class="stat-label">Present</span>
               </div>
               <div class="stat-box absent-stat">
-                <span class="stat-number">2</span>
+                <span class="stat-number">—</span>
                 <span class="stat-label">Absent</span>
               </div>
               <div class="stat-box total-stat">
-                <span class="stat-number">14</span>
+                <span class="stat-number">—</span>
                 <span class="stat-label">Total Events</span>
               </div>
             </div>
 
-            <div class="attendance-history-section">
-              <h5>Event Attendance History</h5>
+            <div class="attendance-history-section" style="opacity: 0.6; filter: grayscale(1)">
+              <h5>Event Attendance History (Placeholder)</h5>
               <div class="attendance-table-wrapper">
                 <table class="attendance-history-table">
                   <thead>
@@ -480,34 +709,9 @@
                   </thead>
                   <tbody>
                     <tr>
-                      <td>Apr 20, 2026</td>
-                      <td>Mobile Kitchen Relief</td>
-                      <td><span class="status-badge status-active">Present</span></td>
-                      <td>Food preparation, Distribution</td>
-                    </tr>
-                    <tr>
-                      <td>Apr 18, 2026</td>
-                      <td>Community Outreach</td>
-                      <td><span class="status-badge status-active">Present</span></td>
-                      <td>Registration, Coordination</td>
-                    </tr>
-                    <tr>
-                      <td>Apr 15, 2026</td>
-                      <td>Emergency Response Training</td>
-                      <td><span class="status-badge status-active">Present</span></td>
-                      <td>Training participation</td>
-                    </tr>
-                    <tr>
-                      <td>Apr 12, 2026</td>
-                      <td>Fundraising Event</td>
-                      <td><span class="status-badge status-inactive">Absent</span></td>
-                      <td>—</td>
-                    </tr>
-                    <tr>
-                      <td>Apr 10, 2026</td>
-                      <td>Disaster Relief Operation</td>
-                      <td><span class="status-badge status-active">Present</span></td>
-                      <td>Supply packing, Logistics</td>
+                      <td colspan="4" style="text-align: center; padding: 2rem">
+                        Detailed historical data is currently unavailable.
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -516,9 +720,11 @@
           </div>
         }
       </div>
-      
+
       <div class="modal-footer">
-        <button type="button" class="outline-btn" (click)="closeAttendanceDetailsModal()">Close</button>
+        <button type="button" class="outline-btn" (click)="closeAttendanceDetailsModal()">
+          Close
+        </button>
       </div>
     </section>
   </div>

@@ -2,24 +2,26 @@
 
 namespace Database\Factories;
 
+use App\Models\Rsvp;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class RsvpFactory extends Factory
 {
     public function definition(): array
     {
+        $title = fake()->sentence(3);
+        $date = now()->addMonth();
+
         return [
-            'title' => fake()->sentence(4),
+            'title' => $title,
             'description' => fake()->paragraph(),
-            'date' => fake()->dateTimeBetween('now', '+3 months')->format('Y-m-d'),
+            'date' => $date->format('Y-m-d'),
             'event_location' => fake()->address(),
-            'cutoff_day' => fake()->randomElement(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']),
-            'cutoff_time' => fake()->randomElement(['8AM', '10AM', '12NN', '3PM', '5PM']),
+            'cutoff_day' => $date->copy()->subDay()->format('Y-m-d'),
+            'cutoff_time' => '23:59:00',
             'status' => 'draft',
             'share_url' => null,
-            'slug' => function (array $attributes) {
-                return \App\Models\Rsvp::generateUniqueSlug($attributes['title']);
-            },
+            'slug' => fn (array $attributes) => Rsvp::generateUniqueSlug($attributes['title']),
         ];
     }
 
@@ -27,6 +29,8 @@ class RsvpFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'active',
+            'cutoff_day' => now()->addMonth()->toDateString(),
+            'date' => now()->addMonth()->addDay()->toDateString(),
         ]);
     }
 

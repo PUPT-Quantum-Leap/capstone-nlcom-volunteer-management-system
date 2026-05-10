@@ -26,7 +26,7 @@ class RsvpController extends Controller
         $id = $request->query('id');
         if ($id) {
             $rsvp = Rsvp::query()
-                ->with(['shifts', 'responses'])
+                ->with(['shifts', 'responses', 'location'])
                 ->withCount('responses')
                 ->where(fn ($query) => is_numeric($id) ? $query->where('rsvp_id', $id) : $query->where('slug', $id))
                 ->first();
@@ -39,7 +39,7 @@ class RsvpController extends Controller
         }
 
         $query = Rsvp::query()
-            ->with(['shifts', 'responses'])
+            ->with(['shifts', 'responses', 'location'])
             ->withCount('responses');
 
         if ($request->user()->role !== 'admin') {
@@ -61,7 +61,7 @@ class RsvpController extends Controller
         }
 
         $rsvp = Rsvp::query()
-            ->with(['shifts', 'responses'])
+            ->with(['shifts', 'responses', 'location'])
             ->withCount('responses')
             ->where(fn ($query) => is_numeric($id) ? $query->where('rsvp_id', $id) : $query->where('slug', $id))
             ->first();

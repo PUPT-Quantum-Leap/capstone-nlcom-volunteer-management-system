@@ -555,10 +555,42 @@ class VolunteerController extends Controller
             $query->where('description', 'like', '%'.$search.'%');
         }
 
-        return response()->json([
+        $attendances = $query->get()->map(function ($attendance) {
+            $location = $attendance->location;
+            if (empty($location) && $attendance->rsvp) {
+                $location = $attendance->rsvp->event_location;
+            }
+            if (empty($location) && $attendance->rsvpResponse && $attendance->rsvpResponse->rsvp) {
+                $location = $attendance->rsvpResponse->rsvp->event_location;
+            }
+            $attendance->location = $location;
+
+            // Add time_slot from rsvp_response
+            $timeSlot = null;
+            if ($attendance->rsvpResponse && $attendance->rsvpResponse->timeSlot) {
+                $timeSlot = $attendance->rsvpResponse->timeSlot->text;
+            }
+            $attendance->time_slot = $timeSlot;
+
+            Log::info('Volunteer attendance item', [
+                'attendance_id' => $attendance->attendance_id,
+                'hours_raw' => $attendance->getAttributes()['hours'] ?? null,
+                'hours_cast' => $attendance->hours,
+                'description' => $attendance->description,
+                'time_slot' => $attendance->time_slot,
+            ]);
+
+            return $attendance;
+        });
+
+        $response = [
             'success' => true,
-            'data' => $query->get(),
-        ]);
+            'data' => $attendances,
+        ];
+
+        Log::debug('Volunteer attendance response', ['count' => count($attendances), 'sample' => $attendances->first()?->toArray()]);
+
+        return response()->json($response);
     }
 
     /**
@@ -582,22 +614,22 @@ class VolunteerController extends Controller
         $base = $volunteer->attendances()->where('status', 'approved');
 
         $stats = [
-            'total_hours' => (float) $base->sum('hours'),
+            'total_hours' => (float) round($base->sum('hours'), 2),
             'total_entries' => $base->count(),
             'all_time' => [
                 'hours' => (float) (clone $base)->sum('hours'),
                 'entries' => (clone $base)->count(),
             ],
             'daily' => [
-                'hours' => (float) (clone $base)->whereDate('date', today())->sum('hours'),
+                'hours' => (float) round((clone $base)->whereDate('date', today())->sum('hours'), 2),
                 'entries' => (clone $base)->whereDate('date', today())->count(),
             ],
             'weekly' => [
-                'hours' => (float) (clone $base)->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])->sum('hours'),
+                'hours' => (float) round((clone $base)->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])->sum('hours'), 2),
                 'entries' => (clone $base)->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])->count(),
             ],
             'monthly' => [
-                'hours' => (float) (clone $base)->whereMonth('date', now()->month)->whereYear('date', now()->year)->sum('hours'),
+                'hours' => (float) round((clone $base)->whereMonth('date', now()->month)->whereYear('date', now()->year)->sum('hours'), 2),
                 'entries' => (clone $base)->whereMonth('date', now()->month)->whereYear('date', now()->year)->count(),
             ],
         ];
@@ -718,7 +750,7 @@ class VolunteerController extends Controller
                     'approved_attendances' => $approvedAttendances,
                     'pending_attendances' => $pendingAttendances,
                     'rejected_attendances' => $rejectedAttendances,
-                    'total_hours' => (float) $totalHours,
+                    'total_hours' => (float) round($totalHours, 2),
                 ],
             ],
         ]);
