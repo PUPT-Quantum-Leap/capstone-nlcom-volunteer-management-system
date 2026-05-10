@@ -16,19 +16,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ServeBotComponent } from '../serve-bot/serve-bot';
 import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
 
-type AdminView =
-  | 'dashboard'
-  | 'analytics'
-  | 'users'
-  | 'volunteers'
-  | 'attendance'
-  | 'performance'
-  | 'operations'
-  | 'sms'
-  | 'rsvps'
-  | 'ics'
-  | 'backup';
-
 @Component({
   selector: 'app-admin-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,6 +44,7 @@ export class AdminLayout implements OnInit {
   showServeBot = signal(false);
   searchQuery = signal('');
   currentUrl = signal(this.router.url);
+  pageLoading = signal(true);
  
   // Profile Edit Signals
   showProfileModal = signal(false);
@@ -124,7 +112,7 @@ export class AdminLayout implements OnInit {
 
   ngOnInit(): void {
     this.updateIsMobile();
-    
+
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
