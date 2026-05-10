@@ -46,11 +46,17 @@ class Volunteer extends Model
     ];
 
     // Define Relationships
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return BelongsTo<EmergencyContact, $this>
+     */
     public function emergencyContact(): BelongsTo
     {
         return $this->belongsTo(

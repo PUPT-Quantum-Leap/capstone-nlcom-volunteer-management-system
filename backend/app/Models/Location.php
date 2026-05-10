@@ -1,0 +1,91 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Location extends Model
+{
+    use HasFactory;
+
+    protected $primaryKey = 'location_id';
+
+    protected $fillable = [
+        'name',
+        'address',
+        'city',
+        'state',
+        'zip_code',
+        'country',
+        'latitude',
+        'longitude',
+        'description',
+        'contact_person',
+        'contact_phone',
+        'is_active',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'latitude' => 'decimal:8',
+            'longitude' => 'decimal:8',
+            'is_active' => 'boolean',
+        ];
+    }
+
+    /**
+     * @return HasMany<Rsvp, $this>
+     */
+    public function rsvps(): HasMany
+    {
+        return $this->hasMany(Rsvp::class, 'location_id', 'location_id');
+    }
+
+    /**
+     * @return HasMany<Attendance, $this>
+     */
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class, 'location_id', 'location_id');
+    }
+
+    /**
+     * Get the full address as a formatted string.
+     */
+    protected function fullAddress(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $parts = array_filter([
+                    $this->address,
+                    $this->city,
+                    $this->state,
+                    $this->zip_code,
+                    $this->country,
+                ]);
+
+                return implode(', ', $parts);
+            }
+        );
+    }
+
+    /**
+     * Get a display name with city for the location.
+     */
+    protected function displayName(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                if ($this->city) {
+                    return "{$this->name} ({$this->city})";
+                }
+
+                return $this->name;
+            }
+        );
+    }
+}
