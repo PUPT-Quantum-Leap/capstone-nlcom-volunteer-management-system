@@ -37,24 +37,24 @@ select.modern-select {
   background-size: 1.25rem;
   padding-right: 2.5rem !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+  
+  &:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%233b82f6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    outline: none;
+    border-color: #3b82f6;
+  }
 
-select.modern-select:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-select.modern-select:focus {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%233b82f6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  outline: none;
-  border-color: #3b82f6;
-}
-
-select.modern-select option {
-  background-color: #ffffff;
-  color: #1f2937;
-  padding: 8px;
-  font-family: 'Inter', sans-serif;
+  option {
+    background-color: #ffffff;
+    color: #1f2937;
+    padding: 8px;
+    font-family: 'Inter', sans-serif;
+  }
 }
 
 .btn-spinner {
