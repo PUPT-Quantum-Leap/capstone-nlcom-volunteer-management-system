@@ -10,7 +10,6 @@ use App\Jobs\NotifyVolunteersOfNewRsvp;
 use App\Models\Rsvp;
 use App\Models\RsvpResponse;
 use App\Models\TimeSlot;
-use App\Services\FacebookService;
 use App\Services\SmsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -468,26 +467,6 @@ class RsvpController extends Controller
                 'per_page' => $responses->perPage(),
                 'total' => $responses->total(),
             ],
-        ]);
-    }
-
-    public function notifyFacebook(int $id): JsonResponse
-    {
-        $rsvp = Rsvp::query()->find($id);
-
-        if (! $rsvp) {
-            return response()->json(['message' => 'RSVP not found.'], 404);
-        }
-
-        $facebook = app(FacebookService::class);
-        $result = $facebook->broadcastRsvpNotification($rsvp);
-
-        return response()->json([
-            'success' => true,
-            'message' => "Facebook notifications sent: {$result['sent']}/{$result['total']}",
-            'total' => $result['total'],
-            'sent' => $result['sent'],
-            'failed' => $result['failed'],
         ]);
     }
 

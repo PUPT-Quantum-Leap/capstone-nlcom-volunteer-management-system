@@ -53,7 +53,7 @@ export class AdminLayout implements OnInit {
   showNotifications = signal(false);
   showLogoutModal = signal(false);
   isLoading = signal(false);
-  pageLoading = signal(true);
+  isInitialLoading = signal(true);
   showServeBot = signal(false);
   searchQuery = signal('');
   currentUrl = signal(this.router.url);
@@ -125,11 +125,6 @@ export class AdminLayout implements OnInit {
   ngOnInit(): void {
     this.updateIsMobile();
     
-    // Initial 2.5-second loading screen for professional startup experience
-    setTimeout(() => {
-      this.pageLoading.set(false);
-    }, 2500);
-
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -138,6 +133,11 @@ export class AdminLayout implements OnInit {
       .subscribe((event) => {
         this.currentUrl.set(event.urlAfterRedirects);
       });
+
+    // Handle initial loading sequence for professional startup experience
+    setTimeout(() => {
+      this.isInitialLoading.set(false);
+    }, 2000);
   }
 
   toggleSidebar(): void {
