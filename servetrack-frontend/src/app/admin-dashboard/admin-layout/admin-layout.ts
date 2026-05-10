@@ -53,7 +53,7 @@ export class AdminLayout implements OnInit {
   showNotifications = signal(false);
   showLogoutModal = signal(false);
   isLoading = signal(false);
-  pageLoading = signal(true);
+
   showServeBot = signal(false);
   searchQuery = signal('');
   currentUrl = signal(this.router.url);
