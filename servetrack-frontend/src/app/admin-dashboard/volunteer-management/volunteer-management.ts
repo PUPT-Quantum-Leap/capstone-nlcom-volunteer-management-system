@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
 import {
   AdminDashboardService,
   ApiResponse,
@@ -21,13 +22,19 @@ import {
 @Component({
   selector: 'app-volunteer-management',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, CustomSelect],
   templateUrl: './volunteer-management.html',
   styleUrl: './volunteer-management.scss',
 })
 export class VolunteerManagement implements OnInit {
   private adminDashboardService = inject(AdminDashboardService);
   private destroyRef = inject(DestroyRef);
+
+  // Dropdown Options
+  statusOptions: SelectOption[] = [
+    { label: 'Active Volunteers', value: 'active' },
+    { label: 'Archived Volunteers', value: 'archived' }
+  ];
 
   // Outputs
   showSnackbar = output<{ message: string; type: 'success' | 'error' | 'info' }>();
@@ -41,6 +48,7 @@ export class VolunteerManagement implements OnInit {
   volunteersPage = signal(1);
   volunteersPerPage = signal(5);
   deletingVolunteerId = signal<number | null>(null);
+  isSaving = signal(false);
   editingVolunteer = signal<DashboardVolunteerRow | null>(null);
   viewingVolunteer = signal<DashboardVolunteerRow | null>(null);
   showEditModal = signal(false);
@@ -271,6 +279,7 @@ export class VolunteerManagement implements OnInit {
 
     const formData = this.editFormData();
 
+    this.isSaving.set(true);
     this.adminDashboardService.updateVolunteer(volunteer.id, formData)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -279,14 +288,17 @@ export class VolunteerManagement implements OnInit {
             this.loadVolunteers();
             this.loadArchivedVolunteers();
             this.showSnackbar.emit({ message: 'Volunteer updated successfully', type: 'success' });
+            this.isSaving.set(false);
             this.closeEditModal();
           } else {
             this.showSnackbar.emit({ message: response.message || 'Failed to update volunteer', type: 'error' });
+            this.isSaving.set(false);
           }
         },
         error: (error: Error) => {
           console.error('Error updating volunteer:', error);
           this.showSnackbar.emit({ message: 'Failed to update volunteer', type: 'error' });
+          this.isSaving.set(false);
         },
       });
   }
@@ -315,6 +327,7 @@ export class VolunteerManagement implements OnInit {
     const id = this.deletingVolunteerId();
     if (id === null) return;
 
+    this.isSaving.set(true);
     this.adminDashboardService.softDeleteVolunteer(id).subscribe({
       next: (response: ApiResponse<void>) => {
         if (response.success) {
@@ -324,17 +337,20 @@ export class VolunteerManagement implements OnInit {
         } else {
           this.showSnackbar.emit({ message: response.message || 'Failed to archive volunteer', type: 'error' });
         }
+        this.isSaving.set(false);
         this.closeDeleteModal();
       },
       error: (error: Error) => {
         console.error('Error archiving volunteer:', error);
         this.showSnackbar.emit({ message: 'Failed to archive volunteer', type: 'error' });
+        this.isSaving.set(false);
         this.closeDeleteModal();
       },
     });
   }
 
   restoreVolunteer(id: number): void {
+    this.isSaving.set(true);
     this.adminDashboardService.restoreVolunteer(id).subscribe({
       next: (response: ApiResponse<void>) => {
         if (response.success) {
@@ -344,10 +360,12 @@ export class VolunteerManagement implements OnInit {
         } else {
           this.showSnackbar.emit({ message: response.message || 'Failed to restore volunteer', type: 'error' });
         }
+        this.isSaving.set(false);
       },
       error: (error: Error) => {
         console.error('Error restoring volunteer:', error);
         this.showSnackbar.emit({ message: 'Failed to restore volunteer', type: 'error' });
+        this.isSaving.set(false);
       },
     });
   }

@@ -86,7 +86,7 @@
   --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition: var(--transition-base);
-
+  
   display: block;
   min-height: 100vh;
   background: var(--background);
@@ -95,6 +95,49 @@
   font-size: 14px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+// Modern Dropdown Mixin
+@mixin premium-dropdown {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23e2e8f0'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding: 0.5rem 2.25rem 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: white;
+  background-color: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
+  }
+
+  &:focus {
+    outline: none;
+    background-color: rgba(255, 255, 255, 0.22);
+    border-color: white;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23ffffff'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  }
+
+  option {
+    background-color: #ffffff;
+    color: #1f2937;
+    padding: 12px;
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
 }
 
 // Layout
@@ -421,10 +464,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1.5rem;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--sidebar-border);
+  padding: 0 2rem;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
 }
 
 .top-bar-left {
@@ -437,10 +482,10 @@
 
 .page-title {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--gray-900);
-  letter-spacing: -0.01em;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.025em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -456,22 +501,28 @@
 .search-inline {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background: var(--gray-100);
+  gap: 0.625rem;
+  background: #f1f5f9;
   border: 1px solid transparent;
-  border-radius: var(--radius-lg);
-  padding: 0.375rem 0.75rem;
-  transition: all var(--transition-fast);
-  width: 240px;
+  border-radius: var(--radius-xl);
+  padding: 0.5rem 1rem;
+  transition: all var(--transition-base);
+  width: 300px;
+
+  &:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+  }
 
   &:focus-within {
     background: var(--white);
-    border-color: var(--primary-400);
-    box-shadow: 0 0 0 3px var(--primary-50);
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 4px var(--primary-50);
+    width: 340px;
   }
 
   svg {
-    color: var(--gray-400);
+    color: #64748b;
     flex-shrink: 0;
     transition: color var(--transition-fast);
   }
@@ -499,37 +550,41 @@
   }
 }
 
-// AI Toggle Button
-.ai-toggle-btn {
+// ServeBot Toggle Button
+.servebot-toggle-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  color: #0369a1;
-  border: 1px solid #7dd3fc;
-  border-radius: var(--radius-md);
-  font-weight: 600;
+  gap: 0.625rem;
+  padding: 0.625rem 1.5rem;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-weight: 700;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 
   &:hover {
-    background: #e0f2fe;
-    border-color: #38bdf8;
+    background: #1d4ed8;
     transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   &.active {
-    background: #0ea5e9;
-    border-color: #0284c7;
-    color: white;
+    background: #0f172a;
+    box-shadow: none;
   }
 
   svg {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     color: inherit;
   }
 }
@@ -539,32 +594,59 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
+  padding: 0.625rem 1.125rem;
   background: white;
-  color: var(--gray-700);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-lg);
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.2s;
   position: relative;
 
   svg {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
+    color: #64748b;
   }
 
   &:hover {
-    background: var(--gray-50);
-    border-color: var(--gray-300);
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #1e293b;
+
+    svg { color: #334155; }
   }
 
   &.active {
-    background: var(--primary-50);
-    border-color: var(--primary-500);
-    color: var(--primary-600);
+    background: #eff6ff;
+    border-color: #3b82f6;
+    color: #2563eb;
+    
+    svg { color: #2563eb; }
+  }
+}
+
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1.25rem;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-lg);
+  font-weight: 700;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #fee2e2;
+    border-color: #f87171;
+    color: #b91c1c;
   }
 }
 

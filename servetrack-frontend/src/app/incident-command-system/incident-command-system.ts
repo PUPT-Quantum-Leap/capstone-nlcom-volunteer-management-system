@@ -1,14 +1,23 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RsvpService } from '../services/rsvp.service';
 import { Rsvp } from '../models/rsvp';
+import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
 
 export interface Volunteer {
   name: string;
   isNew: boolean;
   isDriver: boolean;
   isLeader: boolean;
+  // AI Metadata
+  age?: number;
+  attendance?: string;
+  skills?: string[];
+  training?: string[];
+  department?: string;
+  rationale?: string;
+  alternatives?: string[];
 }
 
 export interface Team {
@@ -43,10 +52,13 @@ export interface CommandRole {
   templateUrl: './incident-command-system.html',
   styleUrl: './incident-command-system.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CustomSelect],
 })
 export class IncidentCommandSystemComponent implements OnInit {
   private rsvpService = inject(RsvpService);
+
+  // Dropdown Options
+  rsvpOptions = signal<SelectOption[]>([]);
 
   // Edit mode state
   isEditMode = false;
@@ -69,6 +81,9 @@ export class IncidentCommandSystemComponent implements OnInit {
   // Command Hierarchy - Start empty
   responsibleOfficial: CommandRole = { role: 'Responsible Official', name: '' };
   incidentCommander: CommandRole = { role: 'Incident Commander', name: '' };
+  pio: CommandRole = { role: 'Public Information Officer', name: '' };
+  liaisonOfficer: CommandRole = { role: 'Liaison Officer', name: '' };
+  safetyOfficer: CommandRole = { role: 'Safety Officer', name: '' };
   planning: CommandRole = { role: 'Planning', name: '' };
   purchasing: CommandRole = { role: 'Purchasing', name: '' };
   mwcCoordinator: CommandRole = { role: 'MWC Coordinator', name: '' };
@@ -103,6 +118,47 @@ export class IncidentCommandSystemComponent implements OnInit {
   newMenu = '';
   newDate = '';
 
+  // Hover state for AI suggestions
+  hoveredVolunteer: Volunteer | CommandRole | null = null;
+  hoveredRole = '';
+
+  setHoveredVolunteer(volunteer: Volunteer | CommandRole, role: string): void {
+    if (!this.isEditMode) {
+      this.hoveredVolunteer = volunteer;
+      this.hoveredRole = role;
+    }
+  }
+
+  clearHover(): void {
+    this.hoveredVolunteer = null;
+    this.hoveredRole = '';
+  }
+
+  // Generate AI Rationale Mock
+  generateRationale(v: Volunteer | CommandRole, role: string): string {
+    // Handle CommandRole (Leadership nodes)
+    if ('role' in v) {
+      if (v.role === 'Responsible Official') return '• Senior leadership with verified oversight experience\n• Historical success in large-scale incident management';
+      if (v.role === 'Incident Commander') return '• Expert in field coordination and team management\n• High-stress resilience and decision-making skills';
+      return '• Specialized leadership with certified expertise\n• Deep institutional knowledge in assigned domain';
+    }
+
+    const skills = v.skills || ['General Ops'];
+    const attendance = v.attendance || '95%';
+    const training = v.training || ['Basic Safety'];
+    
+    return `• Exceptional ${attendance} attendance record
+• Expert in ${skills.join(', ')}
+• Certified in ${training.join(', ')}
+• ${v.age}-year veteran with deep experience in ${v.department || 'Operations'}`;
+  }
+
+  getAlternatives(role: string): string[] {
+    const allNames = ['Mark S.', 'Elena R.', 'David K.', 'Sarah J.', 'Tom H.', 'Lisa M.'];
+    // Return 2 random names that aren't the current one (simplified)
+    return allNames.sort(() => 0.5 - Math.random()).slice(0, 2);
+  }
+
   toggleEditMode(): void {
     if (this.isEditMode) {
       // Save changes - update the actual values
@@ -125,6 +181,23 @@ export class IncidentCommandSystemComponent implements OnInit {
   }
 
   // Volunteer management
+  swapVolunteer(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution', teamIndex: number, volunteerIndex: number, newName: string): void {
+    const column = this.getColumn(columnKey);
+    if (column && column.teams[teamIndex] && column.teams[teamIndex].volunteers[volunteerIndex]) {
+      const oldVolunteer = column.teams[teamIndex].volunteers[volunteerIndex];
+      column.teams[teamIndex].volunteers[volunteerIndex] = {
+        ...oldVolunteer,
+        name: newName,
+        // Reset metadata to trigger new rationale for the new person
+        age: Math.floor(Math.random() * 25) + 20,
+        attendance: (Math.floor(Math.random() * 20) + 80) + '%',
+        skills: ['Ops', 'Coordination'],
+        training: ['Basic Safety'],
+        department: 'Ops'
+      };
+    }
+  }
+
   addVolunteer(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution', teamIndex: number): void {
     const volunteerName = this.getVolunteerNameForColumn(columnKey);
     if (volunteerName.trim()) {
@@ -301,11 +374,51 @@ export class IncidentCommandSystemComponent implements OnInit {
       title: 'Mobile Kitchen',
       leader: 'Elisa Aguipo^',
       teams: [
-        { name: 'KITCHEN TRUCK', volunteers: [{ name: 'Miah', isNew: false, isDriver: false, isLeader: false }, { name: 'Jones', isNew: false, isDriver: false, isLeader: false }, { name: 'Sam', isNew: false, isDriver: false, isLeader: false }, { name: 'Rice: Blessing', isNew: false, isDriver: false, isLeader: false }] },
-        { name: 'FOOD PREP', volunteers: [{ name: 'Teresa^', isNew: false, isDriver: false, isLeader: true }, { name: 'Cath^a', isNew: false, isDriver: false, isLeader: false }, { name: 'Natasya', isNew: false, isDriver: false, isLeader: false }, { name: 'Michay', isNew: false, isDriver: false, isLeader: false }, { name: 'Aly', isNew: false, isDriver: false, isLeader: false }, { name: 'Evenmae', isNew: false, isDriver: false, isLeader: false }] },
-        { name: 'VOLUNTEER CARE', volunteers: [{ name: 'Myrrh^', isNew: false, isDriver: false, isLeader: true }, { name: 'Rhia^a', isNew: false, isDriver: false, isLeader: false }, { name: 'Lady', isNew: false, isDriver: false, isLeader: false }] },
-        { name: 'WASH / CLEAN UP', volunteers: [{ name: 'Orly^', isNew: false, isDriver: false, isLeader: false }, { name: 'John', isNew: false, isDriver: false, isLeader: false }, { name: 'Daniel', isNew: false, isDriver: false, isLeader: false }, { name: 'Ariel', isNew: false, isDriver: false, isLeader: false }] },
-        { name: 'INVENTORY', volunteers: [{ name: 'Beth^', isNew: false, isDriver: false, isLeader: false }, { name: 'Nestor', isNew: false, isDriver: false, isLeader: false }, { name: 'Johan (pm)', isNew: false, isDriver: false, isLeader: false }] },
+        { 
+          name: 'KITCHEN TRUCK', 
+          volunteers: [
+            { name: 'Miah', isNew: false, isDriver: false, isLeader: false, age: 24, attendance: '98%', skills: ['Cooking', 'Inventory'], training: ['Food Safety'], department: 'Logistics' },
+            { name: 'Jones', isNew: false, isDriver: false, isLeader: false, age: 29, attendance: '92%', skills: ['Heavy Lifting'], training: ['Safety 101'], department: 'Ops' },
+            { name: 'Sam', isNew: false, isDriver: false, isLeader: false, age: 22, attendance: '85%', skills: ['Cleaning'], training: ['Basic Hygiene'], department: 'Ops' },
+            { name: 'Rice: Blessing', isNew: false, isDriver: false, isLeader: false, age: 27, attendance: '100%', skills: ['Coordination'], training: ['Leadership'], department: 'Admin' }
+          ] 
+        },
+        { 
+          name: 'FOOD PREP', 
+          volunteers: [
+            { name: 'Teresa^', isNew: false, isDriver: false, isLeader: true, age: 35, attendance: '96%', skills: ['Culinary Arts'], training: ['Advanced Food Safety'], department: 'Logistics' },
+            { name: 'Cath^a', isNew: false, isDriver: false, isLeader: false, age: 31, attendance: '90%', skills: ['Prep Work'], training: ['Hygiene Cert'], department: 'Logistics' },
+            { name: 'Natasya', isNew: false, isDriver: false, isLeader: false, age: 23, attendance: '88%', skills: ['Speed Cutting'], training: ['Safety 101'], department: 'Ops' },
+            { name: 'Michay', isNew: false, isDriver: false, isLeader: false, age: 26, attendance: '94%', skills: ['Organization'], training: ['Food Safety'], department: 'Ops' },
+            { name: 'Aly', isNew: false, isDriver: false, isLeader: false, age: 24, attendance: '91%', skills: ['Sanitization'], training: ['Basic Safety'], department: 'Ops' },
+            { name: 'Evenmae', isNew: false, isDriver: false, isLeader: false, age: 25, attendance: '93%', skills: ['Plating'], training: ['Food Safety'], department: 'Logistics' }
+          ] 
+        },
+        { 
+          name: 'VOLUNTEER CARE', 
+          volunteers: [
+            { name: 'Myrrh^', isNew: false, isDriver: false, isLeader: true, age: 33, attendance: '99%', skills: ['First Aid', 'Counseling'], training: ['Advanced Safety'], department: 'Care' },
+            { name: 'Rhia^a', isNew: false, isDriver: false, isLeader: false, age: 28, attendance: '95%', skills: ['Communication'], training: ['First Aid'], department: 'Care' },
+            { name: 'Lady', isNew: false, isDriver: false, isLeader: false, age: 26, attendance: '87%', skills: ['Hospitality'], training: ['Basic Safety'], department: 'Ops' }
+          ] 
+        },
+        { 
+          name: 'WASH / CLEAN UP', 
+          volunteers: [
+            { name: 'Orly^', isNew: false, isDriver: false, isLeader: false, age: 40, attendance: '97%', skills: ['Sanitization'], training: ['Chemical Handling'], department: 'Ops' },
+            { name: 'John', isNew: false, isDriver: false, isLeader: false, age: 22, attendance: '84%', skills: ['Labor'], training: ['Basic Safety'], department: 'Ops' },
+            { name: 'Daniel', isNew: false, isDriver: false, isLeader: false, age: 23, attendance: '89%', skills: ['Labor'], training: ['Basic Safety'], department: 'Ops' },
+            { name: 'Ariel', isNew: false, isDriver: false, isLeader: false, age: 25, attendance: '92%', skills: ['Labor'], training: ['Basic Safety'], department: 'Ops' }
+          ] 
+        },
+        { 
+          name: 'INVENTORY', 
+          volunteers: [
+            { name: 'Beth^', isNew: false, isDriver: false, isLeader: false, age: 38, attendance: '100%', skills: ['Audit', 'XLS'], training: ['Logistics Management'], department: 'Logistics' },
+            { name: 'Nestor', isNew: false, isDriver: false, isLeader: false, age: 42, attendance: '95%', skills: ['Warehousing'], training: ['Safety 101'], department: 'Logistics' },
+            { name: 'Johan (pm)', isNew: false, isDriver: false, isLeader: false, age: 30, attendance: '91%', skills: ['Stock Control'], training: ['Basic Safety'], department: 'Ops' }
+          ] 
+        },
       ]
     };
 
@@ -314,10 +427,10 @@ export class IncidentCommandSystemComponent implements OnInit {
       title: 'AM DISTRIBUTION',
       leader: 'Steph Tan',
       teams: [
-        { name: 'TEAM ALPHA (PYP/GANNET)', volunteers: [{ name: 'Kevin~', isNew: false, isDriver: true, isLeader: false }] },
-        { name: 'TEAM BRAVO (MX/NBN)', volunteers: [{ name: 'John~', isNew: false, isDriver: true, isLeader: false }, { name: 'Blessing', isNew: false, isDriver: false, isLeader: false }, { name: 'Natasya', isNew: false, isDriver: false, isLeader: false }, { name: 'Jhay2', isNew: false, isDriver: false, isLeader: false }, { name: 'Evenmae', isNew: false, isDriver: false, isLeader: false }] },
-        { name: 'TEAM CHARLIE1 (MASVILLE)', volunteers: [{ name: 'Sam~', isNew: false, isDriver: true, isLeader: false }, { name: 'Michay^', isNew: false, isDriver: false, isLeader: true }, { name: 'Aly', isNew: false, isDriver: false, isLeader: false }] },
-        { name: 'TEAM CHARLIE2 (BANAJ)', volunteers: [{ name: 'Orly~', isNew: false, isDriver: true, isLeader: false }, { name: 'Daniel', isNew: false, isDriver: false, isLeader: false }, { name: 'Rhia', isNew: false, isDriver: false, isLeader: false }] },
+        { name: 'TEAM ALPHA (PYP/GANNET)', volunteers: [{ name: 'Kevin~', isNew: false, isDriver: true, isLeader: false, age: 32, attendance: '98%', skills: ['Driving', 'Nav'], training: ['Advanced Driving'], department: 'Logistics' }] },
+        { name: 'TEAM BRAVO (MX/NBN)', volunteers: [{ name: 'John~', isNew: false, isDriver: true, isLeader: false, age: 34, attendance: '96%', skills: ['Driving'], training: ['Defensive Driving'], department: 'Logistics' }, { name: 'Blessing', isNew: false, isDriver: false, isLeader: false, age: 27, attendance: '100%', skills: ['Coordination'], training: ['Leadership'], department: 'Admin' }, { name: 'Natasya', isNew: false, isDriver: false, isLeader: false, age: 23, attendance: '88%', skills: ['Speed Cutting'], training: ['Safety 101'], department: 'Ops' }, { name: 'Jhay2', isNew: false, isDriver: false, isLeader: false, age: 25, attendance: '90%', skills: ['Ops'], training: ['Basic Safety'], department: 'Ops' }, { name: 'Evenmae', isNew: false, isDriver: false, isLeader: false, age: 25, attendance: '93%', skills: ['Plating'], training: ['Food Safety'], department: 'Logistics' }] },
+        { name: 'TEAM CHARLIE1 (MASVILLE)', volunteers: [{ name: 'Sam~', isNew: false, isDriver: true, isLeader: false, age: 29, attendance: '94%', skills: ['Driving'], training: ['Basic Safety'], department: 'Logistics' }, { name: 'Michay^', isNew: false, isDriver: false, isLeader: true, age: 26, attendance: '94%', skills: ['Organization'], training: ['Food Safety'], department: 'Ops' }, { name: 'Aly', isNew: false, isDriver: false, isLeader: false, age: 24, attendance: '91%', skills: ['Sanitization'], training: ['Basic Safety'], department: 'Ops' }] },
+        { name: 'TEAM CHARLIE2 (BANAJ)', volunteers: [{ name: 'Orly~', isNew: false, isDriver: true, isLeader: false, age: 40, attendance: '97%', skills: ['Driving'], training: ['Chemical Handling'], department: 'Ops' }, { name: 'Daniel', isNew: false, isDriver: false, isLeader: false, age: 23, attendance: '89%', skills: ['Labor'], training: ['Basic Safety'], department: 'Ops' }, { name: 'Rhia', isNew: false, isDriver: false, isLeader: false, age: 28, attendance: '95%', skills: ['Communication'], training: ['First Aid'], department: 'Care' }] },
       ]
     };
 
@@ -326,9 +439,9 @@ export class IncidentCommandSystemComponent implements OnInit {
       title: 'PM DISTRIBUTION',
       leader: 'Steph Tan',
       teams: [
-        { name: 'TEAM DELTA1 (SITIO P)', volunteers: [{ name: 'Cedie~', isNew: false, isDriver: true, isLeader: false }, { name: 'Lady~', isNew: false, isDriver: true, isLeader: false }] },
-        { name: 'TEAM DELTA2 (SUCAT H)', volunteers: [{ name: 'Michael S~', isNew: false, isDriver: true, isLeader: false }, { name: 'Karl', isNew: false, isDriver: false, isLeader: false }, { name: 'Aly', isNew: false, isDriver: false, isLeader: false }] },
-        { name: 'TEAM ECHO (DELPAN)', volunteers: [{ name: 'John~', isNew: false, isDriver: true, isLeader: false }, { name: 'Cath^', isNew: false, isDriver: false, isLeader: true }, { name: 'Johan', isNew: false, isDriver: false, isLeader: false }] },
+        { name: 'TEAM DELTA1 (SITIO P)', volunteers: [{ name: 'Cedie~', isNew: false, isDriver: true, isLeader: false, age: 28, attendance: '93%', skills: ['Driving'], training: ['Basic Safety'], department: 'Logistics' }, { name: 'Lady~', isNew: false, isDriver: true, isLeader: false, age: 26, attendance: '87%', skills: ['Driving'], training: ['Basic Safety'], department: 'Ops' }] },
+        { name: 'TEAM DELTA2 (SUCAT H)', volunteers: [{ name: 'Michael S~', isNew: false, isDriver: true, isLeader: false, age: 31, attendance: '95%', skills: ['Driving'], training: ['Advanced Driving'], department: 'Logistics' }, { name: 'Karl', isNew: false, isDriver: false, isLeader: false, age: 24, attendance: '90%', skills: ['Ops'], training: ['Basic Safety'], department: 'Ops' }, { name: 'Aly', isNew: false, isDriver: false, isLeader: false, age: 24, attendance: '91%', skills: ['Sanitization'], training: ['Basic Safety'], department: 'Ops' }] },
+        { name: 'TEAM ECHO (DELPAN)', volunteers: [{ name: 'John~', isNew: false, isDriver: true, isLeader: false, age: 34, attendance: '96%', skills: ['Driving'], training: ['Defensive Driving'], department: 'Logistics' }, { name: 'Cath^', isNew: false, isDriver: false, isLeader: true, age: 31, attendance: '90%', skills: ['Coordination'], training: ['Hygiene Cert'], department: 'Logistics' }, { name: 'Johan', isNew: false, isDriver: false, isLeader: false, age: 30, attendance: '91%', skills: ['Stock Control'], training: ['Basic Safety'], department: 'Ops' }] },
         { name: 'TEAM FOXTROT (PAR/SUN)', volunteers: [] },
       ]
     };
@@ -384,6 +497,7 @@ export class IncidentCommandSystemComponent implements OnInit {
       next: (response) => {
         console.log('RSVP list loaded:', response);
         this.rsvpList = response.data || [];
+        this.rsvpOptions.set(this.rsvpList.map(r => ({ label: r.title, value: r.id.toString() })));
 
         if (this.rsvpList.length === 0) {
           this.error = 'No RSVP events found. Please create an RSVP event first.';

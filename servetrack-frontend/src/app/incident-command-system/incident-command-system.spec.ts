@@ -37,7 +37,7 @@ describe('IncidentCommandSystemComponent', () => {
 
   it('should have operational columns with correct structure', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const opsSection = compiled.querySelector('.ops-grid');
+    const opsSection = compiled.querySelector('.ops-section');
     expect(opsSection).toBeTruthy();
 
     const columns = compiled.querySelectorAll('.ops-column');

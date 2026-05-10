@@ -10,16 +10,34 @@ import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AnalyticsService, ReportData, DepartmentStat } from '../../services/analytics.service';
 
+import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
+
 @Component({
   selector: 'app-analytics',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, CustomSelect],
   templateUrl: './analytics.html',
   styleUrl: './analytics.scss',
 })
 export class AnalyticsComponent {
   private readonly analyticsService = inject(AnalyticsService);
   private readonly destroyRef = inject(DestroyRef);
+
+  // Dropdown Options
+  dateRangeOptions: SelectOption[] = [
+    { label: 'All Time', value: 'all' },
+    { label: 'This Month', value: 'month' },
+    { label: 'This Quarter', value: 'quarter' },
+    { label: 'This Year', value: 'year' }
+  ];
+
+  departmentSelectOptions = computed<SelectOption[]>(() => {
+    const options: SelectOption[] = [{ label: 'All Departments', value: '' }];
+    this.departmentOptions().forEach(dept => {
+      options.push({ label: dept.name, value: dept.name });
+    });
+    return options;
+  });
 
   readonly analyticsLoading = signal(false);
   readonly reportData = signal<ReportData | null>(null);

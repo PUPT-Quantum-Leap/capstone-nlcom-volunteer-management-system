@@ -12,10 +12,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Rsvp, RsvpShift } from '../../models/rsvp';
 import { RsvpService } from '../../services/rsvp.service';
 
+import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
+
 @Component({
   selector: 'app-rsvps',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, CustomSelect],
   templateUrl: './rsvps.html',
   styleUrl: './rsvps.scss',
 })
@@ -23,6 +25,14 @@ export class RsvpsComponent {
   private readonly fb = inject(FormBuilder);
   private readonly rsvpService = inject(RsvpService);
   private readonly destroyRef = inject(DestroyRef);
+
+  // Dropdown Options
+  statusFilterOptions: SelectOption[] = [
+    { label: 'All Events', value: 'all' },
+    { label: 'Active Events', value: 'active' },
+    { label: 'Draft Events', value: 'draft' },
+    { label: 'Closed Events', value: 'closed' }
+  ];
 
   readonly rsvps = signal<Rsvp[]>([]);
   readonly isLoading = signal(true);
@@ -39,7 +49,7 @@ export class RsvpsComponent {
   readonly isCreatingRsvp = signal(false);
   readonly isDeletingRsvp = signal(false);
   readonly isNotifyingRsvpId = signal<number | null>(null);
-  readonly notifyType = signal<'sms' | 'facebook' | null>(null);
+  readonly notifyType = signal<'sms' | null>(null);
   readonly feedbackMessage = signal('');
   readonly feedbackType = signal<'success' | 'error' | 'info'>('info');
 
@@ -325,6 +335,7 @@ export class RsvpsComponent {
         );
       },
       error: (error: { error?: { message?: string; errors?: Record<string, string[]> }; message?: string }) => {
+        console.error('Error saving RSVP:', error);
         this.isCreatingRsvp.set(false);
 
         // Extract validation errors from backend response
@@ -410,11 +421,12 @@ export class RsvpsComponent {
           this.isDeletingRsvp.set(false);
           this.showFeedback('RSVP deleted successfully.', 'success');
         },
-        error: () => {
+        error: (error: Error) => {
+          console.error('Error deleting RSVP:', error);
           this.isDeletingRsvp.set(false);
           this.showFeedback('RSVP deletion failed.', 'error');
         },
-    });
+      });
   }
 
   notifyRsvpSms(rsvpId: number): void {
@@ -434,40 +446,16 @@ export class RsvpsComponent {
           );
         },
         error: (error: { error?: { message?: string }; message?: string }) => {
+          console.error('Error sending SMS notifications:', error);
           this.isNotifyingRsvpId.set(null);
           this.notifyType.set(null);
 
           const errorMessage = error.error?.message || error.message || 'Failed to send SMS notifications.';
           this.showFeedback(errorMessage, 'error');
         },
-    });
+      });
   }
 
-  notifyRsvpFacebook(rsvpId: number): void {
-    this.isNotifyingRsvpId.set(rsvpId);
-    this.notifyType.set('facebook');
-
-    this.rsvpService
-      .notifyFacebook(rsvpId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (result) => {
-          this.isNotifyingRsvpId.set(null);
-          this.notifyType.set(null);
-          this.showFeedback(
-            `Facebook notifications sent: ${result.sent}/${result.total}`,
-            'success',
-          );
-        },
-        error: (error: { error?: { message?: string }; message?: string }) => {
-          this.isNotifyingRsvpId.set(null);
-          this.notifyType.set(null);
-
-          const errorMessage = error.error?.message || error.message || 'Failed to send Facebook notifications.';
-          this.showFeedback(errorMessage, 'error');
-        },
-    });
-  }
 
   updateRsvpStatus(rsvpId: number, status: 'active' | 'closed' | 'draft'): void {
     this.rsvpService
@@ -477,10 +465,11 @@ export class RsvpsComponent {
         next: () => {
           this.loadRsvps();
         },
-        error: () => {
+        error: (error: Error) => {
+          console.error('Error updating RSVP status:', error);
           this.showFeedback('Failed to update RSVP status.', 'error');
         },
-    });
+      });
   }
 
   getResponsePercentage(rsvp: Rsvp, shift: RsvpShift): number {
@@ -514,11 +503,12 @@ export class RsvpsComponent {
           this.rsvps.set(response.data ?? []);
           this.isLoading.set(false);
         },
-        error: () => {
+        error: (error: Error) => {
+          console.error('Error loading RSVPs:', error);
           this.rsvps.set([]);
           this.isLoading.set(false);
         },
-    });
+      });
   }
 
   private cutoffDateValidator(): ValidatorFn {

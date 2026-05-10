@@ -13,6 +13,8 @@ import { AdminDashboardService } from '../../services/admin-dashboard.service';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ServeBotComponent } from '../serve-bot/serve-bot';
+import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
 
 type AdminView =
   | 'dashboard'
@@ -30,7 +32,7 @@ type AdminView =
 @Component({
   selector: 'app-admin-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, NgOptimizedImage, RouterOutlet],
+  imports: [CommonModule, NgOptimizedImage, RouterOutlet, ServeBotComponent, LoadingScreenComponent],
   templateUrl: './admin-layout.html',
   styleUrl: './admin-layout.scss',
 })
@@ -51,7 +53,8 @@ export class AdminLayout implements OnInit {
   showNotifications = signal(false);
   showLogoutModal = signal(false);
   isLoading = signal(false);
-  showAiSidebar = signal(false);
+  pageLoading = signal(true);
+  showServeBot = signal(false);
   searchQuery = signal('');
   currentUrl = signal(this.router.url);
  
@@ -121,6 +124,12 @@ export class AdminLayout implements OnInit {
 
   ngOnInit(): void {
     this.updateIsMobile();
+    
+    // Initial 2.5-second loading screen for professional startup experience
+    setTimeout(() => {
+      this.pageLoading.set(false);
+    }, 2500);
+
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
@@ -189,8 +198,8 @@ export class AdminLayout implements OnInit {
     this.showNotifications.update(v => !v);
   }
 
-  toggleAiSidebar(): void {
-    this.showAiSidebar.update(v => !v);
+  toggleServeBot(): void {
+    this.showServeBot.update(v => !v);
   }
 
   openLogoutModal(): void {

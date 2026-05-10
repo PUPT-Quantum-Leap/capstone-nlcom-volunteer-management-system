@@ -15,10 +15,14 @@
     </div>
     <div class="report-header-right">
       <button type="button" class="action-btn" [disabled]="backupActionLoading()" (click)="refreshBackups()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-        </svg>
-        Refresh
+        @if (backupActionLoading()) {
+          <span class="btn-spinner"></span> Refreshing...
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+          Refresh
+        }
       </button>
     </div>
   </header>
@@ -37,7 +41,11 @@
           <p>Create a manual snapshot of your current system data and records.</p>
           <button type="button" class="primary-btn btn-lg" [disabled]="backupActionLoading()"
             (click)="createBackup()">
-            Create Full Backup
+            @if (backupActionLoading()) {
+              <span class="btn-spinner"></span> Creating Backup...
+            } @else {
+              Create Full Backup
+            }
           </button>
         </div>
       </article>
@@ -71,7 +79,9 @@
               [disabled]="scheduleSettingsSaving()"
               (click)="toggleScheduledBackups()"
             >
-              @if (scheduledBackupEnabled()) {
+              @if (scheduleSettingsSaving()) {
+                <span class="btn-spinner"></span> Saving...
+              } @else if (scheduledBackupEnabled()) {
                 Disable Schedule
               } @else {
                 Enable Schedule
