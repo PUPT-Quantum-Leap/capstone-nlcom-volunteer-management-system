@@ -21,19 +21,20 @@
     </div>
     <div class="report-header-right">
       <span class="filter-label">DATE RANGE</span>
-      <select class="filter-dropdown" [value]="dateRangeFilter()" (change)="setDateRange($any($event.target).value)">
-        <option value="all">All Time</option>
-        <option value="month">This Month</option>
-        <option value="quarter">This Quarter</option>
-        <option value="year">This Year</option>
-      </select>
+      <app-custom-select 
+        [options]="dateRangeOptions" 
+        [value]="dateRangeFilter()"
+        (valueChange)="setDateRange($event)"
+        variant="admin">
+      </app-custom-select>
+
       <span class="filter-label">DEPT</span>
-      <select class="filter-dropdown filter-dropdown-compact" (change)="onDepartmentFilterChange($any($event.target).value)">
-        <option value="">All</option>
-        @for (department of departmentOptions(); track department.name) {
-        <option [value]="department.name">{{ department.name }}</option>
-        }
-      </select>
+      <app-custom-select 
+        [options]="departmentSelectOptions()" 
+        [value]="selectedDepartmentFilter() || ''"
+        (valueChange)="onDepartmentFilterChange($event)"
+        variant="admin">
+      </app-custom-select>
     </div>
   </header>
 

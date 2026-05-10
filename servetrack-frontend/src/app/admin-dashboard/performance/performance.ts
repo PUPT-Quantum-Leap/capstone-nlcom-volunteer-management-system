@@ -11,16 +11,27 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AdminDashboardService } from '../../services/admin-dashboard.service';
 import { PerformanceMetric } from '../../models/performance-metric';
 
+import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
+
 @Component({
   selector: 'app-performance',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, CustomSelect],
   templateUrl: './performance.html',
   styleUrl: './performance.scss',
 })
 export class PerformanceComponent {
   private readonly adminDashboardService = inject(AdminDashboardService);
   private readonly destroyRef = inject(DestroyRef);
+
+  // Dropdown Options
+  sortOptions: SelectOption[] = [
+    { label: 'Sort by Attendance', value: 'attendance' },
+    { label: 'Sort by Hours', value: 'hours' },
+    { label: 'Sort by Name', value: 'name' },
+    { label: 'Sort by Tasks', value: 'tasks' },
+    { label: 'Sort by Rating', value: 'rating' }
+  ];
 
   readonly Math = Math;
   readonly performanceMetrics = signal<PerformanceMetric[]>([]);

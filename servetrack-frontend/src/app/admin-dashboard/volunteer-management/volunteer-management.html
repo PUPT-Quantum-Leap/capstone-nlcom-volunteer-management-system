@@ -21,10 +21,12 @@
     </div>
     <div class="report-header-right">
       <span class="filter-label">STATUS</span>
-      <select class="filter-dropdown" [value]="showArchivedVolunteers() ? 'archived' : 'active'" (change)="$any($event.target).value === 'active' ? switchToActiveVolunteers() : switchToArchivedVolunteers()">
-        <option value="active">Active Volunteers</option>
-        <option value="archived">Archived Volunteers</option>
-      </select>
+      <app-custom-select 
+        [options]="statusOptions" 
+        [value]="showArchivedVolunteers() ? 'archived' : 'active'"
+        (valueChange)="$event === 'active' ? switchToActiveVolunteers() : switchToArchivedVolunteers()"
+        variant="admin">
+      </app-custom-select>
     </div>
   </header>
 
@@ -181,12 +183,17 @@
                   type="button"
                   class="icon-btn icon-btn-success"
                   (click)="restoreVolunteer(volunteer.id)"
+                  [disabled]="isSaving()"
                   [attr.aria-label]="'Restore ' + volunteer.name"
                   title="Restore">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-                    <path d="M3 3v5h5" />
-                  </svg>
+                  @if (isSaving()) {
+                    <span class="btn-spinner"></span>
+                  } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                      <path d="M3 3v5h5" />
+                    </svg>
+                  }
                 </button>
               }
             </div>
@@ -333,8 +340,10 @@
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="outline-btn" (click)="closeEditModal()">Cancel</button>
-        <button type="button" class="primary-btn" (click)="saveVolunteer()">Save Changes</button>
+        <button type="button" class="outline-btn" (click)="closeEditModal()" [disabled]="isSaving()">Cancel</button>
+        <button type="button" class="primary-btn" (click)="saveVolunteer()" [disabled]="isSaving()">
+          @if (isSaving()) { <span class="btn-spinner"></span> Saving... } @else { Save Changes }
+        </button>
       </div>
     </section>
   </div>
@@ -367,8 +376,10 @@
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="outline-btn" (click)="closeDeleteModal()">Cancel</button>
-        <button type="button" class="danger-btn" (click)="archiveVolunteer()">Archive Volunteer</button>
+        <button type="button" class="outline-btn" (click)="closeDeleteModal()" [disabled]="isSaving()">Cancel</button>
+        <button type="button" class="danger-btn" (click)="archiveVolunteer()" [disabled]="isSaving()">
+          @if (isSaving()) { <span class="btn-spinner"></span> Archiving... } @else { Archive Volunteer }
+        </button>
       </div>
     </div>
   </div>

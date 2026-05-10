@@ -1,3 +1,7 @@
+@if (pageLoading()) {
+  <app-loading-screen></app-loading-screen>
+}
+
 <div class="dashboard-container">
 
   <!-- Sidebar Navigation Template -->
@@ -233,14 +237,6 @@
             (input)="setSearchQuery(dashboardSearch.value)" (keydown.enter)="runSearch()" placeholder="Search..."
             aria-label="Search modules" />
         </div>
-        <button type="button" class="outline-btn ai-toggle-btn" [class.active]="showAiSidebar()"
-          (click)="toggleAiSidebar()" aria-label="Toggle Star AI Assistant" title="Star AI Assistant">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z" />
-          </svg>
-          Star AI
-        </button>
         <button type="button" class="outline-btn" (click)="toggleNotifications()"
           [attr.aria-label]="'Notifications' + (notificationCount() > 0 ? ', ' + notificationCount() + ' unread' : '')"
           aria-haspopup="true">
@@ -253,7 +249,19 @@
           <span class="notification-badge">{{ notificationCount() }}</span>
           }
         </button>
-        <button type="button" class="outline-btn" (click)="logout()" [disabled]="isLoading()">Sign Out</button>
+        <button type="button" class="servebot-toggle-btn" [class.active]="showServeBot()"
+          (click)="toggleServeBot()" aria-label="Toggle ServeBot Assistant" title="ServeBot Assistant">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="10" rx="2" />
+            <circle cx="12" cy="5" r="2" />
+            <path d="M12 7v4" />
+            <line x1="8" y1="16" x2="8" y2="16" />
+            <line x1="16" y1="16" x2="16" y2="16" />
+          </svg>
+          ServeBot
+        </button>
+        <button type="button" class="logout-btn" (click)="logout()" [disabled]="isLoading()">Sign Out</button>
       </div>
     </header>
 
@@ -263,6 +271,10 @@
     </main>
   </div>
 </div>
+
+@if (showServeBot()) {
+  <app-serve-bot (close)="showServeBot.set(false)"></app-serve-bot>
+}
 
 <!-- Admin Profile Edit Modal -->
 @if (showProfileModal()) {

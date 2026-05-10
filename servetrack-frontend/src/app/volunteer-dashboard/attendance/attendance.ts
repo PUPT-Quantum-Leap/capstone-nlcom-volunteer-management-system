@@ -7,7 +7,7 @@ import {
   computed,
   DestroyRef,
 } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, TitleCasePipe } from '@angular/common';
 import { VolunteerService } from '../../services/volunteer.service';
 import { AttendancePeriod } from '../../models/attendance';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -17,7 +17,7 @@ import { Attendance } from '../../models/attendance';
 @Component({
   selector: 'app-attendance',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe],
+  imports: [DatePipe, TitleCasePipe],
   templateUrl: './attendance.html',
   styleUrl: './attendance.scss',
   host: {
@@ -100,9 +100,7 @@ export class AttendanceComponent implements OnInit {
     return this.attendanceItems().filter(item =>
       item.description?.toLowerCase().includes(query) ||
       item.location?.toLowerCase().includes(query) ||
-      item.time_slot?.toLowerCase().includes(query) ||
-      item.status.toLowerCase().includes(query) ||
-      this.getDisplayStatus(item.status).toLowerCase().includes(query)
+      item.status.toLowerCase().includes(query)
     );
   });
 
@@ -125,10 +123,6 @@ export class AttendanceComponent implements OnInit {
       )
       .subscribe((response) => {
         if (response.success) {
-          console.log('Attendance data received:', response.data);
-          response.data?.forEach((item, i) => {
-            console.log(`Item ${i}: hours=`, item.hours, 'type=', typeof item.hours);
-          });
           this.attendanceItems.set(response.data ?? []);
         }
       });
@@ -250,17 +244,8 @@ export class AttendanceComponent implements OnInit {
   }
 
   getAttendanceStatusClass(status: string): string {
-    if (status === 'approved' || status === 'present') return 'status-present';
-    if (status === 'rejected' || status === 'absent') return 'status-absent';
-    // Default pending/null to present
-    return 'status-present';
-  }
-
-  getDisplayStatus(status: string | null | undefined): string {
-    if (status === 'rejected' || status === 'absent') {
-      return 'Absent';
-    }
-    // Default to Present for approved, pending, null, etc.
-    return 'Present';
+    if (status === 'approved') return 'confirmed';
+    if (status === 'rejected') return 'rejected';
+    return 'pending';
   }
 }

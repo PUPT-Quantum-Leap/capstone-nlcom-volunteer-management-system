@@ -101,30 +101,7 @@
 }
 
 .filter-dropdown {
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: #e2e8f0;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-  }
-
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-  }
-
-  option {
-    background: #1e293b;
-    color: #e2e8f0;
-  }
+  @include premium-dropdown;
 }
 
 .action-btn {
@@ -329,7 +306,7 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  overflow: visible; // Allow dropdowns to overflow
 }
 
 .report-table {
@@ -574,30 +551,39 @@
 }
 
 .attendance-dropdown {
-  padding: 0.375rem 0.75rem;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding: 0.375rem 2.25rem 0.375rem 0.875rem;
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--gray-700);
-  background: var(--white);
+  background-color: var(--white);
   border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all var(--transition-base);
-  min-width: 100px;
+  min-width: 120px;
+  box-shadow: var(--shadow-sm);
 
   &:hover {
     border-color: var(--primary-300);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
   }
 
   &:focus {
     outline: none;
     border-color: var(--primary-500);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 4px var(--primary-50);
   }
 
   option {
     padding: 0.5rem;
+    background: white;
+    color: var(--gray-700);
   }
 
   &.dropdown-present {
@@ -611,8 +597,10 @@
     }
 
     option {
-      background: var(--white);
-      color: var(--gray-700);
+      background: white;
+      color: var(--gray-800);
+      padding: 10px;
+      font-weight: 500;
     }
   }
 
@@ -627,8 +615,10 @@
     }
 
     option {
-      background: var(--white);
-      color: var(--gray-700);
+      background: white;
+      color: var(--gray-800);
+      padding: 10px;
+      font-weight: 500;
     }
   }
 }
@@ -1142,7 +1132,7 @@
 .attendance-table-wrapper {
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .attendance-history-table {

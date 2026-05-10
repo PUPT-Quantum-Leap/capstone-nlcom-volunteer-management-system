@@ -21,17 +21,19 @@
     </div>
     <div class="report-header-right">
       <span class="filter-label">STATUS</span>
-      <select class="filter-dropdown" [value]="showArchivedUsers() ? 'archived' : 'active'" (change)="$any($event.target).value === 'active' ? switchToActiveUsers() : switchToArchivedUsers()">
-        <option value="active">Active Users</option>
-        <option value="archived">Archived Users</option>
-      </select>
-      <span class="filter-label">ROLE</span>
-      <select class="filter-dropdown" [value]="userRoleFilter()" (change)="setUserRoleFilter($any($event.target).value)">
-        <option value="">All Roles</option>
-        <option value="admin">Admin</option>
-        <option value="coordinator">Coordinator</option>
-        <option value="volunteer">Volunteer</option>
-      </select>
+      <app-custom-select 
+        [options]="statusOptions" 
+        [value]="showArchivedUsers() ? 'archived' : 'active'"
+        (valueChange)="$event === 'active' ? switchToActiveUsers() : switchToArchivedUsers()"
+        variant="admin">
+      </app-custom-select>
+
+      <app-custom-select 
+        [options]="roleOptions" 
+        [value]="userRoleFilter()"
+        (valueChange)="setUserRoleFilter($event)"
+        variant="admin">
+      </app-custom-select>
       @if (!showArchivedUsers()) {
       <button type="button" class="action-btn" (click)="openCreateUserModal()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -199,12 +201,17 @@
                   type="button"
                   class="icon-btn icon-btn-success"
                   (click)="restoreUser(user.id)"
+                  [disabled]="isSaving()"
                   [attr.aria-label]="'Restore ' + user.name"
                   title="Restore">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-                    <path d="M3 3v5h5" />
-                  </svg>
+                  @if (isSaving()) {
+                    <span class="btn-spinner"></span>
+                  } @else {
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+                      <path d="M3 3v5h5" />
+                    </svg>
+                  }
                 </button>
               }
             </div>
@@ -296,8 +303,10 @@
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="outline-btn" (click)="closeDeleteUserModal()">Cancel</button>
-        <button type="button" class="danger-btn" (click)="deleteUser()">Archive User</button>
+        <button type="button" class="outline-btn" (click)="closeDeleteUserModal()" [disabled]="isSaving()">Cancel</button>
+        <button type="button" class="danger-btn" (click)="deleteUser()" [disabled]="isSaving()">
+          @if (isSaving()) { <span class="btn-spinner"></span> Archiving... } @else { Archive User }
+        </button>
       </div>
     </div>
   </div>
@@ -396,12 +405,14 @@
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="outline-btn" (click)="closeEditUserModal()">Cancel</button>
+        <button type="button" class="outline-btn" (click)="closeEditUserModal()" [disabled]="isSaving() || isCreatingInvite()">Cancel</button>
         @if (editingUser()) {
-          <button type="button" class="primary-btn" (click)="saveUser()">Save Changes</button>
+          <button type="button" class="primary-btn" (click)="saveUser()" [disabled]="isSaving()">
+            @if (isSaving()) { <span class="btn-spinner"></span> Saving... } @else { Save Changes }
+          </button>
         } @else {
           <button type="button" class="primary-btn" (click)="createInvite()" [disabled]="isCreatingInvite()">
-            @if (isCreatingInvite()) { Creating... } @else { Create Invite }
+            @if (isCreatingInvite()) { <span class="btn-spinner"></span> Creating... } @else { Create Invite }
           </button>
         }
       </div>

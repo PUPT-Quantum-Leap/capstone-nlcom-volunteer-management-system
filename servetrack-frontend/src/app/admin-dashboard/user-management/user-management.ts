@@ -12,11 +12,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { User } from '../../models/user';
 import { UserService } from '../../services/user.service';
 import { InviteService } from '../../services/invite.service';
+import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
 
 @Component({
   selector: 'app-user-management',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, CustomSelect],
   templateUrl: './user-management.html',
   styleUrl: './user-management.scss',
 })
@@ -24,6 +25,19 @@ export class UserManagementComponent {
   private readonly userService = inject(UserService);
   private readonly inviteService = inject(InviteService);
   private readonly destroyRef = inject(DestroyRef);
+
+  // Dropdown Options
+  statusOptions: SelectOption[] = [
+    { label: 'Active Users', value: 'active' },
+    { label: 'Archived Users', value: 'archived' }
+  ];
+
+  roleOptions: SelectOption[] = [
+    { label: 'All Roles', value: '' },
+    { label: 'Admin', value: 'admin' },
+    { label: 'Coordinator', value: 'coordinator' },
+    { label: 'Volunteer', value: 'volunteer' }
+  ];
 
   // Outputs
   showSnackbar = output<{ message: string; type: 'success' | 'error' | 'info' }>();
@@ -49,6 +63,7 @@ export class UserManagementComponent {
   readonly inviteEmail = signal('');
   readonly inviteLink = signal('');
   readonly isCreatingInvite = signal(false);
+  readonly isSaving = signal(false);
   readonly showInviteSuccess = signal(false);
 
   readonly filteredUsers = computed(() => {
@@ -194,6 +209,7 @@ export class UserManagementComponent {
       return;
     }
 
+    this.isSaving.set(true);
     this.userService
       .softDeleteUser(userId)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -202,17 +218,20 @@ export class UserManagementComponent {
           this.users.update((items) => items.filter((user) => user.id !== userId));
           this.loadArchivedUsers();
           this.showSnackbar.emit({ message: 'User archived successfully', type: 'success' });
+          this.isSaving.set(false);
           this.closeDeleteUserModal();
         },
         error: (error: Error) => {
           console.error('Error archiving user:', error);
           this.showSnackbar.emit({ message: 'Failed to archive user', type: 'error' });
+          this.isSaving.set(false);
           this.closeDeleteUserModal();
         },
       });
   }
 
   restoreUser(id: number): void {
+    this.isSaving.set(true);
     this.userService.restoreUser(id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -220,10 +239,12 @@ export class UserManagementComponent {
           this.loadUsers();
           this.loadArchivedUsers();
           this.showSnackbar.emit({ message: 'User restored successfully', type: 'success' });
+          this.isSaving.set(false);
         },
         error: (error: Error) => {
           console.error('Error restoring user:', error);
           this.showSnackbar.emit({ message: 'Failed to restore user', type: 'error' });
+          this.isSaving.set(false);
         },
       });
   }
@@ -264,17 +285,20 @@ export class UserManagementComponent {
       role: formData.role as 'admin' | 'coordinator' | 'volunteer',
     };
 
+    this.isSaving.set(true);
     this.userService.updateUser(user.id, updateData)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
           this.loadUsers();
           this.showSnackbar.emit({ message: 'User updated successfully', type: 'success' });
+          this.isSaving.set(false);
           this.closeEditUserModal();
         },
         error: (error: Error) => {
           console.error('Error updating user:', error);
           this.showSnackbar.emit({ message: 'Failed to update user', type: 'error' });
+          this.isSaving.set(false);
         },
       });
   }

@@ -14,13 +14,12 @@
     </div>
     <div class="report-header-right">
       <span class="filter-label">SORT BY</span>
-      <select class="filter-dropdown" [value]="sortField()" (change)="sortBy($any($event.target).value)">
-        <option value="attendance">Attendance Rate</option>
-        <option value="hours">Hours Served</option>
-        <option value="name">Volunteer Name</option>
-        <option value="tasks">Tasks Completed</option>
-        <option value="rating">Rating</option>
-      </select>
+      <app-custom-select 
+        [options]="sortOptions" 
+        [value]="sortField()"
+        (valueChange)="sortBy($event)"
+        variant="admin">
+      </app-custom-select>
     </div>
   </header>
 
