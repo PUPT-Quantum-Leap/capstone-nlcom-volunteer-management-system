@@ -33,6 +33,7 @@ class RsvpResponse extends Model
         'last_edited_at',
         'initial_time_slot_id',
         'edit_history',
+        'cutoff_reminder_sent_at',
     ];
 
     protected function casts(): array
@@ -45,6 +46,7 @@ class RsvpResponse extends Model
             'last_edited_at' => 'datetime',
             'attendance_status' => 'string',
             'edit_history' => 'array',
+            'cutoff_reminder_sent_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
     }
@@ -93,14 +95,14 @@ class RsvpResponse extends Model
 
     public function checkIn(): void
     {
-        $this->checked_in_at = now();
+        $this->checked_in_at = Carbon::now();
         $this->attendance_status = 'checked_in';
         $this->save();
     }
 
     public function checkOut(): void
     {
-        $this->checked_out_at = now();
+        $this->checked_out_at = Carbon::now();
         $this->attendance_status = 'checked_out';
         $this->save();
     }
@@ -156,6 +158,6 @@ class RsvpResponse extends Model
 
         $this->edit_history = $history;
         $this->edit_count++;
-        $this->last_edited_at = now();
+        $this->last_edited_at = Carbon::now();
     }
 }
