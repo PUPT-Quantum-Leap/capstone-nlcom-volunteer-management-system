@@ -2,6 +2,7 @@
 
 use App\Console\Commands\CloseExpiredRsvp;
 use App\Console\Commands\RunScheduledBackup;
+use App\Console\Commands\SendRsvpCutoffReminders;
 use App\Http\Middleware\AdvancedRateLimit;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\NormalizeEmail;
@@ -27,6 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command(CloseExpiredRsvp::class)->everyThreeMinutes();
+
+        $schedule->command(SendRsvpCutoffReminders::class)
+            ->dailyAt('09:00')
+            ->description('Send RSVP cutoff reminder emails to volunteers');
 
         $schedule->command(RunScheduledBackup::class)
             ->dailyAt(config('backup.schedule.time'))
