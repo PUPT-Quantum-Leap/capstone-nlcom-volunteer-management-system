@@ -28,6 +28,10 @@ yarn-error.log*
 .env.local
 .env.*.local
 .server.env
+.env.production
+
+# Docker production secrets
+certbot/
 
 # Gitleaks report
 gitleaks-report.json
