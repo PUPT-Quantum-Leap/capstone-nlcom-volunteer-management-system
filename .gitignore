@@ -39,3 +39,8 @@ deployment-*.md
 vps-hardening-guide.md
 PRODUCTION_DOCKER_PLAN.md
 project-deployment-*.md
+
+# SSH/AWS private keys - NEVER commit these!
+*.pem
+*.key
+*.ppk
