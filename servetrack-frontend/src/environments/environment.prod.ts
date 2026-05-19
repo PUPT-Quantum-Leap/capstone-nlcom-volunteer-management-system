@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://servetrack.kaelvxdev.space/api',
+  apiUrl: 'https://api.servetrack.quantumapp.tech/api',
 };
