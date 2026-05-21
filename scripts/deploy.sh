@@ -13,8 +13,7 @@ RELEASES_DIR="$APP_DIR/releases"
 CURRENT_DIR="$APP_DIR/current"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 NEW_RELEASE_DIR="$RELEASES_DIR/$TIMESTAMP"
-BACKEND_SERVICE="servetrack-backend"
-HEALTH_URL_LOCAL="http://127.0.0.1:8000/up"
+HEALTH_URL_LOCAL="https://api.servetrack.quantumapp.tech/up"
 MAX_WAIT_TIME="30"
 
 # Track deployment state
@@ -32,7 +31,7 @@ handle_error() {
         if [[ -n "$PREV_RELEASE" ]]; then
             echo "Rolling back to previous release: $PREV_RELEASE"
             sudo ln -nfs "$PREV_RELEASE" "$CURRENT_DIR"
-            sudo systemctl restart "$BACKEND_SERVICE" || true
+            sudo systemctl restart php8.3-fpm || true
             sudo systemctl reload nginx || true
             echo "Rollback complete. Please check the logs."
         else
@@ -40,7 +39,7 @@ handle_error() {
         fi
         
         # Show some error logs
-        sudo journalctl -u "$BACKEND_SERVICE" -n 50 --no-pager || true
+        sudo journalctl -u php8.3-fpm -n 50 --no-pager || true
     else
         echo "Error occurred BEFORE atomic swap. Live site is unaffected."
         echo "Cleaning up failed release directory: $NEW_RELEASE_DIR"
@@ -104,25 +103,24 @@ sudo -u www-data php artisan view:cache
 sudo -u www-data php artisan migrate --force
 
 # Step 5: Update System configs if necessary
-echo "Step 5: Applying Systemd and Nginx configurations..."
-sudo cp "$NEW_RELEASE_DIR/config/servetrack-backend.service" /etc/systemd/system/servetrack-backend.service
-sudo systemctl daemon-reload
-
-if [ ! -f /etc/nginx/sites-available/servetrack ] || [ ! -d /etc/letsencrypt/live/servetrack.kaelvxdev.space ]; then
+echo "Step 5: Applying Nginx configuration and restarting PHP-FPM..."
+if [ ! -f /etc/nginx/sites-available/servetrack ] || [ ! -d /etc/letsencrypt/live/api.servetrack.quantumapp.tech ]; then
     sudo cp "$NEW_RELEASE_DIR/config/servetrack-nginx.conf" /etc/nginx/sites-available/servetrack
 else
     echo "Keeping existing nginx config to preserve Certbot SSL config."
 fi
 sudo ln -sf /etc/nginx/sites-available/servetrack /etc/nginx/sites-enabled/servetrack
 
+# Restart PHP-FPM to pick up new code
+sudo systemctl restart php8.3-fpm
+
 # Step 6: The Atomic Swap
 echo "Step 6: Executing Atomic Swap..."
 sudo ln -nfs "$NEW_RELEASE_DIR" "$CURRENT_DIR"
 ATOMIC_SWAP_COMPLETED=true
 
-# Step 7: Restart Services
-echo "Step 7: Restarting services..."
-sudo systemctl restart "$BACKEND_SERVICE"
+# Step 7: Reload Nginx
+echo "Step 7: Reloading nginx..."
 sudo nginx -t && sudo systemctl reload nginx
 
 # Step 8: Health Check and Auto-Rollback
@@ -150,7 +148,7 @@ fi
 # Step 9: Cleanup
 echo "Step 9: Cleaning up old releases (keeping last 5)..."
 ls -1dt "$RELEASES_DIR"/* | tail -n +6 | sudo xargs -r rm -rf || true
-sudo rm -f /tmp/build.tar.gz /tmp/scripts/deploy.sh || true
+sudo rm -f /tmp/build.tar.gz /tmp/servetrack-launcher/deploy.sh || true
 
 echo "=========================================="
 echo "Deployment completed successfully!"

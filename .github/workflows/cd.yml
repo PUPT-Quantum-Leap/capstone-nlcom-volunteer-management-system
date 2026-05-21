@@ -24,14 +24,6 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: servetrack-frontend/package-lock.json
-
-      # Fix 7: Align PHP version with ci.yml (was 8.3, CI uses 8.2)
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -50,46 +42,16 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('servetrack-backend/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      - name: Build Frontend
-        working-directory: servetrack-frontend
-        run: |
-          npm ci
-          npm run build --configuration=production
-
-      # Fix 9: Removed misleading PWA check (ServeTrack has no ngsw.json).
-      #         Replaced with a simple index.html guard that actually fails the build.
-      - name: Verify Frontend Build
-        working-directory: servetrack-frontend
-        run: |
-          echo "=== Checking Frontend Build Artifacts ==="
-
-          MAIN_DIST_DIR=$(find dist -name "index.html" -exec dirname {} \; | head -n 1)
-          if [ -z "$MAIN_DIST_DIR" ]; then
-            echo "❌ ERROR: index.html not found in frontend build."
-            exit 1
-          fi
-          echo "✅ index.html found in $MAIN_DIST_DIR"
-          echo "Build size: $(du -sh dist | cut -f1)"
-
       - name: Build Backend
         working-directory: servetrack-backend
         run: |
           composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
-      - name: Prepare prod branch
+      - name: Create Build Archive
         run: |
-          git config user.name "GitHub Actions Bot"
-          git config user.email "actions@github.com"
-
-          # Stage artifacts to a temp location before switching branches
-          mkdir -p /tmp/build-artifacts/frontend
           mkdir -p /tmp/build-artifacts/backend
           mkdir -p /tmp/build-artifacts/config
           mkdir -p /tmp/build-artifacts/scripts
-
-          # Find and copy frontend build output
-          FRONTEND_DIST_DIR=$(find servetrack-frontend/dist -name "index.html" -exec dirname {} \; | head -n 1)
-          cp -R "$FRONTEND_DIST_DIR"/* /tmp/build-artifacts/frontend/
 
           # Copy backend (strip dev-only dirs)
           rsync -a \
@@ -104,36 +66,13 @@ jobs:
 
           # Copy deployment config and scripts
           cp config/servetrack-nginx.conf /tmp/build-artifacts/config/
-          cp config/servetrack-backend.service /tmp/build-artifacts/config/
           cp scripts/deploy.sh /tmp/build-artifacts/scripts/
 
-          # Switch to prod branch (create orphan if it doesn't exist yet)
-          git fetch origin prod || true
-          git checkout prod 2>/dev/null || git checkout --orphan prod
-
-          # Wipe prod branch content (keep only build artifacts)
-          git rm -rf . 2>/dev/null || true
-
-          # Place artifacts at repo root of prod branch
-          cp -R /tmp/build-artifacts/* ./
-
-          # Commit and push
-          git add -f .
-          git commit -m "Deploy: Build from main $(git rev-parse --short main) at $(date -u +%Y-%m-%dT%H:%M:%SZ)" || echo "No changes to commit"
-          git push origin prod --force
-
-      # Fix 1: Replaced the broken "Package Artifacts" step with a clean
-      #         archive creation step. Creates staging/ wrapper so deploy.sh's
-      #         --strip-components=1 produces the correct directory structure.
-      - name: Create Build Archive
-        run: |
-          # /tmp/build-artifacts has: frontend/ backend/ config/ scripts/
           # Wrap in staging/ so deploy.sh --strip-components=1 lands correctly
           mkdir -p /tmp/staging
-          cp -r /tmp/build-artifacts/frontend \
-                /tmp/build-artifacts/backend  \
-                /tmp/build-artifacts/config   \
-                /tmp/build-artifacts/scripts  \
+          cp -r /tmp/build-artifacts/backend \
+                /tmp/build-artifacts/config  \
+                /tmp/build-artifacts/scripts \
                 /tmp/staging/
 
           tar -czf build.tar.gz -C /tmp staging/
@@ -174,8 +113,8 @@ jobs:
             APP_ENV=production
             APP_DEBUG=false
             APP_KEY=${{ secrets.APP_KEY }}
-            APP_URL=https://${{ secrets.APP_DOMAIN }}
-            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            APP_URL=https://api.servetrack.quantumapp.tech
+            FRONTEND_URL=https://servetrack.quantumapp.tech
 
             LOG_CHANNEL=stack
             LOG_LEVEL=info
@@ -193,14 +132,15 @@ jobs:
             QUEUE_CONNECTION=sync
             SESSION_DRIVER=file
             SESSION_LIFETIME=120
+            SESSION_DOMAIN=.quantumapp.tech
 
             # Sanctum (SPA token-based auth)
-            SANCTUM_STATEFUL_DOMAINS=${{ secrets.APP_DOMAIN }}
-            CORS_ALLOWED_ORIGINS=https://${{ secrets.APP_DOMAIN }}
+            SANCTUM_STATEFUL_DOMAINS=servetrack.quantumapp.tech
+            CORS_ALLOWED_ORIGINS=https://servetrack.quantumapp.tech
 
             # Admin security
             ADMIN_INVITE_CODE=${{ secrets.ADMIN_INVITE_CODE }}
-            ADMIN_ALLOWED_DOMAINS=${{ secrets.APP_DOMAIN }}
+            ADMIN_ALLOWED_DOMAINS=servetrack.quantumapp.tech
 
             # Mail (optional — leave unset until SMTP is configured)
             MAIL_MAILER=${{ secrets.MAIL_MAILER }}
@@ -269,7 +209,7 @@ jobs:
           known_hosts: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
           script: |
             echo "=== Checking Service Status ==="
-            systemctl is-active servetrack-backend nginx
+            systemctl is-active php8.3-fpm nginx
 
             echo ""
             echo "=== Waiting for Backend to settle (15 seconds) ==="
@@ -277,17 +217,12 @@ jobs:
 
             echo ""
             echo "=== Backend Logs (last 30 lines) ==="
-            journalctl -u servetrack-backend -n 30 --no-pager || true
+            journalctl -u php8.3-fpm -n 30 --no-pager || true
 
             echo ""
             echo "=== Testing Backend Health ==="
-            BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/up 2>/dev/null || echo "000")
-            echo "Backend (127.0.0.1:8000/up) Status: $BACKEND_STATUS"
-
-            echo ""
-            echo "=== Testing Frontend via Nginx ==="
-            FRONTEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost 2>/dev/null || echo "000")
-            echo "Frontend (Nginx) Status: $FRONTEND_STATUS"
+            BACKEND_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://api.servetrack.quantumapp.tech/up 2>/dev/null || echo "000")
+            echo "Backend (api.servetrack.quantumapp.tech/up) Status: $BACKEND_STATUS"
 
             # Fail on any non-2xx backend response
             if [[ "$BACKEND_STATUS" != "2"* ]]; then
@@ -298,12 +233,12 @@ jobs:
             echo ""
             echo "✅ Deployment verified successfully!"
 
-      - name: Notify on Success
-        if: success()
-        run: |
-          echo "✅ Deployment successful!"
-          echo "Site: https://${{ secrets.APP_DOMAIN }}"
-          echo "Deployed at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+       - name: Notify on Success
+         if: success()
+         run: |
+           echo "✅ Deployment successful!"
+           echo "Site: https://api.servetrack.quantumapp.tech"
+           echo "Deployed at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
       # Rollback: Fixed prev-release detection (old grep -v date was unreliable)
       - name: Rollback on Verification Failure
@@ -322,7 +257,6 @@ jobs:
 
             APP_DIR="/var/www/servetrack"
             RELEASES_DIR="$APP_DIR/releases"
-            BACKEND_SERVICE="servetrack-backend"
 
             # Get the second-most-recent release (i.e. the one before this deploy)
             PREV_RELEASE=$(ls -1dt "$RELEASES_DIR"/* 2>/dev/null | sed -n '2p' || true)
@@ -335,20 +269,17 @@ jobs:
 
             echo "Rolling back to: $PREV_RELEASE"
 
-            # Stop backend
-            sudo systemctl stop "$BACKEND_SERVICE"
-
             # Restore previous release symlink
             sudo ln -nfs "$PREV_RELEASE" "$APP_DIR/current"
 
             # Restart services
-            sudo systemctl restart "$BACKEND_SERVICE"
+            sudo systemctl restart php8.3-fpm
             sudo nginx -t && sudo systemctl reload nginx
 
             sleep 5
 
             # Verify rollback
-            if systemctl is-active --quiet "$BACKEND_SERVICE"; then
+            if systemctl is-active --quiet php8.3-fpm; then
               echo "✅ Rollback successful! Backend is running on previous release."
             else
               echo "❌ Rollback failed! Backend did not start."
