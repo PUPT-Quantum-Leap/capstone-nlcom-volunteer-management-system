@@ -12,6 +12,7 @@ SHARED_DIR="$APP_DIR/shared"
 RELEASES_DIR="$APP_DIR/releases"
 CURRENT_DIR="$APP_DIR/current"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+DEPLOY_START=$(date +%s)
 NEW_RELEASE_DIR="$RELEASES_DIR/$TIMESTAMP"
 PHP_FPM_SERVICE="${PHP_FPM_SERVICE:-php8.3-fpm}"
 NGINX_SITE="/etc/nginx/sites-available/servetrack"
@@ -76,7 +77,7 @@ sudo mkdir -p "$SHARED_DIR/backend/storage/framework/views"
 sudo mkdir -p "$SHARED_DIR/backend/storage/logs"
 sudo mkdir -p "$SHARED_DIR/backend/storage/app/public"
 sudo mkdir -p "$RELEASES_DIR"
-sudo chown -R "$USER":www-data "$APP_DIR"
+sudo chown -R root:www-data "$APP_DIR"
 sudo chmod -R 775 "$SHARED_DIR/backend/storage"
 sudo chown -R www-data:www-data "$SHARED_DIR/backend/storage"
 
@@ -104,12 +105,30 @@ if [[ ! -d "$SSL_CERT_DIR" ]]; then
     false
 fi
 
+# Verify storage directory is writable
+if sudo -u www-data test ! -w "$SHARED_DIR/backend/storage" 2>/dev/null; then
+    echo "WARNING: shared storage directory not writable, fixing permissions..."
+    sudo chmod -R 775 "$SHARED_DIR/backend/storage"
+    sudo chown -R www-data:www-data "$SHARED_DIR/backend/storage"
+fi
+
 echo "✓ All preflight checks passed"
 
 # Step 2: Extract the build artifact
 echo "Step 2: Extracting build artifact to $NEW_RELEASE_DIR..."
 sudo mkdir -p "$NEW_RELEASE_DIR"
 sudo tar -xzf /tmp/build.tar.gz -C "$NEW_RELEASE_DIR" --strip-components=1
+
+# Validate extraction succeeded
+if [[ ! -d "$NEW_RELEASE_DIR/backend" ]]; then
+    echo "ERROR: Extraction failed - backend/ directory not found in archive"
+    false
+fi
+if [[ ! -d "$NEW_RELEASE_DIR/backend/bootstrap/cache" ]]; then
+    echo "Creating bootstrap/cache directory..."
+    sudo mkdir -p "$NEW_RELEASE_DIR/backend/bootstrap/cache"
+fi
+echo "✓ Archive extracted: $(du -sh "$NEW_RELEASE_DIR" | cut -f1)"
 
 # Step 3: Symlink Shared Assets
 echo "Step 3: Symlinking persistent storage and environment..."
@@ -144,7 +163,11 @@ fi
 sudo cp "$NEW_RELEASE_DIR/config/servetrack-nginx.conf" "$NGINX_SITE"
 NGINX_CONFIG_UPDATED=true
 sudo ln -sf "$NGINX_SITE" "$NGINX_SITE_ENABLED"
-sudo nginx -t
+if ! sudo nginx -t 2>&1; then
+    echo "ERROR: Nginx configuration test failed"
+    false
+fi
+echo "✓ Nginx configuration valid"
 
 # Step 6: The Atomic Swap
 echo "Step 6: Executing Atomic Swap..."
@@ -162,7 +185,7 @@ sleep 3
 ELAPSED=3
 READY=false
 while [[ "$ELAPSED" -lt "$MAX_WAIT_TIME" ]]; do
-  HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL_LOCAL" || echo "000")
+  HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" --connect-timeout 5 "$HEALTH_URL_LOCAL" || echo "000")
   if [[ "$HTTP_CODE" == 2* ]]; then
     READY=true
     echo "✓ Backend health check passed after ${ELAPSED}s (HTTP $HTTP_CODE)"
@@ -183,8 +206,10 @@ echo "Step 9: Cleaning up old releases (keeping last 5)..."
 ls -1dt "$RELEASES_DIR"/* | tail -n +6 | sudo xargs -r rm -rf || true
 sudo rm -f /tmp/build.tar.gz /tmp/servetrack-launcher/deploy.sh || true
 
+DEPLOY_DURATION=$(( $(date +%s) - DEPLOY_START ))
 echo "=========================================="
 echo "Deployment completed successfully!"
 echo "Finished at: $(date)"
+echo "Duration: ${DEPLOY_DURATION}s"
 echo "Current Release: $TIMESTAMP"
 echo "=========================================="
