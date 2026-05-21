@@ -744,11 +744,12 @@ export class AuthService {
       return of({ success: false, message: 'Passwords do not match' } as AuthResponse);
     }
 
-    return this.http
-      .post<AuthResponse>(`${environment.apiUrl}/admin/register`, data, { withCredentials: true })
-      .pipe(
-        map((response) => response),
-        tap((response) => {
+    return this.ensureCsrf$().pipe(
+      switchMap(() =>
+        this.http.post<AuthResponse>(`${environment.apiUrl}/admin/register`, data, { withCredentials: true }),
+      ),
+      map((response) => response),
+      tap((response) => {
           this.isLoading.set(false);
           if (response.success) {
             // Registration successful - user will login manually
