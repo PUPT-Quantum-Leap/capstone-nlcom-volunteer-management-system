@@ -87,6 +87,25 @@ if [[ ! -f "$SHARED_DIR/.env" ]]; then
     false # Trigger trap
 fi
 
+# Step 1.5: Preflight validations (before any destructive operations)
+echo "Step 1.5: Running preflight validations..."
+if ! systemctl cat "$PHP_FPM_SERVICE" >/dev/null 2>&1; then
+    echo "ERROR: PHP-FPM service not found: $PHP_FPM_SERVICE"
+    false
+fi
+
+if ! systemctl is-active --quiet "$PHP_FPM_SERVICE"; then
+    echo "ERROR: PHP-FPM service is not active: $PHP_FPM_SERVICE"
+    false
+fi
+
+if [[ ! -d "$SSL_CERT_DIR" ]]; then
+    echo "ERROR: Missing SSL certificate directory: $SSL_CERT_DIR"
+    false
+fi
+
+echo "✓ All preflight checks passed"
+
 # Step 2: Extract the build artifact
 echo "Step 2: Extracting build artifact to $NEW_RELEASE_DIR..."
 sudo mkdir -p "$NEW_RELEASE_DIR"
@@ -118,21 +137,6 @@ sudo -u www-data php artisan migrate --force
 
 # Step 5: Update and validate system configs before the atomic swap
 echo "Step 5: Applying and validating Nginx configuration..."
-if ! systemctl cat "$PHP_FPM_SERVICE" >/dev/null 2>&1; then
-    echo "ERROR: PHP-FPM service not found: $PHP_FPM_SERVICE"
-    false
-fi
-
-if ! systemctl is-active --quiet "$PHP_FPM_SERVICE"; then
-    echo "ERROR: PHP-FPM service is not active: $PHP_FPM_SERVICE"
-    false
-fi
-
-if [[ ! -d "$SSL_CERT_DIR" ]]; then
-    echo "ERROR: Missing SSL certificate directory: $SSL_CERT_DIR"
-    false
-fi
-
 if [[ -f "$NGINX_SITE" ]]; then
     sudo cp "$NGINX_SITE" "$NGINX_SITE_BACKUP"
 fi
