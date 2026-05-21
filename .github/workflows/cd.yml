@@ -209,7 +209,8 @@ jobs:
           known_hosts: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
           script: |
             echo "=== Checking Service Status ==="
-            systemctl is-active php8.3-fpm nginx
+            PHP_FPM_SERVICE="${PHP_FPM_SERVICE:-php8.3-fpm}"
+            systemctl is-active "$PHP_FPM_SERVICE" nginx
 
             echo ""
             echo "=== Waiting for Backend to settle (15 seconds) ==="
@@ -217,7 +218,7 @@ jobs:
 
             echo ""
             echo "=== Backend Logs (last 30 lines) ==="
-            journalctl -u php8.3-fpm -n 30 --no-pager || true
+            journalctl -u "$PHP_FPM_SERVICE" -n 30 --no-pager || true
 
             echo ""
             echo "=== Testing Backend Health ==="
@@ -233,12 +234,12 @@ jobs:
             echo ""
             echo "✅ Deployment verified successfully!"
 
-       - name: Notify on Success
-         if: success()
-         run: |
-           echo "✅ Deployment successful!"
-           echo "Site: https://api.servetrack.quantumapp.tech"
-           echo "Deployed at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      - name: Notify on Success
+        if: success()
+        run: |
+          echo "✅ Deployment successful!"
+          echo "Site: https://api.servetrack.quantumapp.tech"
+          echo "Deployed at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
       # Rollback: Fixed prev-release detection (old grep -v date was unreliable)
       - name: Rollback on Verification Failure
@@ -273,13 +274,14 @@ jobs:
             sudo ln -nfs "$PREV_RELEASE" "$APP_DIR/current"
 
             # Restart services
-            sudo systemctl restart php8.3-fpm
+            PHP_FPM_SERVICE="${PHP_FPM_SERVICE:-php8.3-fpm}"
+            sudo systemctl reload-or-restart "$PHP_FPM_SERVICE"
             sudo nginx -t && sudo systemctl reload nginx
 
             sleep 5
 
             # Verify rollback
-            if systemctl is-active --quiet php8.3-fpm; then
+            if systemctl is-active --quiet "$PHP_FPM_SERVICE"; then
               echo "✅ Rollback successful! Backend is running on previous release."
             else
               echo "❌ Rollback failed! Backend did not start."

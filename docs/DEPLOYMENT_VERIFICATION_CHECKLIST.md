@@ -221,8 +221,8 @@ ls -lt
 # Point current to a previous release
 sudo ln -nfs /var/www/servetrack/releases/{YYYYMMDD_HHMMSS} /var/www/servetrack/current
 
-# Restart PHP-FPM
-sudo systemctl restart php8.3-fpm
+# Reload PHP-FPM
+sudo systemctl reload-or-restart php8.3-fpm
 
 # Reload nginx
 sudo nginx -t && sudo systemctl reload nginx
@@ -238,7 +238,7 @@ curl -I https://api.servetrack.quantumapp.tech/up
 ### "PHP-FPM is not responding"
 ```bash
 sudo systemctl status php8.3-fpm
-sudo systemctl restart php8.3-fpm
+sudo systemctl reload-or-restart php8.3-fpm
 sudo tail -f /var/log/php8.3-fpm.log
 ```
 
@@ -288,8 +288,9 @@ sudo chmod -R 775 /var/www/servetrack/shared/backend/storage
 ### Secrets to Rotate:
 - [ ] `DB_PASSWORD` (MySQL root password)
 - [ ] `VPS_SSH_KEY` (EC2 keypair)
-- [ ] `APP_KEY` (Laravel encryption key)
 - [ ] `ADMIN_INVITE_CODE` (Admin registration code)
+
+Do not rotate `APP_KEY` as routine maintenance. Laravel uses it for encryption, so changing it can invalidate encrypted cookies and application data unless you run a deliberate key-rotation plan.
 
 ### Rotation Procedure:
 1. Generate new secret value
