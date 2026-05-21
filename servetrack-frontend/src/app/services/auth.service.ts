@@ -270,7 +270,10 @@ export class AuthService {
   }
 
   private forceLogoutForRelogin$(): Observable<void> {
-    return this.http.post<void>(`${environment.apiUrl}/logout`, {}, { withCredentials: true }).pipe(
+    return this.ensureCsrf$().pipe(
+      switchMap(() =>
+        this.http.post<void>(`${environment.apiUrl}/logout`, {}, { withCredentials: true }),
+      ),
       tap(() => {
         this.isAuthenticated.set(false);
         this.currentUser.set(null);
@@ -375,7 +378,10 @@ export class AuthService {
    * Logout current user - Observable version.
    */
   logout$(): Observable<void> {
-    return this.http.post<void>(`${environment.apiUrl}/logout`, {}, { withCredentials: true }).pipe(
+    return this.ensureCsrf$().pipe(
+      switchMap(() =>
+        this.http.post<void>(`${environment.apiUrl}/logout`, {}, { withCredentials: true }),
+      ),
       tap(() => this.clearSession()),
       catchError(() => {
         this.clearSession();
