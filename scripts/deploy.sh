@@ -13,11 +13,17 @@ RELEASES_DIR="$APP_DIR/releases"
 CURRENT_DIR="$APP_DIR/current"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 NEW_RELEASE_DIR="$RELEASES_DIR/$TIMESTAMP"
+PHP_FPM_SERVICE="${PHP_FPM_SERVICE:-php8.3-fpm}"
+NGINX_SITE="/etc/nginx/sites-available/servetrack"
+NGINX_SITE_ENABLED="/etc/nginx/sites-enabled/servetrack"
+NGINX_SITE_BACKUP="$NGINX_SITE.backup.$TIMESTAMP"
+SSL_CERT_DIR="/etc/letsencrypt/live/api.servetrack.quantumapp.tech"
 HEALTH_URL_LOCAL="https://api.servetrack.quantumapp.tech/up"
 MAX_WAIT_TIME="30"
 
 # Track deployment state
 ATOMIC_SWAP_COMPLETED=false
+NGINX_CONFIG_UPDATED=false
 
 handle_error() {
     echo "=========================================="
@@ -31,17 +37,25 @@ handle_error() {
         if [[ -n "$PREV_RELEASE" ]]; then
             echo "Rolling back to previous release: $PREV_RELEASE"
             sudo ln -nfs "$PREV_RELEASE" "$CURRENT_DIR"
-            sudo systemctl restart php8.3-fpm || true
-            sudo systemctl reload nginx || true
+            if [ "$NGINX_CONFIG_UPDATED" = true ] && [[ -f "$NGINX_SITE_BACKUP" ]]; then
+                echo "Restoring previous nginx config: $NGINX_SITE_BACKUP"
+                sudo cp "$NGINX_SITE_BACKUP" "$NGINX_SITE" || true
+            fi
+            sudo systemctl reload-or-restart "$PHP_FPM_SERVICE" || true
+            sudo nginx -t && sudo systemctl reload nginx || true
             echo "Rollback complete. Please check the logs."
         else
             echo "CRITICAL: No previous release found to roll back to!"
         fi
         
         # Show some error logs
-        sudo journalctl -u php8.3-fpm -n 50 --no-pager || true
+        sudo journalctl -u "$PHP_FPM_SERVICE" -n 50 --no-pager || true
     else
         echo "Error occurred BEFORE atomic swap. Live site is unaffected."
+        if [ "$NGINX_CONFIG_UPDATED" = true ] && [[ -f "$NGINX_SITE_BACKUP" ]]; then
+            echo "Restoring previous nginx config: $NGINX_SITE_BACKUP"
+            sudo cp "$NGINX_SITE_BACKUP" "$NGINX_SITE" || true
+        fi
         echo "Cleaning up failed release directory: $NEW_RELEASE_DIR"
         sudo rm -rf "$NEW_RELEASE_DIR" || true
     fi
@@ -102,26 +116,41 @@ sudo -u www-data php artisan view:cache
 # Run database migrations
 sudo -u www-data php artisan migrate --force
 
-# Step 5: Update System configs if necessary
-echo "Step 5: Applying Nginx configuration and restarting PHP-FPM..."
-if [ ! -f /etc/nginx/sites-available/servetrack ] || [ ! -d /etc/letsencrypt/live/api.servetrack.quantumapp.tech ]; then
-    sudo cp "$NEW_RELEASE_DIR/config/servetrack-nginx.conf" /etc/nginx/sites-available/servetrack
-else
-    echo "Keeping existing nginx config to preserve Certbot SSL config."
+# Step 5: Update and validate system configs before the atomic swap
+echo "Step 5: Applying and validating Nginx configuration..."
+if ! systemctl cat "$PHP_FPM_SERVICE" >/dev/null 2>&1; then
+    echo "ERROR: PHP-FPM service not found: $PHP_FPM_SERVICE"
+    false
 fi
-sudo ln -sf /etc/nginx/sites-available/servetrack /etc/nginx/sites-enabled/servetrack
 
-# Restart PHP-FPM to pick up new code
-sudo systemctl restart php8.3-fpm
+if ! systemctl is-active --quiet "$PHP_FPM_SERVICE"; then
+    echo "ERROR: PHP-FPM service is not active: $PHP_FPM_SERVICE"
+    false
+fi
+
+if [[ ! -d "$SSL_CERT_DIR" ]]; then
+    echo "ERROR: Missing SSL certificate directory: $SSL_CERT_DIR"
+    false
+fi
+
+if [[ -f "$NGINX_SITE" ]]; then
+    sudo cp "$NGINX_SITE" "$NGINX_SITE_BACKUP"
+fi
+
+sudo cp "$NEW_RELEASE_DIR/config/servetrack-nginx.conf" "$NGINX_SITE"
+NGINX_CONFIG_UPDATED=true
+sudo ln -sf "$NGINX_SITE" "$NGINX_SITE_ENABLED"
+sudo nginx -t
 
 # Step 6: The Atomic Swap
 echo "Step 6: Executing Atomic Swap..."
 sudo ln -nfs "$NEW_RELEASE_DIR" "$CURRENT_DIR"
 ATOMIC_SWAP_COMPLETED=true
 
-# Step 7: Reload Nginx
-echo "Step 7: Reloading nginx..."
-sudo nginx -t && sudo systemctl reload nginx
+# Step 7: Reload services after the new release is live
+echo "Step 7: Reloading PHP-FPM and nginx..."
+sudo systemctl reload-or-restart "$PHP_FPM_SERVICE"
+sudo systemctl reload nginx
 
 # Step 8: Health Check and Auto-Rollback
 echo "Step 8: Waiting for backend health..."
@@ -130,7 +159,7 @@ ELAPSED=3
 READY=false
 while [[ "$ELAPSED" -lt "$MAX_WAIT_TIME" ]]; do
   HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL_LOCAL" || echo "000")
-  if [[ "$HTTP_CODE" == "200" || "$HTTP_CODE" == "301" || "$HTTP_CODE" == "302" ]]; then
+  if [[ "$HTTP_CODE" == 2* ]]; then
     READY=true
     echo "✓ Backend health check passed after ${ELAPSED}s (HTTP $HTTP_CODE)"
     break

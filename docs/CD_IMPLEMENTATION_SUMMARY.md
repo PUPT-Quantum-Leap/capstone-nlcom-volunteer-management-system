@@ -33,16 +33,18 @@
   - `SESSION_DOMAIN=.quantumapp.tech` (NEW)
 - ✅ Archive creation now only includes backend, config, scripts
 - ✅ Health check updated to `https://api.servetrack.quantumapp.tech/up`
-- ✅ Service checks changed from `servetrack-backend` to `php8.3-fpm`
-- ✅ Rollback procedure updated to use PHP-FPM
+- ✅ Service checks changed from `servetrack-backend` to configurable PHP-FPM service (`php8.3-fpm` by default)
+- ✅ Rollback procedure updated to use PHP-FPM reload/restart
 
 ### 3. **Deployment Script** (`scripts/deploy.sh`)
-- ✅ Updated SSL cert domain check to `api.servetrack.quantumapp.tech`
+- ✅ Added SSL cert directory preflight for `api.servetrack.quantumapp.tech`
 - ✅ Removed systemd service deployment
-- ✅ Added PHP-FPM restart after config update
+- ✅ Nginx config is backed up, replaced, and validated before atomic swap
+- ✅ Added PHP-FPM reload/restart after atomic swap
 - ✅ Updated health check URL to `https://api.servetrack.quantumapp.tech/up`
+- ✅ Health check accepts only 2xx responses
 - ✅ Removed `BACKEND_SERVICE` variable
-- ✅ Updated rollback to use `php8.3-fpm`
+- ✅ Updated rollback to use configurable PHP-FPM service
 
 ### 4. **Removed Files**
 - ❌ `config/servetrack-backend.service` (no longer needed with PHP-FPM)
@@ -186,7 +188,7 @@ If deployment fails:
    cd /var/www/servetrack/releases
    ls -lt  # Find previous release
    sudo ln -nfs /var/www/servetrack/releases/{YYYYMMDD_HHMMSS} /var/www/servetrack/current
-   sudo systemctl restart php8.3-fpm
+   sudo systemctl reload-or-restart php8.3-fpm
    sudo nginx -t && sudo systemctl reload nginx
    ```
 
