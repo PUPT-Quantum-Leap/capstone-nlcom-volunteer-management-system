@@ -108,7 +108,7 @@ jobs:
             sudo mkdir -p /var/www/servetrack/shared
             sudo chmod 750 /var/www/servetrack/shared
 
-            sudo tee /var/www/servetrack/shared/.env > /dev/null << EOF
+            sudo tee /var/www/servetrack/shared/.env > /dev/null << 'EOF'
             APP_NAME=ServeTrack
             APP_ENV=production
             APP_DEBUG=false
@@ -132,7 +132,7 @@ jobs:
             QUEUE_CONNECTION=sync
             SESSION_DRIVER=file
             SESSION_LIFETIME=120
-            SESSION_DOMAIN=.quantumapp.tech
+            SESSION_DOMAIN=.servetrack.quantumapp.tech
 
             # Sanctum (SPA token-based auth)
             SANCTUM_STATEFUL_DOMAINS=servetrack.quantumapp.tech
