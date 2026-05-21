@@ -108,7 +108,9 @@ jobs:
             sudo mkdir -p /var/www/servetrack/shared
             sudo chmod 750 /var/www/servetrack/shared
 
-            sudo tee /var/www/servetrack/shared/.env > /dev/null << 'EOF'
+            if [ ! -f /var/www/servetrack/shared/.env ]; then
+              echo "Initializing .env for first deployment..."
+              sudo tee /var/www/servetrack/shared/.env > /dev/null << 'EOF'
             APP_NAME=ServeTrack
             APP_ENV=production
             APP_DEBUG=false
@@ -132,7 +134,7 @@ jobs:
             QUEUE_CONNECTION=sync
             SESSION_DRIVER=file
             SESSION_LIFETIME=120
-            SESSION_DOMAIN=.servetrack.quantumapp.tech
+            SESSION_DOMAIN=.quantumapp.tech
 
             # Sanctum (SPA token-based auth)
             SANCTUM_STATEFUL_DOMAINS=servetrack.quantumapp.tech
@@ -153,10 +155,13 @@ jobs:
             MAIL_FROM_NAME="ServeTrack"
             EOF
 
-            sudo chmod 640 /var/www/servetrack/shared/.env
-            sudo chown root:www-data /var/www/servetrack/shared/.env
-            echo "✓ Environment file deployed"
-            echo "Variables written: $(sudo grep -c '^[A-Z]' /var/www/servetrack/shared/.env || echo 0)"
+              sudo chmod 640 /var/www/servetrack/shared/.env
+              sudo chown root:www-data /var/www/servetrack/shared/.env
+              echo "✓ Environment file initialized"
+            else
+              echo "Skipping .env creation because /var/www/servetrack/shared/.env already exists"
+            fi
+            echo "Current .env variables: $(sudo grep -c '^[A-Z]' /var/www/servetrack/shared/.env || echo 0)"
 
       # Fix 5: Completely rewrote this step.
       #         Old code: extracted archive → re-packed it (corrupting the structure)
