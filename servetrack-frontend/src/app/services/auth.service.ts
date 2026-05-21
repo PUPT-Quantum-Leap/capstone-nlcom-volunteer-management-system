@@ -644,24 +644,27 @@ export class AuthService {
       return of({ success: false, message: 'Passwords do not match' } as AuthResponse);
     }
 
-    return this.http
-      .post<AuthResponse>(`${environment.apiUrl}/coordinator/register`, data, { withCredentials: true })
-      .pipe(
-        map((response) => response),
-        tap((response) => {
-          this.isLoading.set(false);
-          if (response.success) {
-            // Auto-login after successful registration
-            this.login({ email: data.email, password: data.password });
-          }
-        }),
-        catchError((error: HttpErrorResponse) => {
-          this.isLoading.set(false);
-          const errorMessage = error.error?.message || 'Admin registration failed';
-          this.error.set(errorMessage);
-          return of({ success: false, message: errorMessage } as AuthResponse);
-        }),
-      );
+     return this.ensureCsrf$().pipe(
+       switchMap(() =>
+         this.http.post<AuthResponse>(`${environment.apiUrl}/coordinator/register`, data, {
+           withCredentials: true,
+         })
+       ),
+       map((response) => response),
+       tap((response) => {
+         this.isLoading.set(false);
+         if (response.success) {
+           // Auto-login after successful registration
+           this.login({ email: data.email, password: data.password });
+         }
+       }),
+       catchError((error: HttpErrorResponse) => {
+         this.isLoading.set(false);
+         const errorMessage = error.error?.message || 'Admin registration failed';
+         this.error.set(errorMessage);
+         return of({ success: false, message: errorMessage } as AuthResponse);
+       }),
+     );
   }
 
   /**
@@ -744,23 +747,26 @@ export class AuthService {
       return of({ success: false, message: 'Passwords do not match' } as AuthResponse);
     }
 
-    return this.http
-      .post<AuthResponse>(`${environment.apiUrl}/admin/register`, data, { withCredentials: true })
-      .pipe(
-        map((response) => response),
-        tap((response) => {
-          this.isLoading.set(false);
-          if (response.success) {
-            // Registration successful - user will login manually
-            // No auto-login - just show success message
-          }
-        }),
-        catchError((error: HttpErrorResponse) => {
-          this.isLoading.set(false);
-          const errorMessage = error.error?.message || 'Admin registration failed';
-          this.error.set(errorMessage);
-          return of({ success: false, message: errorMessage } as AuthResponse);
-        }),
-      );
+     return this.ensureCsrf$().pipe(
+       switchMap(() =>
+         this.http.post<AuthResponse>(`${environment.apiUrl}/admin/register`, data, {
+           withCredentials: true,
+         })
+       ),
+       map((response) => response),
+       tap((response) => {
+         this.isLoading.set(false);
+         if (response.success) {
+           // Registration successful - user will login manually
+           // No auto-login - just show success message
+         }
+       }),
+       catchError((error: HttpErrorResponse) => {
+         this.isLoading.set(false);
+         const errorMessage = error.error?.message || 'Admin registration failed';
+         this.error.set(errorMessage);
+         return of({ success: false, message: errorMessage } as AuthResponse);
+       }),
+     );
   }
 }
