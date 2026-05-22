@@ -10,8 +10,8 @@ A volunteer management system for NLCOM (New Life Community Care Foundation) to 
 
 ## Production
 
-- **Live**: https://servetrack.kaelvxdev.space
-- **Health**: https://servetrack.kaelvxdev.space/up
+- **Live**: https://servetrack.quantumapp.tech/
+- **Health**: https://api.servetrack.quantumapp.tech/up
 
 ## Repository Structure
 
