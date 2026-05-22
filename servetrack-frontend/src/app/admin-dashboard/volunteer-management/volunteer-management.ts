@@ -31,7 +31,7 @@ export class VolunteerManagement implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   // Dropdown Options
-  statusOptions: SelectOption[] = [
+  statusOptions: SelectOption<string>[] = [
     { label: 'Active Volunteers', value: 'active' },
     { label: 'Archived Volunteers', value: 'archived' }
   ];

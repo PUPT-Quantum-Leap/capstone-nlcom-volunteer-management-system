@@ -24,15 +24,15 @@ export class AnalyticsComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   // Dropdown Options
-  dateRangeOptions: SelectOption[] = [
+  dateRangeOptions: SelectOption<'all' | 'month' | 'quarter' | 'year'>[] = [
     { label: 'All Time', value: 'all' },
     { label: 'This Month', value: 'month' },
     { label: 'This Quarter', value: 'quarter' },
     { label: 'This Year', value: 'year' }
   ];
 
-  departmentSelectOptions = computed<SelectOption[]>(() => {
-    const options: SelectOption[] = [{ label: 'All Departments', value: '' }];
+  departmentSelectOptions = computed<SelectOption<string>[]>(() => {
+    const options: SelectOption<string>[] = [{ label: 'All Departments', value: '' }];
     this.departmentOptions().forEach(dept => {
       options.push({ label: dept.name, value: dept.name });
     });

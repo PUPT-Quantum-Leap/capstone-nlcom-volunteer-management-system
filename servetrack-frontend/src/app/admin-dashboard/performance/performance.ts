@@ -25,7 +25,7 @@ export class PerformanceComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   // Dropdown Options
-  sortOptions: SelectOption[] = [
+  sortOptions: SelectOption<'attendance' | 'name' | 'hours' | 'tasks' | 'rating'>[] = [
     { label: 'Sort by Attendance', value: 'attendance' },
     { label: 'Sort by Hours', value: 'hours' },
     { label: 'Sort by Name', value: 'name' },

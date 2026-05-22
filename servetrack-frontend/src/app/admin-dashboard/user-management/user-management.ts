@@ -27,12 +27,12 @@ export class UserManagementComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   // Dropdown Options
-  statusOptions: SelectOption[] = [
+  statusOptions: SelectOption<string>[] = [
     { label: 'Active Users', value: 'active' },
     { label: 'Archived Users', value: 'archived' }
   ];
 
-  roleOptions: SelectOption[] = [
+  roleOptions: SelectOption<string>[] = [
     { label: 'All Roles', value: '' },
     { label: 'Admin', value: 'admin' },
     { label: 'Coordinator', value: 'coordinator' },
