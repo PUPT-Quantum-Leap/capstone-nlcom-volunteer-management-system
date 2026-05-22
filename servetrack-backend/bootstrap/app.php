@@ -11,12 +11,15 @@ use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SecurityAudit;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\StripTags;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\HandleCors;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -27,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withSchedule(function (Schedule $schedule): void {
+        RateLimiter::for('chatbot', function (Request $request) {
+            return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
+        });
         $schedule->command(CloseExpiredRsvp::class)->everyThreeMinutes();
 
         $schedule->command(SendRsvpCutoffReminders::class)

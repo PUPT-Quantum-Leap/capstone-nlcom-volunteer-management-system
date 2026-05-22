@@ -15,6 +15,9 @@ import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ServeBotComponent } from '../serve-bot/serve-bot';
 import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
+import { ChatbotService } from '../../services/chatbot.service';
+import { ChatbotContainerComponent } from '../../components/chatbot/chatbot-container.component';
+import { ChatbotButtonComponent } from '../../components/chatbot/chatbot-button.component';
 
 type AdminView =
   | 'dashboard'
@@ -32,7 +35,7 @@ type AdminView =
 @Component({
   selector: 'app-admin-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, NgOptimizedImage, RouterOutlet, ServeBotComponent, LoadingScreenComponent],
+  imports: [CommonModule, NgOptimizedImage, RouterOutlet, ServeBotComponent, LoadingScreenComponent, ChatbotContainerComponent, ChatbotButtonComponent],
   templateUrl: './admin-layout.html',
   styleUrl: './admin-layout.scss',
 })
@@ -41,6 +44,7 @@ export class AdminLayout implements OnInit {
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
   private adminService = inject(AdminDashboardService);
+  private chatbotService = inject(ChatbotService);
   private destroyRef = inject(DestroyRef);
  
   readonly defaultPhoto = '/assets/person.svg';

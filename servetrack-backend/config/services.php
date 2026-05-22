@@ -55,4 +55,13 @@ return [
         'phone_number' => env('TWILIO_PHONE_NUMBER'),
     ],
 
+    'supabase' => [
+        'url' => env('SUPABASE_URL'),
+        'service_key' => env('SUPABASE_SERVICE_ROLE_KEY'),
+    ],
+
+    'chatbot' => [
+        'n8n_webhook_url' => env('N8N_CHAT_WEBHOOK_URL'),
+    ],
+
 ];

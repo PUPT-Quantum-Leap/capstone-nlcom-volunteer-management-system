@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\FacebookWebhookController;
 use App\Http\Controllers\IcsController;
@@ -64,6 +65,14 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
     Route::post('/volunteer/change-password', [VolunteerController::class, 'changePassword'])
         ->middleware('throttle:password-change')
         ->name('volunteer.password.change');
+
+    // Chatbot — AI assistant for all authenticated users
+    Route::prefix('chatbot')->group(function () {
+        Route::post('/message', [ChatbotController::class, 'message'])
+            ->middleware('throttle:chatbot');
+        Route::get('/history', [ChatbotController::class, 'history']);
+        Route::post('/clear', [ChatbotController::class, 'clear']);
+    });
 
     // Volunteer attendance (volunteer role only — enforced in controller)
     Route::get('/volunteer/attendance', [VolunteerController::class, 'listAttendance'])->name('volunteer.attendance.index');

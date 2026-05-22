@@ -249,6 +249,7 @@
           <span class="notification-badge">{{ notificationCount() }}</span>
           }
         </button>
+        <app-chatbot-button></app-chatbot-button>
         <button type="button" class="servebot-toggle-btn" [class.active]="showServeBot()"
           (click)="toggleServeBot()" aria-label="Toggle ServeBot Assistant" title="ServeBot Assistant">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -274,6 +275,10 @@
 
 @if (showServeBot()) {
   <app-serve-bot (close)="showServeBot.set(false)"></app-serve-bot>
+}
+
+@if (chatbotService.showChatbot()) {
+  <app-chatbot-container></app-chatbot-container>
 }
 
 <!-- Admin Profile Edit Modal -->
