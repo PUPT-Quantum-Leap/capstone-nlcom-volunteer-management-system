@@ -201,6 +201,12 @@ if [[ "$READY" != "true" ]]; then
   false # Trigger trap
 fi
 
+# Restart queue worker to pick up new code
+echo "Restarting queue worker..."
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl restart servetrack-queue-worker:* || true
+
 # Step 9: Cleanup
 echo "Step 9: Cleaning up old releases (keeping last 5)..."
 ls -1dt "$RELEASES_DIR"/* | tail -n +6 | sudo xargs -r rm -rf || true
