@@ -15,11 +15,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NotificationItem } from '../../models/notification-item';
 
 import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
+import { ChatbotService } from '../../services/chatbot.service';
+import { ChatbotContainerComponent } from '../../components/chatbot/chatbot-container.component';
+import { ChatbotButtonComponent } from '../../components/chatbot/chatbot-button.component';
 
 @Component({
   selector: 'app-volunteer-dashboard-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, NgTemplateOutlet, NgOptimizedImage, LoadingScreenComponent],
+  imports: [RouterOutlet, NgTemplateOutlet, NgOptimizedImage, LoadingScreenComponent, ChatbotContainerComponent, ChatbotButtonComponent],
   templateUrl: './volunteer-dashboard-shell.html',
   styleUrl: './volunteer-dashboard-shell.scss',
 })
@@ -28,6 +31,7 @@ export class VolunteerDashboardShell implements OnInit {
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
+  private chatbotService = inject(ChatbotService);
   private destroyRef = inject(DestroyRef);
 
   readonly defaultPhoto = '/assets/person.svg';

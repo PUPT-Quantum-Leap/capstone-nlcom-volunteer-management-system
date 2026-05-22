@@ -135,6 +135,7 @@
             <span class="badge">{{ notificationCount() }}</span>
           }
         </button>
+        <app-chatbot-button></app-chatbot-button>
         <button type="button" class="primary-btn" (click)="logout()" [disabled]="isLoading()">Sign Out</button>
       </div>
     </header>
@@ -169,6 +170,10 @@
     </main>
   </div>
 </div>
+
+@if (chatbotService.showChatbot()) {
+  <app-chatbot-container></app-chatbot-container>
+}
 
 <!-- Modals -->
 @if (showLogoutModal()) {
