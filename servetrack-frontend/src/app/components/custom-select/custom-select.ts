@@ -11,9 +11,9 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-export interface SelectOption {
+export interface SelectOption<T> {
   label: string;
-  value: any;
+  value: T;
   icon?: string;
 }
 
@@ -27,16 +27,16 @@ export interface SelectOption {
     '(document:click)': 'onClickOutside($event)'
   }
 })
-export class CustomSelect {
+export class CustomSelect<T> {
   private elementRef = inject(ElementRef);
 
-  options = input.required<SelectOption[]>();
-  value = input<any>();
+  options = input.required<SelectOption<T>[]>();
+  value = input<T | null>();
   placeholder = input<string>('Select an option');
   variant = input<'admin' | 'volunteer' | 'default'>('default');
   status = input<'present' | 'absent' | string | null>(null);
   
-  valueChange = output<any>();
+  valueChange = output<T>();
 
   isOpen = signal(false);
 
@@ -48,7 +48,7 @@ export class CustomSelect {
     this.isOpen.update(v => !v);
   }
 
-  selectOption(option: SelectOption): void {
+  selectOption(option: SelectOption<T>): void {
     this.valueChange.emit(option.value);
     this.isOpen.set(false);
   }

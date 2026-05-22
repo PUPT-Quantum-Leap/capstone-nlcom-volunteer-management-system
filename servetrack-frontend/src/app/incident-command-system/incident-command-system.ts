@@ -58,7 +58,7 @@ export class IncidentCommandSystemComponent implements OnInit {
   private rsvpService = inject(RsvpService);
 
   // Dropdown Options
-  rsvpOptions = signal<SelectOption[]>([]);
+  rsvpOptions = signal<SelectOption<string>[]>([]);
 
   // Edit mode state
   isEditMode = false;

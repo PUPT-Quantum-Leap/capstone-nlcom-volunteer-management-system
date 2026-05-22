@@ -38,13 +38,13 @@ export class AttendanceManagement {
   private adminDashboardService = inject(AdminDashboardService);
 
   // Dropdown Options
-  viewOptions: SelectOption[] = [
+  viewOptions: SelectOption<'daily' | 'history' | 'reports'>[] = [
     { label: 'Daily Attendance', value: 'daily' },
     { label: 'Attendance History', value: 'history' },
     { label: 'Reports', value: 'reports' }
   ];
 
-  statusOptions: SelectOption[] = [
+  statusOptions: SelectOption<'present' | 'absent'>[] = [
     { label: 'Present', value: 'present' },
     { label: 'Absent', value: 'absent' }
   ];

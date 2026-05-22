@@ -27,7 +27,7 @@ export class RsvpsComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   // Dropdown Options
-  statusFilterOptions: SelectOption[] = [
+  statusFilterOptions: SelectOption<'all' | 'active' | 'closed' | 'draft'>[] = [
     { label: 'All Events', value: 'all' },
     { label: 'Active Events', value: 'active' },
     { label: 'Draft Events', value: 'draft' },
