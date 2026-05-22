@@ -77,7 +77,7 @@ sudo mkdir -p "$SHARED_DIR/backend/storage/framework/views"
 sudo mkdir -p "$SHARED_DIR/backend/storage/logs"
 sudo mkdir -p "$SHARED_DIR/backend/storage/app/public"
 sudo mkdir -p "$RELEASES_DIR"
-sudo chown -R root:www-data "$APP_DIR"
+sudo chown root:www-data "$APP_DIR" "$RELEASES_DIR" "$SHARED_DIR"
 sudo chmod -R 775 "$SHARED_DIR/backend/storage"
 sudo chown -R www-data:www-data "$SHARED_DIR/backend/storage"
 
@@ -185,7 +185,7 @@ sleep 3
 ELAPSED=3
 READY=false
 while [[ "$ELAPSED" -lt "$MAX_WAIT_TIME" ]]; do
-  HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" --connect-timeout 5 "$HEALTH_URL_LOCAL" || echo "000")
+  HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 "$HEALTH_URL_LOCAL" || echo "000")
   if [[ "$HTTP_CODE" == 2* ]]; then
     READY=true
     echo "✓ Backend health check passed after ${ELAPSED}s (HTTP $HTTP_CODE)"

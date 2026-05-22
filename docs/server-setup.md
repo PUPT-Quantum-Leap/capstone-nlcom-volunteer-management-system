@@ -22,7 +22,6 @@ sudo usermod -aG www-data deploy
 ```bash
 sudo chown -R root:www-data /var/www/servetrack
 sudo chmod -R 775 /var/www/servetrack/shared/backend/storage
-sudo chmod -R 775 /var/www/servetrack/shared/backend/storage/bootstrap/cache
 ```
 
 ### 4. Create `.env` File
