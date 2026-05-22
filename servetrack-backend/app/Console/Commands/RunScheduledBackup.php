@@ -36,6 +36,7 @@ class RunScheduledBackup extends Command
 
         try {
             $backupService->createBackup('automatic', 'Scheduled backup');
+            $backupService->cleanupOldBackups(config('backup.retention', 10));
             $this->components->info('Scheduled backup completed successfully.');
 
             return self::SUCCESS;

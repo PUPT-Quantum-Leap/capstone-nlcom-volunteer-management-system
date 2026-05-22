@@ -396,7 +396,7 @@ class BackupService
                             if ($value === null) {
                                 $values[] = 'NULL';
                             } else {
-                                $values[] = "'".addslashes($value)."'";
+                                $values[] = DB::getPdo()->quote($value);
                             }
                         }
 
