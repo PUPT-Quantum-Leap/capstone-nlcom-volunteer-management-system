@@ -32,6 +32,9 @@ yarn-error.log*
 # Gitleaks report
 gitleaks-report.json
 
+# Local gitleaks false-positive overrides (per-developer, never committed)
+.gitleaksignore
+
 # Private server configuration
 VPS_CONFIG_PRIVATE.md
 session-transcript-*.md

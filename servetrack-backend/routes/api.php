@@ -129,7 +129,6 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::post('/rsvp/{id}/check-in', [RsvpController::class, 'checkIn'])->name('rsvp.check-in');
     Route::post('/rsvp/{id}/check-out', [RsvpController::class, 'checkOut'])->name('rsvp.check-out');
     Route::get('/rsvp/{id}/attendance', [RsvpController::class, 'attendance'])->name('rsvp.attendance');
-    Route::post('/rsvp/{id}/notify-facebook', [RsvpController::class, 'notifyFacebook'])->name('rsvp.notify.facebook');
     Route::post('/rsvp/{id}/notify-sms', [RsvpController::class, 'notifySms'])->name('rsvp.notify.sms');
     Route::get('/rsvp-trashed', [RsvpController::class, 'trashed'])->name('rsvp.trashed');
     Route::post('/rsvp/{id}/restore', [RsvpController::class, 'restore'])->name('rsvp.restore');

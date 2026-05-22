@@ -4,7 +4,6 @@ import { AdminDashboardService, AdminDashboardData } from '../../services/admin-
 
 @Component({
   selector: 'app-serve-bot',
-  standalone: true,
   imports: [CommonModule],
   templateUrl: './serve-bot.html',
   styleUrl: './serve-bot.scss'
