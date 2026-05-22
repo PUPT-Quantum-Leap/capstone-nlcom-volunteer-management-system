@@ -200,9 +200,15 @@ export class BackupRecoveryComponent {
       .subscribe({
         next: (response) => {
           if (response.success) {
+            const lastPage = response.pagination?.last_page ?? 1;
             this.backupRecords.set(response.data);
-            this.backupLastPage.set(response.pagination?.last_page ?? 1);
+            this.backupLastPage.set(lastPage);
             this.backupTotalRecords.set(response.pagination?.total ?? 0);
+            if (this.backupHistoryPage() > lastPage) {
+              this.backupHistoryPage.set(lastPage);
+              this.loadBackups();
+              return;
+            }
             this.showSnackbar.emit({ message: 'Backup history refreshed.', type: 'info' });
           } else {
             this.showSnackbar.emit({ message: 'Failed to refresh backup history', type: 'error' });

@@ -198,7 +198,7 @@
         <div class="pagination-info">
           @if (paginatedBackupRecords().length > 0) {
             Showing <strong>{{ (backupHistoryPage() - 1) * backupPerPage() + 1 }}</strong> to
-            <strong>{{ Math.min(backupHistoryPage() * backupPerPage(), backupRecords().length) }}</strong>
+            <strong>{{ Math.min((backupHistoryPage() - 1) * backupPerPage() + paginatedBackupRecords().length, backupTotalRecords()) }}</strong>
             of <strong>{{ backupTotalRecords() }}</strong> backup(s)
           } @else {
             No backups found

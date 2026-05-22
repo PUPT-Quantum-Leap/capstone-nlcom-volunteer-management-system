@@ -396,7 +396,13 @@ class BackupService
                             if ($value === null) {
                                 $values[] = 'NULL';
                             } else {
-                                $values[] = DB::getPdo()->quote($value);
+                                $quoted = DB::getPdo()->quote($value);
+                                if ($quoted === false) {
+                                    throw new \RuntimeException(
+                                        'PDO::quote() failed for value: '.substr((string) $value, 0, 100)
+                                    );
+                                }
+                                $values[] = $quoted;
                             }
                         }
 

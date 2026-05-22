@@ -36,19 +36,28 @@ class RunScheduledBackup extends Command
 
         try {
             $backupService->createBackup('automatic', 'Scheduled backup');
-            $backupService->cleanupOldBackups(config('backup.retention', 10));
-            $this->components->info('Scheduled backup completed successfully.');
-
-            return self::SUCCESS;
         } catch (Throwable $e) {
             Log::error('Scheduled backup command failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            $message = 'Scheduled backup failed: '.$e->getMessage();
-            $this->components->error($message);
+            $this->components->error('Scheduled backup failed: '.$e->getMessage());
 
             return self::FAILURE;
         }
+
+        try {
+            $backupService->cleanupOldBackups(config('backup.retention', 10));
+        } catch (Throwable $e) {
+            Log::error('Scheduled backup cleanup failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            $this->components->error('Backup cleanup failed (backup was created): '.$e->getMessage());
+        }
+
+        $this->components->info('Scheduled backup completed successfully.');
+
+        return self::SUCCESS;
     }
 }
