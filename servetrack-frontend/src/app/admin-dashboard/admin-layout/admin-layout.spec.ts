@@ -9,8 +9,32 @@ describe('AdminLayout - Logic Tests', () => {
   let routerMock: any;
   let authServiceMock: any;
   let adminServiceMock: any;
+  const originalLocalStorage = window.localStorage;
 
   beforeEach(() => {
+    // Set up localStorage mock
+    let store: { [key: string]: string } = {};
+    const localStorageMock = {
+      getItem: (key: string) => store[key] || null,
+      setItem: (key: string, value: string) => {
+        store[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete store[key];
+      },
+      clear: () => {
+        store = {};
+      },
+      key: (index: number) => {
+        const keys = Object.keys(store);
+        return keys[index] || null;
+      },
+      get length() {
+        return Object.keys(store).length;
+      }
+    };
+    Object.defineProperty(window, 'localStorage', { value: localStorageMock, writable: true });
+
     routerMock = {
       url: '/admin-dashboard/dashboard',
       events: of(new NavigationEnd(0, '/admin-dashboard/dashboard', '/admin-dashboard/dashboard')),
@@ -31,7 +55,6 @@ describe('AdminLayout - Logic Tests', () => {
     component = Object.create(AdminLayout.prototype);
     
     // Initialize signals that would normally be initialized in the class
-    component.pageLoading = signal(true);
     component.sidebarCollapsed = signal(false);
     component.mobileSidebarOpen = signal(false);
     component.isMobile = signal(false);
@@ -53,22 +76,8 @@ describe('AdminLayout - Logic Tests', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-  });
-
-  it('should have pageLoading signal initially set to true', () => {
-    expect(component.pageLoading()).toBe(true);
-  });
-
-  it('should set pageLoading to false after timeout in ngOnInit', () => {
-    vi.useFakeTimers();
-    
-    // Mock the updateIsMobile which is called in ngOnInit
-    (component as any).updateIsMobile = vi.fn();
-    
-    component.ngOnInit();
-    
-    vi.advanceTimersByTime(2500);
-    expect(component.pageLoading()).toBe(false);
+    // Restore original localStorage
+    Object.defineProperty(window, 'localStorage', { value: originalLocalStorage, writable: true });
   });
 
   it('should toggle sidebarCollapsed state', () => {

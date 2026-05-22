@@ -1,4 +1,4 @@
-@if (isInitialLoading()) {
+@if (isLoading()) {
   <app-loading-screen></app-loading-screen>
 }
 
@@ -146,21 +146,21 @@
     </nav>
   </ng-template>
 
-  <!-- Desktop Sidebar -->
-  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()" [class.mobile-open]="mobileSidebarOpen()">
-    <div class="sidebar-header">
-      <div class="logo-area" (click)="toggleSidebar()" (keydown.enter)="toggleSidebar()" role="button" tabindex="0"
-        aria-label="Toggle sidebar">
-        <div class="logo-icon">
-          <img ngSrc="/assets/logo.png" width="36" height="36" alt="ServeTrack Logo" />
+    <!-- Desktop Sidebar -->
+    <aside class="sidebar" [class.collapsed]="sidebarCollapsed()" [class.mobile-open]="mobileSidebarOpen()">
+      <div class="sidebar-header">
+        <div class="logo-area" (click)="toggleSidebar()" (keydown.enter)="toggleSidebar()" role="button" tabindex="0"
+          aria-label="Toggle sidebar">
+          <div class="logo-icon">
+            <img ngSrc="/assets/logo.png" width="36" height="36" alt="ServeTrack Logo" />
+          </div>
+          <span class="logo-text">ServeTrack</span>
         </div>
-        <span class="logo-text">ServeTrack</span>
       </div>
-    </div>
 
-    <ng-container *ngTemplateOutlet="sidebarNav"></ng-container>
+      <ng-container *ngTemplateOutlet="sidebarNav"></ng-container>
 
-    <div class="sidebar-footer">
+      <div class="sidebar-footer">
       <div class="user-brief" (click)="openProfileModal()" role="button" tabindex="0" (keydown.enter)="openProfileModal()" aria-label="Edit Profile">
         <img [src]="$any(currentUser())?.profile_photo_url || defaultPhoto" width="32" height="32" alt="Admin" class="avatar-sm"
           [class.svg]="($any(currentUser())?.profile_photo_url || defaultPhoto).endsWith('.svg')" />
@@ -172,30 +172,31 @@
     </div>
   </aside>
 
-  <!-- Mobile Sidebar -->
-  <aside class="mobile-sidebar" [class.mobile-open]="mobileSidebarOpen()" aria-label="Mobile navigation">
-    <div class="mobile-sidebar-header">
-      <div class="logo-area">
-        <div class="logo-icon">
-          <img ngSrc="/assets/logo.png" width="36" height="36" alt="ServeTrack Logo" />
+    <!-- Mobile Sidebar -->
+    <aside class="mobile-sidebar" [class.mobile-open]="mobileSidebarOpen()" aria-label="Mobile navigation">
+      <div class="mobile-sidebar-header">
+        <div class="logo-area">
+          <div class="logo-icon">
+            <img ngSrc="/assets/logo.png" width="36" height="36" alt="ServeTrack Logo" />
+          </div>
+          <span class="logo-text">ServeTrack</span>
         </div>
-        <span class="logo-text">ServeTrack</span>
+        <button type="button" class="mobile-logout-btn" (click)="logout(); closeMobileSidebar()"
+          (keydown.enter)="logout(); closeMobileSidebar()" aria-label="Sign Out">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M9 21H12M12 21L15 18M9 21L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <path d="M16 17V14C16 12.58 14.58 9 10 9S4 12.58 4 17V20" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" />
+            <path d="M12 14V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          Sign Out
+        </button>
       </div>
-      <button type="button" class="mobile-logout-btn" (click)="logout(); closeMobileSidebar()"
-        (keydown.enter)="logout(); closeMobileSidebar()" aria-label="Sign Out">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M9 21H12M12 21L15 18M9 21L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-          <path d="M16 17V14C16 12.58 14.58 9 10 9S4 12.58 4 17V20" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" />
-          <path d="M12 14V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
-        Sign Out
-      </button>
-    </div>
 
-    <ng-container *ngTemplateOutlet="sidebarNav"></ng-container>
+      @let sidebarNavTemplate = sidebarNav;
+      <ng-container *ngTemplateOutlet="sidebarNavTemplate"></ng-container>
 
-    <div class="sidebar-footer">
+      <div class="sidebar-footer">
       <div class="user-brief" (click)="openProfileModal()" role="button" tabindex="0" (keydown.enter)="openProfileModal()" aria-label="Edit Profile">
         <img [src]="$any(currentUser())?.profile_photo_url || defaultPhoto" width="32" height="32" alt="Admin" class="avatar-sm"
           [class.svg]="($any(currentUser())?.profile_photo_url || defaultPhoto).endsWith('.svg')" />

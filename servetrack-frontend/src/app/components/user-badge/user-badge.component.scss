@@ -53,12 +53,12 @@
     font-weight: t.$font-weight-semibold;
     cursor: pointer;
     transition: all t.$duration-normal t.$easing-ease-out;
-    box-shadow: 0 2px 4px rgba(t.$color-primary, 0.2);
+    box-shadow: 0 2px 4px color-mix(in srgb, t.$color-primary 20%, transparent);
 
     &:hover {
       background: t.$color-primary-dark;
       transform: translateY(-1px);
-      box-shadow: 0 4px 6px rgba(t.$color-primary, 0.3);
+      box-shadow: 0 4px 6px color-mix(in srgb, t.$color-primary 30%, transparent);
     }
 
     &:active {
@@ -88,8 +88,8 @@
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
-    background: rgba(t.$color-primary-light, 0.08);
-    border-color: rgba(t.$color-primary-light, 0.2);
+    background: color-mix(in srgb, t.$color-primary-light 8%, transparent);
+    border-color: color-mix(in srgb, t.$color-primary-light 20%, transparent);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   }
@@ -115,7 +115,7 @@
 
   &:hover img {
     border-color: t.$color-primary-light;
-    box-shadow: 0 0 0 4px rgba(t.$color-primary-light, 0.1);
+    box-shadow: 0 0 0 4px color-mix(in srgb, t.$color-primary-light 10%, transparent);
   }
 
   .chevron-icon {
@@ -188,17 +188,17 @@
 
   .dropdown-header {
     padding: 1.25rem;
-    background: linear-gradient(135deg, rgba(t.$color-primary-lightest, 0.8), rgba(t.$color-white, 0));
+    background: linear-gradient(135deg, color-mix(in srgb, t.$color-primary-lightest 80%, transparent), transparent);
     border-bottom: 1px solid rgba(0, 0, 0, 0.03);
     display: flex;
     align-items: center;
     gap: 1rem;
 
-    .icon-md {
-      font-size: 1.5rem;
-      color: t.$color-primary;
-      filter: drop-shadow(0 2px 4px rgba(t.$color-primary, 0.2));
-    }
+  .icon-md {
+    font-size: 1.5rem;
+    color: t.$color-primary;
+    filter: drop-shadow(0 2px 4px color-mix(in srgb, t.$color-primary 20%, transparent));
+  }
 
     div {
       display: flex;

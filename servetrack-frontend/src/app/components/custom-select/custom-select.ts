@@ -1,14 +1,13 @@
 import {
   Component,
-  Input,
-  Output,
-  EventEmitter,
+  input,
+  output,
   signal,
   computed,
-  HostListener,
   ElementRef,
   inject,
   ChangeDetectionStrategy,
+  HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -20,27 +19,29 @@ export interface SelectOption {
 
 @Component({
   selector: 'app-custom-select',
-  standalone: true,
   imports: [CommonModule],
   templateUrl: './custom-select.html',
   styleUrl: './custom-select.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'onClickOutside($event)'
+  }
 })
 export class CustomSelect {
   private elementRef = inject(ElementRef);
 
-  @Input({ required: true }) options: SelectOption[] = [];
-  @Input() value: any;
-  @Input() placeholder = 'Select an option';
-  @Input() variant: 'admin' | 'volunteer' | 'default' = 'default';
-  @Input() status: 'present' | 'absent' | string | null = null;
+  options = input.required<SelectOption[]>();
+  value = input<any>();
+  placeholder = input<string>('Select an option');
+  variant = input<'admin' | 'volunteer' | 'default'>('default');
+  status = input<'present' | 'absent' | string | null>(null);
   
-  @Output() valueChange = new EventEmitter<any>();
+  valueChange = output<any>();
 
   isOpen = signal(false);
 
   selectedOption = computed(() => 
-    this.options.find(opt => opt.value === this.value)
+    this.options().find(opt => opt.value === this.value())
   );
 
   toggleDropdown(): void {
@@ -48,12 +49,10 @@ export class CustomSelect {
   }
 
   selectOption(option: SelectOption): void {
-    this.value = option.value;
     this.valueChange.emit(option.value);
     this.isOpen.set(false);
   }
 
-  @HostListener('document:click', ['$event'])
   onClickOutside(event: MouseEvent): void {
     if (!this.elementRef.nativeElement.contains(event.target)) {
       this.isOpen.set(false);
