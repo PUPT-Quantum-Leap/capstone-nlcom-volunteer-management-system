@@ -48,25 +48,21 @@ export class BackupRecoveryComponent {
   confirmationDialogMessage = signal('');
   confirmationDialogAction = signal<() => void>(() => {});
 
+  // Server pagination metadata
+  backupLastPage = signal(1);
+  backupTotalRecords = signal(0);
+
   // Computed
-  backupTotalPages = computed(() =>
-    Math.max(1, Math.ceil(this.backupRecords().length / this.backupHistoryPageSize()))
-  );
+  backupTotalPages = computed(() => this.backupLastPage());
 
   paginatedBackupRecords = computed(() => {
-    const page = this.backupHistoryPage();
-    const size = this.backupHistoryPageSize();
-    const start = (page - 1) * size;
-    const end = start + size;
-
     return this.backupRecords()
       .slice()
       .sort((a, b) => {
         const bDate = this.safeDate(b.created_at)?.getTime() ?? 0;
         const aDate = this.safeDate(a.created_at)?.getTime() ?? 0;
         return bDate - aDate;
-      })
-      .slice(start, end);
+      });
   });
 
   latestBackup = computed(() => {
@@ -143,8 +139,12 @@ export class BackupRecoveryComponent {
       .subscribe((response) => {
         if (response.success) {
           this.backupRecords.set(response.data);
+          this.backupLastPage.set(response.pagination?.last_page ?? 1);
+          this.backupTotalRecords.set(response.pagination?.total ?? 0);
         } else {
           this.backupRecords.set([]);
+          this.backupLastPage.set(1);
+          this.backupTotalRecords.set(0);
         }
       });
   }
@@ -172,8 +172,8 @@ export class BackupRecoveryComponent {
       .subscribe({
         next: (response) => {
           if (response.success) {
-            this.backupRecords.update((items) => [response.data, ...items]);
             this.backupHistoryPage.set(1);
+            this.loadBackups();
             this.showSnackbar.emit({ message: 'Backup created successfully.', type: 'success' });
           } else {
             this.showSnackbar.emit({
@@ -201,6 +201,8 @@ export class BackupRecoveryComponent {
         next: (response) => {
           if (response.success) {
             this.backupRecords.set(response.data);
+            this.backupLastPage.set(response.pagination?.last_page ?? 1);
+            this.backupTotalRecords.set(response.pagination?.total ?? 0);
             this.showSnackbar.emit({ message: 'Backup history refreshed.', type: 'info' });
           } else {
             this.showSnackbar.emit({ message: 'Failed to refresh backup history', type: 'error' });
@@ -285,13 +287,7 @@ export class BackupRecoveryComponent {
           .subscribe({
             next: (response) => {
               if (response.success) {
-                this.backupRecords.update((items) => items.filter((item) => item.id !== backupId));
-
-                const totalPages = this.backupTotalPages();
-                if (this.backupHistoryPage() > totalPages) {
-                  this.backupHistoryPage.set(totalPages);
-                }
-
+                this.loadBackups();
                 this.showSnackbar.emit({ message: 'Backup deleted successfully.', type: 'success' });
               } else {
                 this.showSnackbar.emit({
@@ -423,18 +419,21 @@ export class BackupRecoveryComponent {
   previousBackupHistoryPage(): void {
     if (this.backupHistoryPage() > 1) {
       this.backupHistoryPage.update((page) => page - 1);
+      this.loadBackups();
     }
   }
 
   nextBackupHistoryPage(): void {
     if (this.backupHistoryPage() < this.backupTotalPages()) {
       this.backupHistoryPage.update((page) => page + 1);
+      this.loadBackups();
     }
   }
 
   goToBackupPage(page: number): void {
     if (page >= 1 && page <= this.backupTotalPages()) {
       this.backupHistoryPage.set(page);
+      this.loadBackups();
     }
   }
 
