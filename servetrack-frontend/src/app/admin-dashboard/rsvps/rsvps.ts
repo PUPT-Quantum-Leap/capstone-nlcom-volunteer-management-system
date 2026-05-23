@@ -9,8 +9,10 @@ import {
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormArray, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators, ValidatorFn } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { Rsvp, RsvpShift } from '../../models/rsvp';
 import { RsvpService } from '../../services/rsvp.service';
+import { AdminDashboardService, NonResponder } from '../../services/admin-dashboard.service';
 
 import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
 
@@ -24,7 +26,9 @@ import { CustomSelect, SelectOption } from '../../components/custom-select/custo
 export class RsvpsComponent {
   private readonly fb = inject(FormBuilder);
   private readonly rsvpService = inject(RsvpService);
+  private readonly adminService = inject(AdminDashboardService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly nonResponderSearch$ = new Subject<string>();
 
   // Dropdown Options
   statusFilterOptions: SelectOption<'all' | 'active' | 'closed' | 'draft'>[] = [
@@ -52,6 +56,58 @@ export class RsvpsComponent {
   readonly notifyType = signal<'sms' | null>(null);
   readonly feedbackMessage = signal('');
   readonly feedbackType = signal<'success' | 'error' | 'info'>('info');
+
+  // ── Responses modal ──────────────────────────────────────────────────────────
+  readonly showResponsesModal = signal(false);
+  readonly selectedRsvpForResponses = signal<Rsvp | null>(null);
+  readonly responsesActiveTab = signal<'responded' | 'not_responded'>('responded');
+  readonly respondedList = signal<any[]>([]);
+  readonly responsesLoading = signal(false);
+  readonly responsesError = signal('');
+  readonly responseFilterStatus = signal<'all' | 'registered' | 'checked_in' | 'checked_out' | 'no_show'>('all');
+  readonly responseFilterShift = signal<string>('all');
+  readonly responseSearchQuery = signal('');
+
+  readonly nonRespondersList = signal<NonResponder[]>([]);
+  readonly nonRespondersLoading = signal(false);
+  readonly nonRespondersError = signal('');
+  readonly nonRespondersPage = signal(1);
+  readonly nonRespondersTotalPages = signal(1);
+  readonly nonRespondersTotal = signal(0);
+  readonly nonResponderSearchQuery = signal('');
+
+  // CSV export popover
+  readonly showExportPopover = signal(false);
+  readonly exportColumns = signal<Record<string, boolean>>({});
+
+  readonly filteredResponded = computed(() => {
+    let list = this.respondedList();
+    const status = this.responseFilterStatus();
+    const shift = this.responseFilterShift();
+    const q = this.responseSearchQuery().toLowerCase();
+    if (status !== 'all') list = list.filter((r) => r.attendance_status === status);
+    if (shift !== 'all') list = list.filter((r) => r.time_slot === shift);
+    if (q) list = list.filter((r) => (r.volunteer_name as string).toLowerCase().includes(q));
+    return list;
+  });
+
+  readonly responseStats = computed(() => {
+    const list = this.respondedList();
+    return {
+      total: list.length,
+      registered: list.filter((r) => r.attendance_status === 'registered').length,
+      checkedIn: list.filter((r) => r.attendance_status === 'checked_in').length,
+      checkedOut: list.filter((r) => r.attendance_status === 'checked_out').length,
+      noShow: list.filter((r) => r.attendance_status === 'no_show').length,
+    };
+  });
+
+  readonly responseShiftOptions = computed((): SelectOption<string>[] => {
+    const rsvp = this.selectedRsvpForResponses();
+    if (!rsvp) return [{ label: 'All Shifts', value: 'all' }];
+    const shifts = rsvp.shifts.map((s) => ({ label: s.text ?? s.timeSlot, value: s.text ?? s.timeSlot }));
+    return [{ label: 'All Shifts', value: 'all' }, ...shifts];
+  });
 
   readonly filteredRsvps = computed(() => {
     const status = this.rsvpFilterStatus();
@@ -122,6 +178,14 @@ export class RsvpsComponent {
 
   constructor() {
     this.loadRsvps();
+
+    this.nonResponderSearch$
+      .pipe(debounceTime(350), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((q) => {
+        this.nonResponderSearchQuery.set(q);
+        this.nonRespondersPage.set(1);
+        this.loadNonResponders();
+      });
 
     this.destroyRef.onDestroy(() => {
       this.unlockBodyScroll();
@@ -491,6 +555,199 @@ export class RsvpsComponent {
       return `${this.formatTimeTo12Hour(start.trim())} - ${this.formatTimeTo12Hour(end.trim())}`;
     }
     return this.formatTimeTo12Hour(timeSlot);
+  }
+
+  // ── Responses modal methods ──────────────────────────────────────────────────
+
+  openResponsesModal(rsvp: Rsvp): void {
+    this.selectedRsvpForResponses.set(rsvp);
+    this.responsesActiveTab.set('responded');
+    this.responseFilterStatus.set('all');
+    this.responseFilterShift.set('all');
+    this.responseSearchQuery.set('');
+    this.nonResponderSearchQuery.set('');
+    this.nonRespondersPage.set(1);
+    this.showExportPopover.set(false);
+    this.resetExportColumns('responded');
+    this.lockBodyScroll();
+    this.showResponsesModal.set(true);
+    this.loadResponded(rsvp.id);
+    this.loadNonResponders();
+  }
+
+  closeResponsesModal(): void {
+    this.showResponsesModal.set(false);
+    this.unlockBodyScroll();
+    this.selectedRsvpForResponses.set(null);
+    this.respondedList.set([]);
+    this.nonRespondersList.set([]);
+    this.responsesError.set('');
+    this.nonRespondersError.set('');
+    this.showExportPopover.set(false);
+  }
+
+  switchResponsesTab(tab: 'responded' | 'not_responded'): void {
+    this.responsesActiveTab.set(tab);
+    this.showExportPopover.set(false);
+    this.resetExportColumns(tab);
+  }
+
+  setResponseFilterStatus(status: 'all' | 'registered' | 'checked_in' | 'checked_out' | 'no_show'): void {
+    this.responseFilterStatus.set(status);
+  }
+
+  setResponseFilterShift(shift: string): void {
+    this.responseFilterShift.set(shift);
+  }
+
+  setResponseSearchQuery(q: string): void {
+    this.responseSearchQuery.set(q);
+  }
+
+  setNonResponderSearchQuery(q: string): void {
+    this.nonResponderSearch$.next(q);
+  }
+
+  loadNonResponders(): void {
+    const rsvp = this.selectedRsvpForResponses();
+    if (!rsvp) return;
+    this.nonRespondersLoading.set(true);
+    this.nonRespondersError.set('');
+    this.adminService
+      .getRsvpNonResponders(rsvp.id, {
+        search: this.nonResponderSearchQuery() || undefined,
+        page: this.nonRespondersPage(),
+        perPage: 25,
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.nonRespondersLoading.set(false);
+        if (res.success) {
+          this.nonRespondersList.set(res.data);
+          this.nonRespondersTotalPages.set(res.meta.last_page);
+          this.nonRespondersTotal.set(res.meta.total);
+        } else {
+          this.nonRespondersError.set(res.message ?? 'Failed to load non-responders.');
+        }
+      });
+  }
+
+  nextNonRespondersPage(): void {
+    if (this.nonRespondersPage() < this.nonRespondersTotalPages()) {
+      this.nonRespondersPage.update((p) => p + 1);
+      this.loadNonResponders();
+    }
+  }
+
+  prevNonRespondersPage(): void {
+    if (this.nonRespondersPage() > 1) {
+      this.nonRespondersPage.update((p) => p - 1);
+      this.loadNonResponders();
+    }
+  }
+
+  toggleExportPopover(): void {
+    this.showExportPopover.update((v) => !v);
+  }
+
+  toggleExportColumn(col: string): void {
+    this.exportColumns.update((cols) => ({ ...cols, [col]: !cols[col] }));
+  }
+
+  exportCsv(): void {
+    const tab = this.responsesActiveTab();
+    const cols = this.exportColumns();
+    let rows: string[][];
+    let headers: string[];
+
+    if (tab === 'responded') {
+      const allCols: { key: string; label: string }[] = [
+        { key: 'name', label: 'Name' },
+        { key: 'email', label: 'Email' },
+        { key: 'department', label: 'Department' },
+        { key: 'shift', label: 'Shift' },
+        { key: 'status', label: 'Status' },
+        { key: 'voted_at', label: 'Voted At' },
+        { key: 'checked_in_at', label: 'Checked In At' },
+        { key: 'checked_out_at', label: 'Checked Out At' },
+      ];
+      const active = allCols.filter((c) => cols[c.key]);
+      headers = active.map((c) => c.label);
+      rows = this.filteredResponded().map((r) =>
+        active.map((c) => {
+          if (c.key === 'name') return r.volunteer_name ?? '';
+          if (c.key === 'email') return r.volunteer_email ?? '';
+          if (c.key === 'department') return r.volunteer_department ?? '';
+          if (c.key === 'shift') return r.time_slot ?? '';
+          if (c.key === 'status') return r.attendance_status ?? '';
+          if (c.key === 'voted_at') return r.voted_at ?? '';
+          if (c.key === 'checked_in_at') return r.checked_in_at ?? '';
+          if (c.key === 'checked_out_at') return r.checked_out_at ?? '';
+          return '';
+        }),
+      );
+    } else {
+      const allCols: { key: string; label: string }[] = [
+        { key: 'name', label: 'Name' },
+        { key: 'email', label: 'Email' },
+        { key: 'department', label: 'Department' },
+        { key: 'mobile', label: 'Mobile Number' },
+      ];
+      const active = allCols.filter((c) => cols[c.key]);
+      headers = active.map((c) => c.label);
+      rows = this.nonRespondersList().map((r) =>
+        active.map((c) => {
+          if (c.key === 'name') return r.volunteer_name;
+          if (c.key === 'email') return r.volunteer_email;
+          if (c.key === 'department') return r.volunteer_department;
+          if (c.key === 'mobile') return r.mobile_number;
+          return '';
+        }),
+      );
+    }
+
+    const rsvp = this.selectedRsvpForResponses();
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `rsvp-${rsvp?.id ?? 0}-${tab}-${date}.csv`;
+    this.downloadCsv([headers, ...rows], filename);
+    this.showExportPopover.set(false);
+  }
+
+  loadResponded(rsvpId: number): void {
+    this.responsesLoading.set(true);
+    this.responsesError.set('');
+    this.adminService
+      .getAttendanceFromRsvp(rsvpId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.responsesLoading.set(false);
+        if (res.success) {
+          this.respondedList.set(res.data ?? []);
+          this.resetExportColumns('responded');
+        } else {
+          this.responsesError.set(res.message ?? 'Failed to load responses.');
+        }
+      });
+  }
+
+  private resetExportColumns(tab: 'responded' | 'not_responded'): void {
+    if (tab === 'responded') {
+      this.exportColumns.set({ name: true, email: true, department: true, shift: true, status: true, voted_at: true, checked_in_at: true, checked_out_at: true });
+    } else {
+      this.exportColumns.set({ name: true, email: true, department: true, mobile: true });
+    }
+  }
+
+  private downloadCsv(rows: string[][], filename: string): void {
+    const escape = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`;
+    const csv = rows.map((r) => r.map(escape).join(',')).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   private loadRsvps(): void {

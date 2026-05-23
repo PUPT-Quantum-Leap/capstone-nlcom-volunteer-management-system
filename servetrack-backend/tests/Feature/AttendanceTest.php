@@ -94,3 +94,63 @@ describe('Admin Attendance Management', function (): void {
         expect($attendance->status)->toBe('rejected');
     });
 });
+
+describe('RSVP Non-Responders', function (): void {
+    beforeEach(function (): void {
+        $this->admin = User::factory()->admin()->create();
+        $this->actingAs($this->admin);
+
+        $this->location = Location::factory()->create();
+        $this->rsvp = Rsvp::factory()->create([
+            'status' => 'active',
+            'location_id' => $this->location->location_id,
+        ]);
+
+        // 3 volunteers; only 1 responds
+        $this->responder = Volunteer::factory()->create(['first_name' => 'Alice', 'last_name' => 'Smith']);
+        $this->nonResponder1 = Volunteer::factory()->create(['first_name' => 'Bob',   'last_name' => 'Jones']);
+        $this->nonResponder2 = Volunteer::factory()->create(['first_name' => 'Carol', 'last_name' => 'White']);
+
+        $shift = TimeSlot::factory()->create();
+        RsvpResponse::factory()->create([
+            'rsvp_id' => $this->rsvp->rsvp_id,
+            'volunteer_id' => $this->responder->volunteer_id,
+            'time_slot_id' => $shift->time_slot_id,
+        ]);
+    });
+
+    it('returns volunteers who have not responded', function (): void {
+        $this->getJson("/api/admin/rsvp-non-responders?rsvp_id={$this->rsvp->rsvp_id}")
+            ->assertSuccessful()
+            ->assertJsonPath('meta.total', 2)
+            ->assertJsonMissing(['volunteer_name' => 'Alice Smith']);
+    });
+
+    it('filters non-responders by search', function (): void {
+        $this->getJson("/api/admin/rsvp-non-responders?rsvp_id={$this->rsvp->rsvp_id}&search=Bob")
+            ->assertSuccessful()
+            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.volunteer_name', 'Bob Jones');
+    });
+
+    it('paginates non-responders', function (): void {
+        $this->getJson("/api/admin/rsvp-non-responders?rsvp_id={$this->rsvp->rsvp_id}&per_page=1&page=1")
+            ->assertSuccessful()
+            ->assertJsonPath('meta.last_page', 2)
+            ->assertJsonCount(1, 'data');
+    });
+
+    it('returns 403 for non-admin', function (): void {
+        $volunteer = Volunteer::factory()->create();
+        $user = User::factory()->create(['role' => 'volunteer']);
+        $this->actingAs($user);
+
+        $this->getJson("/api/admin/rsvp-non-responders?rsvp_id={$this->rsvp->rsvp_id}")
+            ->assertForbidden();
+    });
+
+    it('returns 422 for missing rsvp_id', function (): void {
+        $this->getJson('/api/admin/rsvp-non-responders')
+            ->assertUnprocessable();
+    });
+});
