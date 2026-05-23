@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Constants\TokenAbilities;
+use App\Http\Requests\RsvpNonRespondersRequest;
 use App\Models\Admin;
 use App\Models\Attendance;
 use App\Models\Rsvp;
@@ -535,19 +536,9 @@ class AdminController extends Controller
      * Get active volunteers who have NOT responded to a given RSVP.
      * Supports search by name/email and pagination.
      */
-    public function rsvpNonResponders(Request $request): JsonResponse
+    public function rsvpNonResponders(RsvpNonRespondersRequest $request): JsonResponse
     {
-        $role = $request->user()?->role;
-        if ($role !== 'admin') {
-            return response()->json(['success' => false, 'message' => 'Forbidden. Admin access only.'], 403);
-        }
-
-        $validated = $request->validate([
-            'rsvp_id' => ['required', 'integer', 'exists:rsvp,rsvp_id'],
-            'search' => ['nullable', 'string', 'max:100'],
-            'page' => ['nullable', 'integer', 'min:1'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
-        ]);
+        $validated = $request->validated();
 
         $rsvpId = (int) $validated['rsvp_id'];
         $search = $validated['search'] ?? null;

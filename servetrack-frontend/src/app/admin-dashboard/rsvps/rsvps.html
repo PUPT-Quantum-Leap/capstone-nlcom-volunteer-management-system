@@ -675,6 +675,7 @@
         @if (responsesActiveTab() === 'not_responded') {
           <div class="response-filters">
             <input type="search" class="response-search-input response-search-full" placeholder="Search by name or email…"
+              [value]="nonResponderSearchQuery()"
               (input)="setNonResponderSearchQuery($any($event.target).value)"
               aria-label="Search non-responding volunteers" />
           </div>
