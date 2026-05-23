@@ -111,11 +111,10 @@ class RsvpCutoffReminderService
                     // Cutoff is in the next 24 hours
                     $q->whereDate('cutoff_day', '>', $now->format('Y-m-d'))
                         ->whereDate('cutoff_day', '<=', $twentyFourHoursFromNow->format('Y-m-d'));
-                })->orWhere(function ($q) use ($now, $twentyFourHoursFromNow) {
-                    // Cutoff is today and within 24 hours
+                })->orWhere(function ($q) use ($now) {
+                    // Cutoff is today and still in the future — automatically within 24 hours
                     $q->whereDate('cutoff_day', '=', $now->format('Y-m-d'))
-                        ->whereTime('cutoff_time', '>', $now->format('H:i:s'))
-                        ->whereTime('cutoff_time', '<=', $twentyFourHoursFromNow->format('H:i:s'));
+                        ->whereTime('cutoff_time', '>', $now->format('H:i:s'));
                 });
             })
             ->whereHas('responses', function ($query) {
