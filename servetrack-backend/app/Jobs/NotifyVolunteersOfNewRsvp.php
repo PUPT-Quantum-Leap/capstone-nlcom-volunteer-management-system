@@ -8,13 +8,17 @@ use App\Models\RsvpNotification;
 use App\Models\Volunteer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class NotifyVolunteersOfNewRsvp implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public Rsvp $rsvp) {}
+    public function __construct(public Rsvp $rsvp)
+    {
+        $this->onQueue('emails');
+    }
 
     /**
      * Execute the job.
@@ -37,8 +41,17 @@ class NotifyVolunteersOfNewRsvp implements ShouldQueue
                 'email_sent' => false,
             ]);
 
-            // Queue email if volunteer has notification preferences enabled
+            // Queue email if volunteer has notification preferences and an email address
             if ($volunteer->notify_rsvp_on_email) {
+                if (empty($volunteer->email)) {
+                    Log::warning('Volunteer has no email address, skipping new RSVP notification', [
+                        'volunteer_id' => $volunteer->volunteer_id,
+                        'rsvp_id' => $this->rsvp->rsvp_id,
+                    ]);
+
+                    continue;
+                }
+
                 Mail::queue(new RsvpEventCreatedMail($this->rsvp, $volunteer));
                 $notification->update(['email_sent' => true]);
             }
