@@ -52,7 +52,7 @@ class NotifyVolunteersOfNewRsvp implements ShouldQueue
                     continue;
                 }
 
-                Mail::queue(new RsvpEventCreatedMail($this->rsvp, $volunteer));
+                Mail::to($volunteer->email)->queue(new RsvpEventCreatedMail($this->rsvp, $volunteer));
                 $notification->update(['email_sent' => true]);
             }
         }
