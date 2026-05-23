@@ -196,6 +196,19 @@
               </button>
               <button
                 type="button"
+                class="icon-btn icon-btn-info"
+                (click)="openResponsesModal(rsvp)"
+                [attr.aria-label]="'View responses for ' + rsvp.title"
+                title="View Responses">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </button>
+              <button
+                type="button"
                 class="icon-btn"
                 (click)="notifyRsvpSms(rsvp.id)"
                 [disabled]="isNotifyingRsvpId() === rsvp.id && notifyType() === 'sms'"
@@ -487,6 +500,287 @@
         <button type="button" class="danger-btn" (click)="deleteRsvp()" [disabled]="isDeletingRsvp()">
           @if (isDeletingRsvp()) { <span class="btn-spinner"></span> Deleting... } @else { Delete RSVP }
         </button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (showResponsesModal() && selectedRsvpForResponses()) {
+  <div class="modal-backdrop" (click)="closeResponsesModal()" role="presentation">
+    <section class="modal-card modal-responses" (click)="$event.stopPropagation()" role="dialog"
+      aria-modal="true" aria-labelledby="responses-modal-title"
+      (keydown.escape)="closeResponsesModal()">
+
+      <!-- Header -->
+      <div class="modal-header header-primary">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div>
+            <h3 id="responses-modal-title">Volunteer Responses</h3>
+            <span class="modal-subtitle">{{ selectedRsvpForResponses()?.title }}</span>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeResponsesModal()" aria-label="Close responses modal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m18 6-12 12"/><path d="m6 6 12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Stats bar -->
+      <div class="response-stats-bar" aria-label="Response statistics">
+        <div class="stat-tile">
+          <span class="stat-tile-value">{{ responseStats().total }}</span>
+          <span class="stat-tile-label">Total</span>
+        </div>
+        <div class="stat-tile stat-tile-green">
+          <span class="stat-tile-value">{{ responseStats().checkedIn }}</span>
+          <span class="stat-tile-label">Checked In</span>
+        </div>
+        <div class="stat-tile stat-tile-blue">
+          <span class="stat-tile-value">{{ responseStats().checkedOut }}</span>
+          <span class="stat-tile-label">Checked Out</span>
+        </div>
+        <div class="stat-tile stat-tile-amber">
+          <span class="stat-tile-value">{{ responseStats().registered }}</span>
+          <span class="stat-tile-label">Registered</span>
+        </div>
+        <div class="stat-tile stat-tile-red">
+          <span class="stat-tile-value">{{ responseStats().noShow }}</span>
+          <span class="stat-tile-label">No Show</span>
+        </div>
+        <div class="stat-tile stat-tile-gray">
+          <span class="stat-tile-value">{{ nonRespondersTotal() }}</span>
+          <span class="stat-tile-label">Not Responded</span>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="responses-tabs" role="tablist" aria-label="Response tabs">
+        <button type="button" role="tab" class="responses-tab-btn"
+          [class.active]="responsesActiveTab() === 'responded'"
+          [attr.aria-selected]="responsesActiveTab() === 'responded'"
+          (click)="switchResponsesTab('responded')">
+          Responded
+          <span class="tab-count">{{ respondedList().length }}</span>
+        </button>
+        <button type="button" role="tab" class="responses-tab-btn"
+          [class.active]="responsesActiveTab() === 'not_responded'"
+          [attr.aria-selected]="responsesActiveTab() === 'not_responded'"
+          (click)="switchResponsesTab('not_responded')">
+          Not Responded
+          <span class="tab-count">{{ nonRespondersTotal() }}</span>
+        </button>
+      </div>
+
+      <!-- Modal body -->
+      <div class="modal-body responses-modal-body" role="tabpanel">
+
+        <!-- ── Responded tab ── -->
+        @if (responsesActiveTab() === 'responded') {
+          <!-- Filters -->
+          <div class="response-filters">
+            <div class="response-filter-group">
+              <app-custom-select
+                [options]="responseShiftOptions()"
+                [value]="responseFilterShift()"
+                (valueChange)="setResponseFilterShift($event)"
+                variant="admin">
+              </app-custom-select>
+            </div>
+            <div class="response-status-chips" role="group" aria-label="Filter by status">
+              @for (chip of [
+                { value: 'all', label: 'All' },
+                { value: 'registered', label: 'Registered' },
+                { value: 'checked_in', label: 'Checked In' },
+                { value: 'checked_out', label: 'Checked Out' },
+                { value: 'no_show', label: 'No Show' }
+              ]; track chip.value) {
+                <button type="button"
+                  [class]="'status-chip-filter status-chip-filter--' + chip.value + (responseFilterStatus() === chip.value ? ' active' : '')"
+                  (click)="setResponseFilterStatus($any(chip.value))"
+                  [attr.aria-pressed]="responseFilterStatus() === chip.value">
+                  {{ chip.label }}
+                </button>
+              }
+            </div>
+            <input type="search" class="response-search-input" placeholder="Search by name…"
+              [value]="responseSearchQuery()"
+              (input)="setResponseSearchQuery($any($event.target).value)"
+              aria-label="Search responded volunteers by name" />
+          </div>
+
+          @if (responsesLoading()) {
+            <div class="responses-loading" aria-live="polite">
+              <span class="btn-spinner"></span>
+              <span>Loading responses…</span>
+            </div>
+          } @else if (responsesError()) {
+            <div class="responses-error" role="alert">
+              <p>{{ responsesError() }}</p>
+              <button type="button" class="outline-btn" (click)="loadResponded(selectedRsvpForResponses()!.id)">Retry</button>
+            </div>
+          } @else if (filteredResponded().length === 0) {
+            <div class="response-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+              <p>No responses match the current filters.</p>
+            </div>
+          } @else {
+            <div class="response-table-wrapper">
+              <table class="response-table" aria-label="Responded volunteers">
+                <thead>
+                  <tr>
+                    <th scope="col">Volunteer</th>
+                    <th scope="col">Department</th>
+                    <th scope="col">Shift</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Voted At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of filteredResponded(); track r.id) {
+                    <tr [class]="'response-row response-row--' + r.attendance_status">
+                      <td>
+                        <div class="volunteer-cell">
+                          <span class="volunteer-name">{{ r.volunteer_name }}</span>
+                          <span class="volunteer-email">{{ r.volunteer_email }}</span>
+                        </div>
+                      </td>
+                      <td>{{ r.volunteer_department }}</td>
+                      <td>{{ r.time_slot }}</td>
+                      <td>
+                        <span [class]="'status-chip status-chip--' + r.attendance_status">
+                          {{ r.attendance_status | titlecase }}
+                        </span>
+                      </td>
+                      <td class="timestamp-cell">{{ r.voted_at ? (r.voted_at | date:'MMM d, y h:mm a') : '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        }
+
+        <!-- ── Not Responded tab ── -->
+        @if (responsesActiveTab() === 'not_responded') {
+          <div class="response-filters">
+            <input type="search" class="response-search-input response-search-full" placeholder="Search by name or email…"
+              (input)="setNonResponderSearchQuery($any($event.target).value)"
+              aria-label="Search non-responding volunteers" />
+          </div>
+
+          @if (nonRespondersLoading()) {
+            <div class="responses-loading" aria-live="polite">
+              <span class="btn-spinner"></span>
+              <span>Loading non-responders…</span>
+            </div>
+          } @else if (nonRespondersError()) {
+            <div class="responses-error" role="alert">
+              <p>{{ nonRespondersError() }}</p>
+              <button type="button" class="outline-btn" (click)="loadNonResponders()">Retry</button>
+            </div>
+          } @else if (nonRespondersList().length === 0) {
+            <div class="response-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <line x1="23" y1="11" x2="17" y2="11"/>
+              </svg>
+              <p>All volunteers have responded to this RSVP.</p>
+            </div>
+          } @else {
+            <div class="response-table-wrapper">
+              <table class="response-table" aria-label="Non-responding volunteers">
+                <thead>
+                  <tr>
+                    <th scope="col">Volunteer</th>
+                    <th scope="col">Department</th>
+                    <th scope="col">Mobile Number</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (v of nonRespondersList(); track v.volunteer_id) {
+                    <tr class="response-row">
+                      <td>
+                        <div class="volunteer-cell">
+                          <span class="volunteer-name">{{ v.volunteer_name }}</span>
+                          <span class="volunteer-email">{{ v.volunteer_email }}</span>
+                        </div>
+                      </td>
+                      <td>{{ v.volunteer_department }}</td>
+                      <td>{{ v.mobile_number || '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (nonRespondersTotalPages() > 1) {
+              <div class="responses-pagination">
+                <button type="button" class="pagination-btn" [disabled]="nonRespondersPage() === 1"
+                  (click)="prevNonRespondersPage()" aria-label="Previous page">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <span class="responses-page-info">{{ nonRespondersPage() }} / {{ nonRespondersTotalPages() }}</span>
+                <button type="button" class="pagination-btn" [disabled]="nonRespondersPage() === nonRespondersTotalPages()"
+                  (click)="nextNonRespondersPage()" aria-label="Next page">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
+            }
+          }
+        }
+      </div>
+
+      <!-- Footer with CSV export popover -->
+      <div class="modal-footer responses-modal-footer">
+        <button type="button" class="outline-btn" (click)="closeResponsesModal()">Close</button>
+        <div class="export-popover-anchor">
+          <button type="button" class="primary-btn export-btn" (click)="toggleExportPopover()"
+            [attr.aria-expanded]="showExportPopover()" aria-haspopup="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Export CSV
+          </button>
+          @if (showExportPopover()) {
+            <div class="export-popover-backdrop" (click)="showExportPopover.set(false)" aria-hidden="true"></div>
+            <div class="export-popover" role="dialog" aria-label="Select columns to export">
+              <p class="export-popover-title">Select columns</p>
+              @for (entry of exportColumns() | keyvalue; track entry.key) {
+                <label class="export-col-option">
+                  <input type="checkbox" [checked]="entry.value"
+                    (change)="toggleExportColumn(entry.key)" />
+                  {{ entry.key === 'checked_in_at' ? 'Checked In At'
+                   : entry.key === 'checked_out_at' ? 'Checked Out At'
+                   : entry.key === 'voted_at' ? 'Voted At'
+                   : entry.key === 'mobile' ? 'Mobile Number'
+                   : (entry.key | titlecase) }}
+                </label>
+              }
+              <button type="button" class="primary-btn export-download-btn" (click)="exportCsv()">
+                Download
+              </button>
+            </div>
+          }
+        </div>
       </div>
     </section>
   </div>

@@ -87,6 +87,9 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::get('/admin/attendance-from-rsvp', [AdminController::class, 'attendanceFromRsvp'])
         ->middleware('throttle:120,1')
         ->name('admin.attendance.from-rsvp');
+    Route::get('/admin/rsvp-non-responders', [AdminController::class, 'rsvpNonResponders'])
+        ->middleware('throttle:120,1')
+        ->name('admin.rsvp.non-responders');
     Route::post('/admin/attendance-status', [AdminController::class, 'updateAttendanceStatus'])
         ->middleware('throttle:60,1')
         ->name('admin.attendance.status.update');

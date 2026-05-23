@@ -63,6 +63,21 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface NonResponder {
+  volunteer_id: number;
+  volunteer_name: string;
+  volunteer_email: string;
+  volunteer_department: string;
+  mobile_number: string;
+}
+
+export interface NonRespondersResponse {
+  success: boolean;
+  message?: string;
+  data: NonResponder[];
+  meta: { current_page: number; last_page: number; total: number; per_page: number };
+}
+
 export interface BackupRecord {
   id: number;
   name: string;
@@ -498,6 +513,32 @@ export class AdminDashboardService {
         });
       })
     );
+  }
+
+  getRsvpNonResponders(
+    rsvpId: number,
+    params?: { search?: string; page?: number; perPage?: number },
+  ): Observable<NonRespondersResponse> {
+    const query = new URLSearchParams({ rsvp_id: String(rsvpId) });
+    if (params?.search) query.set('search', params.search);
+    if (params?.page) query.set('page', String(params.page));
+    if (params?.perPage) query.set('per_page', String(params.perPage));
+
+    return this.http
+      .get<NonRespondersResponse>(`${environment.apiUrl}/admin/rsvp-non-responders?${query}`, {
+        withCredentials: true,
+      })
+      .pipe(
+        catchError((error) => {
+          console.error('Error fetching RSVP non-responders:', error);
+          return of<NonRespondersResponse>({
+            success: false,
+            message: 'Failed to fetch non-responders',
+            data: [],
+            meta: { current_page: 1, last_page: 1, total: 0, per_page: 25 },
+          });
+        }),
+      );
   }
 
   updateAttendanceStatus(rsvpResponseId: number, status: 'present' | 'absent'): Observable<ApiResponse<any>> {

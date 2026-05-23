@@ -532,6 +532,63 @@ class AdminController extends Controller
     }
 
     /**
+     * Get active volunteers who have NOT responded to a given RSVP.
+     * Supports search by name/email and pagination.
+     */
+    public function rsvpNonResponders(Request $request): JsonResponse
+    {
+        $role = $request->user()?->role;
+        if ($role !== 'admin') {
+            return response()->json(['success' => false, 'message' => 'Forbidden. Admin access only.'], 403);
+        }
+
+        $validated = $request->validate([
+            'rsvp_id' => ['required', 'integer', 'exists:rsvp,rsvp_id'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $rsvpId = (int) $validated['rsvp_id'];
+        $search = $validated['search'] ?? null;
+        $perPage = (int) ($validated['per_page'] ?? 25);
+
+        $query = Volunteer::query()
+            ->with('positions:position_id,name')
+            ->whereNull('deleted_at')
+            ->whereDoesntHave('rsvpResponses', fn ($q) => $q->where('rsvp_id', $rsvpId));
+
+        if ($search) {
+            $query->where(function ($q) use ($search): void {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $paginated = $query->paginate($perPage, ['*'], 'page', $validated['page'] ?? 1);
+
+        $data = $paginated->map(fn ($v) => [
+            'volunteer_id' => $v->volunteer_id,
+            'volunteer_name' => trim("{$v->first_name} {$v->last_name}"),
+            'volunteer_email' => $v->email ?? '',
+            'volunteer_department' => $v->positions->first()?->name ?? 'Unassigned',
+            'mobile_number' => $v->mobile_number ?? '',
+        ])->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+            'meta' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'total' => $paginated->total(),
+                'per_page' => $paginated->perPage(),
+            ],
+        ]);
+    }
+
+    /**
      * Update attendance status for an RSVP response.
      * This updates both the RSVP response and creates/updates the Attendance record.
      */
