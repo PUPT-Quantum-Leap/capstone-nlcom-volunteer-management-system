@@ -16,6 +16,20 @@ import { AdminDashboardService, NonResponder } from '../../services/admin-dashbo
 
 import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
 
+export interface RespondedItem {
+  id: number;
+  rsvp_id: number;
+  volunteer_id: number;
+  volunteer_name: string;
+  volunteer_email: string;
+  volunteer_department: string;
+  time_slot: string | null;
+  attendance_status: 'registered' | 'checked_in' | 'checked_out' | 'no_show';
+  voted_at: string | null;
+  checked_in_at: string | null;
+  checked_out_at: string | null;
+}
+
 @Component({
   selector: 'app-rsvps',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,7 +75,7 @@ export class RsvpsComponent {
   readonly showResponsesModal = signal(false);
   readonly selectedRsvpForResponses = signal<Rsvp | null>(null);
   readonly responsesActiveTab = signal<'responded' | 'not_responded'>('responded');
-  readonly respondedList = signal<any[]>([]);
+  readonly respondedList = signal<RespondedItem[]>([]);
   readonly responsesLoading = signal(false);
   readonly responsesError = signal('');
   readonly responseFilterStatus = signal<'all' | 'registered' | 'checked_in' | 'checked_out' | 'no_show'>('all');
@@ -87,7 +101,7 @@ export class RsvpsComponent {
     const q = this.responseSearchQuery().toLowerCase();
     if (status !== 'all') list = list.filter((r) => r.attendance_status === status);
     if (shift !== 'all') list = list.filter((r) => r.time_slot === shift);
-    if (q) list = list.filter((r) => (r.volunteer_name as string).toLowerCase().includes(q));
+    if (q) list = list.filter((r) => r.volunteer_name.toLowerCase().includes(q));
     return list;
   });
 
@@ -739,8 +753,11 @@ export class RsvpsComponent {
   }
 
   private downloadCsv(rows: string[][], filename: string): void {
-    const escape = (v: string) => `"${(v ?? '').replace(/"/g, '""')}"`;
-    const csv = rows.map((r) => r.map(escape).join(',')).join('\r\n');
+    const escape = (v: string) => {
+      let s = (v ?? '').replace(/"/g, '""');
+      if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+      return `"${s}"`;
+    };    const csv = rows.map((r) => r.map(escape).join(',')).join('\r\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
