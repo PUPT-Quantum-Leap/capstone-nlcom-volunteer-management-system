@@ -28,6 +28,30 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .analytics-container {
+    animation: none;
+  }
+
+  .loading-spinner {
+    animation: none;
+    border-color: var(--primary-500);
+  }
+
+  .stat-card:hover {
+    transform: none;
+  }
+
+  .department-fill,
+  .skill-fill {
+    transition: none;
+  }
+
+  .action-btn:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
 // Loading State
 .loading-state {
   display: flex;
@@ -56,6 +80,57 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+// Error State
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+  text-align: center;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  svg {
+    width: 3rem;
+    height: 3rem;
+    color: var(--red-500, #ef4444);
+  }
+
+  p {
+    color: var(--gray-600);
+    font-size: 0.95rem;
+    margin: 0;
+    max-width: 400px;
+  }
+}
+
+.retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: white;
+  background: var(--primary-500);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--primary-600);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
   }
 }
 
@@ -162,6 +237,11 @@
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
   }
 
+  &:focus-visible {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+  }
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -192,6 +272,11 @@
   &:hover {
     background: rgba(255, 255, 255, 0.25);
     border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  &:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
   }
 }
 
@@ -540,6 +625,11 @@
       background: var(--gray-50);
       color: var(--primary-600);
       border-color: var(--primary-200);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--primary-500);
+      outline-offset: 1px;
     }
 
     &:disabled {
