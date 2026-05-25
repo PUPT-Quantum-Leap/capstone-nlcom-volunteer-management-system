@@ -12,13 +12,13 @@ class ChatbotMessageRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, string|int>>
      */
     public function rules(): array
     {
         return [
-            'message' => ['required', 'string', 'max:4000'],
-            'session_id' => ['nullable', 'string', 'max:255'],
+            'message' => ['required', 'string', 'max:2000'],
+            'session_id' => ['nullable', 'string', 'uuid'],
         ];
     }
 
@@ -29,7 +29,8 @@ class ChatbotMessageRequest extends FormRequest
     {
         return [
             'message.required' => 'Please enter a message.',
-            'message.max' => 'Message cannot exceed 4000 characters.',
+            'message.max' => 'Message cannot exceed 2000 characters.',
+            'session_id.uuid' => 'Session ID must be a valid UUID.',
         ];
     }
 }

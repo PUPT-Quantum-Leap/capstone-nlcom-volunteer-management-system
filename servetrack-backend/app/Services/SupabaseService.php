@@ -7,14 +7,17 @@ use Illuminate\Support\Facades\Http;
 
 class SupabaseService
 {
-    private string $baseUrl;
-
-    private string $serviceKey;
-
-    public function __construct()
-    {
-        $this->baseUrl = config('services.supabase.url');
-        $this->serviceKey = config('services.supabase.service_key');
+    public function __construct(
+        private string $baseUrl = '',
+        private string $serviceKey = '',
+    ) {
+        // Resolve from config if not provided
+        if (! $this->baseUrl) {
+            $this->baseUrl = config('services.supabase.url');
+        }
+        if (! $this->serviceKey) {
+            $this->serviceKey = config('services.supabase.service_key');
+        }
     }
 
     public function getHistory(int $userId, string $sessionId, int $limit = 50): array
@@ -42,10 +45,10 @@ class SupabaseService
             Http::withHeaders([
                 'apikey' => $this->serviceKey,
                 'Authorization' => "Bearer {$this->serviceKey}",
-            ])->delete("{$this->baseUrl}/rest/v1/chatbot_conversations", [
+            ])->withQueryParameters([
                 'user_id' => "eq.{$userId}",
                 'session_id' => "eq.{$sessionId}",
-            ]);
+            ])->delete("{$this->baseUrl}/rest/v1/chatbot_conversations");
         } catch (RequestException) {
             // Silently fail — history clear is non-critical
         }

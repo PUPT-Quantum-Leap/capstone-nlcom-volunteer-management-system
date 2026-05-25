@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ChatbotMessageRequest;
+use App\Services\SupabaseService;
 use Firebase\JWT\JWT;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,12 +16,9 @@ class ChatbotController extends Controller
      *
      * Authenticates the request using JWT (HS256) signed with the webhook secret.
      */
-    public function message(Request $request): JsonResponse
+    public function message(ChatbotMessageRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'message' => 'required|string|max:2000',
-            'session_id' => 'nullable|string|uuid',
-        ]);
+        $validated = $request->validated();
 
         $webhookUrl = config('services.chatbot.webhook_url');
         $jwtSecret = config('services.chatbot.webhook_jwt_secret');
@@ -66,10 +65,12 @@ class ChatbotController extends Controller
      */
     public function history(Request $request): JsonResponse
     {
-        // TODO: Implement conversation history retrieval from Supabase or n8n
-        return response()->json([
-            'conversations' => [],
-        ]);
+        $sessionId = $request->query('session_id', '');
+        $userId = $request->user()->id;
+
+        $messages = app(SupabaseService::class)->getHistory($userId, $sessionId);
+
+        return response()->json(['success' => true, 'data' => $messages]);
     }
 
     /**
@@ -77,9 +78,11 @@ class ChatbotController extends Controller
      */
     public function clear(Request $request): JsonResponse
     {
-        // TODO: Implement conversation history clearing from Supabase or n8n
-        return response()->json([
-            'success' => true,
-        ]);
+        $sessionId = $request->input('session_id', '');
+        $userId = $request->user()->id;
+
+        app(SupabaseService::class)->clearHistory($userId, $sessionId);
+
+        return response()->json(['success' => true, 'message' => 'Conversation history cleared']);
     }
 }
