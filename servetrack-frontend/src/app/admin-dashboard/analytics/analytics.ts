@@ -43,9 +43,6 @@ export class AnalyticsComponent {
   readonly reportData = signal<ReportData | null>(null);
   readonly departmentOptions = signal<DepartmentStat[]>([]);
   readonly errorMessage = signal<string | null>(null);
-  readonly selectedReportType = signal<
-    'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'
-  >('volunteers');
   readonly dateRangeFilter = signal<'all' | 'month' | 'quarter' | 'year'>('all');
   readonly selectedDepartmentFilter = signal<string | null>(null);
   readonly skillsPage = signal(1);
@@ -138,10 +135,6 @@ export class AnalyticsComponent {
 
   calculateSkillPercentage(count: number): number {
     return Math.round((count / this.maxSkillCount()) * 100);
-  }
-
-  setReportType(type: 'volunteers' | 'attendance' | 'performance' | 'department' | 'trends'): void {
-    this.selectedReportType.set(type);
   }
 
   setDateRange(range: 'all' | 'month' | 'quarter' | 'year'): void {
