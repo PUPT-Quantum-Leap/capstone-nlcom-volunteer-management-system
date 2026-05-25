@@ -12,6 +12,7 @@
         "php": "^8.2",
         "dompdf/dompdf": "^2.0",
         "facebook/graph-sdk": "*",
+        "firebase/php-jwt": "^7.0",
         "laravel/boost": "*",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",

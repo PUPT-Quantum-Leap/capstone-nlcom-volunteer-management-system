@@ -63,14 +63,8 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->ip());
         });
 
-        // Analytics rate limiters — reports can be fetched more frequently,
-        // but exports (PDF/Excel generation) are heavier and thus stricter.
-        RateLimiter::for('analytics-reports', function (Request $request) {
-            return Limit::perMinute(30)->by($request->user()?->id ?: $request->ip());
-        });
-
-        RateLimiter::for('analytics-exports', function (Request $request) {
-            return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+        RateLimiter::for('chatbot', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
         // Register Volunteer observer for audit logging
