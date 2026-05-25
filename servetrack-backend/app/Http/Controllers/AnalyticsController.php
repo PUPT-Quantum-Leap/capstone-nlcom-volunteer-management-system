@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AnalyticsReportRequest;
 use App\Models\Attendance;
 use App\Models\Lifegroup;
 use App\Models\Position;
@@ -11,8 +12,8 @@ use App\Models\Training;
 use App\Models\Volunteer;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -24,7 +25,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class AnalyticsController extends Controller
 {
-    public function reports(Request $request): JsonResponse
+    public function reports(AnalyticsReportRequest $request): JsonResponse
     {
         $dateRange = $request->query('dateRange', 'all');
         $departmentId = $request->query('departmentId');
@@ -69,8 +70,20 @@ class AnalyticsController extends Controller
                     ])
                     ->get();
             }
+        } catch (ModelNotFoundException $e) {
+            Log::warning('Analytics: model not found', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Requested resource not found.',
+            ], 404);
         } catch (\Exception $e) {
-            Log::error($e);
+            Log::error('Analytics: internal error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return response()->json([
                 'success' => false,
@@ -171,16 +184,8 @@ class AnalyticsController extends Controller
         return response()->json($responseData);
     }
 
-    public function exportPdf(Request $request): Response
+    public function exportPdf(AnalyticsReportRequest $request): Response
     {
-        $role = $request->user()?->role;
-        if ($role !== 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Forbidden. Admin access only.',
-            ], 403);
-        }
-
         $reportResponse = $this->reports($request);
         $reportData = $reportResponse->getData(true);
 
@@ -194,7 +199,7 @@ class AnalyticsController extends Controller
         $data = $reportData['data'];
         $data['dateRange'] = $request->query('dateRange', 'all');
 
-        $html = $this->generatePdfHtml($data);
+        $html = view('pdfs.analytics', $data)->render();
 
         $dompdf = new Dompdf;
         $dompdf->loadHtml($html);
@@ -209,16 +214,8 @@ class AnalyticsController extends Controller
         ]);
     }
 
-    public function exportExcel(Request $request): Response
+    public function exportExcel(AnalyticsReportRequest $request): Response
     {
-        $role = $request->user()?->role;
-        if ($role !== 'admin') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Forbidden. Admin access only.',
-            ], 403);
-        }
-
         $reportResponse = $this->reports($request);
         $reportData = $reportResponse->getData(true);
 
@@ -405,52 +402,59 @@ class AnalyticsController extends Controller
 
     private function getMonthlyTrend(?string $startDate, ?string $department = null): array
     {
-        $months = collect();
         $currentMonth = Carbon::now()->startOfMonth();
 
         if ($startDate) {
             $month = Carbon::parse($startDate)->startOfMonth();
-
-            while ($month->lte($currentMonth)) {
-                $months->push($month->copy());
-                $month->addMonth();
-            }
+            $startMonth = $month->copy();
         } else {
-            for ($i = 5; $i >= 0; $i--) {
-                $months->push(Carbon::now()->subMonths($i));
-            }
+            $startMonth = Carbon::now()->subMonths(5)->startOfMonth();
         }
 
-        return $months->map(function ($month) use ($department) {
-            $start = $month->copy()->startOfMonth();
-            $end = $month->copy()->endOfMonth();
+        // Single grouped query for volunteers per month
+        $volunteerMonthly = Volunteer::query()
+            ->selectRaw('DATE_FORMAT(created_at, "%Y-%m-01") as month_start')
+            ->selectRaw('COUNT(*) as total')
+            ->whereBetween('created_at', [$startMonth, $currentMonth->copy()->endOfMonth()])
+            ->when($department, fn ($q) => $q->whereHas(
+                'positions', fn ($q) => $q->where('name', $department)
+            ))
+            ->groupByRaw('DATE_FORMAT(created_at, "%Y-%m-01")')
+            ->pluck('total', 'month_start');
 
-            $volunteerQuery = Volunteer::query()
-                ->whereBetween('created_at', [$start, $end]);
+        // Single grouped query for attendance per month
+        $attendanceMonthly = Attendance::query()
+            ->selectRaw('DATE_FORMAT(date, "%Y-%m-01") as month_start')
+            ->selectRaw('COUNT(*) as tasks')
+            ->selectRaw('COALESCE(SUM(hours), 0) as hours')
+            ->where('status', 'approved')
+            ->whereBetween('date', [$startMonth->toDateString(), $currentMonth->copy()->endOfMonth()->toDateString()])
+            ->when($department, fn ($q) => $q->whereHas(
+                'volunteer.positions', fn ($q) => $q->where('name', $department)
+            ))
+            ->groupByRaw('DATE_FORMAT(date, "%Y-%m-01")')
+            ->get()
+            ->keyBy('month_start');
 
-            if ($department) {
-                $volunteerQuery->whereHas('positions', fn ($q) => $q->where('name', $department));
-            }
+        // Build result for each month in range
+        $results = [];
+        $cursor = $startMonth->copy();
 
-            $newVolunteers = $volunteerQuery->count();
+        while ($cursor->lte($currentMonth)) {
+            $key = $cursor->format('Y-m-01');
+            $volData = $attendanceMonthly->get($key);
 
-            $attendanceQuery = Attendance::query()
-                ->where('status', 'approved')
-                ->whereBetween('date', [$start->toDateString(), $end->toDateString()]);
-
-            if ($department) {
-                $attendanceQuery->whereHas('volunteer.positions', fn ($q) => $q->where('name', $department));
-            }
-
-            $attendances = $attendanceQuery->get();
-
-            return [
-                'month' => $month->format('M'),
-                'volunteers' => $newVolunteers,
-                'hours' => round((float) $attendances->sum('hours'), 2),
-                'tasks' => $attendances->count(),
+            $results[] = [
+                'month' => $cursor->format('M'),
+                'volunteers' => (int) ($volunteerMonthly[$key] ?? 0),
+                'hours' => round((float) ($volData->hours ?? 0), 2),
+                'tasks' => (int) ($volData->tasks ?? 0),
             ];
-        })->toArray();
+
+            $cursor->addMonth();
+        }
+
+        return $results;
     }
 
     private function getTopPerformers($volunteers, int $limit = 10)
@@ -537,14 +541,14 @@ class AnalyticsController extends Controller
     private function getEventParticipation(?string $startDate): array
     {
         $rsvps = Rsvp::query()
-            ->with('responses')
             ->withCount('responses')
+            ->withCount(['responses as confirmed_count' => fn ($q) => $q->where('attendance_status', 'checked_in')])
             ->when($startDate, fn ($q) => $q->where('date', '>=', $startDate))
             ->get();
 
         $totalEvents = $rsvps->count();
         $totalResponses = $rsvps->sum('responses_count') ?: 0;
-        $confirmedCount = $rsvps->map(fn ($r) => $r->responses->filter(fn ($resp) => $resp->attendance_status === 'checked_in')->count())->sum();
+        $confirmedCount = $rsvps->sum('confirmed_count') ?: 0;
 
         $activeEvents = $rsvps->filter(fn ($r) => $r->status === 'active')->count();
         $closedEvents = $rsvps->filter(fn ($r) => $r->status === 'closed')->count();
@@ -691,136 +695,6 @@ class AnalyticsController extends Controller
         });
 
         return $dayData->toArray();
-    }
-
-    private function generatePdfHtml(array $data): string
-    {
-        $html = '
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Volunteer Analytics Report</title>
-            <style>
-                body { font-family: Arial, sans-serif; padding: 20px; }
-                h1 { color: #1e40af; margin-bottom: 5px; }
-                h2 { color: #374151; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px; margin-top: 25px; }
-                .header { margin-bottom: 20px; }
-                .meta { color: #6b7280; font-size: 12px; }
-                .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0; }
-                .stat-box { background: #f3f4f6; padding: 15px; border-radius: 8px; text-align: center; }
-                .stat-value { font-size: 24px; font-weight: bold; color: #1e40af; }
-                .stat-label { font-size: 12px; color: #6b7280; }
-                table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-                th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-                th { background: #f9fafb; font-weight: bold; }
-                tr:hover { background: #f9fafb; }
-                .section { margin: 25px 0; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1>Volunteer Analytics Report</h1>
-                <p class="meta">Generated: '.date('Y-m-d H:i:s').' | Date Range: '.htmlspecialchars(ucfirst((string) $data['dateRange']), ENT_QUOTES, 'UTF-8').'</p>
-            </div>
-
-            <h2>Overview</h2>
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-value">'.$data['totalVolunteers'].'</div>
-                    <div class="stat-label">Total Volunteers</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value">'.$data['activeVolunteers'].'</div>
-                    <div class="stat-label">Active Volunteers</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value">'.$data['totalHoursServed'].'</div>
-                    <div class="stat-label">Hours Served</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value">'.$data['totalTasksCompleted'].'</div>
-                    <div class="stat-label">Tasks Completed</div>
-                </div>
-            </div>
-
-            <h2>Department Breakdown</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Department</th>
-                        <th>Count</th>
-                    </tr>
-                </thead>
-                <tbody>
-        ';
-
-        foreach ($data['departmentBreakdown'] as $dept) {
-            $html .= '<tr><td>'.htmlspecialchars($dept['name']).'</td><td>'.$dept['count'].'</td></tr>';
-        }
-
-        $html .= '
-                </tbody>
-            </table>
-
-            <h2>Top Performers</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Department</th>
-                        <th>Hours Served</th>
-                        <th>Attendance Rate</th>
-                        <th>Rating</th>
-                    </tr>
-                </thead>
-                <tbody>
-        ';
-
-        foreach ($data['topPerformers'] as $performer) {
-            $html .= '<tr>';
-            $html .= '<td>'.htmlspecialchars($performer['name']).'</td>';
-            $html .= '<td>'.htmlspecialchars($performer['department']).'</td>';
-            $html .= '<td>'.$performer['hoursServed'].'</td>';
-            $html .= '<td>'.$performer['attendanceRate'].'%</td>';
-            $html .= '<td>'.$performer['rating'].'</td>';
-            $html .= '</tr>';
-        }
-
-        $html .= '
-                </tbody>
-            </table>
-
-            <h2>Monthly Trend</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Month</th>
-                        <th>New Volunteers</th>
-                        <th>Hours</th>
-                        <th>Tasks</th>
-                    </tr>
-                </thead>
-                <tbody>
-        ';
-
-        foreach ($data['monthlyTrend'] as $trend) {
-            $html .= '<tr>';
-            $html .= '<td>'.htmlspecialchars($trend['month']).'</td>';
-            $html .= '<td>'.$trend['volunteers'].'</td>';
-            $html .= '<td>'.$trend['hours'].'</td>';
-            $html .= '<td>'.$trend['tasks'].'</td>';
-            $html .= '</tr>';
-        }
-
-        $html .= '
-                </tbody>
-            </table>
-        </body>
-        </html>
-        ';
-
-        return $html;
     }
 
     private function spreadsheetText(mixed $value): string
