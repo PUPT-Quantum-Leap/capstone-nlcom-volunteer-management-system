@@ -3,9 +3,19 @@
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
+const TEST_WEBHOOK_URL = 'https://ai.quantumapp.tech/webhook-test/chatbot';
+const TEST_WEBHOOK_SECRET = 'test-webhook-secret-that-is-long-enough-for-hs256-sha256-minimum-32-bytes';
+
+beforeEach(function (): void {
+    config([
+        'services.chatbot.webhook_url' => TEST_WEBHOOK_URL,
+        'services.chatbot.webhook_jwt_secret' => TEST_WEBHOOK_SECRET,
+    ]);
+});
+
 it('sends a message to the n8n chatbot webhook with jwt auth', function (): void {
     Http::fake([
-        'https://ai.quantumapp.tech/webhook-test/*' => Http::response([
+        TEST_WEBHOOK_URL => Http::response([
             'response' => 'Hello! How can I help you?',
             'session_id' => Str::uuid(),
         ]),
@@ -38,7 +48,7 @@ it('validates required message field', function (): void {
 it('accepts optional session_id with uuid format', function (): void {
     $sessionId = (string) Str::uuid();
     Http::fake([
-        'https://ai.quantumapp.tech/webhook-test/*' => Http::response([
+        TEST_WEBHOOK_URL => Http::response([
             'response' => 'Response',
             'session_id' => $sessionId,
         ]),
@@ -71,7 +81,7 @@ it('returns 500 when webhook is not configured', function (): void {
 
 it('returns 503 when webhook service is unavailable', function (): void {
     Http::fake([
-        'https://ai.quantumapp.tech/webhook-test/*' => Http::response(null, 503),
+        TEST_WEBHOOK_URL => Http::response(null, 503),
     ]);
 
     $response = $this->postJson('/api/chatbot/message', [
