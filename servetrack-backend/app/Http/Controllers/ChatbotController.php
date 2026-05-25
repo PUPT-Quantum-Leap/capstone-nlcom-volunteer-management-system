@@ -38,10 +38,8 @@ class ChatbotController extends Controller
             $response = Http::withToken($jwt)
                 ->timeout(30)
                 ->post($webhookUrl, [
-                    'body' => [
-                        'message' => $validated['message'],
-                        'sessionId' => $validated['session_id'] ?? null,
-                    ],
+                    'message' => $validated['message'],
+                    'sessionId' => $validated['session_id'] ?? null,
                 ]);
 
             if (! $response->successful()) {
@@ -50,7 +48,13 @@ class ChatbotController extends Controller
                 ], 503);
             }
 
-            return response()->json($response->json());
+            $n8nData = $response->json();
+
+            return response()->json([
+                'success' => true,
+                'message' => $n8nData['output'] ?? $n8nData['response'] ?? '',
+                'session_id' => $validated['session_id'] ?? '',
+            ]);
         } catch (\Exception $e) {
             \Log::error('Chatbot webhook error: '.$e->getMessage());
 

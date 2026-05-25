@@ -18,8 +18,7 @@ beforeEach(function (): void {
 it('sends a message to the n8n chatbot webhook with jwt auth', function (): void {
     Http::fake([
         TEST_WEBHOOK_URL => Http::response([
-            'response' => 'Hello! How can I help you?',
-            'session_id' => Str::uuid(),
+            'output' => 'Hello! How can I help you?',
         ]),
     ]);
 
@@ -28,13 +27,15 @@ it('sends a message to the n8n chatbot webhook with jwt auth', function (): void
         'session_id' => null,
     ]);
 
-    $response->assertSuccessful();
+    $response->assertSuccessful()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('message', 'Hello! How can I help you?');
     Http::assertSent(function ($request) {
         $body = $request->data();
 
         return $request->hasHeader('Authorization')
-            && isset($body['body']['message'])
-            && $body['body']['message'] === 'What are volunteer opportunities?';
+            && isset($body['message'])
+            && $body['message'] === 'What are volunteer opportunities?';
     });
 });
 
@@ -51,8 +52,7 @@ it('accepts optional session_id with uuid format', function (): void {
     $sessionId = (string) Str::uuid();
     Http::fake([
         TEST_WEBHOOK_URL => Http::response([
-            'response' => 'Response',
-            'session_id' => $sessionId,
+            'output' => 'Response',
         ]),
     ]);
 
@@ -61,12 +61,14 @@ it('accepts optional session_id with uuid format', function (): void {
         'session_id' => $sessionId,
     ]);
 
-    $response->assertSuccessful();
+    $response->assertSuccessful()
+        ->assertJsonPath('success', true)
+        ->assertJsonPath('session_id', $sessionId);
     Http::assertSent(function ($request) use ($sessionId) {
         $body = $request->data();
 
-        return isset($body['body']['sessionId'])
-            && $body['body']['sessionId'] === $sessionId;
+        return isset($body['sessionId'])
+            && $body['sessionId'] === $sessionId;
     });
 });
 
