@@ -47,3 +47,6 @@ project-deployment-*.md
 *.pem
 *.key
 *.ppk
+
+# AI API keys
+ai-quantumapp-tech.env

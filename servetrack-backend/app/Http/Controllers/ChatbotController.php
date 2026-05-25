@@ -2,84 +2,84 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ChatbotMessageRequest;
-use App\Services\SupabaseService;
+use Firebase\JWT\JWT;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 
 class ChatbotController extends Controller
 {
-    public function __construct(
-        protected SupabaseService $supabase
-    ) {}
-
-    public function message(ChatbotMessageRequest $request): JsonResponse
+    /**
+     * Send a message to the n8n chatbot workflow via webhook.
+     *
+     * Authenticates the request using JWT (HS256) signed with the webhook secret.
+     */
+    public function message(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $sessionId = $request->input('session_id', (string) Str::uuid());
-        $message = $request->validated('message');
+        $validated = $request->validate([
+            'message' => 'required|string|max:2000',
+            'session_id' => 'nullable|string|uuid',
+        ]);
+
+        $webhookUrl = config('services.chatbot.webhook_url');
+        $jwtSecret = config('services.chatbot.webhook_jwt_secret');
+
+        if (! $webhookUrl || ! $jwtSecret) {
+            return response()->json([
+                'error' => 'Chatbot webhook not configured',
+            ], 500);
+        }
+
+        $jwt = JWT::encode([
+            'iss' => 'servetrack-backend',
+            'exp' => time() + 300,
+        ], $jwtSecret, 'HS256');
 
         try {
-            $response = Http::timeout(60)->post(config('services.chatbot.n8n_webhook_url'), [
-                'message' => $message,
-                'user_id' => $user->id,
-                'user_role' => $user->role,
-                'user_name' => $user->name,
-                'session_id' => $sessionId,
-            ]);
-
-            $body = $response->json();
+            $response = Http::withToken($jwt)
+                ->timeout(30)
+                ->post($webhookUrl, [
+                    'body' => [
+                        'message' => $validated['message'],
+                        'sessionId' => $validated['session_id'] ?? null,
+                    ],
+                ]);
 
             if (! $response->successful()) {
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Chat service error. Please try again.',
-                    'session_id' => $sessionId,
-                ], 502);
+                    'error' => 'Chatbot service unavailable',
+                ], 503);
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => $body['answer'] ?? $body['message'] ?? $body['output'] ?? 'No response.',
-                'session_id' => $sessionId,
-                'metadata' => $body['metadata'] ?? null,
-            ]);
+            return response()->json($response->json());
         } catch (\Exception $e) {
+            \Log::error('Chatbot webhook error: '.$e->getMessage());
+
             return response()->json([
-                'success' => false,
-                'message' => 'Chat service unavailable. Please try again later.',
-                'session_id' => $sessionId,
-            ], 503);
+                'error' => 'Failed to communicate with chatbot service',
+            ], 500);
         }
     }
 
+    /**
+     * Get conversation history for the authenticated user.
+     */
     public function history(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $sessionId = $request->query('session_id', (string) Str::uuid());
-
-        $messages = $this->supabase->getHistory($user->id, $sessionId);
-
+        // TODO: Implement conversation history retrieval from Supabase or n8n
         return response()->json([
-            'success' => true,
-            'data' => $messages,
-            'session_id' => $sessionId,
+            'conversations' => [],
         ]);
     }
 
+    /**
+     * Clear conversation history for the authenticated user.
+     */
     public function clear(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $sessionId = $request->input('session_id', (string) Str::uuid());
-
-        $this->supabase->clearHistory($user->id, $sessionId);
-
+        // TODO: Implement conversation history clearing from Supabase or n8n
         return response()->json([
             'success' => true,
-            'message' => 'Conversation cleared.',
-            'session_id' => $sessionId,
         ]);
     }
 }

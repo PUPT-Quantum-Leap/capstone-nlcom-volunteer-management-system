@@ -48,6 +48,11 @@ Route::post('/coordinator/register', [CoordinatorController::class, 'register'])
 Route::get('/webhooks/facebook', [FacebookWebhookController::class, 'verify'])->name('webhooks.facebook.verify');
 Route::post('/webhooks/facebook', [FacebookWebhookController::class, 'handle'])->name('webhooks.facebook.handle');
 
+// Chatbot message — public API with rate limiting + audit logging
+Route::post('/chatbot/message', [ChatbotController::class, 'message'])
+    ->middleware(['api', 'security.audit', 'throttle:chatbot'])
+    ->name('chatbot.message');
+
 // Public RSVP view — accessible to all users (authenticated and unauthenticated)
 Route::get('/rsvp/{identifier}', [RsvpController::class, 'show'])->name('rsvp.show')->where('identifier', '[\d\w\-]+');
 
@@ -66,10 +71,8 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
         ->middleware('throttle:password-change')
         ->name('volunteer.password.change');
 
-    // Chatbot — AI assistant for all authenticated users
+    // Chatbot history and conversation management (authenticated)
     Route::prefix('chatbot')->group(function () {
-        Route::post('/message', [ChatbotController::class, 'message'])
-            ->middleware('throttle:chatbot');
         Route::get('/history', [ChatbotController::class, 'history']);
         Route::post('/clear', [ChatbotController::class, 'clear']);
     });
