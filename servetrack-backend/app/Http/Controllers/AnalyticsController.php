@@ -181,14 +181,27 @@ class AnalyticsController extends Controller
             ], 403);
         }
 
-        $html = $this->generateEventScheduleHtml();
+        $reportResponse = $this->reports($request);
+        $reportData = $reportResponse->getData(true);
+
+        if (! $reportData['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate report data.',
+            ], 500);
+        }
+
+        $data = $reportData['data'];
+        $data['dateRange'] = $request->query('dateRange', 'all');
+
+        $html = $this->generatePdfHtml($data);
 
         $dompdf = new Dompdf;
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
-        $filename = 'nlcom-metro-world-child-feeding-'.date('Y-m-d-H-i-s').'.pdf';
+        $filename = 'volunteer-analytics-'.date('Y-m-d-H-i-s').'.pdf';
 
         return response($dompdf->output(), 200, [
             'Content-Type' => 'application/pdf',
@@ -206,186 +219,169 @@ class AnalyticsController extends Controller
             ], 403);
         }
 
+        $reportResponse = $this->reports($request);
+        $reportData = $reportResponse->getData(true);
+
+        if (! $reportData['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate report data.',
+            ], 500);
+        }
+
+        $data = $reportData['data'];
+
         $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Feeding Operation');
+        $sheet->setTitle('Analytics Report');
 
-        // Set default font to Calibri
         $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri');
 
-        // Title - 15pt Bold
-        $sheet->setCellValue('A1', 'NLCOM x Metro World Child Feeding Operation');
+        // Title
+        $sheet->setCellValue('A1', 'Volunteer Analytics Report');
         $sheet->mergeCells('A1:E1');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(15);
-        $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1')
+            ->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Date - 11pt Regular
-        $sheet->setCellValue('A2', 'November 22, 2025');
+        $sheet->setCellValue('A2', 'Generated: '.date('Y-m-d H:i:s'));
         $sheet->mergeCells('A2:E2');
         $sheet->getStyle('A2')->getFont()->setSize(11);
-        $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A2')
+            ->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-        // Headers - 10pt Bold
-        $sheet->setCellValue('A4', 'TEAM & TIME DEPARTURE');
-        $sheet->setCellValue('B4', 'LOCATION');
-        $sheet->setCellValue('C4', 'TIME');
-        $sheet->setCellValue('D4', 'NO. OF PAX');
-        $sheet->setCellValue('E4', 'DETAILS');
+        // Overview section
+        $sheet->setCellValue('A4', 'Overview');
+        $sheet->getStyle('A4')->getFont()->setBold(true)->setSize(13);
 
-        $sheet->getStyle('A4:E4')->getFont()->setBold(true)->setSize(10);
-        $sheet->getStyle('A4:E4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FFe5e7eb');
+        $sheet->setCellValue('A5', 'Metric');
+        $sheet->setCellValue('B5', 'Value');
+        $sheet->getStyle('A5:B5')->getFont()->setBold(true)->setSize(10);
+        $sheet->getStyle('A5:B5')
+            ->getFill()
+            ->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()
+            ->setARGB('FFe5e7eb');
 
-        // Data - 10pt Regular
-        $row = 5;
+        $overviewData = [
+            ['Total Volunteers', $data['totalVolunteers']],
+            ['Active Volunteers', $data['activeVolunteers']],
+            ['Inactive Volunteers', $data['inactiveVolunteers']],
+            ['Total Hours Served', $data['totalHoursServed']],
+            ['Average Attendance Rate', $data['averageAttendanceRate'].'%'],
+            ['Total Tasks Completed', $data['totalTasksCompleted']],
+            ['Average Rating', $data['averageRating']],
+        ];
 
-        // Team Alpha
-        $sheet->setCellValue('A'.$row, 'TEAM ALPHA (NL Las Piñas - Leaves 7:30am)');
-        $sheet->mergeCells("A{$row}:E{$row}");
-        $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(10);
+        $row = 6;
+        foreach ($overviewData as $item) {
+            $sheet->setCellValue('A'.$row, $item[0]);
+            $sheet->setCellValue('B'.$row, $item[1]);
+            $sheet->getStyle("A{$row}:B{$row}")->getFont()->setSize(10);
+            $row++;
+        }
+
+        // Department Breakdown
+        $row += 1;
+        $sheet->setCellValue('A'.$row, 'Department Breakdown');
+        $sheet->getStyle('A'.$row)->getFont()->setBold(true)->setSize(13);
         $row++;
 
-        $sheet->setCellValue('A'.$row, '1. Golden Acres (Talon 1)');
-        $sheet->setCellValue('B'.$row, 'Golden Acres (Talon 1)');
-        $sheet->setCellValue('C'.$row, '8:00am - 9:30am');
-        $sheet->setCellValue('D'.$row, 100);
-        $sheet->setCellValue('E'.$row, 'Drop off GA team before proceeding to VP. Wait after feeding.');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
+        $sheet->setCellValue('A'.$row, 'Department');
+        $sheet->setCellValue('B'.$row, 'Count');
+        $sheet->setCellValue('C'.$row, 'Percentage');
+        $sheet->getStyle("A{$row}:C{$row}")
+            ->getFont()->setBold(true)->setSize(10);
+        $sheet->getStyle("A{$row}:C{$row}")
+            ->getFill()->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('FFe5e7eb');
         $row++;
 
-        $sheet->setCellValue('A'.$row, '2. Villa Pangarap (Talon 5)');
-        $sheet->setCellValue('B'.$row, 'Villa Pangarap (Talon 5)');
-        $sheet->setCellValue('C'.$row, '8:00am - 9:30am');
-        $sheet->setCellValue('D'.$row, 150);
-        $sheet->setCellValue('E'.$row, 'Park vehicle in VP. After feeding, pick up GA team and go to Annex.');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
+        foreach ($data['departmentBreakdown'] as $dept) {
+            $sheet->setCellValue(
+                'A'.$row, $this->spreadsheetText($dept['name'])
+            );
+            $sheet->setCellValue('B'.$row, $dept['count']);
+            $sheet->setCellValue('C'.$row, $dept['percentage'].'%');
+            $sheet->getStyle("A{$row}:C{$row}")->getFont()->setSize(10);
+            $row++;
+        }
+
+        // Top Performers
+        $row += 1;
+        $sheet->setCellValue('A'.$row, 'Top Performers');
+        $sheet->getStyle('A'.$row)->getFont()->setBold(true)->setSize(13);
         $row++;
 
-        $sheet->setCellValue('A'.$row, '3. Annex (Talon 5)');
-        $sheet->setCellValue('B'.$row, 'Annex (Talon 5)');
-        $sheet->setCellValue('C'.$row, '9:00am - 12:00nn');
-        $sheet->setCellValue('D'.$row, 150);
-        $sheet->setCellValue('E'.$row, 'Proceed after 2 sites before heading back to base.');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
-        $row += 2;
-
-        // Team Bravo
-        $sheet->setCellValue('A'.$row, 'TEAM BRAVO (Tondo AM - Leaves 7:30am)');
-        $sheet->mergeCells("A{$row}:E{$row}");
-        $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(10);
+        $sheet->setCellValue('A'.$row, 'Name');
+        $sheet->setCellValue('B'.$row, 'Department');
+        $sheet->setCellValue('C'.$row, 'Hours Served');
+        $sheet->setCellValue('D'.$row, 'Attendance Rate');
+        $sheet->setCellValue('E'.$row, 'Rating');
+        $sheet->getStyle("A{$row}:E{$row}")
+            ->getFont()->setBold(true)->setSize(10);
+        $sheet->getStyle("A{$row}:E{$row}")
+            ->getFill()->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('FFe5e7eb');
         $row++;
 
-        $sheet->setCellValue('A'.$row, '4. Market 3');
-        $sheet->setCellValue('B'.$row, 'Market 3');
-        $sheet->setCellValue('C'.$row, '8:30am - 10:00am');
-        $sheet->setCellValue('D'.$row, 200);
-        $sheet->setCellValue('E'.$row, 'Proceed to M3 until feeding. Then go to second site (NBBN).');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
+        foreach ($data['topPerformers'] as $performer) {
+            $sheet->setCellValue(
+                'A'.$row, $this->spreadsheetText($performer['name'])
+            );
+            $sheet->setCellValue(
+                'B'.$row, $this->spreadsheetText($performer['department'])
+            );
+            $sheet->setCellValue('C'.$row, $performer['hoursServed']);
+            $sheet->setCellValue('D'.$row, $performer['attendanceRate'].'%');
+            $sheet->setCellValue('E'.$row, $performer['rating']);
+            $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
+            $row++;
+        }
+
+        // Monthly Trend
+        $row += 1;
+        $sheet->setCellValue('A'.$row, 'Monthly Trend');
+        $sheet->getStyle('A'.$row)->getFont()->setBold(true)->setSize(13);
         $row++;
 
-        $sheet->setCellValue('A'.$row, '5. NBBN');
-        $sheet->setCellValue('B'.$row, 'NBBN');
-        $sheet->setCellValue('C'.$row, '11:00am - 12:30pm');
-        $sheet->setCellValue('D'.$row, 170);
-        $sheet->setCellValue('E'.$row, 'Continue after M3 before heading back to base.');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
-        $row += 2;
-
-        // Team Charlie
-        $sheet->setCellValue('A'.$row, 'TEAM CHARLIE (GIAWH AM - Leaves 8:30am)');
-        $sheet->mergeCells("A{$row}:E{$row}");
-        $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(10);
+        $sheet->setCellValue('A'.$row, 'Month');
+        $sheet->setCellValue('B'.$row, 'New Volunteers');
+        $sheet->setCellValue('C'.$row, 'Hours');
+        $sheet->setCellValue('D'.$row, 'Tasks');
+        $sheet->getStyle("A{$row}:D{$row}")
+            ->getFont()->setBold(true)->setSize(10);
+        $sheet->getStyle("A{$row}:D{$row}")
+            ->getFill()->setFillType(Fill::FILL_SOLID)
+            ->getStartColor()->setARGB('FFe5e7eb');
         $row++;
 
-        $sheet->setCellValue('A'.$row, '6. Masville');
-        $sheet->setCellValue('B'.$row, 'Masville');
-        $sheet->setCellValue('C'.$row, '9:00am - 12:00nn');
-        $sheet->setCellValue('D'.$row, 350);
-        $sheet->setCellValue('E'.$row, 'Whole team proceeds to Masville.');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
-        $row++;
+        foreach ($data['monthlyTrend'] as $trend) {
+            $sheet->setCellValue(
+                'A'.$row, $this->spreadsheetText($trend['month'])
+            );
+            $sheet->setCellValue('B'.$row, $trend['volunteers']);
+            $sheet->setCellValue('C'.$row, $trend['hours']);
+            $sheet->setCellValue('D'.$row, $trend['tasks']);
+            $sheet->getStyle("A{$row}:D{$row}")->getFont()->setSize(10);
+            $row++;
+        }
 
-        $sheet->setCellValue('A'.$row, '7. Banai');
-        $sheet->setCellValue('B'.$row, 'Banai');
-        $sheet->setCellValue('C'.$row, '9:00am - 10:30am');
-        $sheet->setCellValue('D'.$row, 250);
-        $sheet->setCellValue('E'.$row, 'Whole team proceeds to Banai.');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
-        $row += 2;
+        $lastRow = $row - 1;
 
-        // Team Delta
-        $sheet->setCellValue('A'.$row, 'TEAM DELTA (GIAWH PM - Leaves 2:00pm)');
-        $sheet->mergeCells("A{$row}:E{$row}");
-        $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(10);
-        $row++;
-
-        $sheet->setCellValue('A'.$row, '8. Sitio Pagkakaisa Zone');
-        $sheet->setCellValue('B'.$row, 'Sitio Pagkakaisa Zone');
-        $sheet->setCellValue('C'.$row, '2:00pm - 3:30pm');
-        $sheet->setCellValue('D'.$row, 300);
-        $sheet->setCellValue('E'.$row, 'Transport food via pedicab to reach Sitio Pagkakaisa.');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
-        $row++;
-
-        $sheet->setCellValue('A'.$row, '9. Sucat Highway');
-        $sheet->setCellValue('B'.$row, 'Sucat Highway');
-        $sheet->setCellValue('C'.$row, '3:30pm - 4:30pm');
-        $sheet->setCellValue('D'.$row, 300);
-        $sheet->setCellValue('E'.$row, 'Whole team proceeds to Sucat Highway.');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
-        $row += 2;
-
-        // Team Echo
-        $sheet->setCellValue('A'.$row, 'TEAM ECHO (Tondo PM - Leaves 2:00pm)');
-        $sheet->mergeCells("A{$row}:E{$row}");
-        $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(10);
-        $row++;
-
-        $sheet->setCellValue('A'.$row, '10. Delpan');
-        $sheet->setCellValue('B'.$row, 'Delpan');
-        $sheet->setCellValue('C'.$row, '3:30pm - 4:30pm');
-        $sheet->setCellValue('D'.$row, 220);
-        $sheet->setCellValue('E'.$row, 'Whole team proceeds to Delpan.');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
-        $row += 2;
-
-        // Team Foxtrot
-        $sheet->setCellValue('A'.$row, 'TEAM FOXTROT (NL Muntinlupa - Leaves 2:00pm)');
-        $sheet->mergeCells("A{$row}:E{$row}");
-        $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(10);
-        $row++;
-
-        $sheet->setCellValue('A'.$row, '11. Paraiso (Alabang)');
-        $sheet->setCellValue('B'.$row, 'Paraiso (Alabang)');
-        $sheet->setCellValue('C'.$row, '2:00pm - 4:00pm');
-        $sheet->setCellValue('D'.$row, 100);
-        $sheet->setCellValue('E'.$row, 'Drop off Paraiso team before proceeding to Sunrise.');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
-        $row++;
-
-        $sheet->setCellValue('A'.$row, '12. Sunrise (Bayanan)');
-        $sheet->setCellValue('B'.$row, 'Sunrise (Bayanan)');
-        $sheet->setCellValue('C'.$row, '2:00pm - 4:00pm');
-        $sheet->setCellValue('D'.$row, 100);
-        $sheet->setCellValue('E'.$row, 'Park vehicle. After feeding, pick up Paraiso team and return.');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setSize(10);
-        $row++;
-
-        // Total PAX - 10pt Bold
-        $row++;
-        $sheet->setCellValue('A'.$row, 'TOTAL PAX:');
-        $sheet->mergeCells("B{$row}:C{$row}");
-        $sheet->setCellValue('D'.$row, 2390);
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setBold(true)->setSize(10);
-
-        // Borders
-        $sheet->getStyle("A4:E{$row}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        // Borders for all data sections
+        $sheet->getStyle("A5:B{$lastRow}")
+            ->getBorders()->getAllBorders()
+            ->setBorderStyle(Border::BORDER_THIN);
 
         foreach (range('A', 'E') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
         $writer = new Xlsx($spreadsheet);
-        $filename = 'nlcom-metro-world-child-feeding-'.date('Y-m-d-H-i-s').'.xlsx';
+        $filename = 'volunteer-analytics-'.date('Y-m-d-H-i-s').'.xlsx';
 
         ob_start();
         $writer->save('php://output');
@@ -832,162 +828,5 @@ class AnalyticsController extends Controller
         $text = (string) $value;
 
         return preg_match('/^[=+\-@]/', $text) === 1 ? "'".$text : $text;
-    }
-
-    private function generateEventScheduleHtml(): string
-    {
-        $html = '
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>NLCOM x Metro World Child Feeding Operation</title>
-            <style>
-                body { font-family: Calibri, sans-serif; padding: 20px; }
-                .title { font-size: 15pt; font-weight: bold; margin-bottom: 5px; }
-                .date { font-size: 11pt; margin-bottom: 20px; }
-                table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 10pt; }
-                th { font-size: 10pt; font-weight: bold; padding: 8px; text-align: left; border: 1px solid #000; background: #e5e7eb; }
-                td { font-size: 10pt; padding: 8px; text-align: left; border: 1px solid #000; }
-                .team-header { font-weight: bold; font-size: 10pt; background: #f3f4f6; }
-                .separator { border-top: 2px solid #000; }
-                .total { font-weight: bold; font-size: 10pt; }
-            </style>
-        </head>
-        <body>
-            <div class="title">NLCOM x Metro World Child Feeding Operation</div>
-            <div class="date">November 22, 2025</div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>TEAM & TIME DEPARTURE</th>
-                        <th>LOCATION</th>
-                        <th>TIME</th>
-                        <th>NO. OF PAX</th>
-                        <th>DETAILS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="team-header">
-                        <td colspan="5">TEAM ALPHA (NL Las Piñas - Leaves 7:30am)</td>
-                    </tr>
-                    <tr>
-                        <td>1. Golden Acres (Talon 1)</td>
-                        <td>Golden Acres (Talon 1)</td>
-                        <td>8:00am - 9:30am</td>
-                        <td>100</td>
-                        <td>Drop off GA team before proceeding to VP. Wait after feeding.</td>
-                    </tr>
-                    <tr>
-                        <td>2. Villa Pangarap (Talon 5)</td>
-                        <td>Villa Pangarap (Talon 5)</td>
-                        <td>8:00am - 9:30am</td>
-                        <td>150</td>
-                        <td>Park vehicle in VP. After feeding, pick up GA team and go to Annex.</td>
-                    </tr>
-                    <tr>
-                        <td>3. Annex (Talon 5)</td>
-                        <td>Annex (Talon 5)</td>
-                        <td>9:00am - 12:00nn</td>
-                        <td>150</td>
-                        <td>Proceed after 2 sites before heading back to base.</td>
-                    </tr>
-                    <tr class="separator"><td colspan="5"></td></tr>
-                    <tr class="team-header">
-                        <td colspan="5">TEAM BRAVO (Tondo AM - Leaves 7:30am)</td>
-                    </tr>
-                    <tr>
-                        <td>4. Market 3</td>
-                        <td>Market 3</td>
-                        <td>8:30am - 10:00am</td>
-                        <td>200</td>
-                        <td>Proceed to M3 until feeding. Then go to second site (NBBN).</td>
-                    </tr>
-                    <tr>
-                        <td>5. NBBN</td>
-                        <td>NBBN</td>
-                        <td>11:00am - 12:30pm</td>
-                        <td>170</td>
-                        <td>Continue after M3 before heading back to base.</td>
-                    </tr>
-                    <tr class="separator"><td colspan="5"></td></tr>
-                    <tr class="team-header">
-                        <td colspan="5">TEAM CHARLIE (GIAWH AM - Leaves 8:30am)</td>
-                    </tr>
-                    <tr>
-                        <td>6. Masville</td>
-                        <td>Masville</td>
-                        <td>9:00am - 12:00nn</td>
-                        <td>350</td>
-                        <td>Whole team proceeds to Masville.</td>
-                    </tr>
-                    <tr>
-                        <td>7. Banai</td>
-                        <td>Banai</td>
-                        <td>9:00am - 10:30am</td>
-                        <td>250</td>
-                        <td>Whole team proceeds to Banai.</td>
-                    </tr>
-                    <tr class="separator"><td colspan="5"></td></tr>
-                    <tr class="team-header">
-                        <td colspan="5">TEAM DELTA (GIAWH PM - Leaves 2:00pm)</td>
-                    </tr>
-                    <tr>
-                        <td>8. Sitio Pagkakaisa Zone</td>
-                        <td>Sitio Pagkakaisa Zone</td>
-                        <td>2:00pm - 3:30pm</td>
-                        <td>300</td>
-                        <td>Transport food via pedicab to reach Sitio Pagkakaisa.</td>
-                    </tr>
-                    <tr>
-                        <td>9. Sucat Highway</td>
-                        <td>Sucat Highway</td>
-                        <td>3:30pm - 4:30pm</td>
-                        <td>300</td>
-                        <td>Whole team proceeds to Sucat Highway.</td>
-                    </tr>
-                    <tr class="separator"><td colspan="5"></td></tr>
-                    <tr class="team-header">
-                        <td colspan="5">TEAM ECHO (Tondo PM - Leaves 2:00pm)</td>
-                    </tr>
-                    <tr>
-                        <td>10. Delpan</td>
-                        <td>Delpan</td>
-                        <td>3:30pm - 4:30pm</td>
-                        <td>220</td>
-                        <td>Whole team proceeds to Delpan.</td>
-                    </tr>
-                    <tr class="separator"><td colspan="5"></td></tr>
-                    <tr class="team-header">
-                        <td colspan="5">TEAM FOXTROT (NL Muntinlupa - Leaves 2:00pm)</td>
-                    </tr>
-                    <tr>
-                        <td>11. Paraiso (Alabang)</td>
-                        <td>Paraiso (Alabang)</td>
-                        <td>2:00pm - 4:00pm</td>
-                        <td>100</td>
-                        <td>Drop off Paraiso team before proceeding to Sunrise.</td>
-                    </tr>
-                    <tr>
-                        <td>12. Sunrise (Bayanan)</td>
-                        <td>Sunrise (Bayanan)</td>
-                        <td>2:00pm - 4:00pm</td>
-                        <td>100</td>
-                        <td>Park vehicle. After feeding, pick up Paraiso team and return.</td>
-                    </tr>
-                    <tr class="separator"><td colspan="5"></td></tr>
-                    <tr class="total">
-                        <td colspan="3">TOTAL PAX:</td>
-                        <td>2390</td>
-                        <td></td>
-                    </tr>
-                </tbody>
-            </table>
-        </body>
-        </html>
-        ';
-
-        return $html;
     }
 }

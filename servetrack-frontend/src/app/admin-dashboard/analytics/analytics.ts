@@ -146,6 +146,18 @@ export class AnalyticsComponent {
     }
   }
 
+  exportPdf(): void {
+    const dateRange = this.dateRangeFilter();
+    const department = this.selectedDepartmentFilter() ?? undefined;
+    this.analyticsService.exportPdf(dateRange, department);
+  }
+
+  exportExcel(): void {
+    const dateRange = this.dateRangeFilter();
+    const department = this.selectedDepartmentFilter() ?? undefined;
+    this.analyticsService.exportExcel(dateRange, department);
+  }
+
   private loadDepartmentOptions(): void {
     this.analyticsService
       .getReportData('all')
