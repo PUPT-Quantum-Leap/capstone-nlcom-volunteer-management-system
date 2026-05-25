@@ -17,12 +17,11 @@ import { NotificationItem } from '../../models/notification-item';
 import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
 import { ChatbotService } from '../../services/chatbot.service';
 import { ChatbotContainerComponent } from '../../components/chatbot/chatbot-container.component';
-import { ChatbotButtonComponent } from '../../components/chatbot/chatbot-button.component';
 
 @Component({
   selector: 'app-volunteer-dashboard-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, NgTemplateOutlet, NgOptimizedImage, LoadingScreenComponent, ChatbotContainerComponent, ChatbotButtonComponent],
+  imports: [RouterOutlet, NgTemplateOutlet, NgOptimizedImage, LoadingScreenComponent, ChatbotContainerComponent],
   templateUrl: './volunteer-dashboard-shell.html',
   styleUrl: './volunteer-dashboard-shell.scss',
 })

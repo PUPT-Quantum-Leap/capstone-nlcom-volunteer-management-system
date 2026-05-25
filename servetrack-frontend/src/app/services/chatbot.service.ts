@@ -55,7 +55,7 @@ export class ChatbotService {
     return this.http.post<ChatApiResponse>(`${this.apiUrl}/chatbot/message`, {
       message: text.trim(),
       session_id: this.sessionId(),
-    }).pipe(
+    }, { withCredentials: true }).pipe(
       tap(response => {
         if (response.success) {
           this.sessionId.set(response.session_id);
@@ -86,7 +86,8 @@ export class ChatbotService {
 
   loadHistory(): void {
     this.http.get<{ success: boolean; data: ChatMessage[] }>(
-      `${this.apiUrl}/chatbot/history?session_id=${this.sessionId()}`
+      `${this.apiUrl}/chatbot/history?session_id=${this.sessionId()}`,
+      { withCredentials: true }
     ).pipe(
       tap(response => {
         if (response.success && response.data.length > 0) {
@@ -100,7 +101,8 @@ export class ChatbotService {
   clearHistory(): Observable<{ success: boolean; message: string }> {
     return this.http.post<{ success: boolean; message: string }>(
       `${this.apiUrl}/chatbot/clear`,
-      { session_id: this.sessionId() }
+      { session_id: this.sessionId() },
+      { withCredentials: true }
     ).pipe(
       tap(response => {
         if (response.success) {

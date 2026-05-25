@@ -17,7 +17,6 @@ import { ServeBotComponent } from '../serve-bot/serve-bot';
 import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
 import { ChatbotService } from '../../services/chatbot.service';
 import { ChatbotContainerComponent } from '../../components/chatbot/chatbot-container.component';
-import { ChatbotButtonComponent } from '../../components/chatbot/chatbot-button.component';
 
 type AdminView =
   | 'dashboard'
@@ -35,7 +34,7 @@ type AdminView =
 @Component({
   selector: 'app-admin-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, NgOptimizedImage, RouterOutlet, ServeBotComponent, LoadingScreenComponent, ChatbotContainerComponent, ChatbotButtonComponent],
+  imports: [CommonModule, NgOptimizedImage, RouterOutlet, ServeBotComponent, LoadingScreenComponent, ChatbotContainerComponent],
   templateUrl: './admin-layout.html',
   styleUrl: './admin-layout.scss',
 })
