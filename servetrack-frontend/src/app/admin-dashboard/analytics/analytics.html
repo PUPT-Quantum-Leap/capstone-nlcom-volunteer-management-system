@@ -1,8 +1,18 @@
-<section class="analytics-container">
+<section class="analytics-container" aria-live="polite" aria-label="Analytics dashboard">
   @if (analyticsLoading()) {
-  <div class="loading-state">
+  <div class="loading-state" role="status">
     <div class="loading-spinner"></div>
     <p>Loading analytics data...</p>
+  </div>
+  } @else if (errorMessage()) {
+  <div class="error-state" role="alert">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <p>{{ errorMessage() }}</p>
+    <button type="button" class="retry-btn" (click)="loadAnalyticsData()">Retry</button>
   </div>
   } @else {
   <!-- Dark Header Bar -->
@@ -138,14 +148,15 @@
             <line x1="40" y1="125" x2="360" y2="125" class="chart-grid-line" />
             <line x1="40" y1="160" x2="360" y2="160" class="chart-grid-line" />
           </g>
-          <path d="M70,130 L120,110 L170,90 L220,70 L270,80 L320,50 L320,160 L70,160 Z" fill="url(#chartGradient)" />
-          <polyline points="70,130 120,110 170,90 220,70 270,80 320,50" class="chart-line" />
-          <circle cx="70" cy="130" r="4.5" class="chart-point" />
-          <circle cx="120" cy="110" r="4.5" class="chart-point" />
-          <circle cx="170" cy="90" r="4.5" class="chart-point" />
-          <circle cx="220" cy="70" r="4.5" class="chart-point" />
-          <circle cx="270" cy="80" r="4.5" class="chart-point" />
-          <circle cx="320" cy="50" r="4.5" class="chart-point" />
+          @if (chartData().length > 0) {
+          <path [attr.d]="chartPathArea()" fill="url(#chartGradient)" />
+          <path [attr.d]="chartPathLine()" class="chart-line" fill="none" />
+          @for (point of chartData(); track point.label) {
+          <circle [attr.cx]="point.x" [attr.cy]="point.y" r="4.5" class="chart-point" />
+          }
+          } @else {
+          <text x="200" y="100" text-anchor="middle" fill="var(--gray-400)" font-size="14">No trend data available</text>
+          }
           <g font-size="10" fill="var(--gray-400)" text-anchor="middle" font-weight="600">
             @for (trend of reportData()?.monthlyTrend ?? []; track trend.month) {
             <text [attr.x]="70 + ($index * 50)" y="185">{{ trend.month }}</text>
