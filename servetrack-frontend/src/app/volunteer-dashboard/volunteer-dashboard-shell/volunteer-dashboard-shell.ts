@@ -31,7 +31,7 @@ export class VolunteerDashboardShell implements OnInit {
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
-  private chatbotService = inject(ChatbotService);
+  readonly chatbotService = inject(ChatbotService);
   private destroyRef = inject(DestroyRef);
 
   readonly defaultPhoto = '/assets/person.svg';

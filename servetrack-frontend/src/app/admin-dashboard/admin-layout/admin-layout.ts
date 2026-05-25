@@ -44,7 +44,7 @@ export class AdminLayout implements OnInit {
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
   private adminService = inject(AdminDashboardService);
-  private chatbotService = inject(ChatbotService);
+  readonly chatbotService = inject(ChatbotService);
   private destroyRef = inject(DestroyRef);
  
   readonly defaultPhoto = '/assets/person.svg';
