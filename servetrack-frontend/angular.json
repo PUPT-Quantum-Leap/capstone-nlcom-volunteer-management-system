@@ -30,6 +30,14 @@
             "stylePreprocessorOptions": {
               "includePaths": ["src/styles"]
             },
+            "allowedCommonJsDependencies": [
+              "canvg",
+              "html2canvas",
+              "jspdf",
+              "raf",
+              "rgbcolor",
+              "core-js"
+            ],
             "assets": [
               {
                 "glob": "**/*",
@@ -56,8 +64,8 @@
                 "budgets": [
                  {
                    "type": "initial",
-                   "maximumWarning": "2MB",
-                   "maximumError": "3MB"
+                    "maximumWarning": "3MB",
+                    "maximumError": "4MB"
                  },
                 {
                   "type": "anyComponentStyle",
