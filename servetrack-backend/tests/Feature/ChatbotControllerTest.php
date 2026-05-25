@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -11,6 +12,7 @@ beforeEach(function (): void {
         'services.chatbot.webhook_url' => TEST_WEBHOOK_URL,
         'services.chatbot.webhook_jwt_secret' => TEST_WEBHOOK_SECRET,
     ]);
+    $this->actingAs(User::factory()->create());
 });
 
 it('sends a message to the n8n chatbot webhook with jwt auth', function (): void {

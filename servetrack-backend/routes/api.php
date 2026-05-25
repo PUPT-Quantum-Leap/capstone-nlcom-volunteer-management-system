@@ -48,9 +48,9 @@ Route::post('/coordinator/register', [CoordinatorController::class, 'register'])
 Route::get('/webhooks/facebook', [FacebookWebhookController::class, 'verify'])->name('webhooks.facebook.verify');
 Route::post('/webhooks/facebook', [FacebookWebhookController::class, 'handle'])->name('webhooks.facebook.handle');
 
-// Chatbot message — public API with rate limiting + audit logging
+// Chatbot message — authenticated API with rate limiting + audit logging
 Route::post('/chatbot/message', [ChatbotController::class, 'message'])
-    ->middleware(['api', 'security.audit', 'throttle:chatbot'])
+    ->middleware(['api', 'auth:sanctum', 'security.audit', 'throttle:chatbot'])
     ->name('chatbot.message');
 
 // Public RSVP view — accessible to all users (authenticated and unauthenticated)
