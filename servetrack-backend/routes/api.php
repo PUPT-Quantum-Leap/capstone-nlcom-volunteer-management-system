@@ -94,10 +94,17 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
         ->middleware('throttle:60,1')
         ->name('admin.attendance.status.update');
 
-    // Analytics & Reports
-    Route::get('/analytics/reports', [AnalyticsController::class, 'reports'])->name('analytics.reports');
-    Route::get('/analytics/export/pdf', [AnalyticsController::class, 'exportPdf'])->name('analytics.export.pdf');
-    Route::get('/analytics/export/excel', [AnalyticsController::class, 'exportExcel'])->name('analytics.export.excel');
+    // Analytics & Reports — throttle: analytics-reports allows 30 req/min,
+    // analytics-exports allows 5 req/min (PDF/Excel generation is expensive)
+    Route::get('/analytics/reports', [AnalyticsController::class, 'reports'])
+        ->middleware('throttle:analytics-reports')
+        ->name('analytics.reports');
+    Route::get('/analytics/export/pdf', [AnalyticsController::class, 'exportPdf'])
+        ->middleware('throttle:analytics-exports')
+        ->name('analytics.export.pdf');
+    Route::get('/analytics/export/excel', [AnalyticsController::class, 'exportExcel'])
+        ->middleware('throttle:analytics-exports')
+        ->name('analytics.export.excel');
 
     Route::get('/volunteers', [VolunteerController::class, 'index'])->name('volunteers.index');
     Route::get('/volunteers/{id}', [VolunteerController::class, 'show'])->name('volunteers.show');
