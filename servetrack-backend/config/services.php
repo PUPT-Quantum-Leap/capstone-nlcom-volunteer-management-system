@@ -60,4 +60,9 @@ return [
         'webhook_jwt_secret' => env('N8N_WEBHOOK_JWT_SECRET'),
     ],
 
+    'supabase' => [
+        'url' => env('SUPABASE_URL'),
+        'service_key' => env('SUPABASE_SERVICE_ROLE_KEY'),
+    ],
+
 ];
