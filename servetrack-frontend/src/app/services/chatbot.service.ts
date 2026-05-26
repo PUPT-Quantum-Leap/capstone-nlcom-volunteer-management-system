@@ -7,6 +7,7 @@ import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 import { ChatMessage, ChatApiResponse } from '../models/chatbot.model';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
 
 const MARKDOWN_ALLOWED_TAGS: readonly string[] = [
   'a', 'b', 'blockquote', 'br', 'code', 'em', 'h1', 'h2', 'h3', 'h4',
@@ -35,23 +36,40 @@ const DANGEROUS_PATTERNS: readonly RegExp[] = [
 export class ChatbotService {
   private http = inject(HttpClient);
   private sanitizer = inject(DomSanitizer);
+  private authService = inject(AuthService);
   private apiUrl = environment.apiUrl;
 
   private readonly markdownCache = new Map<string, SafeHtml>();
-  private readonly MESSAGES_KEY = 'chatbot_messages';
+
+  private get userId(): number | string {
+    return this.authService.currentUser()?.id ?? 'guest';
+  }
+
+  private get MESSAGES_KEY(): string {
+    return `user_${this.userId}_chatbot_messages`;
+  }
+
+  private get SESSION_KEY(): string {
+    return `user_${this.userId}_chatbot_session_id`;
+  }
 
   readonly showChatbot = signal(false);
   readonly messages = signal<ChatMessage[]>([]);
   readonly isLoading = signal(false);
-  readonly sessionId = signal<string>(this.loadSession());
+  readonly sessionId = signal<string>('');
 
   readonly hasMessages = computed(() => this.messages().length > 0);
 
+  constructor() {
+    // Defer session load until after injection so userId is available
+    this.sessionId.set(this.loadSession());
+  }
+
   private loadSession(): string {
-    const stored = localStorage.getItem('chatbot_session_id');
+    const stored = localStorage.getItem(this.SESSION_KEY);
     if (stored) return stored;
     const newId = crypto.randomUUID();
-    localStorage.setItem('chatbot_session_id', newId);
+    localStorage.setItem(this.SESSION_KEY, newId);
     return newId;
   }
 
@@ -164,7 +182,7 @@ export class ChatbotService {
           if (response.success) {
             if (response.session_id) {
               this.sessionId.set(response.session_id);
-              localStorage.setItem('chatbot_session_id', response.session_id);
+              localStorage.setItem(this.SESSION_KEY, response.session_id);
             }
             const assistantMessage: ChatMessage = {
               role: 'assistant',
@@ -201,7 +219,7 @@ export class ChatbotService {
   clearHistory(): Observable<{ success: boolean; message: string }> {
     this.messages.set([]);
     localStorage.removeItem(this.MESSAGES_KEY);
-    localStorage.removeItem('chatbot_session_id');
+    localStorage.removeItem(this.SESSION_KEY);
     this.sessionId.set(this.loadSession());
     return new Observable((observer) => {
       observer.next({ success: true, message: 'Conversation history cleared' });
