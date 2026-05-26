@@ -104,3 +104,112 @@ it('limits message length to 2000 characters', function (): void {
     $response->assertUnprocessable()
         ->assertJsonValidationErrors('message');
 });
+
+it('rejects messages that are only whitespace', function (): void {
+    $response = $this->postJson('/api/chatbot/message', [
+        'message' => "   \n\t  ",
+    ]);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors('message');
+});
+
+it('strips <script> tags from messages before they reach the webhook', function (): void {
+    Http::fake([
+        TEST_WEBHOOK_URL => Http::response(['output' => 'ok']),
+    ]);
+
+    $response = $this->postJson('/api/chatbot/message', [
+        'message' => 'hello <script>alert(1)</script>',
+    ]);
+
+    $response->assertSuccessful();
+    Http::assertSent(function ($request) {
+        $body = $request->data();
+
+        return is_string($body['message'])
+            && ! str_contains($body['message'], '<script')
+            && ! str_contains($body['message'], '</script>');
+    });
+});
+
+it('rejects messages containing <iframe> tags', function (): void {
+    $response = $this->postJson('/api/chatbot/message', [
+        'message' => '<iframe src="https://evil.example"></iframe>',
+    ]);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors('message');
+});
+
+it('rejects messages containing javascript: URIs', function (): void {
+    $response = $this->postJson('/api/chatbot/message', [
+        'message' => 'click here javascript:alert(1)',
+    ]);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors('message');
+});
+
+it('rejects messages containing inline event handlers', function (): void {
+    $response = $this->postJson('/api/chatbot/message', [
+        'message' => '<img src=x onerror="alert(1)">',
+    ]);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors('message');
+});
+
+it('rejects an invalid uuid session id', function (): void {
+    $response = $this->postJson('/api/chatbot/message', [
+        'message' => 'hello',
+        'session_id' => 'not-a-uuid',
+    ]);
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors('session_id');
+});
+
+it('returns the same uuid the client supplied', function (): void {
+    $sessionId = (string) Str::uuid();
+    Http::fake([
+        TEST_WEBHOOK_URL => Http::response(['output' => 'hi']),
+    ]);
+
+    $response = $this->postJson('/api/chatbot/message', [
+        'message' => 'hello',
+        'session_id' => $sessionId,
+    ]);
+
+    $response->assertSuccessful()
+        ->assertJsonPath('session_id', $sessionId);
+});
+
+it('generates a uuid when the client omits session id', function (): void {
+    Http::fake([
+        TEST_WEBHOOK_URL => Http::response(['output' => 'hi']),
+    ]);
+
+    $response = $this->postJson('/api/chatbot/message', [
+        'message' => 'hello',
+    ]);
+
+    $response->assertSuccessful();
+    $returned = $response->json('session_id');
+    expect($returned)->toBeString();
+    expect(Str::isUuid($returned))->toBeTrue();
+});
+
+it('requires authentication', function (): void {
+    auth()->logout();
+    config([
+        'services.chatbot.webhook_url' => TEST_WEBHOOK_URL,
+        'services.chatbot.webhook_jwt_secret' => TEST_WEBHOOK_SECRET,
+    ]);
+
+    $response = $this->postJson('/api/chatbot/message', [
+        'message' => 'hello',
+    ]);
+
+    $response->assertUnauthorized();
+});
