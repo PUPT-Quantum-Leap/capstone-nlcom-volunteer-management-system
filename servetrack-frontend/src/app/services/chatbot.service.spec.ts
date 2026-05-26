@@ -2,17 +2,27 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ChatbotService, CHATBOT_MAX_MESSAGE_LENGTH } from './chatbot.service';
+import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
 describe('ChatbotService', () => {
   let service: ChatbotService;
   let httpMock: HttpTestingController;
+  const mockUserId = 123;
 
   beforeEach(() => {
     localStorage.clear();
+
+    const authServiceMock = {
+      currentUser: () => ({ id: String(mockUserId) }),
+    };
+
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
-      providers: [ChatbotService],
+      providers: [
+        ChatbotService,
+        { provide: AuthService, useValue: authServiceMock },
+      ],
     });
     service = TestBed.inject(ChatbotService);
     httpMock = TestBed.inject(HttpTestingController);
@@ -234,7 +244,7 @@ describe('ChatbotService', () => {
 
   describe('session persistence', () => {
     it('reuses session id from localStorage on init', () => {
-      const stored = localStorage.getItem('chatbot_session_id');
+      const stored = localStorage.getItem(`user_${mockUserId}_chatbot_session_id`);
       expect(stored).toBeTruthy();
       expect(service.sessionId()).toBe(stored);
     });
