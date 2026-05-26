@@ -8,13 +8,18 @@ use Firebase\JWT\JWT;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ChatbotController extends Controller
 {
     /**
      * Send a message to the n8n chatbot workflow via webhook.
      *
-     * Authenticates the request using JWT (HS256) signed with the webhook secret.
+     * Authenticates the upstream call using JWT (HS256) signed with the
+     * shared webhook secret. Returns the assistant reply alongside the
+     * session id used (generated server-side if the client did not supply
+     * one) so the client can persist it for follow-up messages.
      */
     public function message(ChatbotMessageRequest $request): JsonResponse
     {
@@ -29,6 +34,14 @@ class ChatbotController extends Controller
             ], 500);
         }
 
+        $sessionId = $validated['session_id'] ?? (string) Str::uuid();
+
+        Log::info('chatbot.message.dispatched', [
+            'user_id' => $request->user()?->id,
+            'session_id' => $sessionId,
+            'message_length' => strlen($validated['message']),
+        ]);
+
         $jwt = JWT::encode([
             'iss' => 'servetrack-backend',
             'exp' => time() + 300,
@@ -39,10 +52,15 @@ class ChatbotController extends Controller
                 ->timeout(30)
                 ->post($webhookUrl, [
                     'message' => $validated['message'],
-                    'sessionId' => $validated['session_id'] ?? null,
+                    'sessionId' => $sessionId,
                 ]);
 
             if (! $response->successful()) {
+                Log::warning('chatbot.webhook.unsuccessful', [
+                    'user_id' => $request->user()?->id,
+                    'status' => $response->status(),
+                ]);
+
                 return response()->json([
                     'error' => 'Chatbot service unavailable',
                 ], 503);
@@ -53,10 +71,13 @@ class ChatbotController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => $n8nData['output'] ?? $n8nData['response'] ?? '',
-                'session_id' => $validated['session_id'] ?? '',
+                'session_id' => $sessionId,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Chatbot webhook error: '.$e->getMessage());
+            Log::error('chatbot.webhook.error', [
+                'user_id' => $request->user()?->id,
+                'error' => $e->getMessage(),
+            ]);
 
             return response()->json([
                 'error' => 'Failed to communicate with chatbot service',
@@ -69,8 +90,12 @@ class ChatbotController extends Controller
      */
     public function history(Request $request): JsonResponse
     {
-        $sessionId = $request->query('session_id', '');
+        $sessionId = (string) $request->query('session_id', '');
         $userId = $request->user()->id;
+
+        if ($sessionId === '') {
+            return response()->json(['success' => true, 'data' => []]);
+        }
 
         $messages = app(SupabaseService::class)->getHistory($userId, $sessionId);
 
@@ -82,10 +107,12 @@ class ChatbotController extends Controller
      */
     public function clear(Request $request): JsonResponse
     {
-        $sessionId = $request->input('session_id', '');
+        $sessionId = (string) $request->input('session_id', '');
         $userId = $request->user()->id;
 
-        app(SupabaseService::class)->clearHistory($userId, $sessionId);
+        if ($sessionId !== '') {
+            app(SupabaseService::class)->clearHistory($userId, $sessionId);
+        }
 
         return response()->json(['success' => true, 'message' => 'Conversation history cleared']);
     }
