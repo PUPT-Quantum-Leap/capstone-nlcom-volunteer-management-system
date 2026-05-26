@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
@@ -133,17 +133,19 @@ describe('ChatbotSidebarComponent', () => {
     expect(component.currentVoiceName()).toBe('Google US English');
   });
 
-  it('copyMessage sets copiedIndex', fakeAsync(() => {
+  it('copyMessage sets copiedIndex', async () => {
+    vi.useFakeTimers();
     const msg = { role: 'assistant' as const, message: 'Test message' };
     Object.assign(navigator, {
       clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
     });
     component.copyMessage(msg, 2);
-    tick(50);
+    await Promise.resolve();
     expect(component.copiedIndex()).toBe(2);
-    tick(1500);
+    vi.advanceTimersByTime(1600);
     expect(component.copiedIndex()).toBeNull();
-  }));
+    vi.useRealTimers();
+  });
 
   it('formatTime returns empty string for invalid date', () => {
     expect(component.formatTime(undefined)).toBe('');
@@ -218,24 +220,21 @@ describe('ChatbotSidebarComponent - command integration', () => {
     fixture.detectChanges();
   });
 
-  it('executing /events command sends message to backend', fakeAsync(() => {
+  it('executing /events command sends message to backend', () => {
     const eventsCmd = component.commandService.getCommands().find((c) => c.id === 'events')!;
     component.selectCommand(eventsCmd);
-    tick();
 
     const req = httpMock.expectOne((r) => r.url.includes('/chatbot/message'));
     expect(req.request.body.message).toBe('/events');
     req.flush({ success: true, message: 'Here are upcoming events', session_id: 'test' });
-    tick();
 
     expect(component.chatbotService.messages().length).toBeGreaterThan(0);
     httpMock.verify();
-  }));
+  });
 
-  it('sending a message adds user message immediately', fakeAsync(() => {
+  it('sending a message adds user message immediately', () => {
     component.userInput.set('What events are available?');
     component.sendMessage();
-    tick();
 
     const msgs = component.chatbotService.messages();
     expect(msgs.some((m) => m.role === 'user' && m.message === 'What events are available?')).toBe(true);
@@ -243,7 +242,6 @@ describe('ChatbotSidebarComponent - command integration', () => {
     httpMock.expectOne((r) => r.url.includes('/chatbot/message')).flush({
       success: true, message: 'Here are events', session_id: 'test',
     });
-    tick();
     httpMock.verify();
-  }));
+  });
 });

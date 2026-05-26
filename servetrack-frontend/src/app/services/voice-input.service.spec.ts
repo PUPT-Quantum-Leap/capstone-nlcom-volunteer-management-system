@@ -11,8 +11,8 @@ function makeMockRecognition() {
     interimResults: false,
     lang: '',
     onstart: null as ((e: Event) => void) | null,
-    onresult: null as ((e: SpeechRecognitionEvent) => void) | null,
-    onerror: null as ((e: SpeechRecognitionErrorEvent) => void) | null,
+    onresult: null as ((e: any) => void) | null,
+    onerror: null as ((e: any) => void) | null,
     onend: null as ((e: Event) => void) | null,
   };
 }
@@ -23,7 +23,7 @@ describe('VoiceInputService', () => {
 
   beforeEach(() => {
     mockRecognition = makeMockRecognition();
-    (window as any).SpeechRecognition = vi.fn(() => mockRecognition);
+    (window as any).SpeechRecognition = function() { return mockRecognition; };
 
     Object.defineProperty(navigator, 'mediaDevices', {
       writable: true,
@@ -69,7 +69,7 @@ describe('VoiceInputService', () => {
       results: [
         Object.assign([{ transcript: 'Hello world', confidence: 1 }], { isFinal: true }),
       ],
-    } as unknown as SpeechRecognitionEvent);
+    } as any);
 
     mockRecognition.stop.mockImplementation(() => {
       mockRecognition.onend?.(new Event('end'));
@@ -93,7 +93,7 @@ describe('VoiceInputService', () => {
       results: [
         Object.assign([{ transcript: 'Hel', confidence: 0.5 }], { isFinal: false }),
       ],
-    } as unknown as SpeechRecognitionEvent);
+    } as any);
 
     expect(emitted).toContain('Hel');
   });
