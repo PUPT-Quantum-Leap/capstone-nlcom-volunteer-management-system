@@ -1,9 +1,11 @@
 export interface ChatMessage {
-  id?: number;
+  id?: string;
   role: 'user' | 'assistant';
   message: string;
   metadata?: Record<string, unknown>;
   created_at?: string;
+  isRetrying?: boolean;
+  retryAttempt?: number;
 }
 
 export interface ChatSession {
