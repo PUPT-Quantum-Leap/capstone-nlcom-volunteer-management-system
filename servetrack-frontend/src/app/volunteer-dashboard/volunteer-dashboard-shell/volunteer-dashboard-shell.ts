@@ -216,6 +216,10 @@ export class VolunteerDashboardShell implements OnInit {
     this.showNotifications.update((value) => !value);
   }
 
+  toggleChatbot(): void {
+    this.chatbotService.toggleChatbot();
+  }
+
   markNotificationsRead(): void {
     this.notifications.update((items) => items.map((item) => ({ ...item, read: true })));
   }
