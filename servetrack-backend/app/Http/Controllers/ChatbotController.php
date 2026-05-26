@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ChatbotMessageRequest;
-use App\Services\SupabaseService;
 use Firebase\JWT\JWT;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -87,33 +86,23 @@ class ChatbotController extends Controller
 
     /**
      * Get conversation history for the authenticated user.
+     *
+     * Note: Chat history is managed by n8n via Postgres chat memory.
+     * This endpoint exists for frontend compatibility but returns empty
+     * since the n8n workflow handles persistence internally.
      */
     public function history(Request $request): JsonResponse
     {
-        $sessionId = (string) $request->query('session_id', '');
-        $userId = $request->user()->id;
-
-        if ($sessionId === '') {
-            return response()->json(['success' => true, 'data' => []]);
-        }
-
-        $messages = app(SupabaseService::class)->getHistory($userId, $sessionId);
-
-        return response()->json(['success' => true, 'data' => $messages]);
+        return response()->json(['success' => true, 'data' => []]);
     }
 
     /**
      * Clear conversation history for the authenticated user.
+     *
+     * Note: Chat memory is managed by n8n. This is a no-op placeholder.
      */
     public function clear(Request $request): JsonResponse
     {
-        $sessionId = (string) $request->input('session_id', '');
-        $userId = $request->user()->id;
-
-        if ($sessionId !== '') {
-            app(SupabaseService::class)->clearHistory($userId, $sessionId);
-        }
-
         return response()->json(['success' => true, 'message' => 'Conversation history cleared']);
     }
 }
