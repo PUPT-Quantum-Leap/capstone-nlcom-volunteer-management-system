@@ -210,7 +210,7 @@
   <div class="sidebar-overlay" [class.active]="mobileSidebarOpen()" (click)="closeMobileSidebar()"
     (keydown.enter)="closeMobileSidebar()" role="button" tabindex="0" aria-label="Close sidebar"></div>
 
-  <div class="main-wrapper" [class.expanded]="sidebarCollapsed()">
+  <div class="main-wrapper" [class.expanded]="sidebarCollapsed()" [class.chatbot-open]="chatbotService.showChatbot()">
     <!-- Top Bar / Header -->
     <header class="top-bar">
       <div class="top-bar-left">
