@@ -37,7 +37,7 @@ export class ProfileComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private sanitizer = inject(InputSanitizerService);
 
-  readonly defaultPhoto = '/assets/person.svg';
+  readonly defaultPhoto = '/assets/apple.svg';
 
   // ── Profile State ───────────────────────────────────────────────────────
   isEditMode = signal(false);
@@ -166,6 +166,8 @@ export class ProfileComponent implements OnInit {
   showSaveConfirmModal = signal(false);
   showProfileError = signal(false);
   showProfileSuccess = signal(false);
+  showAvatarSelectorModal = signal(false);
+  isDirectAvatarChange = signal(false);
   profileErrorMessage = signal('');
   profileSuccessMessage = signal('');
 
@@ -198,6 +200,7 @@ export class ProfileComponent implements OnInit {
       mobileNumber: ['', [Validators.required, Validators.pattern(/^(09|\+639)\d{9}$/)]],
       birthdate: ['', [Validators.required]],
       lastMedicalExam: ['', [Validators.required]],
+      gender: [''],
       completeAddress: ['', [Validators.required, Validators.minLength(10)]],
       educationalAttainment: ['', [Validators.required]],
       trainingExperience: [''],
@@ -272,6 +275,20 @@ export class ProfileComponent implements OnInit {
       }
       leaderNameControl?.updateValueAndValidity();
     });
+
+    // Reactive avatar update when gender changes and no custom photo exists
+    this.profileForm.get('gender')?.valueChanges.subscribe((value) => {
+      const savedData = this.savedProfileData();
+      if (!savedData?.photo_url && !this.profilePreviewUrl().startsWith('data:image/')) {
+        if (value === 'girl' || value === 'female') {
+          this.profilePreviewUrl.set('/assets/girl.svg');
+        } else if (value === 'boy' || value === 'male') {
+          this.profilePreviewUrl.set('/assets/boy.svg');
+        } else {
+          this.profilePreviewUrl.set(this.defaultPhoto);
+        }
+      }
+    });
   }
 
   private loadProfile(): void {
@@ -292,6 +309,16 @@ export class ProfileComponent implements OnInit {
 
   private applyProfileResponse(data: VolunteerProfileResponse): void {
     this.savedProfileData.set(data);
+
+    if (data.photo_url) {
+      this.profilePreviewUrl.set(data.photo_url);
+    } else if (data.gender === 'girl' || data.gender === 'female') {
+      this.profilePreviewUrl.set('/assets/girl.svg');
+    } else if (data.gender === 'boy' || data.gender === 'male') {
+      this.profilePreviewUrl.set('/assets/boy.svg');
+    } else {
+      this.profilePreviewUrl.set(this.defaultPhoto);
+    }
 
     if (data.positions?.length) {
       // Update task info
@@ -330,6 +357,7 @@ export class ProfileComponent implements OnInit {
       mobileNumber: data.mobile_number,
       birthdate: data.birthdate,
       lastMedicalExam: data.last_medical_examination,
+      gender: data.gender ?? '',
       completeAddress: data.address,
       educationalAttainment: data.educational_attainment,
       trainingExperience: data.training_experience ?? '',
@@ -388,6 +416,7 @@ export class ProfileComponent implements OnInit {
           mobileNumber: savedData.mobile_number,
           birthdate: savedData.birthdate,
           lastMedicalExam: savedData.last_medical_examination,
+          gender: savedData.gender ?? '',
           completeAddress: savedData.address,
           educationalAttainment: savedData.educational_attainment,
           trainingExperience: savedData.training_experience ?? '',
@@ -405,27 +434,51 @@ export class ProfileComponent implements OnInit {
         });
         // Reset UI-only state to match saved data
         this.showOtherPreference.set(positionKey === 'other');
-        this.profilePreviewUrl.set(savedData.photo_url ?? this.defaultPhoto);
+        if (savedData.photo_url) {
+          this.profilePreviewUrl.set(savedData.photo_url);
+        } else if (savedData.gender === 'girl' || savedData.gender === 'female') {
+          this.profilePreviewUrl.set('/assets/girl.svg');
+        } else if (savedData.gender === 'boy' || savedData.gender === 'male') {
+          this.profilePreviewUrl.set('/assets/boy.svg');
+        } else {
+          this.profilePreviewUrl.set(this.defaultPhoto);
+        }
       }
       this.profileForm.markAsPristine();
     }
   }
 
-  onPhotoSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
 
-    if (!file || !file.type.startsWith('image/')) return;
+  openAvatarSelectorModal(): void {
+    const isDirect = !this.isEditMode();
+    this.isDirectAvatarChange.set(isDirect);
+    if (isDirect) {
+      this.enterEditMode();
+    }
+    this.showAvatarSelectorModal.set(true);
+  }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result === 'string') {
-        this.profilePreviewUrl.set(result);
+  closeAvatarSelectorModal(): void {
+    this.showAvatarSelectorModal.set(false);
+    if (this.isDirectAvatarChange()) {
+      this.isDirectAvatarChange.set(false);
+      if (this.profileForm.valid) {
+        this.performSaveProfile();
       }
-      reader.onload = null;
-    };
-    reader.readAsDataURL(file);
+    }
+  }
+
+  selectPersona(gender: string): void {
+    this.profileForm.patchValue({ gender: gender });
+    this.profileForm.get('gender')?.markAsDirty();
+    this.profileForm.get('gender')?.markAsTouched();
+    if (gender === 'girl') {
+      this.profilePreviewUrl.set('/assets/girl.svg');
+    } else if (gender === 'boy') {
+      this.profilePreviewUrl.set('/assets/boy.svg');
+    } else {
+      this.profilePreviewUrl.set(this.defaultPhoto);
+    }
   }
 
   onVolunteerPreferenceChange(event: Event): void {
@@ -482,6 +535,7 @@ export class ProfileComponent implements OnInit {
       mobileNumber: this.sanitizer.sanitizeInput(formValue.mobileNumber ?? '', 'text'),
       birthdate: formValue.birthdate ?? '',
       lastMedicalExam: formValue.lastMedicalExam ?? '',
+      gender: formValue.gender ?? '',
       completeAddress: this.sanitizer.sanitizeInput(formValue.completeAddress ?? '', 'both'),
       educationalAttainment: this.sanitizer.sanitizeInput(formValue.educationalAttainment ?? '', 'both'),
       trainingExperience: this.sanitizer.sanitizeInput(formValue.trainingExperience ?? '', 'both'),
@@ -499,6 +553,7 @@ export class ProfileComponent implements OnInit {
       emergencyContactName: this.sanitizer.sanitizeInput(formValue.emergencyContactName ?? '', 'both'),
       emergencyContactNumber: this.sanitizer.sanitizeInput(formValue.emergencyContactNumber ?? '', 'text'),
       emergencyContactRelationship: this.sanitizer.sanitizeInput(formValue.emergencyContactRelationship ?? '', 'both'),
+      clearPhoto: this.profilePreviewUrl().endsWith('.svg')
     };
 
     this.volunteerService.updateProfile(payload).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
@@ -506,6 +561,17 @@ export class ProfileComponent implements OnInit {
         if (response.success && response.data) {
           // Update saved data first
           this.savedProfileData.set(response.data);
+
+          // Update authService.currentUser signal to keep header/sidebar in sync
+          const current = this.authService.currentUser();
+          if (current) {
+            this.authService.currentUser.set({
+              ...current,
+              name: `${response.data.first_name} ${response.data.last_name}`,
+              email: response.data.email,
+              volunteer_profile: response.data as any
+            });
+          }
 
           // Apply to form while still enabled
           this.applyProfileResponse(response.data);

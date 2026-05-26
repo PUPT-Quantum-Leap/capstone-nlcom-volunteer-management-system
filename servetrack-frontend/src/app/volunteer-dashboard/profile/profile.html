@@ -2,22 +2,35 @@
   <!-- Profile Header Card -->
   <article class="profile-header-card">
     <div class="profile-avatar-section">
-      <div class="avatar-wrapper">
-        <img [src]="profilePreviewUrl()" alt="Profile" class="profile-avatar" [class.svg]="profilePreviewUrl().endsWith('.svg')" />
+      <div class="avatar-wrapper"
+           [class.persona-boy]="profileForm.get('gender')?.value === 'boy'"
+           [class.persona-girl]="profileForm.get('gender')?.value === 'girl'"
+           [class.persona-default]="!profileForm.get('gender')?.value"
+           (click)="openAvatarSelectorModal()"
+           style="cursor: pointer;"
+           title="Change Avatar or Photo">
+        <img [src]="profilePreviewUrl()" 
+             alt="Profile" 
+             class="profile-avatar" 
+             [class.svg]="profilePreviewUrl().endsWith('.svg')"
+             [class.boy-fallback]="profilePreviewUrl().endsWith('.svg') && profileForm.get('gender')?.value === 'boy'"
+             [class.girl-fallback]="profilePreviewUrl().endsWith('.svg') && profileForm.get('gender')?.value === 'girl'"
+             [class.default-fallback]="profilePreviewUrl().endsWith('.svg') && !profileForm.get('gender')?.value" />
         @if (isEditMode()) {
-          <label class="upload-overlay" for="photo-upload">
+          <div class="upload-overlay">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
-            <span>Change Photo</span>
-          </label>
-          <input id="photo-upload" type="file" (change)="onPhotoSelected($event)" accept="image/*" style="display: none;" />
+            <span>Change</span>
+          </div>
         }
       </div>
       <div class="profile-meta">
         <h3>{{ profileForm.get('firstName')?.value || 'Your Name' }} {{ profileForm.get('lastName')?.value || '' }}</h3>
-        <p>Volunteer Member</p>
+        <div class="meta-row">
+          <p class="role-badge">Volunteer Member</p>
+        </div>
       </div>
     </div>
     <div class="profile-stats">
@@ -166,7 +179,7 @@
                 <span class="error-text">{{ getControlError('lastMedicalExam') }}</span>
               }
             </div>
-            <div class="form-group">
+             <div class="form-group">
               <label>Facebook Name</label>
               <input type="text" [value]="profileForm.get('facebookName')?.value" formControlName="facebookName" placeholder="FB Profile Name" />
               @if (controlHasError('facebookName')) {
@@ -440,3 +453,76 @@
     </div>
   </div>
 }
+
+<!-- Avatar Selector Modal -->
+@if (showAvatarSelectorModal()) {
+  <div class="modal-backdrop" (click)="closeAvatarSelectorModal()">
+    <div class="modal-card avatar-selection-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header-section">
+        <h3>Choose Avatar / Persona</h3>
+        <p>Select a persona style or upload your own custom photo.</p>
+      </div>
+      
+      <div class="avatar-modal-options">
+        <!-- Boy Persona -->
+        <button type="button" class="avatar-option-card" 
+                [class.active]="profilePreviewUrl().endsWith('boy.svg')"
+                (click)="selectPersona('boy')">
+          <div class="avatar-option-img-wrapper boy">
+            <img src="/assets/boy.svg" alt="Boy Persona" />
+          </div>
+          <div class="avatar-option-info">
+            <span class="title">Boy Persona</span>
+            <span class="desc">Cool and dynamic style</span>
+          </div>
+          <div class="avatar-option-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        </button>
+
+        <!-- Girl Persona -->
+        <button type="button" class="avatar-option-card" 
+                [class.active]="profilePreviewUrl().endsWith('girl.svg')"
+                (click)="selectPersona('girl')">
+          <div class="avatar-option-img-wrapper girl">
+            <img src="/assets/girl.svg" alt="Girl Persona" />
+          </div>
+          <div class="avatar-option-info">
+            <span class="title">Girl Persona</span>
+            <span class="desc">Friendly and professional style</span>
+          </div>
+          <div class="avatar-option-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        </button>
+
+        <!-- Default Persona -->
+        <button type="button" class="avatar-option-card" 
+                [class.active]="profilePreviewUrl().endsWith('apple.svg')"
+                (click)="selectPersona('')">
+          <div class="avatar-option-img-wrapper default">
+            <img src="/assets/apple.svg" alt="Default Persona" />
+          </div>
+          <div class="avatar-option-info">
+            <span class="title">Default Persona</span>
+            <span class="desc">Cute apple style</span>
+          </div>
+          <div class="avatar-option-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        </button>
+      </div>
+
+      <div class="modal-actions-full">
+        <button type="button" class="primary-btn full" (click)="closeAvatarSelectorModal()">Done</button>
+      </div>
+    </div>
+  </div>
+}
+

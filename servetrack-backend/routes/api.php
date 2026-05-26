@@ -59,7 +59,14 @@ Route::get('/rsvp/{identifier}', [RsvpController::class, 'show'])->name('rsvp.sh
 // Auth-required routes (all authenticated users)
 Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('auth.logout');
-    Route::get('/user', fn (Request $request) => $request->user())->name('auth.user');
+    Route::get('/user', function (Request $request) {
+        $user = $request->user();
+        if ($user && $user->role === 'volunteer') {
+            $user->setRelation('volunteer_profile', $user->volunteer);
+        }
+
+        return $user;
+    })->name('auth.user');
 
     // Volunteer profile (volunteer role only — enforced in controller)
     Route::get('/volunteer/profile', [VolunteerController::class, 'profile'])->name('volunteer.profile');

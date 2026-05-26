@@ -72,6 +72,7 @@ class VolunteerController extends Controller
             'birthdate' => 'required|date|before:today',
             'completeAddress' => 'required|string|min:10|max:255',
             'lastMedicalExam' => 'required|date|before_or_equal:today',
+            'gender' => 'nullable|string|in:boy,girl,male,female',
 
             // Education & Experience
             'educationalAttainment' => 'required|string|max:100',
@@ -155,6 +156,7 @@ class VolunteerController extends Controller
                 'educational_attainment' => $request->educationalAttainment,
                 'last_medical_examination' => $request->lastMedicalExam,
                 'user_id' => $user->id,
+                'gender' => $request->gender,
             ]);
 
             // Sync all related data
@@ -249,6 +251,8 @@ class VolunteerController extends Controller
                 'address' => $volunteer->address,
                 'educational_attainment' => $volunteer->educational_attainment,
                 'last_medical_examination' => $volunteer->last_medical_examination,
+                'gender' => $volunteer->gender,
+                'photo_url' => $volunteer->profile_photo ? Storage::disk('public')->url($volunteer->profile_photo) : null,
                 'training_experience' => $trainingExperience,
                 'skills_hobbies' => $skillsHobbies,
                 'classes_training' => $classesTraining,
@@ -288,6 +292,7 @@ class VolunteerController extends Controller
                     'educational_attainment' => $request->educationalAttainment,
                     'last_medical_examination' => $request->lastMedicalExam,
                     'user_id' => $user->id,
+                    'gender' => $request->gender,
                 ]);
 
                 // Update user info
@@ -317,6 +322,8 @@ class VolunteerController extends Controller
                         'address' => $volunteer->address,
                         'educational_attainment' => $volunteer->educational_attainment,
                         'last_medical_examination' => $volunteer->last_medical_examination,
+                        'gender' => $volunteer->gender,
+                        'photo_url' => $volunteer->profile_photo ? Storage::disk('public')->url($volunteer->profile_photo) : null,
                         'training_experience' => '',
                         'skills_hobbies' => '',
                         'classes_training' => '',
@@ -358,6 +365,16 @@ class VolunteerController extends Controller
             $volunteer->address = $request->completeAddress;
             $volunteer->educational_attainment = $request->educationalAttainment;
             $volunteer->last_medical_examination = $request->lastMedicalExam;
+            $volunteer->gender = $request->gender;
+
+            // Clear custom photo if they select a persona gender or explicitly clear it
+            if ($request->gender || $request->boolean('clearPhoto')) {
+                if ($volunteer->profile_photo) {
+                    Storage::disk('public')->delete($volunteer->profile_photo);
+                    $volunteer->profile_photo = null;
+                }
+            }
+
             $volunteer->save();
 
             // Also update the linked user's name and email
@@ -419,6 +436,8 @@ class VolunteerController extends Controller
                     'address' => $volunteer->address,
                     'educational_attainment' => $volunteer->educational_attainment,
                     'last_medical_examination' => $volunteer->last_medical_examination,
+                    'gender' => $volunteer->gender,
+                    'photo_url' => $volunteer->profile_photo ? Storage::disk('public')->url($volunteer->profile_photo) : null,
                     'training_experience' => $trainingExperience,
                     'skills_hobbies' => $skillsHobbies,
                     'classes_training' => $classesTraining,

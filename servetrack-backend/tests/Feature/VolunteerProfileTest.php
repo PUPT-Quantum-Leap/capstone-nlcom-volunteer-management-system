@@ -211,4 +211,31 @@ describe('Profile Update Success', function (): void {
         expect($user->name)->toBe('Synced User')
             ->and($user->email)->toBe('synced@example.com');
     });
+
+    it('updates volunteer gender to boy, girl, or empty', function (): void {
+        $user = User::factory()->create();
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id, 'gender' => 'boy']);
+
+        // 1. Update to girl
+        $data = baseProfileData($volunteer);
+        $data['gender'] = 'girl';
+
+        $this->actingAs($user)
+            ->putJson('/api/volunteer/profile', $data)
+            ->assertSuccessful()
+            ->assertJsonPath('data.gender', 'girl');
+
+        $volunteer->refresh();
+        expect($volunteer->gender)->toBe('girl');
+
+        // 2. Update to empty string (default apple)
+        $data['gender'] = '';
+        $this->actingAs($user)
+            ->putJson('/api/volunteer/profile', $data)
+            ->assertSuccessful()
+            ->assertJsonPath('data.gender', null);
+
+        $volunteer->refresh();
+        expect($volunteer->gender)->toBeNull();
+    });
 });
