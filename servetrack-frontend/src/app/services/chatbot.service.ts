@@ -38,6 +38,7 @@ export class ChatbotService {
   private apiUrl = environment.apiUrl;
 
   private readonly markdownCache = new Map<string, SafeHtml>();
+  private readonly MESSAGES_KEY = 'chatbot_messages';
 
   readonly showChatbot = signal(false);
   readonly messages = signal<ChatMessage[]>([]);
@@ -52,6 +53,23 @@ export class ChatbotService {
     const newId = crypto.randomUUID();
     localStorage.setItem('chatbot_session_id', newId);
     return newId;
+  }
+
+  private saveMessages(msgs: ChatMessage[]): void {
+    try {
+      localStorage.setItem(this.MESSAGES_KEY, JSON.stringify(msgs));
+    } catch {
+      // quota exceeded — silently ignore
+    }
+  }
+
+  private loadMessages(): ChatMessage[] {
+    try {
+      const stored = localStorage.getItem(this.MESSAGES_KEY);
+      return stored ? (JSON.parse(stored) as ChatMessage[]) : [];
+    } catch {
+      return [];
+    }
   }
 
   toggleChatbot(): void {
@@ -155,6 +173,7 @@ export class ChatbotService {
               created_at: new Date().toISOString(),
             };
             this.messages.update((msgs) => [...msgs, assistantMessage]);
+            this.saveMessages(this.messages());
           }
           this.isLoading.set(false);
         }),
@@ -173,36 +192,21 @@ export class ChatbotService {
   }
 
   loadHistory(): void {
-    this.http
-      .get<{ success: boolean; data: ChatMessage[] }>(
-        `${this.apiUrl}/chatbot/history?session_id=${this.sessionId()}`,
-        { withCredentials: true },
-      )
-      .pipe(
-        tap((response) => {
-          if (response.success && response.data.length > 0) {
-            this.messages.set(response.data);
-          }
-        }),
-        catchError(() => []),
-      )
-      .subscribe();
+    const msgs = this.loadMessages();
+    if (msgs.length > 0) {
+      this.messages.set(msgs);
+    }
   }
 
   clearHistory(): Observable<{ success: boolean; message: string }> {
-    return this.http
-      .post<{ success: boolean; message: string }>(
-        `${this.apiUrl}/chatbot/clear`,
-        { session_id: this.sessionId() },
-        { withCredentials: true },
-      )
-      .pipe(
-        tap((response) => {
-          if (response.success) {
-            this.messages.set([]);
-          }
-        }),
-      );
+    this.messages.set([]);
+    localStorage.removeItem(this.MESSAGES_KEY);
+    localStorage.removeItem('chatbot_session_id');
+    this.sessionId.set(this.loadSession());
+    return new Observable((observer) => {
+      observer.next({ success: true, message: 'Conversation history cleared' });
+      observer.complete();
+    });
   }
 
   isTransientError(error: HttpErrorResponse): boolean {
