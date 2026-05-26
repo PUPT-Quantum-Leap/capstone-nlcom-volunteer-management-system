@@ -27,6 +27,7 @@ class VolunteerProfileResource extends JsonResource
             'address' => $this->address,
             'educational_attainment' => $this->educational_attainment,
             'last_medical_examination' => $this->last_medical_examination?->format('Y-m-d'),
+            'gender' => $this->gender,
             'profile_photo_url' => $this->profile_photo
                 ? Storage::disk('public')->url($this->profile_photo)
                 : null,

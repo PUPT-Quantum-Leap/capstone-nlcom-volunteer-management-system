@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="boyBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#312e81" />
+    </linearGradient>
+    <!-- Skin Gradient -->
+    <linearGradient id="skin" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffebd5" />
+      <stop offset="100%" stop-color="#fccb9e" />
+    </linearGradient>
+    <!-- Hair Gradient -->
+    <linearGradient id="hair" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3e2723" />
+      <stop offset="100%" stop-color="#1b0000" />
+    </linearGradient>
+    <!-- Clothing Gradient -->
+    <linearGradient id="clothes" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+    <!-- Shadow Filter -->
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- Circle Base -->
+  <circle cx="50" cy="50" r="50" fill="url(#boyBg)" />
+
+  <!-- Body / Hoodie -->
+  <path d="M20 90 C20 74, 30 70, 40 70 L60 70 C70 70, 80 74, 80 90 Z" fill="url(#clothes)" filter="url(#softShadow)" />
+  <path d="M42 70 L50 82 L58 70 Z" fill="#024e75" /> <!-- Inner shirt V -->
+  <path d="M45 70 L50 76 L55 70 Z" fill="#ffffff" /> <!-- White undershirt V -->
+
+  <!-- Neck -->
+  <path d="M44 56 L44 72 C44 75, 56 75, 56 72 L56 56 Z" fill="#fccb9e" />
+  <path d="M44 56 L56 56 C56 56, 50 63, 44 56" fill="#e0ab7f" opacity="0.6" /> <!-- Neck shadow -->
+
+  <!-- Head / Face -->
+  <path d="M33 46 C33 32, 67 32, 67 46 C67 58, 62 62, 50 62 C38 62, 33 58, 33 46 Z" fill="url(#skin)" />
+
+  <!-- Ears -->
+  <circle cx="31" cy="46" r="4.5" fill="#fccb9e" />
+  <circle cx="69" cy="46" r="4.5" fill="#fccb9e" />
+  <!-- Ear inner details -->
+  <path d="M31.5 44 C30 44, 29.5 47, 31 48" stroke="#e0ab7f" stroke-width="0.8" fill="none" />
+  <path d="M68.5 44 C70 44, 70.5 47, 69 48" stroke="#e0ab7f" stroke-width="0.8" fill="none" />
+
+  <!-- Eyes -->
+  <g fill="#1e293b">
+    <circle cx="43" cy="45" r="2.5" />
+    <circle cx="57" cy="45" r="2.5" />
+  </g>
+  <!-- Eye Reflections -->
+  <g fill="#ffffff">
+    <circle cx="42.2" cy="44.2" r="0.8" />
+    <circle cx="56.2" cy="44.2" r="0.8" />
+    <circle cx="43.8" cy="45.8" r="0.4" />
+    <circle cx="57.8" cy="45.8" r="0.4" />
+  </g>
+
+  <!-- Eyebrows -->
+  <path d="M39 39 C41 37, 45 37, 47 39" stroke="#1b0000" stroke-width="2" stroke-linecap="round" fill="none" />
+  <path d="M61 39 C59 37, 55 37, 53 39" stroke="#1b0000" stroke-width="2" stroke-linecap="round" fill="none" />
+
+  <!-- Nose -->
+  <path d="M49 46 C49 49, 50 50, 51 49" stroke="#e0ab7f" stroke-width="1.8" stroke-linecap="round" fill="none" />
+
+  <!-- Smiling Mouth -->
+  <path d="M44 53 Q50 58 56 53" stroke="#b45309" stroke-width="2" stroke-linecap="round" fill="none" />
+  <!-- Cheeks blush -->
+  <circle cx="37" cy="50" r="2.5" fill="#f43f5e" opacity="0.15" />
+  <circle cx="63" cy="50" r="2.5" fill="#f43f5e" opacity="0.15" />
+
+  <!-- Hair -->
+  <!-- Back/side hair base -->
+  <path d="M31 43 C29 36, 32 30, 38 27 C44 24, 56 24, 62 27 C68 30, 71 36, 69 43 C67 33, 61 29, 50 29 C39 29, 33 33, 31 43 Z" fill="url(#hair)" />
+  <!-- Hair spikes / layers on top -->
+  <path d="M31 38 C32 32, 38 28, 44 29 C40 32, 38 35, 38 38 Z" fill="url(#hair)" />
+  <path d="M69 38 C68 32, 62 28, 56 29 C60 32, 62 35, 62 38 Z" fill="url(#hair)" />
+  <!-- Front fringe/spikes swept to the side -->
+  <path d="M35 34 C42 26, 52 26, 58 31 C52 32, 44 35, 41 39 C40 36, 38 35, 35 34 Z" fill="url(#hair)" />
+  <path d="M48 27 C53 22, 60 25, 63 30 C58 30, 53 32, 51 35 C50 32, 49 30, 48 27 Z" fill="url(#hair)" />
+</svg>

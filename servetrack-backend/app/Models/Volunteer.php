@@ -35,6 +35,7 @@ class Volunteer extends Model
         'emergency_contact_id',
         'user_id',
         'profile_photo',
+        'gender',
         'deleted_at',
     ];
 

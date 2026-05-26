@@ -72,11 +72,27 @@ export class UserBadgeComponent {
   }
 
   getProfilePhotoUrl(): string {
-    const photoUrl = this.currentUser()?.profile_photo_url;
-    if (!photoUrl) {
-      return '/assets/person.svg';
+    const user = this.currentUser();
+    const photoUrl = user?.profile_photo_url;
+    if (photoUrl) {
+      return photoUrl;
     }
-    return photoUrl;
+    if (user?.role === 'volunteer' && user?.volunteer_profile) {
+      const volProfile = user.volunteer_profile as any;
+      const volPhoto = volProfile.profile_photo_url || volProfile.photo_url;
+      if (volPhoto) {
+        return volPhoto;
+      }
+      const gender = volProfile.gender;
+      if (gender === 'girl' || gender === 'female') {
+        return '/assets/girl.svg';
+      } else if (gender === 'boy' || gender === 'male') {
+        return '/assets/boy.svg';
+      } else {
+        return '/assets/apple.svg';
+      }
+    }
+    return '/assets/apple.svg';
   }
 
   isSvgImage(): boolean {
