@@ -110,7 +110,7 @@
 
   <div class="sidebar-overlay" [class.active]="mobileSidebarOpen()" (click)="closeMobileSidebar()"></div>
 
-  <div class="main-wrapper" [class.expanded]="sidebarCollapsed()">
+  <div class="main-wrapper" [class.expanded]="sidebarCollapsed()" [class.chatbot-open]="chatbotService.showChatbot()">
     <header class="top-bar">
       <div class="top-bar-left">
         <button type="button" class="mobile-menu-btn" (click)="toggleMobileSidebar()">

@@ -401,13 +401,17 @@
 .main-wrapper {
   flex: 1;
   margin-left: var(--sidebar-width);
-  transition: margin-left var(--transition-slow);
+  transition: margin-left var(--transition-slow), margin-right var(--transition-slow);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 
   &.expanded {
     margin-left: var(--sidebar-collapsed-width);
+  }
+
+  &.chatbot-open {
+    margin-right: 400px;
   }
 }
 
@@ -769,6 +773,10 @@
 
     &.expanded {
       margin-left: 0;
+    }
+
+    &.chatbot-open {
+      margin-right: 0;
     }
   }
 
