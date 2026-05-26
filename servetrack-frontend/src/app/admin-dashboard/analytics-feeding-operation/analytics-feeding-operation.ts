@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { AnalyticsService } from '../../services/analytics.service';
 import { IcsTeamFeedingOperation } from '../../services/analytics.service';
 import jsPDF from 'jspdf';
@@ -27,7 +26,7 @@ interface FeedingOperationRow extends FeedingOperation {
 @Component({
   selector: 'app-analytics-feeding-operation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './analytics-feeding-operation.html',
   styleUrl: './analytics-feeding-operation.scss',
 })
