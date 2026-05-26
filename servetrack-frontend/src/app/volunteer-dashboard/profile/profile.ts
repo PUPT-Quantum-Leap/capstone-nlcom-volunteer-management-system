@@ -151,7 +151,11 @@ export class ProfileComponent implements OnInit {
   }
 
   private parseLocalISO(dateStr: string): Date {
-    const [year, month, day] = dateStr.split('-').map(Number);
+    if (!dateStr) return new Date();
+    // Extract only the YYYY-MM-DD part if a full timestamp is provided
+    const datePart = dateStr.split(/[T ]/)[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return new Date(dateStr);
     return new Date(year, month - 1, day);
   }
 
