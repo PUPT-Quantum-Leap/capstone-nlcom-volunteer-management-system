@@ -15,7 +15,7 @@ import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
 import { ChatbotService } from '../../services/chatbot.service';
-import { ChatbotContainerComponent } from '../../components/chatbot/chatbot-container.component';
+import { ChatbotSidebarComponent } from '../../components/chatbot-sidebar/chatbot-sidebar.component';
 
 type AdminView =
   | 'dashboard'
@@ -33,7 +33,7 @@ type AdminView =
 @Component({
   selector: 'app-admin-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, NgOptimizedImage, RouterOutlet, LoadingScreenComponent, ChatbotContainerComponent],
+  imports: [CommonModule, NgOptimizedImage, RouterOutlet, LoadingScreenComponent, ChatbotSidebarComponent],
   templateUrl: './admin-layout.html',
   styleUrl: './admin-layout.scss',
 })

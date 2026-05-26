@@ -1,0 +1,251 @@
+<div class="sidebar-wrapper" [class.open]="chatbotService.showChatbot()" role="complementary" aria-label="AI Assistant">
+
+  <!-- ── Header ── -->
+  <div class="sidebar-header">
+    <div class="header-info">
+      <img src="/assets/kamen-rider-gotchard.jpg" alt="ServeTrack AI Avatar" class="bot-avatar" width="40" height="40" />
+      <div class="header-text">
+        <h3>ServeTrack AI</h3>
+        <span class="status" [class.speaking]="isSpeaking()">
+          {{ isSpeaking() ? 'Speaking…' : isRecording() ? 'Listening…' : 'Online' }}
+        </span>
+      </div>
+    </div>
+    <div class="header-actions">
+      @if (isTTSSupported()) {
+        <button type="button" class="btn-icon" [class.active]="autoSpeak()"
+          (click)="toggleAutoSpeak()" title="Toggle auto-speak" aria-label="Toggle auto-speak">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            @if (autoSpeak()) {
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            } @else {
+              <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+            }
+          </svg>
+        </button>
+      }
+      <button type="button" class="btn-icon" [class.active]="showSettings()"
+        (click)="toggleSettings()" title="Settings" aria-label="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33
+            1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06
+            a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+            A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06
+            A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51
+            1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9
+            a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <button type="button" class="btn-icon" (click)="clearChat()" title="Clear chat" aria-label="Clear chat">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+          <path d="M10 11v6"/><path d="M14 11v6"/>
+          <path d="M9 6V4h6v2"/>
+        </svg>
+      </button>
+      <button type="button" class="btn-icon" (click)="chatbotService.closeChatbot()" title="Close" aria-label="Close chatbot">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Settings Panel ── -->
+  @if (showSettings()) {
+    <div class="settings-panel" role="region" aria-label="Voice settings">
+      <div class="settings-row">
+        <label for="voice-select">Voice</label>
+        <div class="voice-select-row">
+          <select id="voice-select" [ngModel]="currentVoiceName()"
+            (ngModelChange)="selectVoice($event)" aria-label="Select voice">
+            <option value="">Default</option>
+            @for (group of groupedVoices(); track group.lang) {
+              <optgroup [label]="group.langName">
+                @for (voice of group.voices; track voice.name) {
+                  <option [value]="voice.name">{{ voice.name }}</option>
+                }
+              </optgroup>
+            }
+          </select>
+          <button type="button" class="btn-preview" (click)="previewVoice()" aria-label="Preview voice">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Preview
+          </button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <label>
+          <input type="checkbox" [ngModel]="autoSpeak()" (ngModelChange)="toggleAutoSpeak()" />
+          Auto-speak responses
+        </label>
+      </div>
+      @if (!isTTSSupported()) {
+        <p class="settings-hint">Text-to-speech is not available in your browser.</p>
+      }
+    </div>
+  }
+
+  <!-- ── Messages ── -->
+  <div class="sidebar-messages" #messagesContainer>
+    @if (!chatbotService.hasMessages()) {
+      <div class="empty-state">
+        <img src="/assets/kamen-rider-gotchard.jpg" alt="" class="empty-avatar" aria-hidden="true" width="72" height="72" />
+        <h4>Hello! I'm ServeTrack AI</h4>
+        <p>Ask me anything about NLCOM volunteer programs, events, attendance, and more.</p>
+        <div class="suggestion-chips">
+          @for (s of suggestions; track s) {
+            <button type="button" class="chip" (click)="sendSuggestion(s)">{{ s }}</button>
+          }
+        </div>
+      </div>
+    }
+
+    @for (msg of chatbotService.messages(); track $index) {
+      <div class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+        @if (msg.role === 'assistant') {
+          <img src="/assets/kamen-rider-gotchard.jpg" alt="" class="msg-avatar" aria-hidden="true" width="28" height="28" />
+        }
+        <div class="message-content">
+          @if (msg.role === 'assistant') {
+            <div class="markdown" [innerHTML]="chatbotService.parseMarkdown(msg.message)"></div>
+            @if (msg.isRetrying) {
+              <div class="retry-indicator" aria-live="polite">Retrying attempt {{ msg.retryAttempt }}/3…</div>
+            }
+          } @else {
+            <p>{{ msg.message }}</p>
+          }
+          <div class="message-meta">
+            @if (msg.created_at) {
+              <span class="timestamp">{{ formatTime(msg.created_at) }}</span>
+            }
+            @if (msg.role === 'assistant') {
+              <div class="msg-actions">
+                <button type="button" class="copy-btn"
+                  (click)="copyMessage(msg, $index)"
+                  [attr.aria-label]="copiedIndex() === $index ? 'Copied' : 'Copy message'"
+                  [title]="copiedIndex() === $index ? 'Copied!' : 'Copy'">
+                  @if (copiedIndex() === $index) {
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                  } @else {
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                    </svg>
+                  }
+                </button>
+                @if (isTTSSupported()) {
+                  <button type="button" class="speak-btn" (click)="speakMessage(msg.message)"
+                    [attr.aria-label]="isSpeaking() ? 'Stop speaking' : 'Speak message'"
+                    [title]="isSpeaking() ? 'Stop' : 'Speak'">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                    </svg>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (chatbotService.isLoading()) {
+      <div class="message assistant" aria-live="polite" aria-label="ServeTrack AI is typing">
+        <img src="/assets/kamen-rider-gotchard.jpg" alt="" class="msg-avatar" aria-hidden="true" width="28" height="28" />
+        <div class="message-content typing">
+          <div class="typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- ── Command Palette Dropdown ── -->
+  @if (showCommandDropdown()) {
+    <div class="command-palette" role="listbox" aria-label="Commands">
+      @for (cmd of visibleCommands(); track cmd.id; let i = $index) {
+        <button type="button" class="command-item" role="option"
+          [class.selected]="selectedCommandIndex() === i"
+          (click)="selectCommand(cmd)"
+          [attr.aria-selected]="selectedCommandIndex() === i">
+          <span class="cmd-icon"><i [class]="'bi ' + cmd.icon" aria-hidden="true"></i></span>
+          <span class="cmd-info">
+            <span class="cmd-command">{{ cmd.command }}</span>
+            <span class="cmd-desc">{{ cmd.description }}</span>
+          </span>
+        </button>
+      }
+      @if (visibleCommands().length === 0) {
+        <div class="command-empty">No commands found</div>
+      }
+    </div>
+  }
+
+  <!-- ── Input Area ── -->
+  <div class="sidebar-input">
+    @if (liveTranscript()) {
+      <div class="live-transcript" aria-live="polite">{{ liveTranscript() }}</div>
+    }
+    @if (speechError()) {
+      <div class="speech-error" role="alert">{{ speechError() }}</div>
+    }
+    <div class="input-row">
+      <textarea
+        #textareaRef
+        [ngModel]="userInput()"
+        (ngModelChange)="onInputChange($event)"
+        (keydown.enter)="onEnterKey($event)"
+        placeholder="Type a message or / for commands…"
+        rows="1"
+        [maxlength]="maxLength"
+        aria-label="Type your message"
+      ></textarea>
+      <div class="input-actions">
+        <button type="button" class="btn-icon-sm" (click)="toggleCommandPalette()"
+          [class.active]="showCommandPalette()"
+          title="Commands (Ctrl+K)" aria-label="Open command palette">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+        </button>
+        @if (isSTTSupported()) {
+          <button type="button" class="btn-icon-sm" [class.recording]="isRecording()"
+            (click)="toggleRecording()" [title]="isRecording() ? 'Stop recording' : 'Voice input'"
+            [attr.aria-label]="isRecording() ? 'Stop recording' : 'Start voice input'">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+        }
+        <button type="button" class="btn-send"
+          (click)="sendMessage()"
+          [disabled]="!isInputValid() || chatbotService.isLoading()"
+          aria-label="Send message">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

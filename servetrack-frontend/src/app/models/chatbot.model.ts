@@ -6,6 +6,7 @@ export interface ChatMessage {
   created_at?: string;
   isRetrying?: boolean;
   retryAttempt?: number;
+  copied?: boolean;
 }
 
 export interface ChatSession {
