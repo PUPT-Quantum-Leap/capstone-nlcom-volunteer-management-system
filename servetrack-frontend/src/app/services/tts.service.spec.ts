@@ -5,6 +5,23 @@ import { TTSService } from './tts.service';
 const mockVoice = (name: string, lang: string): SpeechSynthesisVoice =>
   ({ name, lang, default: false, localService: true, voiceURI: name }) as SpeechSynthesisVoice;
 
+// jsdom doesn't implement SpeechSynthesisUtterance/SpeechSynthesisEvent
+class MockUtterance {
+  text: string;
+  rate = 1;
+  pitch = 1;
+  volume = 1;
+  voice: SpeechSynthesisVoice | null = null;
+  onstart: ((e: Event) => void) | null = null;
+  onend: ((e: Event) => void) | null = null;
+  onerror: ((e: Event) => void) | null = null;
+  constructor(text: string) { this.text = text; }
+}
+(globalThis as any).SpeechSynthesisUtterance = MockUtterance;
+(globalThis as any).SpeechSynthesisEvent = class extends Event {
+  constructor(type: string, init?: any) { super(type); }
+};
+
 describe('TTSService', () => {
   let service: TTSService;
 
@@ -13,6 +30,7 @@ describe('TTSService', () => {
 
     Object.defineProperty(window, 'speechSynthesis', {
       writable: true,
+      configurable: true,
       value: {
         speak: vi.fn(),
         cancel: vi.fn(),
