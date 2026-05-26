@@ -98,11 +98,9 @@ describe('VoiceInputService', () => {
     expect(emitted).toContain('Hel');
   });
 
-  it('sets error on permission denied', async () => {
-    (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValue(
-      Object.assign(new Error(), { name: 'NotAllowedError' }),
-    );
-    await service.start();
+  it('sets error on permission denied', () => {
+    service.start();
+    mockRecognition.onerror?.({ error: 'not-allowed' } as any);
     expect(service.error()).toContain('denied');
   });
 
