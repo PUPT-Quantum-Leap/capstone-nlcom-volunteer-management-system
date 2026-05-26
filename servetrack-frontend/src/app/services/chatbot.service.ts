@@ -1,7 +1,7 @@
 ﻿import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { Observable, throwError, timer } from 'rxjs';
+import { Observable, of, throwError, timer } from 'rxjs';
 import { catchError, concatMap, retryWhen, tap } from 'rxjs/operators';
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
@@ -84,7 +84,9 @@ export class ChatbotService {
   private loadMessages(): ChatMessage[] {
     try {
       const stored = localStorage.getItem(this.MESSAGES_KEY);
-      return stored ? (JSON.parse(stored) as ChatMessage[]) : [];
+      if (!stored) return [];
+      const parsed: unknown = JSON.parse(stored);
+      return Array.isArray(parsed) ? (parsed as ChatMessage[]) : [];
     } catch {
       return [];
     }
@@ -210,10 +212,10 @@ export class ChatbotService {
   }
 
   loadHistory(): void {
-    const msgs = this.loadMessages();
-    if (msgs.length > 0) {
-      this.messages.set(msgs);
-    }
+    // Re-sync session for the current user (handles login/logout transitions)
+    this.sessionId.set(this.loadSession());
+    // Always replace messages — prevents cross-user leaks if user changed
+    this.messages.set(this.loadMessages());
   }
 
   clearHistory(): Observable<{ success: boolean; message: string }> {
@@ -221,10 +223,7 @@ export class ChatbotService {
     localStorage.removeItem(this.MESSAGES_KEY);
     localStorage.removeItem(this.SESSION_KEY);
     this.sessionId.set(this.loadSession());
-    return new Observable((observer) => {
-      observer.next({ success: true, message: 'Conversation history cleared' });
-      observer.complete();
-    });
+    return of({ success: true, message: 'Conversation history cleared' });
   }
 
   isTransientError(error: HttpErrorResponse): boolean {
