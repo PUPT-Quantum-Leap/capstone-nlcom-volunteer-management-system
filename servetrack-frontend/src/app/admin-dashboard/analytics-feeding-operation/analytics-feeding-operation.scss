@@ -104,20 +104,6 @@
   }
 }
 
-.back-link {
-  text-decoration: none;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--white);
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  padding: 0.5rem 0.875rem;
-  border-radius: 8px;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.12);
-  }
-}
-
 .operations-section {
   background: var(--white);
   border-radius: var(--radius-xl);
