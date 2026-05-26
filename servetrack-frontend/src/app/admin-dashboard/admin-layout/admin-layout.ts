@@ -13,7 +13,6 @@ import { AdminDashboardService } from '../../services/admin-dashboard.service';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ServeBotComponent } from '../serve-bot/serve-bot';
 import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
 import { ChatbotService } from '../../services/chatbot.service';
 import { ChatbotContainerComponent } from '../../components/chatbot/chatbot-container.component';
@@ -34,7 +33,7 @@ type AdminView =
 @Component({
   selector: 'app-admin-layout',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, NgOptimizedImage, RouterOutlet, ServeBotComponent, LoadingScreenComponent, ChatbotContainerComponent],
+  imports: [CommonModule, NgOptimizedImage, RouterOutlet, LoadingScreenComponent, ChatbotContainerComponent],
   templateUrl: './admin-layout.html',
   styleUrl: './admin-layout.scss',
 })
@@ -57,10 +56,8 @@ export class AdminLayout implements OnInit {
   showLogoutModal = signal(false);
   isLoading = signal(false);
 
-  showServeBot = signal(false);
   searchQuery = signal('');
-  currentUrl = signal(this.router.url);
- 
+  currentUrl = signal(this.router.url); 
   // Profile Edit Signals
   showProfileModal = signal(false);
   isSavingProfile = signal(false);
@@ -196,8 +193,8 @@ export class AdminLayout implements OnInit {
     this.showNotifications.update(v => !v);
   }
 
-  toggleServeBot(): void {
-    this.showServeBot.update(v => !v);
+  toggleChatbot(): void {
+    this.chatbotService.toggleChatbot();
   }
 
   openLogoutModal(): void {

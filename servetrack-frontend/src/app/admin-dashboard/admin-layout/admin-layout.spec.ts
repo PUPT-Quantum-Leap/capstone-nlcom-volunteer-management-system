@@ -61,7 +61,6 @@ describe('AdminLayout - Logic Tests', () => {
     component.showNotifications = signal(false);
     component.showLogoutModal = signal(false);
     component.isLoading = signal(false);
-    component.showServeBot = signal(false);
     component.searchQuery = signal('');
     component.currentUrl = signal(routerMock.url);
     
