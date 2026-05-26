@@ -40,6 +40,10 @@ return [
         'allowed_domains' => env('ADMIN_ALLOWED_DOMAINS'),
     ],
 
+    'volunteer' => [
+        'allowed_domains' => env('VOLUNTEER_ALLOWED_DOMAINS', 'gmail.com,googlemail.com'),
+    ],
+
     'facebook' => [
         'app_id' => env('FACEBOOK_APP_ID'),
         'app_secret' => env('FACEBOOK_APP_SECRET'),

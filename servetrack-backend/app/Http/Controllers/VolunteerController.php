@@ -109,6 +109,21 @@ class VolunteerController extends Controller
             ], 422);
         }
 
+        // Check email domain against whitelist
+        $allowedDomains = array_map(
+            fn (string $d) => strtolower(trim($d)),
+            explode(',', config('services.volunteer.allowed_domains')),
+        );
+        $emailDomain = strtolower(substr(strrchr($validator->validated()['email'], '@'), 1));
+        if (! in_array($emailDomain, $allowedDomains, true)) {
+            Log::warning('Volunteer registration rejected: disallowed email domain', ['domain' => $emailDomain]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed. Please use a Gmail address to register.',
+            ], 422);
+        }
+
         // Use database transaction for data integrity
         DB::beginTransaction();
         try {
