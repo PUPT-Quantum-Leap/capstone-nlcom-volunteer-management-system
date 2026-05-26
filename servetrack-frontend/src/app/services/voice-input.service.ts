@@ -12,7 +12,6 @@ function getSpeechRecognition(): (new () => any) | null {
 
 @Injectable({ providedIn: 'root' })
 export class VoiceInputService {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private recognition: any = null;
   private finalTranscript = '';
 
@@ -27,14 +26,13 @@ export class VoiceInputService {
     return getSpeechRecognition() !== null;
   }
 
-  async start(): Promise<void> {
+  start(): void {
     if (!this.isSupported()) {
       this.setError('not-supported');
       return;
     }
 
-    const hasAccess = await this.requestMicAccess();
-    if (!hasAccess) return;
+    if (this.isListening()) return;
 
     const Ctor = getSpeechRecognition()!;
     this.recognition = new Ctor();
@@ -73,15 +71,25 @@ export class VoiceInputService {
         'service-not-allowed': 'service-not-allowed',
       };
       const key: VoiceInputError = map[event.error] ?? 'unknown';
-      this.setError(key);
-      this.error$.next(VOICE_INPUT_ERROR_MESSAGES[key]);
+      // 'no-speech' and 'network' are non-fatal — don't stop listening state
+      if (key !== 'no-speech' && key !== 'network') {
+        this.setError(key);
+      } else {
+        const msg = VOICE_INPUT_ERROR_MESSAGES[key];
+        this.error.set(msg);
+        this.error$.next(msg);
+      }
     };
 
     this.recognition.onend = () => {
       this.isListening.set(false);
     };
 
-    this.recognition.start();
+    try {
+      this.recognition.start();
+    } catch {
+      // Already started — ignore
+    }
   }
 
   stop(): Promise<string> {
@@ -105,20 +113,6 @@ export class VoiceInputService {
     this.isListening.set(false);
     this.transcript.set('');
     this.finalTranscript = '';
-  }
-
-  private async requestMicAccess(): Promise<boolean> {
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      return true;
-    } catch (err: unknown) {
-      const name = (err as DOMException).name;
-      if (name === 'NotAllowedError') this.setError('permission-denied');
-      else if (name === 'NotFoundError') this.setError('no-microphone');
-      else if (name === 'NotReadableError') this.setError('mic-in-use');
-      else this.setError('unknown');
-      return false;
-    }
   }
 
   private setError(key: VoiceInputError): void {

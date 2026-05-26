@@ -239,7 +239,7 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
         this.sendMessage();
       }
     } else {
-      await this.voiceInputService.start();
+      this.voiceInputService.start();
       if (!this.voiceInputService.error()) {
         this.isRecording.set(true);
       }

@@ -16,7 +16,7 @@ export const VOICE_INPUT_ERROR_MESSAGES: Record<VoiceInputError, string> = {
   'mic-in-use': 'Microphone is being used by another application.',
   'no-speech': 'No speech detected. Please try again.',
   'audio-capture': 'No audio detected. Check your microphone.',
-  'network': 'Network error. Check your internet connection.',
+  'network': 'Speech recognition service unavailable. Please try again.',
   'service-not-allowed': 'Speech recognition service not available.',
   'unknown': 'An unknown error occurred.',
 };
