@@ -22,6 +22,10 @@ class SupabaseService
 
     public function getHistory(int $userId, string $sessionId, int $limit = 50): array
     {
+        if (! $this->baseUrl || ! $this->serviceKey) {
+            return [];
+        }
+
         try {
             $response = Http::withHeaders([
                 'apikey' => $this->serviceKey,
@@ -41,6 +45,10 @@ class SupabaseService
 
     public function clearHistory(int $userId, string $sessionId): void
     {
+        if (! $this->baseUrl || ! $this->serviceKey) {
+            return;
+        }
+
         try {
             Http::withHeaders([
                 'apikey' => $this->serviceKey,
