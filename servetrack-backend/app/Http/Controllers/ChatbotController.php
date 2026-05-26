@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ChatbotMessageRequest;
 use Firebase\JWT\JWT;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -91,7 +90,7 @@ class ChatbotController extends Controller
      * This endpoint exists for frontend compatibility but returns empty
      * since the n8n workflow handles persistence internally.
      */
-    public function history(Request $request): JsonResponse
+    public function history(): JsonResponse
     {
         return response()->json(['success' => true, 'data' => []]);
     }
@@ -101,7 +100,7 @@ class ChatbotController extends Controller
      *
      * Note: Chat memory is managed by n8n. This is a no-op placeholder.
      */
-    public function clear(Request $request): JsonResponse
+    public function clear(): JsonResponse
     {
         return response()->json(['success' => true, 'message' => 'Conversation history cleared']);
     }
