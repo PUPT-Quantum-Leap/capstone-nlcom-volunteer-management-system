@@ -79,13 +79,13 @@ export class IncidentCommandSystemComponent implements OnInit {
 
   hasSelectedSuggestions = computed(() => this.selectedSuggestionIds().size > 0);
   canGenerateAiSuggestions = computed(
-    () => !!this.selectedRsvp && (this.selectedRsvp.totalResponses ?? 0) > 0,
+    () => !!this.selectedRsvp() && (this.selectedRsvp()!.totalResponses ?? 0) > 0,
   );
   generateButtonTooltip = computed(() => {
-    if (!this.selectedRsvp) {
+    if (!this.selectedRsvp()) {
       return 'Select an RSVP event first.';
     }
-    if ((this.selectedRsvp.totalResponses ?? 0) === 0) {
+    if ((this.selectedRsvp()!.totalResponses ?? 0) === 0) {
       return 'No volunteers have RSVP\'d for this event yet.';
     }
     return 'Generate AI-powered team assignments.';
@@ -93,7 +93,7 @@ export class IncidentCommandSystemComponent implements OnInit {
 
   // Backend data
   rsvpList: Rsvp[] = [];
-  selectedRsvp: Rsvp | null = null;
+  selectedRsvp = signal<Rsvp | null>(null);
 
   // Header Information - Connected to backend
   objective = 0;
@@ -371,14 +371,16 @@ export class IncidentCommandSystemComponent implements OnInit {
   }
 
   generateAiSuggestions(): void {
-    if (!this.selectedRsvp || !this.canGenerateAiSuggestions()) {
+    if (!this.selectedRsvp() || !this.canGenerateAiSuggestions()) {
       return;
     }
 
     this.isLoadingAiSuggestions.set(true);
     this.aiError.set(null);
 
-    this.icsService.createIcs({ rsvp_id: this.selectedRsvp.id, name: this.selectedRsvp.title }).subscribe({
+    const rsvp = this.selectedRsvp()!;
+
+    this.icsService.createIcs({ rsvp_id: rsvp.id, name: rsvp.title }).subscribe({
       next: (icsResponse) => {
         const icsId = icsResponse.data.id;
         this.currentIcsId.set(icsId);
@@ -468,12 +470,12 @@ export class IncidentCommandSystemComponent implements OnInit {
 
   // Generate New ICS - populates all data including RSVP header and volunteer teams
   generateNewICS(): void {
-    if (this.selectedRsvp) {
+    if (this.selectedRsvp()) {
       // Display the RSVP header data
-      this.mapRsvpToComponent(this.selectedRsvp);
+      this.mapRsvpToComponent(this.selectedRsvp()!);
       // Populate the sample volunteer and team data
       this.populateSampleData();
-      console.log('Generated ICS with data from:', this.selectedRsvp.title);
+      console.log('Generated ICS with data from:', this.selectedRsvp()!.title);
     } else {
       // Clear all fields if no RSVP selected
       this.clearAllData();
@@ -625,9 +627,9 @@ export class IncidentCommandSystemComponent implements OnInit {
           this.error = 'No RSVP events found. Please create an RSVP event first.';
         } else {
           // Select first RSVP but DON'T display data yet
-          this.selectedRsvp = this.rsvpList[0];
+          this.selectedRsvp.set(this.rsvpList[0]);
           this.rsvpId = this.rsvpList[0].id;
-          console.log('Selected RSVP (data not displayed yet):', this.selectedRsvp.title);
+          console.log('Selected RSVP (data not displayed yet):', this.selectedRsvp()!.title);
         }
       },
       error: (err) => {
@@ -648,7 +650,7 @@ export class IncidentCommandSystemComponent implements OnInit {
     this.rsvpService.getRsvpById(rsvpId).subscribe({
       next: (response) => {
         console.log('RSVP data loaded:', response);
-        this.selectedRsvp = response.data;
+        this.selectedRsvp.set(response.data);
         this.mapRsvpToComponent(response.data);
         this.isLoading = false;
       },
@@ -668,7 +670,7 @@ export class IncidentCommandSystemComponent implements OnInit {
     if (!isNaN(id)) {
       const found = this.rsvpList.find(r => r.id === id);
       if (found) {
-        this.selectedRsvp = found;
+        this.selectedRsvp.set(found);
         this.rsvpId = id;
         console.log('Selected RSVP for generation:', found.title);
       }

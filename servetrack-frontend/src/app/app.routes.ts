@@ -14,7 +14,6 @@ import { AdminLayout } from './admin-dashboard/admin-layout/admin-layout';
 import { DashboardComponent } from './admin-dashboard/dashboard/dashboard';
 import { AnalyticsComponent } from './admin-dashboard/analytics/analytics';
 import { AnalyticsFeedingOperationComponent } from './admin-dashboard/analytics-feeding-operation/analytics-feeding-operation';
-import { UserManagementComponent } from './admin-dashboard/user-management/user-management';
 import { OverviewDashboard } from './admin-dashboard/overview-dashboard/overview-dashboard';
 import { VolunteerManagement } from './admin-dashboard/volunteer-management/volunteer-management';
 import { AttendanceManagement } from './admin-dashboard/attendance-management/attendance-management';
@@ -65,7 +64,6 @@ export const routes: Routes = [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'analytics/feeding-operation', redirectTo: 'operations', pathMatch: 'full' },
       { path: 'analytics', component: AnalyticsComponent },
-      { path: 'user-management', component: UserManagementComponent },
       { path: 'volunteers', component: VolunteerManagement },
       { path: 'attendance', component: AttendanceManagement },
       { path: 'performance', component: PerformanceComponent },

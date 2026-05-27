@@ -28,6 +28,13 @@ Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(funct
 
     // Invite validation (public)
     Route::post('/invites/validate', [InviteController::class, 'validate'])->name('invites.validate');
+
+    // Password reset redirect to frontend (public)
+    Route::get('/reset-password/{token}', function (string $token, Request $request) {
+        $email = $request->query('email');
+
+        return redirect(config('app.frontend_url', 'http://localhost:4200').'/reset-password?token='.$token.'&email='.urlencode($email));
+    })->name('password.reset');
 });
 
 // Volunteer registration - public signup with registration rate limit + email normalization

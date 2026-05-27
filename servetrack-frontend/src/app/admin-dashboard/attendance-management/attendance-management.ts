@@ -5,10 +5,13 @@ import {
   inject,
   signal,
   output,
+  effect,
+  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AdminDashboardService, VolunteerUser } from '../../services/admin-dashboard.service';
 import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
+import { GlobalSearchService } from '../../services/global-search.service';
 
 interface AttendanceRecord {
   id: number;
@@ -36,6 +39,7 @@ interface DetectedVolunteer {
 export class AttendanceManagement {
   protected readonly Math = Math;
   private adminDashboardService = inject(AdminDashboardService);
+  private globalSearchService = inject(GlobalSearchService);
 
   // Dropdown Options
   viewOptions: SelectOption<'daily' | 'history' | 'reports'>[] = [
@@ -56,7 +60,7 @@ export class AttendanceManagement {
   attendanceView = signal<'daily' | 'history' | 'reports'>('daily');
   attendancePage = signal(1);
   attendancePerPage = signal(5);
-  attendanceSearchQuery = signal('');
+  attendanceSearchQuery = this.globalSearchService.searchQuery;
   attendanceDateFilter = signal(new Date().toISOString().split('T')[0]);
 
   // Modal states
@@ -85,7 +89,14 @@ export class AttendanceManagement {
   ]);
 
 
-  constructor() {}
+  constructor() {
+    effect(() => {
+      this.attendanceSearchQuery();
+      untracked(() => {
+        this.attendancePage.set(1);
+      });
+    });
+  }
 
   // Computed signals for stats cards
   presentCount = computed(() =>
@@ -138,11 +149,7 @@ export class AttendanceManagement {
     this.attendancePage.set(1);
   }
 
-  // Search and filter
-  setAttendanceSearchQuery(query: string): void {
-    this.attendanceSearchQuery.set(query);
-    this.attendancePage.set(1);
-  }
+  // Search and filter handled by global search effect
 
   setAttendanceDateFilter(date: string): void {
     this.attendanceDateFilter.set(date);

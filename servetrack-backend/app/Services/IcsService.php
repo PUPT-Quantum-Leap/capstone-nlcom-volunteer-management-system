@@ -23,6 +23,8 @@ class IcsService
         $rsvp = $ics->rsvp;
 
         if (! $rsvp) {
+            \Illuminate\Support\Facades\Log::warning('IcsService: No RSVP associated with ICS', ['ics_id' => $ics->id]);
+
             return [
                 'message' => 'No RSVP associated with this ICS.',
                 'total_volunteers' => 0,
@@ -33,6 +35,8 @@ class IcsService
         $teams = $ics->teams;
 
         if ($teams->isEmpty()) {
+            \Illuminate\Support\Facades\Log::warning('IcsService: No teams assigned to ICS', ['ics_id' => $ics->id]);
+
             return [
                 'message' => 'No teams assigned to this ICS.',
                 'total_volunteers' => 0,
@@ -48,7 +52,16 @@ class IcsService
             ->with(['skills', 'trainings', 'positions', 'experiences'])
             ->get();
 
+        \Illuminate\Support\Facades\Log::info('IcsService: Volunteers loaded', [
+            'ics_id' => $ics->id,
+            'rsvp_id' => $rsvp->rsvp_id,
+            'volunteer_count' => $volunteers->count(),
+            'team_count' => $teams->count(),
+        ]);
+
         if ($volunteers->isEmpty()) {
+            \Illuminate\Support\Facades\Log::warning('IcsService: No volunteers RSVP\'d for event', ['rsvp_id' => $rsvp->rsvp_id]);
+
             return [
                 'message' => 'No volunteers have RSVP\'d for this event.',
                 'total_volunteers' => 0,
@@ -58,12 +71,19 @@ class IcsService
 
         // Attempt Groq AI-powered suggestions
         if ($this->groqService->isConfigured()) {
+            \Illuminate\Support\Facades\Log::info('IcsService: Calling GroqService', ['ics_id' => $ics->id]);
             $groqResult = $this->groqService->suggestAssignments(
                 $volunteers,
                 $teams,
                 $rsvp->title,
                 $rsvp->description,
             );
+
+            \Illuminate\Support\Facades\Log::info('IcsService: Groq result received', [
+                'ics_id' => $ics->id,
+                'assignment_count' => count($groqResult['assignments'] ?? []),
+                'unassigned_count' => count($groqResult['unassigned'] ?? []),
+            ]);
 
             $assignments = $this->normalizeGroqAssignments(
                 $groqResult['assignments'] ?? [],
@@ -72,6 +92,8 @@ class IcsService
             );
 
             if (! empty($assignments)) {
+                \Illuminate\Support\Facades\Log::info('IcsService: Returning Groq assignments', ['count' => count($assignments)]);
+
                 return [
                     'message' => 'AI-generated team assignments using Groq LLM.',
                     'total_volunteers' => count($assignments),
@@ -81,6 +103,8 @@ class IcsService
         }
 
         // Fallback to hardcoded skill-to-team mapping
+        \Illuminate\Support\Facades\Log::info('IcsService: Falling back to hardcoded algorithm', ['ics_id' => $ics->id]);
+
         return $this->fallbackAssignments($volunteers, $teams);
     }
 
