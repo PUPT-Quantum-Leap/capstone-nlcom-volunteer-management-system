@@ -154,84 +154,31 @@ export class AdminDashboardService {
   getVolunteers(): Observable<VolunteersResponse> {
     return this.http.get<VolunteersResponse>(`${environment.apiUrl}/volunteers?per_page=100`, {
       withCredentials: true,
-    }).pipe(
-      catchError((error) => {
-        console.error('Error fetching volunteers from database:', error);
-        return of({
-          success: false,
-          data: [],
-          meta: {
-            total: 0,
-            per_page: 100,
-            current_page: 1,
-            last_page: 1
-          }
-        });
-      })
-    );
+    });
   }
 
   getArchivedVolunteers(): Observable<VolunteersResponse> {
     return this.http.get<VolunteersResponse>(`${environment.apiUrl}/volunteers?per_page=100&archived=true`, {
       withCredentials: true,
-    }).pipe(
-      catchError((error) => {
-        console.error('Error fetching archived volunteers:', error);
-        return of({
-          success: false,
-          data: [],
-          meta: {
-            total: 0,
-            per_page: 100,
-            current_page: 1,
-            last_page: 1
-          }
-        });
-      })
-    );
+    });
   }
 
   softDeleteVolunteer(id: number): Observable<ApiResponse<void>> {
     return this.http.patch<ApiResponse<void>>(`${environment.apiUrl}/volunteers/${id}/soft-delete`, {}, {
       withCredentials: true,
-    }).pipe(
-      catchError((error) => {
-        console.error('Error soft deleting volunteer:', error);
-        return of({
-          success: false,
-          message: 'Failed to archive volunteer'
-        } as ApiResponse<void>);
-      })
-    );
+    });
   }
 
   restoreVolunteer(id: number): Observable<ApiResponse<void>> {
     return this.http.patch<ApiResponse<void>>(`${environment.apiUrl}/volunteers/${id}/restore`, {}, {
       withCredentials: true,
-    }).pipe(
-      catchError((error) => {
-        console.error('Error restoring volunteer:', error);
-        return of({
-          success: false,
-          message: 'Failed to restore volunteer'
-        } as ApiResponse<void>);
-      })
-    );
+    });
   }
 
   updateVolunteer(id: number, data: Partial<VolunteerUser>): Observable<ApiResponse<VolunteerUser>> {
     return this.http.put<ApiResponse<VolunteerUser>>(`${environment.apiUrl}/volunteers/${id}`, data, {
       withCredentials: true,
-    }).pipe(
-      catchError((error) => {
-        console.error('Error updating volunteer:', error);
-        return of({
-          success: false,
-          message: 'Failed to update volunteer',
-          data: {} as VolunteerUser,
-        });
-      })
-    );
+    });
   }
 
   // Backup management methods
