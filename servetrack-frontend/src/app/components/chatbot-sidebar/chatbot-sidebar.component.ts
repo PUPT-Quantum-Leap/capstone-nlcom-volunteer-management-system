@@ -19,6 +19,7 @@ import { CommandPaletteService } from '../../services/command-palette.service';
 import { ChatMessage } from '../../models/chatbot.model';
 import { Command } from '../../models/command.model';
 import { Subscription } from 'rxjs';
+import { SpeechResult } from '../../models/voice-input.model';
 
 @Component({
   selector: 'app-chatbot-sidebar',
@@ -57,6 +58,7 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
   readonly isRecording = signal(false);
   readonly liveTranscript = signal('');
   readonly speechError = signal('');
+  private pendingTranscript = '';
 
   // TTS state
   readonly autoSpeak = signal(
@@ -118,12 +120,19 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
     this.ttsService.loadVoices();
     setTimeout(() => this.voicesReady.set(this.ttsService.getVoices().length > 0), 500);
 
-    // Subscribe to live transcript
+    // Subscribe to speech results and errors
     this.subs.push(
-      this.voiceInputService.transcript$.subscribe((t) => this.liveTranscript.set(t)),
+      this.voiceInputService.transcript$.subscribe((result: SpeechResult) => {
+        if (result.isFinal) {
+          this.pendingTranscript += result.transcript + ' ';
+        } else {
+          this.liveTranscript.set(result.transcript);
+        }
+      }),
       this.voiceInputService.error$.subscribe((e) => {
-        this.speechError.set(e);
+        this.speechError.set(e.message);
         this.isRecording.set(false);
+        setTimeout(() => this.speechError.set(''), 5000);
       }),
     );
 
@@ -232,13 +241,16 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
     this.speechError.set('');
     if (this.isRecording()) {
       this.isRecording.set(false);
-      const transcript = await this.voiceInputService.stop();
+      await this.voiceInputService.stop();
       this.liveTranscript.set('');
+      const transcript = this.pendingTranscript.trim();
+      this.pendingTranscript = '';
       if (transcript) {
         this.userInput.set(transcript);
         this.sendMessage();
       }
     } else {
+      this.pendingTranscript = '';
       this.voiceInputService.start();
       if (!this.voiceInputService.error()) {
         this.isRecording.set(true);

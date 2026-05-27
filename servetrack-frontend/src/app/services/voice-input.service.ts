@@ -1,108 +1,113 @@
-import { Injectable, signal } from '@angular/core';
-import { Subject } from 'rxjs';
-import { VoiceInputError, VOICE_INPUT_ERROR_MESSAGES } from '../models/voice-input.model';
+import { Injectable, signal, OnDestroy } from '@angular/core';
+import { Subject, Observable } from 'rxjs';
+import {
+  SpeechResult,
+  VoiceInputError,
+  SpeechError,
+  VOICE_INPUT_ERROR_MESSAGES,
+} from '../models/voice-input.model';
 
-function getSpeechRecognition(): (new () => any) | null {
-  return (
-    (window as any).SpeechRecognition ??
-    (window as any).webkitSpeechRecognition ??
-    null
-  );
+interface ISpeechRecognitionResult {
+  readonly isFinal: boolean;
+  readonly length: number;
+  [index: number]: { transcript: string; confidence: number };
+}
+
+interface ISpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): ISpeechRecognitionResult;
+  [index: number]: ISpeechRecognitionResult;
+}
+
+interface ISpeechRecognitionEvent extends Event {
+  readonly resultIndex: number;
+  readonly results: ISpeechRecognitionResultList;
+}
+
+interface ISpeechRecognitionErrorEvent extends Event {
+  readonly error: string;
+  readonly message: string;
+}
+
+interface ISpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  onresult: ((event: ISpeechRecognitionEvent) => void) | null;
+  onerror: ((event: ISpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  onstart: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+
+interface ISpeechRecognitionConstructor {
+  new (): ISpeechRecognition;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: ISpeechRecognitionConstructor;
+    webkitSpeechRecognition: ISpeechRecognitionConstructor;
+  }
 }
 
 @Injectable({ providedIn: 'root' })
-export class VoiceInputService {
-  private recognition: any = null;
+export class VoiceInputService implements OnDestroy {
+  private recognition: ISpeechRecognition | null = null;
+  private recognitionSubject = new Subject<SpeechResult>();
+  private errorSubject = new Subject<SpeechError>();
   private finalTranscript = '';
 
   readonly isListening = signal(false);
   readonly transcript = signal('');
   readonly error = signal<string | null>(null);
 
-  readonly transcript$ = new Subject<string>();
-  readonly error$ = new Subject<string>();
+  readonly transcript$: Observable<SpeechResult> = this.recognitionSubject.asObservable();
+  readonly error$: Observable<SpeechError> = this.errorSubject.asObservable();
 
   isSupported(): boolean {
-    return getSpeechRecognition() !== null;
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    return SpeechRecognitionAPI !== undefined;
   }
 
-  start(): void {
+  start(): Observable<SpeechResult> {
     if (!this.isSupported()) {
-      this.setError('not-supported');
-      return;
+      this.emitError('not-supported');
+      return this.transcript$;
     }
 
-    if (this.isListening()) return;
+    if (this.isListening()) {
+      return this.transcript$;
+    }
 
-    const Ctor = getSpeechRecognition()!;
-    this.recognition = new Ctor();
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    this.recognition = new SpeechRecognitionAPI();
     this.finalTranscript = '';
-
-    this.recognition.continuous = true;
-    this.recognition.interimResults = true;
-    this.recognition.lang = 'en-US';
-
-    this.recognition.onstart = () => {
-      this.isListening.set(true);
-      this.transcript.set('');
-      this.error.set(null);
-    };
-
-    this.recognition.onresult = (event: any) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const t = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          this.finalTranscript += t + ' ';
-        } else {
-          interim += t;
-        }
-      }
-      this.transcript.set(interim);
-      this.transcript$.next(interim);
-    };
-
-    this.recognition.onerror = (event: any) => {
-      const map: Record<string, VoiceInputError> = {
-        'not-allowed': 'permission-denied',
-        'audio-capture': 'audio-capture',
-        'no-speech': 'no-speech',
-        'network': 'network',
-        'service-not-allowed': 'service-not-allowed',
-      };
-      const key: VoiceInputError = map[event.error] ?? 'unknown';
-      // 'no-speech' and 'network' are non-fatal — don't stop listening state
-      if (key !== 'no-speech' && key !== 'network') {
-        this.setError(key);
-      } else {
-        const msg = VOICE_INPUT_ERROR_MESSAGES[key];
-        this.error.set(msg);
-        this.error$.next(msg);
-      }
-    };
-
-    this.recognition.onend = () => {
-      this.isListening.set(false);
-    };
+    this.configureRecognition();
 
     try {
       this.recognition.start();
     } catch {
       // Already started — ignore
     }
+
+    return this.transcript$;
   }
 
   stop(): Promise<string> {
     return new Promise((resolve) => {
       if (!this.recognition) {
-        resolve('');
+        resolve(this.finalTranscript.trim());
         return;
       }
       const prev = this.recognition.onend;
       this.recognition.onend = () => {
         this.isListening.set(false);
         resolve(this.finalTranscript.trim());
-        this.recognition.onend = prev;
+        this.recognition!.onend = prev;
       };
       this.recognition.stop();
     });
@@ -115,10 +120,74 @@ export class VoiceInputService {
     this.finalTranscript = '';
   }
 
-  private setError(key: VoiceInputError): void {
-    const msg = VOICE_INPUT_ERROR_MESSAGES[key];
+  ngOnDestroy(): void {
+    this.abort();
+    this.recognitionSubject.complete();
+    this.errorSubject.complete();
+  }
+
+  private configureRecognition(): void {
+    if (!this.recognition) return;
+
+    this.recognition.continuous = true;
+    this.recognition.interimResults = true;
+    this.recognition.lang = 'en-US';
+    this.recognition.maxAlternatives = 1;
+
+    this.recognition.onstart = () => {
+      this.isListening.set(true);
+      this.transcript.set('');
+      this.error.set(null);
+    };
+
+    this.recognition.onresult = (event: ISpeechRecognitionEvent) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const t = result[0].transcript;
+        const confidence = result[0].confidence;
+        if (result.isFinal) {
+          this.finalTranscript += t + ' ';
+          this.recognitionSubject.next({ transcript: t, isFinal: true, confidence });
+        } else {
+          interim += t;
+          this.recognitionSubject.next({ transcript: t, isFinal: false, confidence });
+        }
+      }
+      this.transcript.set(interim);
+    };
+
+    this.recognition.onerror = (event: ISpeechRecognitionErrorEvent) => {
+      const errorType = this.mapSpeechError(event.error);
+      this.emitError(errorType);
+    };
+
+    this.recognition.onend = () => {
+      this.isListening.set(false);
+    };
+  }
+
+  private mapSpeechError(error: string): VoiceInputError {
+    switch (error) {
+      case 'not-allowed':
+        return 'permission-denied';
+      case 'no-speech':
+        return 'no-speech';
+      case 'audio-capture':
+        return 'audio-capture';
+      case 'network':
+        return 'network';
+      case 'aborted':
+        return 'aborted';
+      default:
+        return 'unknown';
+    }
+  }
+
+  private emitError(type: VoiceInputError): void {
+    const msg = VOICE_INPUT_ERROR_MESSAGES[type];
     this.error.set(msg);
-    this.error$.next(msg);
+    this.errorSubject.next({ type, message: msg });
     this.isListening.set(false);
   }
 }
