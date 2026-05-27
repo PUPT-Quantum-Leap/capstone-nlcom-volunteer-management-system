@@ -14,11 +14,22 @@ use Illuminate\Validation\ValidationException;
 
 class ForgotPasswordController extends Controller
 {
-    public function sendResetLinkEmail(ForgotPasswordRequest $request): JsonResponse
+    public function sendAdminResetLink(ForgotPasswordRequest $request): JsonResponse
+    {
+        return $this->sendResetLinkForRole($request, 'admin');
+    }
+
+    public function sendVolunteerResetLink(ForgotPasswordRequest $request): JsonResponse
+    {
+        return $this->sendResetLinkForRole($request, ['volunteer', 'coordinator']);
+    }
+
+    private function sendResetLinkForRole(ForgotPasswordRequest $request, string|array $roles): JsonResponse
     {
         $user = User::where('email', $request->input('email'))->first();
+        $allowedRoles = (array) $roles;
 
-        if (! $user || $user->role !== 'admin') {
+        if (! $user || ! in_array($user->role, $allowedRoles, true)) {
             return response()->json([
                 'message' => 'If this email is registered, you will receive a password reset link.',
             ]);
