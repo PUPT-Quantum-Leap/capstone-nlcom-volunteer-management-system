@@ -655,6 +655,7 @@ class VolunteerController extends Controller
         }
 
         // Aggregate stats in minimal queries
+        $base = $volunteer->attendances()->getQuery();
         $allTime = (clone $base)->selectRaw('COALESCE(SUM(hours), 0) as hours, COUNT(*) as entries')->first();
         $daily = (clone $base)->selectRaw('COALESCE(SUM(hours), 0) as hours, COUNT(*) as entries')
             ->whereDate('date', today())->first();
