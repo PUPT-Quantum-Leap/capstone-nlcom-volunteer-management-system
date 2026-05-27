@@ -131,176 +131,70 @@
 
   <!-- Command Hierarchy Section -->
   <div class="hierarchy-section">
-    <div class="tree-container">
-      <!-- Level 1 -->
-      <div class="tree-node root" 
-           (mouseenter)="setHoveredVolunteer(responsibleOfficial, 'Leadership')" 
-           (mouseleave)="clearHover()">
-        <div class="node-role">Responsible Official</div>
-        @if (!isEditMode) {
-          <div class="node-name">{{ responsibleOfficial.name || '---' }}</div>
-        } @else {
-          <input type="text" [(ngModel)]="responsibleOfficial.name" class="edit-input" placeholder="Name">
-        }
+    <div class="org-chart">
 
-        <!-- AI Tooltip for Hierarchy -->
-        @if (!isEditMode && hoveredVolunteer === responsibleOfficial) {
-          <div class="ai-tooltip">
-            <div class="ai-tooltip-header">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-              <span>AI Leadership Insight</span>
-            </div>
-            <div class="ai-rationale">
-              <p class="rationale-text">• Senior leadership with verified oversight experience
-• Historical success in large-scale incident management
-• Direct accountability for regional operations</p>
-            </div>
-          </div>
-        }
-      </div>
-      
-      <div class="tree-connector"></div>
-      
-      <!-- Level 2 -->
-      <div class="tree-node"
-           (mouseenter)="setHoveredVolunteer(incidentCommander, 'Leadership')" 
-           (mouseleave)="clearHover()">
-        <div class="node-role">Incident Commander</div>
-        @if (!isEditMode) {
-          <div class="node-name">{{ incidentCommander.name || '---' }}</div>
-        } @else {
-          <input type="text" [(ngModel)]="incidentCommander.name" class="edit-input" placeholder="Name">
-        }
-
-        <!-- AI Tooltip for Hierarchy -->
-        @if (!isEditMode && hoveredVolunteer === incidentCommander) {
-          <div class="ai-tooltip">
-            <div class="ai-tooltip-header">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-              <span>AI Command Insight</span>
-            </div>
-            <div class="ai-rationale">
-              <p class="rationale-text">• Expert in field coordination and team management
-• High-stress resilience and decision-making skills
-• Certified Incident Management Professional</p>
-            </div>
-          </div>
-        }
-      </div>
-
-      <div class="tree-connector"></div>
-
-      <!-- Level 3 Branches -->
-      <div class="tree-branch-container">
-        <div class="tree-branch">
-          <div class="tree-node"
-             (mouseenter)="setHoveredVolunteer(pio, 'Leadership')" 
-             (mouseleave)="clearHover()">
-          <div class="node-role">Public Information Officer</div>
+      <!-- Level 1: Responsible Official -->
+      <div class="org-level org-level--center">
+        <div class="org-node org-node--root">
+          <div class="org-node__role">Responsible Official</div>
           @if (!isEditMode) {
-            <div class="node-name">{{ pio.name || '---' }}</div>
+            <div class="org-node__name">{{ responsibleOfficial.name || '---' }}</div>
           } @else {
-            <input type="text" [(ngModel)]="pio.name" class="edit-input" placeholder="Name">
+            <input type="text" [(ngModel)]="responsibleOfficial.name" class="edit-input" placeholder="Name">
           }
-
-          <!-- AI Tooltip -->
-          @if (!isEditMode && hoveredVolunteer === pio) {
-            <div class="ai-tooltip">
-              <div class="ai-tooltip-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                <span>AI Media Insight</span>
-              </div>
-              <div class="ai-rationale">
-                <p class="rationale-text">• Skilled in crisis communication
-• Experienced in multi-agency PR
-• Strategic media response lead</p>
-              </div>
-            </div>
-          }
-        </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-node"
-               (mouseenter)="setHoveredVolunteer(purchasing, 'Leadership')" 
-               (mouseleave)="clearHover()">
-            <div class="node-role">Purchasing</div>
-            @if (!isEditMode) {
-              <div class="node-name">{{ purchasing.name || '---' }}</div>
-            } @else {
-              <input type="text" [(ngModel)]="purchasing.name" class="edit-input" placeholder="Name">
-            }
-
-            <!-- AI Tooltip -->
-            @if (!isEditMode && hoveredVolunteer === purchasing) {
-              <div class="ai-tooltip">
-                <div class="ai-tooltip-header">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                  <span>AI Procurement Insight</span>
-                </div>
-                <div class="ai-rationale">
-                  <p class="rationale-text">• Senior logistics lead with resource expertise
-• Proven efficiency in vendor management
-• Critical supply chain oversight experience</p>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-node"
-               (mouseenter)="setHoveredVolunteer(liaisonOfficer, 'Leadership')" 
-               (mouseleave)="clearHover()">
-            <div class="node-role">Liaison Officer</div>
-            @if (!isEditMode) {
-              <div class="node-name">{{ liaisonOfficer.name || '---' }}</div>
-            } @else {
-              <input type="text" [(ngModel)]="liaisonOfficer.name" class="edit-input" placeholder="Name">
-            }
-
-            <!-- AI Tooltip -->
-            @if (!isEditMode && hoveredVolunteer === liaisonOfficer) {
-              <div class="ai-tooltip">
-                <div class="ai-tooltip-header">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                  <span>AI Liaison Insight</span>
-                </div>
-                <div class="ai-rationale">
-                  <p class="rationale-text">• Expert in multi-agency collaboration
-• Diplomatic coordination skills
-• Direct link for external partner integration</p>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-node"
-             (mouseenter)="setHoveredVolunteer(safetyOfficer, 'Leadership')" 
-             (mouseleave)="clearHover()">
-          <div class="node-role">Safety Officer</div>
-          @if (!isEditMode) {
-            <div class="node-name">{{ safetyOfficer.name || '---' }}</div>
-          } @else {
-            <input type="text" [(ngModel)]="safetyOfficer.name" class="edit-input" placeholder="Name">
-          }
-
-          <!-- AI Tooltip -->
-          @if (!isEditMode && hoveredVolunteer === safetyOfficer) {
-            <div class="ai-tooltip">
-              <div class="ai-tooltip-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                <span>AI Safety Insight</span>
-              </div>
-              <div class="ai-rationale">
-                <p class="rationale-text">• Certified Safety Auditor
-• Expert in OSHA/EMS protocols
-• Proven track record in hazard mitigation</p>
-              </div>
-            </div>
-          }
-        </div>
         </div>
       </div>
+
+      <div class="org-connector org-connector--v"></div>
+
+      <!-- Level 2: Incident Commander -->
+      <div class="org-level org-level--center">
+        <div class="org-node org-node--commander">
+          <div class="org-node__role">Incident Commander</div>
+          @if (!isEditMode) {
+            <div class="org-node__name">{{ incidentCommander.name || '---' }}</div>
+          } @else {
+            <input type="text" [(ngModel)]="incidentCommander.name" class="edit-input" placeholder="Name">
+          }
+        </div>
+      </div>
+
+      <div class="org-connector org-connector--v"></div>
+
+      <!-- Level 3: Section Chiefs (horizontal row) -->
+      <div class="org-level org-level--chiefs">
+        @for (chief of [planning, purchasing, mwcCoordinator, safetyEmergency]; track chief.role) {
+          <div class="org-node org-node--chief">
+            <div class="org-node__role">{{ chief.role }}</div>
+            @if (!isEditMode) {
+              <div class="org-node__name">{{ chief.name || '---' }}</div>
+            } @else {
+              <input type="text" [(ngModel)]="chief.name" class="edit-input" placeholder="Name">
+            }
+          </div>
+        }
+      </div>
+
+      <div class="org-connector org-connector--v"></div>
+
+      <!-- Level 4: Branch Directors -->
+      <div class="org-level org-level--branches">
+        @for (branch of [
+          { col: mobileKitchen, label: 'Mobile Kitchen' },
+          { col: amDistribution, label: 'AM Distribution' },
+          { col: pmDistribution, label: 'PM Distribution' }
+        ]; track branch.label) {
+          <div class="org-node org-node--branch">
+            <div class="org-node__role">{{ branch.label }}</div>
+            @if (!isEditMode) {
+              <div class="org-node__name">{{ branch.col.leader || '---' }}</div>
+            } @else {
+              <input type="text" [(ngModel)]="branch.col.leader" class="edit-input" placeholder="Leader name">
+            }
+          </div>
+        }
+      </div>
+
     </div>
   </div>
 
@@ -318,299 +212,97 @@
   <!-- Operational Grid -->
   @if (hasIcsData()) {
     <div class="ops-section">
-    <!-- Mobile Kitchen Column -->
-    <div class="ops-column">
-      <div class="ops-header">
-        <div class="header-info">
-          @if (!isEditMode) {
-            <h3>{{ mobileKitchen.title || 'Mobile Kitchen' }}</h3>
-            <p>{{ mobileKitchen.leader || 'Leader Not Assigned' }}</p>
-          } @else {
-            <input type="text" [(ngModel)]="mobileKitchen.title" class="edit-input mb-1" placeholder="Title">
-            <input type="text" [(ngModel)]="mobileKitchen.leader" class="edit-input" placeholder="Leader">
-          }
-        </div>
-        <span class="team-count">{{ mobileKitchen.teams.length }} Teams</span>
-      </div>
-      <div class="ops-content">
-        @for (team of mobileKitchen.teams; track teamIdx; let teamIdx = $index) {
-          <div class="team-card">
-            <div class="team-title">
-              @if (!isEditMode) {
-                <span>{{ team.name }}</span>
-              } @else {
-                <input type="text" [(ngModel)]="team.name" class="edit-input" placeholder="Team Name">
-                <button class="btn-danger" style="padding: 2px 6px; border: none; border-radius: 4px; margin-left: 8px;" (click)="removeTeam('mobileKitchen', teamIdx)">×</button>
-              }
-            </div>
-            <div class="team-body">
-              <div class="volunteer-list">
-                @for (volunteer of team.volunteers; track volIdx; let volIdx = $index) {
-                  <div class="volunteer-wrapper" 
-                       (mouseenter)="setHoveredVolunteer(volunteer, team.name)" 
-                       (mouseleave)="clearHover()">
-                    <span class="volunteer-tag" [class.is-new]="volunteer.isNew" [class.is-driver]="volunteer.isDriver" [class.is-leader]="volunteer.isLeader">
-                      {{ getDisplayName(volunteer) }}
-                      @if (getVolunteerSymbols(volunteer)) {
-                        <span class="symbol">{{ getVolunteerSymbols(volunteer) }}</span>
-                      }
-                      @if (isEditMode) {
-                        <div class="volunteer-actions">
-                          <button (click)="toggleNewVolunteer('mobileKitchen', teamIdx, volIdx)" [class.active]="volunteer.isNew" title="New">*</button>
-                          <button (click)="toggleDriver('mobileKitchen', teamIdx, volIdx)" [class.active]="volunteer.isDriver" title="Driver">~</button>
-                          <button (click)="toggleLeader('mobileKitchen', teamIdx, volIdx)" [class.active]="volunteer.isLeader" title="Leader">^</button>
-                          <button (click)="removeVolunteer('mobileKitchen', teamIdx, volIdx)" class="btn-danger" title="Remove">×</button>
-                        </div>
-                      }
-                    </span>
 
-                    <!-- Floating AI Tooltip (View Mode) -->
-                    @if (!isEditMode && hoveredVolunteer === volunteer) {
-                      <div class="ai-tooltip align-left">
-                        <div class="ai-tooltip-header">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                          <span>AI Insights</span>
-                        </div>
-                        <div class="ai-rationale">
-                          <p class="rationale-text">{{ generateRationale(volunteer, team.name) }}</p>
-                        </div>
-                        <div class="ai-alternatives">
-                          <span class="alt-label">Recommended Alternatives:</span>
-                          <div class="alt-list">
-                            @for (alt of getAlternatives(team.name); track alt) {
-                              <span class="alt-name">{{ alt }}</span>
-                            }
-                          </div>
+      <!-- Helper: renders one column of team cards -->
+      @for (col of [
+        { key: 'mobileKitchen', data: mobileKitchen, newVol: mobileKitchenNewVolunteer },
+        { key: 'amDistribution', data: amDistribution, newVol: amDistributionNewVolunteer },
+        { key: 'pmDistribution', data: pmDistribution, newVol: pmDistributionNewVolunteer }
+      ]; track col.key) {
+        <div class="ops-column">
+          <div class="ops-header">
+            <h3>{{ col.data.title || col.key }}</h3>
+            <span class="team-count">{{ col.data.teams.length }} teams</span>
+          </div>
+
+          <div class="ops-content">
+            @for (team of col.data.teams; track teamIdx; let teamIdx = $index) {
+
+              <!-- Team Card -->
+              <div class="team-card">
+                <div class="team-card__header">
+                  @if (!isEditMode) {
+                    <span class="team-card__title">{{ team.name }}</span>
+                  } @else {
+                    <input type="text" [(ngModel)]="team.name" class="edit-input" placeholder="Team name">
+                  }
+                  @if (isEditMode) {
+                    <button class="icon-btn icon-btn--danger" (click)="removeTeam($any(col.key), teamIdx)" title="Remove team">×</button>
+                  }
+                </div>
+
+                <div class="team-card__body">
+                  @for (volunteer of team.volunteers; track volIdx; let volIdx = $index) {
+
+                    <!-- Volunteer row -->
+                    <div class="vol-row">
+                      <div class="vol-tag" [class.is-new]="volunteer.isNew" [class.is-driver]="volunteer.isDriver" [class.is-leader]="volunteer.isLeader">
+                        <span class="vol-tag__name">{{ getDisplayName(volunteer) }}</span>
+                        @if (getVolunteerSymbols(volunteer)) {
+                          <span class="vol-tag__symbols">{{ getVolunteerSymbols(volunteer) }}</span>
+                        }
+                        <div class="vol-tag__actions">
+                          <button class="sym-btn" [class.active]="volunteer.isNew"    (click)="toggleNewVolunteer($any(col.key), teamIdx, volIdx)" title="New volunteer">*</button>
+                          <button class="sym-btn" [class.active]="volunteer.isDriver" (click)="toggleDriver($any(col.key), teamIdx, volIdx)"       title="Driver">~</button>
+                          <button class="sym-btn" [class.active]="volunteer.isLeader" (click)="toggleLeader($any(col.key), teamIdx, volIdx)"       title="Leader">^</button>
+                          <button class="sym-btn sym-btn--danger"                     (click)="removeVolunteer($any(col.key), teamIdx, volIdx)"    title="Remove">×</button>
                         </div>
                       </div>
-                    }
-                  </div>
 
-                  <!-- Inline AI Suggestion (Edit Mode) -->
-                  @if (isEditMode) {
-                    <div class="edit-suggestion-box">
-                      <div class="suggestion-header">AI SUGGESTION</div>
-                      <p class="suggestion-text">{{ generateRationale(volunteer, team.name) }}</p>
-                      <div class="suggestion-alternatives">
-                        <span>Try: </span>
-                        @for (alt of getAlternatives(team.name); track alt) {
-                          <button class="alt-swap-btn" (click)="swapVolunteer('mobileKitchen', teamIdx, volIdx, alt)">{{ alt }}</button>
-                        }
+                      <!-- AI Suggestion block (always visible) -->
+                      <div class="ai-block">
+                        <div class="ai-block__label">AI SUGGESTION</div>
+                        <ul class="ai-block__bullets">
+                          @for (line of generateRationale(volunteer, team.name).split('\n'); track line) {
+                            @if (line.trim()) {
+                              <li>{{ line.replace('• ', '') }}</li>
+                            }
+                          }
+                        </ul>
+                        <div class="ai-block__try">
+                          <span>Try:</span>
+                          @for (alt of getAlternatives(team.name); track alt) {
+                            <button class="try-btn" (click)="swapVolunteer($any(col.key), teamIdx, volIdx, alt)">{{ alt }}</button>
+                          }
+                        </div>
                       </div>
                     </div>
+
                   }
-                }
-              </div>
-              @if (isEditMode) {
-                <div class="add-volunteer" style="margin-top: 12px; display: flex; gap: 8px;">
-                  <input type="text" [(ngModel)]="mobileKitchenNewVolunteer" class="edit-input" placeholder="Add volunteer..." (keyup.enter)="addVolunteer('mobileKitchen', teamIdx)">
-                  <button class="action-btn" style="padding: 4px 12px;" (click)="addVolunteer('mobileKitchen', teamIdx)">+</button>
-                </div>
-              }
-            </div>
-          </div>
-        }
-        @if (isEditMode) {
-          <button class="add-btn" (click)="addTeam('mobileKitchen')">+ Add New Team</button>
-        }
-      </div>
-    </div>
 
-    <!-- AM Distribution Column -->
-    <div class="ops-column">
-      <div class="ops-header">
-        <div class="header-info">
-          @if (!isEditMode) {
-            <h3>{{ amDistribution.title || 'AM Distribution' }}</h3>
-            <p>{{ amDistribution.leader || 'Leader Not Assigned' }}</p>
-          } @else {
-            <input type="text" [(ngModel)]="amDistribution.title" class="edit-input mb-1" placeholder="Title">
-            <input type="text" [(ngModel)]="amDistribution.leader" class="edit-input" placeholder="Leader">
-          }
-        </div>
-        <span class="team-count">{{ amDistribution.teams.length }} Teams</span>
-      </div>
-      <div class="ops-content">
-        @for (team of amDistribution.teams; track teamIdx; let teamIdx = $index) {
-          <div class="team-card">
-            <div class="team-title">
-              @if (!isEditMode) {
-                <span>{{ team.name }}</span>
-              } @else {
-                <input type="text" [(ngModel)]="team.name" class="edit-input" placeholder="Team Name">
-                <button class="btn-danger" style="padding: 2px 6px; border: none; border-radius: 4px; margin-left: 8px;" (click)="removeTeam('amDistribution', teamIdx)">×</button>
-              }
-            </div>
-            <div class="team-body">
-              <div class="volunteer-list">
-                @for (volunteer of team.volunteers; track volIdx; let volIdx = $index) {
-                  <div class="volunteer-wrapper" 
-                       (mouseenter)="setHoveredVolunteer(volunteer, team.name)" 
-                       (mouseleave)="clearHover()">
-                    <span class="volunteer-tag" [class.is-new]="volunteer.isNew" [class.is-driver]="volunteer.isDriver" [class.is-leader]="volunteer.isLeader">
-                      {{ getDisplayName(volunteer) }}
-                      @if (getVolunteerSymbols(volunteer)) {
-                        <span class="symbol">{{ getVolunteerSymbols(volunteer) }}</span>
-                      }
-                      @if (isEditMode) {
-                        <div class="volunteer-actions">
-                          <button (click)="toggleNewVolunteer('amDistribution', teamIdx, volIdx)" [class.active]="volunteer.isNew" title="New">*</button>
-                          <button (click)="toggleDriver('amDistribution', teamIdx, volIdx)" [class.active]="volunteer.isDriver" title="Driver">~</button>
-                          <button (click)="toggleLeader('amDistribution', teamIdx, volIdx)" [class.active]="volunteer.isLeader" title="Leader">^</button>
-                          <button (click)="removeVolunteer('amDistribution', teamIdx, volIdx)" class="btn-danger" title="Remove">×</button>
-                        </div>
-                      }
-                    </span>
-
-                    <!-- Floating AI Tooltip (View Mode) -->
-                    @if (!isEditMode && hoveredVolunteer === volunteer) {
-                      <div class="ai-tooltip">
-                        <div class="ai-tooltip-header">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                          <span>AI Insights</span>
-                        </div>
-                        <div class="ai-rationale">
-                          <p class="rationale-text">{{ generateRationale(volunteer, team.name) }}</p>
-                        </div>
-                        <div class="ai-alternatives">
-                          <span class="alt-label">Recommended Alternatives:</span>
-                          <div class="alt-list">
-                            @for (alt of getAlternatives(team.name); track alt) {
-                              <span class="alt-name">{{ alt }}</span>
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    }
+                  <!-- Add volunteer row -->
+                  <div class="add-vol-row">
+                    <input
+                      type="text"
+                      class="add-vol-input"
+                      placeholder="Add volunteer..."
+                      [ngModel]="col.key === 'mobileKitchen' ? mobileKitchenNewVolunteer : col.key === 'amDistribution' ? amDistributionNewVolunteer : pmDistributionNewVolunteer"
+                      (ngModelChange)="col.key === 'mobileKitchen' ? (mobileKitchenNewVolunteer = $event) : col.key === 'amDistribution' ? (amDistributionNewVolunteer = $event) : (pmDistributionNewVolunteer = $event)"
+                      (keyup.enter)="addVolunteer($any(col.key), teamIdx)" />
+                    <button class="add-vol-btn" (click)="addVolunteer($any(col.key), teamIdx)">+</button>
                   </div>
-
-                  <!-- Inline AI Suggestion (Edit Mode) -->
-                  @if (isEditMode) {
-                    <div class="edit-suggestion-box">
-                      <div class="suggestion-header">AI SUGGESTION</div>
-                      <p class="suggestion-text">{{ generateRationale(volunteer, team.name) }}</p>
-                      <div class="suggestion-alternatives">
-                        <span>Try: </span>
-                        @for (alt of getAlternatives(team.name); track alt) {
-                          <button class="alt-swap-btn" (click)="swapVolunteer('amDistribution', teamIdx, volIdx, alt)">{{ alt }}</button>
-                        }
-                      </div>
-                    </div>
-                  }
-                }
-              </div>
-              @if (isEditMode) {
-                <div class="add-volunteer" style="margin-top: 12px; display: flex; gap: 8px;">
-                  <input type="text" [(ngModel)]="amDistributionNewVolunteer" class="edit-input" placeholder="Add volunteer..." (keyup.enter)="addVolunteer('amDistribution', teamIdx)">
-                  <button class="action-btn" style="padding: 4px 12px;" (click)="addVolunteer('amDistribution', teamIdx)">+</button>
                 </div>
-              }
-            </div>
-          </div>
-        }
-        @if (isEditMode) {
-          <button class="add-btn" (click)="addTeam('amDistribution')">+ Add New Team</button>
-        }
-      </div>
-    </div>
+              </div>
 
-    <!-- PM Distribution Column -->
-    <div class="ops-column">
-      <div class="ops-header">
-        <div class="header-info">
-          @if (!isEditMode) {
-            <h3>{{ pmDistribution.title || 'PM Distribution' }}</h3>
-            <p>{{ pmDistribution.leader || 'Leader Not Assigned' }}</p>
-          } @else {
-            <input type="text" [(ngModel)]="pmDistribution.title" class="edit-input mb-1" placeholder="Title">
-            <input type="text" [(ngModel)]="pmDistribution.leader" class="edit-input" placeholder="Leader">
-          }
+            }
+
+            @if (isEditMode) {
+              <button class="add-team-btn" (click)="addTeam($any(col.key))">+ Add Team</button>
+            }
+          </div>
         </div>
-        <span class="team-count">{{ pmDistribution.teams.length }} Teams</span>
-      </div>
-      <div class="ops-content">
-        @for (team of pmDistribution.teams; track teamIdx; let teamIdx = $index) {
-          <div class="team-card">
-            <div class="team-title">
-              @if (!isEditMode) {
-                <span>{{ team.name }}</span>
-              } @else {
-                <input type="text" [(ngModel)]="team.name" class="edit-input" placeholder="Team Name">
-                <button class="btn-danger" style="padding: 2px 6px; border: none; border-radius: 4px; margin-left: 8px;" (click)="removeTeam('pmDistribution', teamIdx)">×</button>
-              }
-            </div>
-            <div class="team-body">
-              <div class="volunteer-list">
-                @for (volunteer of team.volunteers; track volIdx; let volIdx = $index) {
-                  <div class="volunteer-wrapper" 
-                       (mouseenter)="setHoveredVolunteer(volunteer, team.name)" 
-                       (mouseleave)="clearHover()">
-                    <span class="volunteer-tag" [class.is-new]="volunteer.isNew" [class.is-driver]="volunteer.isDriver" [class.is-leader]="volunteer.isLeader">
-                      {{ getDisplayName(volunteer) }}
-                      @if (getVolunteerSymbols(volunteer)) {
-                        <span class="symbol">{{ getVolunteerSymbols(volunteer) }}</span>
-                      }
-                      @if (isEditMode) {
-                        <div class="volunteer-actions">
-                          <button (click)="toggleNewVolunteer('pmDistribution', teamIdx, volIdx)" [class.active]="volunteer.isNew" title="New">*</button>
-                          <button (click)="toggleDriver('pmDistribution', teamIdx, volIdx)" [class.active]="volunteer.isDriver" title="Driver">~</button>
-                          <button (click)="toggleLeader('pmDistribution', teamIdx, volIdx)" [class.active]="volunteer.isLeader" title="Leader">^</button>
-                          <button (click)="removeVolunteer('pmDistribution', teamIdx, volIdx)" class="btn-danger" title="Remove">×</button>
-                        </div>
-                      }
-                    </span>
+      }
 
-                    <!-- Floating AI Tooltip (View Mode) -->
-                    @if (!isEditMode && hoveredVolunteer === volunteer) {
-                      <div class="ai-tooltip align-right">
-                        <div class="ai-tooltip-header">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                          <span>AI Insights</span>
-                        </div>
-                        <div class="ai-rationale">
-                          <p class="rationale-text">{{ generateRationale(volunteer, team.name) }}</p>
-                        </div>
-                        <div class="ai-alternatives">
-                          <span class="alt-label">Recommended Alternatives:</span>
-                          <div class="alt-list">
-                            @for (alt of getAlternatives(team.name); track alt) {
-                              <span class="alt-name">{{ alt }}</span>
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    }
-                  </div>
-
-                  <!-- Inline AI Suggestion (Edit Mode) -->
-                  @if (isEditMode) {
-                    <div class="edit-suggestion-box">
-                      <div class="suggestion-header">AI SUGGESTION</div>
-                      <p class="suggestion-text">{{ generateRationale(volunteer, team.name) }}</p>
-                      <div class="suggestion-alternatives">
-                        <span>Try: </span>
-                        @for (alt of getAlternatives(team.name); track alt) {
-                          <button class="alt-swap-btn" (click)="swapVolunteer('pmDistribution', teamIdx, volIdx, alt)">{{ alt }}</button>
-                        }
-                      </div>
-                    </div>
-                  }
-                }
-              </div>
-              @if (isEditMode) {
-                <div class="add-volunteer" style="margin-top: 12px; display: flex; gap: 8px;">
-                  <input type="text" [(ngModel)]="pmDistributionNewVolunteer" class="edit-input" placeholder="Add volunteer..." (keyup.enter)="addVolunteer('pmDistribution', teamIdx)">
-                  <button class="action-btn" style="padding: 4px 12px;" (click)="addVolunteer('pmDistribution', teamIdx)">+</button>
-                </div>
-              }
-            </div>
-          </div>
-        }
-        @if (isEditMode) {
-          <button class="add-btn" (click)="addTeam('pmDistribution')">+ Add New Team</button>
-        }
-      </div>
-    </div>
     </div><!-- /ops-section -->
   }
 

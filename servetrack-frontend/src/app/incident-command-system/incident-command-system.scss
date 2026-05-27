@@ -1094,3 +1094,360 @@ $radius: 12px;
     }
   }
 }
+
+// ── Org Chart ────────────────────────────────────────────────────────────────
+
+.hierarchy-section {
+  background: #fff;
+  border: 1px solid $border-color;
+  border-radius: $radius;
+  padding: 2rem 1.5rem;
+  box-shadow: $shadow-sm;
+}
+
+.org-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.org-level {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+
+  &--center { justify-content: center; }
+
+  &--chiefs {
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  &--branches {
+    gap: 1.5rem;
+  }
+}
+
+.org-connector--v {
+  width: 2px;
+  height: 28px;
+  background: $border-color;
+  margin: 0 auto;
+}
+
+.org-node {
+  background: #fff;
+  border: 1.5px solid $border-color;
+  border-radius: 8px;
+  padding: 0.6rem 1.25rem;
+  text-align: center;
+  min-width: 160px;
+  box-shadow: $shadow-sm;
+  position: relative;
+
+  &__role {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $text-muted;
+    margin-bottom: 2px;
+  }
+
+  &__name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: $text-main;
+  }
+
+  &--root {
+    border-color: #1e40af;
+    background: #eff6ff;
+    .org-node__role { color: #1e40af; }
+  }
+
+  &--commander {
+    border-color: #1d4ed8;
+    background: #dbeafe;
+    .org-node__role { color: #1d4ed8; }
+  }
+
+  &--chief {
+    min-width: 140px;
+    border-color: #7c3aed;
+    background: #f5f3ff;
+    .org-node__role { color: #7c3aed; }
+  }
+
+  &--branch {
+    min-width: 160px;
+    border-color: #0891b2;
+    background: #ecfeff;
+    .org-node__role { color: #0891b2; }
+    font-style: italic;
+  }
+}
+
+// ── Ops Section (Kanban) ─────────────────────────────────────────────────────
+
+.ops-section {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.ops-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ops-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+
+  h3 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $text-muted;
+    margin: 0;
+  }
+
+  .team-count {
+    font-size: 0.75rem;
+    color: $text-muted;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 9999px;
+  }
+}
+
+.ops-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+// ── Team Card ────────────────────────────────────────────────────────────────
+
+.team-card {
+  background: #fff;
+  border: 1px solid $border-color;
+  border-radius: 10px;
+  box-shadow: $shadow-sm;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.875rem;
+    background: #f8fafc;
+    border-bottom: 1px solid $border-color;
+  }
+
+  &__title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $text-main;
+  }
+
+  &__body {
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+// ── Volunteer Row ────────────────────────────────────────────────────────────
+
+.vol-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.vol-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid $border-color;
+
+  &__name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $text-main;
+    flex: 1;
+  }
+
+  &__symbols {
+    font-size: 0.75rem;
+    color: $primary;
+    font-weight: 700;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 2px;
+  }
+
+  &.is-driver { border-left: 3px solid #0891b2; }
+  &.is-leader { border-left: 3px solid #7c3aed; }
+  &.is-new    { border-left: 3px solid #16a34a; }
+}
+
+.sym-btn {
+  width: 22px;
+  height: 22px;
+  border: 1px solid $border-color;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+
+  &:hover { background: #f1f5f9; }
+  &.active { background: $primary; color: #fff; border-color: $primary; }
+  &--danger { color: #dc2626; border-color: #fecaca; }
+  &--danger:hover { background: #fee2e2; }
+}
+
+.icon-btn {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &--danger { background: #fee2e2; color: #dc2626; }
+  &--danger:hover { background: #fecaca; }
+}
+
+// ── AI Block ─────────────────────────────────────────────────────────────────
+
+.ai-block {
+  margin: 0 0 0.25rem 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border-left: 3px solid $primary;
+  background: #f0f9ff;
+  border-radius: 0 6px 6px 0;
+
+  &__label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: $primary;
+    margin-bottom: 4px;
+  }
+
+  &__bullets {
+    margin: 0 0 6px 0;
+    padding-left: 1rem;
+    list-style: disc;
+
+    li {
+      font-size: 0.75rem;
+      color: #334155;
+      line-height: 1.5;
+    }
+  }
+
+  &__try {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    color: $text-muted;
+  }
+}
+
+.try-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $primary;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover { color: $primary-hover; }
+}
+
+// ── Add Volunteer Row ────────────────────────────────────────────────────────
+
+.add-vol-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.add-vol-input {
+  flex: 1;
+  padding: 0.35rem 0.625rem;
+  border: 1px solid $border-color;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: $text-main;
+  background: #fff;
+  outline: none;
+
+  &:focus { border-color: $primary; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15); }
+  &::placeholder { color: #94a3b8; }
+}
+
+.add-vol-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: $primary;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover { background: $primary-hover; }
+}
+
+.add-team-btn {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1.5px dashed $border-color;
+  border-radius: 8px;
+  background: none;
+  color: $text-muted;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { border-color: $primary; color: $primary; background: #eff6ff; }
+}
