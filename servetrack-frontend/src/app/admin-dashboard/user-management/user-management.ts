@@ -65,6 +65,9 @@ export class UserManagementComponent {
   readonly isCreatingInvite = signal(false);
   readonly isSaving = signal(false);
   readonly showInviteSuccess = signal(false);
+  readonly showResetPassword = signal(false);
+  readonly resetPasswordValue = signal('');
+  readonly isResettingPassword = signal(false);
 
   readonly filteredUsers = computed(() => {
     const search = this.userSearchQuery().toLowerCase().trim();
@@ -267,6 +270,8 @@ export class UserManagementComponent {
     this.inviteEmail.set('');
     this.inviteLink.set('');
     this.showInviteSuccess.set(false);
+    this.showResetPassword.set(false);
+    this.resetPasswordValue.set('');
   }
 
   updateEditForm(field: 'name' | 'email' | 'role', value: string): void {
@@ -331,6 +336,37 @@ export class UserManagementComponent {
           console.error('Error creating invite:', error);
           this.showSnackbar.emit({ message: 'Failed to create invite', type: 'error' });
           this.isCreatingInvite.set(false);
+        },
+      });
+  }
+
+  toggleResetPassword(): void {
+    this.showResetPassword.update((v) => !v);
+    if (!this.showResetPassword()) {
+      this.resetPasswordValue.set('');
+    }
+  }
+
+  resetUserPassword(): void {
+    const user = this.editingUser();
+    const password = this.resetPasswordValue();
+
+    if (!user || !password) return;
+
+    this.isResettingPassword.set(true);
+    this.userService.resetPassword(user.id, password)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.showSnackbar.emit({ message: 'Password reset successfully', type: 'success' });
+          this.showResetPassword.set(false);
+          this.resetPasswordValue.set('');
+          this.isResettingPassword.set(false);
+        },
+        error: (error: Error) => {
+          console.error('Error resetting password:', error);
+          this.showSnackbar.emit({ message: 'Failed to reset password', type: 'error' });
+          this.isResettingPassword.set(false);
         },
       });
   }
