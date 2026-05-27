@@ -229,17 +229,20 @@ class IcsController extends Controller
         }
 
         // Pre-load all volunteers and teams to avoid N+1 queries
-        $volunteerIds = collect($request->input('suggestions'))->pluck('volunteer_id')->unique();
-        $teamIds = collect($request->input('suggestions'))->pluck('team_id')->unique();
+        /** @var array<int, array{volunteer_id: int, team_id: int, role?: string}> $suggestions */
+        $suggestions = $request->input('suggestions', []) ?: [];
+
+        $volunteerIds = collect($suggestions)->pluck('volunteer_id')->unique();
+        $teamIds = collect($suggestions)->pluck('team_id')->unique();
 
         $volunteers = Volunteer::query()->whereIn('volunteer_id', $volunteerIds)->get()->keyBy('volunteer_id');
         $teams = Team::query()->whereIn('id', $teamIds)->get()->keyBy('id');
         $icsTeamIds = $ics->teams()->pluck('id')->flip();
 
-        DB::transaction(function () use ($request, $ics, $volunteers, $teams, $icsTeamIds): void {
-            foreach ($request->input('suggestions') as $suggestion) {
-                $volunteer = $volunteers->get($suggestion['volunteer_id']);
-                $team = $teams->get($suggestion['team_id']);
+        DB::transaction(function () use ($suggestions, $ics, $volunteers, $teams, $icsTeamIds): void {
+            foreach ($suggestions as $suggestion) {
+                $volunteer = $volunteers->get((int) ($suggestion['volunteer_id'] ?? 0));
+                $team = $teams->get((int) ($suggestion['team_id'] ?? 0));
 
                 $isTeamInIcs = $team && $icsTeamIds->has($team->id);
 
@@ -254,7 +257,7 @@ class IcsController extends Controller
                 }
             }
 
-            $ics->update(['ai_suggestions' => $request->input('suggestions')]);
+            $ics->update(['ai_suggestions' => $suggestions]);
         });
 
         return new IcsResource($ics->fresh(['rsvp', 'teams', 'volunteers' => fn ($query) => $query->with('skills')]));
