@@ -40,7 +40,6 @@ class IcsService
             ];
         }
 
-        // Get volunteers who RSVP'd for this event with full profile data
         $volunteers = Volunteer::query()
             ->whereHas('rsvpResponses', function ($query) use ($rsvp) {
                 $query->where('rsvp_id', $rsvp->rsvp_id);
@@ -96,10 +95,15 @@ class IcsService
         $teamsById = $teams->keyBy('id');
 
         $assignments = [];
+        $seenVolunteerIds = [];
 
         foreach ($groqAssignments as $suggestion) {
             $volunteerId = $suggestion['volunteer_id'] ?? null;
             $teamId = $suggestion['team_id'] ?? null;
+
+            if (isset($seenVolunteerIds[$volunteerId])) {
+                continue;
+            }
 
             $volunteer = $volunteersById->get($volunteerId);
             $team = $teamsById->get($teamId);
@@ -107,6 +111,8 @@ class IcsService
             if (! $volunteer || ! $team) {
                 continue;
             }
+
+            $seenVolunteerIds[$volunteerId] = true;
 
             $assignments[] = [
                 'volunteer_id' => $volunteer->volunteer_id,
@@ -234,13 +240,11 @@ class IcsService
         }
 
         if (empty($teamScores)) {
-            // If no skills match, assign to Support Team as default
             $supportTeam = $teams->first(fn ($team) => str_contains(strtolower($team->name), 'support'));
 
             return $supportTeam ?? $teams->first();
         }
 
-        // Return team with highest score
         $bestTeamId = array_keys($teamScores, max($teamScores), true)[0];
 
         return $teams->first(fn ($team) => $team->id === $bestTeamId);
@@ -251,7 +255,6 @@ class IcsService
      */
     private function determineRole(Volunteer $volunteer, Team $team): string
     {
-        // Check if volunteer has leadership position
         if ($volunteer->positions->contains('name', 'Leader')) {
             if (str_contains(strtolower($team->name), 'command')) {
                 return 'Team Lead';
@@ -263,7 +266,6 @@ class IcsService
             return 'Team Lead';
         }
 
-        // Determine role based on skills
         $skills = $volunteer->skills->pluck('name')->map(fn ($skill) => strtolower($skill))->toArray();
 
         if (in_array('medical', $skills, true) || in_array('nursing', $skills, true)) {
