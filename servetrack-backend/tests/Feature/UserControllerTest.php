@@ -3,13 +3,6 @@
 use App\Models\User;
 use App\Models\Volunteer;
 
-function validPassword(): string
-{
-    $random = Illuminate\Support\Str::random(8);
-
-    return $random.'Ab1!';
-}
-
 beforeEach(function () {
     $this->adminUser = User::factory()->admin()->create();
 });
