@@ -311,6 +311,42 @@ export class BackupRecoveryComponent {
     );
   }
 
+  cleanupBackups(): void {
+    this.openConfirmationDialog(
+      'Cleanup Old Backups',
+      'This will delete all but the 10 most recent completed backups. This action cannot be undone.',
+      () => {
+        this.backupActionLoading.set(true);
+
+        this.adminDashboardService
+          .cleanupBackups(10)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (response) => {
+              if (response.success) {
+                this.loadBackups();
+                this.showSnackbar.emit({
+                  message: 'Old backups cleaned up successfully.',
+                  type: 'success',
+                });
+              } else {
+                this.showSnackbar.emit({
+                  message: response.message || 'Failed to cleanup backups',
+                  type: 'error',
+                });
+              }
+              this.backupActionLoading.set(false);
+            },
+            error: (error: Error) => {
+              console.error('Error cleaning up backups:', error);
+              this.showSnackbar.emit({ message: 'Failed to cleanup backups', type: 'error' });
+              this.backupActionLoading.set(false);
+            },
+          });
+      }
+    );
+  }
+
   // Scheduled backup settings
   onScheduledFrequencyChange(value: string): void {
     // Type guard to validate frequency value
