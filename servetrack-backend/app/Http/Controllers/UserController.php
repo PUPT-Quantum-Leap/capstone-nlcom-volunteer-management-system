@@ -418,18 +418,13 @@ class UserController extends Controller
     }
 
     /**
-     * Handle role change: clean up old profile and create new one.
+     * Handle role change: ensure the target profile exists without destroying old data.
+     * The `users.role` column is the source of truth — profile tables are
+     * supplementary data stores that should never be deleted on role change
+     * (doing so would orphan historical records like attendance, RSVPs, etc.).
      */
     private function handleRoleChange(User $user, string $oldRole, string $newRole): void
     {
-        match ($oldRole) {
-            'volunteer' => $user->volunteer?->delete(),
-            'admin' => $user->admin?->delete(),
-            'coordinator' => $user->coordinator?->delete(),
-        };
-
-        $user->unsetRelation('volunteer')->unsetRelation('admin')->unsetRelation('coordinator');
-
         match ($newRole) {
             'volunteer' => $user->volunteer ?? $this->createVolunteerProfile($user),
             'admin' => $user->admin ?? $this->createAdminProfile($user),
