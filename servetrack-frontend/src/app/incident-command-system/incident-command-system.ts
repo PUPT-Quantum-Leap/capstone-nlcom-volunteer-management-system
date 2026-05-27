@@ -76,6 +76,7 @@ export class IncidentCommandSystemComponent implements OnInit {
   aiError = signal<string | null>(null);
   isSuggestionsModalOpen = signal(false);
   currentIcsId = signal<number | null>(null);
+  hasIcsData = signal(false);
 
   hasSelectedSuggestions = computed(() => this.selectedSuggestionIds().size > 0);
   canGenerateAiSuggestions = computed(
@@ -441,6 +442,7 @@ export class IncidentCommandSystemComponent implements OnInit {
           this.aiSuggestions.set([]);
           if (response?.data) {
             this.populateFromIcsData(response.data);
+            this.hasIcsData.set(true);
           }
         },
         error: () => {
@@ -675,9 +677,26 @@ export class IncidentCommandSystemComponent implements OnInit {
       if (found) {
         this.selectedRsvp.set(found);
         this.rsvpId = id;
-        console.log('Selected RSVP for generation:', found.title);
+        this.loadExistingIcsForRsvp(id);
       }
     }
+  }
+
+  private loadExistingIcsForRsvp(rsvpId: number): void {
+    this.hasIcsData.set(false);
+    this.clearAllData();
+
+    this.icsService.getIcs().subscribe({
+      next: (response) => {
+        const existing = response.data?.find((ics: any) => ics.rsvp_id === rsvpId);
+        if (existing?.volunteers?.length) {
+          this.currentIcsId.set(existing.id);
+          this.populateFromIcsData(existing);
+          this.hasIcsData.set(true);
+        }
+      },
+      error: () => {},
+    });
   }
 
   /**
