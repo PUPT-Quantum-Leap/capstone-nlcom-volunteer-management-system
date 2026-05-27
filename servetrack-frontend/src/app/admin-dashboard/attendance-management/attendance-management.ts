@@ -53,7 +53,7 @@ export class AttendanceManagement implements OnInit {
   viewOptions: SelectOption<'calendar' | 'history' | 'photos'>[] = [
     { label: 'Calendar View', value: 'calendar' },
     { label: 'Attendance Confirmation', value: 'history' },
-    { label: 'Photo Gallery', value: 'photos' }
+    { label: 'Attendance Upload', value: 'photos' }
   ];
 
   statusOptions: SelectOption<'present' | 'absent'>[] = [

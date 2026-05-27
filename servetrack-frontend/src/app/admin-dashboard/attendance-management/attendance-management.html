@@ -50,6 +50,7 @@
   </header>
 
   <!-- Stats Cards -->
+  @if (attendanceView() !== 'photos') {
   <div class="attendance-stats-grid">
     <article class="stat-card stat-card-blue">
       <div class="stat-icon">
@@ -107,6 +108,7 @@
       </div>
     </article>
   </div>
+  }
 
   <!-- Search Bar / Date Filter -->
   @if (attendanceView() === 'calendar') {
