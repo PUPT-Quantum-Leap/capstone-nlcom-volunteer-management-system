@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, computed, signal } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RsvpService } from '../services/rsvp.service';
-import { IcsApiService } from '../services/ics-api.service';
+import { IcsService } from '../services/ics.service';
 import { Rsvp } from '../models/rsvp';
 import { AiSuggestion } from '../models/ics';
 import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
@@ -58,7 +58,7 @@ export interface CommandRole {
 })
 export class IncidentCommandSystemComponent implements OnInit {
   private rsvpService = inject(RsvpService);
-  private icsApiService = inject(IcsApiService);
+  private icsService = inject(IcsService);
 
   // Dropdown Options
   rsvpOptions = signal<SelectOption<string>[]>([]);
@@ -368,6 +368,102 @@ export class IncidentCommandSystemComponent implements OnInit {
   exportToExcel(): void {
     // Will be implemented later
     console.log('Export to Excel clicked');
+  }
+
+  generateAiSuggestions(): void {
+    if (!this.selectedRsvp || !this.canGenerateAiSuggestions()) {
+      return;
+    }
+
+    this.isLoadingAiSuggestions.set(true);
+    this.aiError.set(null);
+
+    this.icsService.createIcs({ rsvp_id: this.selectedRsvp.id, name: this.selectedRsvp.title }).subscribe({
+      next: (icsResponse) => {
+        const icsId = icsResponse.data.id;
+        this.currentIcsId.set(icsId);
+
+        this.icsService.getAiSuggestions(icsId).subscribe({
+          next: (suggestionsResponse) => {
+            const suggestions = (suggestionsResponse.data ?? []) as AiSuggestion[];
+            this.aiSuggestions.set(suggestions);
+            this.selectedSuggestionIds.set(new Set(suggestions.map((s) => s.volunteer_id)));
+            this.isLoadingAiSuggestions.set(false);
+            this.isSuggestionsModalOpen.set(true);
+          },
+          error: () => {
+            this.aiError.set('Failed to generate AI suggestions. Please try again.');
+            this.isLoadingAiSuggestions.set(false);
+          },
+        });
+      },
+      error: () => {
+        this.aiError.set('Failed to initialize ICS. Please try again.');
+        this.isLoadingAiSuggestions.set(false);
+      },
+    });
+  }
+
+  toggleSuggestion(volunteerId: number): void {
+    const current = new Set(this.selectedSuggestionIds());
+    if (current.has(volunteerId)) {
+      current.delete(volunteerId);
+    } else {
+      current.add(volunteerId);
+    }
+    this.selectedSuggestionIds.set(current);
+  }
+
+  applySelected(): void {
+    const icsId = this.currentIcsId();
+    if (!icsId) {
+      return;
+    }
+
+    const selected = this.aiSuggestions().filter((s) =>
+      this.selectedSuggestionIds().has(s.volunteer_id),
+    );
+
+    if (selected.length === 0) {
+      return;
+    }
+
+    this.isApplyingAiSuggestions.set(true);
+
+    this.icsService
+      .applyAiSuggestions(icsId, selected)
+      .subscribe({
+        next: () => {
+          this.isApplyingAiSuggestions.set(false);
+          this.isSuggestionsModalOpen.set(false);
+          this.aiSuggestions.set([]);
+        },
+        error: () => {
+          this.aiError.set('Failed to apply suggestions. Please try again.');
+          this.isApplyingAiSuggestions.set(false);
+        },
+      });
+  }
+
+  applyAll(): void {
+    this.selectedSuggestionIds.set(new Set(this.aiSuggestions().map((s) => s.volunteer_id)));
+    this.applySelected();
+  }
+
+  dismissSuggestions(): void {
+    this.isSuggestionsModalOpen.set(false);
+    this.aiSuggestions.set([]);
+    this.aiError.set(null);
+  }
+
+  confidenceClass(confidence: number): string {
+    if (confidence >= 0.85) {
+      return 'confidence-high';
+    }
+    if (confidence >= 0.6) {
+      return 'confidence-medium';
+    }
+    return 'confidence-low';
   }
 
   // Generate New ICS - populates all data including RSVP header and volunteer teams

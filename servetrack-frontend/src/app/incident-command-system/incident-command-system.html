@@ -27,13 +27,21 @@
           <span>Edit ICS</span>
         }
       </button>
-      <button type="button" class="action-btn" (click)="generateNewICS()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"></polyline>
-          <polyline points="1 20 1 14 7 14"></polyline>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-        </svg>
-        <span>Generate Data</span>
+      <button
+        type="button"
+        class="action-btn"
+        [disabled]="!canGenerateAiSuggestions() || isLoadingAiSuggestions()"
+        [title]="generateButtonTooltip()"
+        (click)="generateAiSuggestions()">
+        @if (isLoadingAiSuggestions()) {
+          <span class="btn-spinner" aria-hidden="true"></span>
+          <span>Generating...</span>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span>Generate AI Suggestions</span>
+        }
       </button>
     </div>
   </header>
@@ -695,5 +703,99 @@
       <span>Export Excel</span>
     </button>
   </div>
+
+  <!-- AI Error Banner -->
+  @if (aiError()) {
+    <div class="ai-error-banner">
+      <span>{{ aiError() }}</span>
+      <button type="button" (click)="aiError.set(null)" aria-label="Dismiss error">×</button>
+    </div>
+  }
+
+  <!-- AI Suggestions Modal -->
+  @if (isSuggestionsModalOpen()) {
+    <div class="modal-backdrop" (click)="dismissSuggestions()">
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3 id="modal-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="modal-icon" aria-hidden="true">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            AI-Generated Volunteer Assignments
+          </h3>
+          <button type="button" class="modal-close" (click)="dismissSuggestions()" aria-label="Close">×</button>
+        </div>
+
+        @if (aiSuggestions().length === 0) {
+          <div class="modal-empty">
+            <p>No suggestions were generated. The AI could not match volunteers to teams.</p>
+          </div>
+        } @else {
+          <div class="modal-body">
+            <table class="suggestions-table">
+              <thead>
+                <tr>
+                  <th class="col-check"></th>
+                  <th>Volunteer</th>
+                  <th>Team</th>
+                  <th>Role</th>
+                  <th>Confidence</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (suggestion of aiSuggestions(); track suggestion.volunteer_id) {
+                  <tr [class.row-selected]="selectedSuggestionIds().has(suggestion.volunteer_id)">
+                    <td class="col-check">
+                      <input
+                        type="checkbox"
+                        [checked]="selectedSuggestionIds().has(suggestion.volunteer_id)"
+                        (change)="toggleSuggestion(suggestion.volunteer_id)"
+                        [attr.aria-label]="'Select ' + suggestion.volunteer_name" />
+                    </td>
+                    <td>
+                      <span class="volunteer-name">{{ suggestion.volunteer_name }}</span>
+                      @if (suggestion.skills?.length) {
+                        <span class="volunteer-skills">{{ suggestion.skills.join(', ') }}</span>
+                      }
+                    </td>
+                    <td>{{ suggestion.team_name }}</td>
+                    <td>{{ suggestion.role }}</td>
+                    <td>
+                      <span class="confidence-badge" [class]="confidenceClass(suggestion.confidence)">
+                        {{ (suggestion.confidence * 100).toFixed(0) }}%
+                      </span>
+                      @if (suggestion.reasoning) {
+                        <span class="reasoning-text">{{ suggestion.reasoning }}</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="action-btn secondary" (click)="dismissSuggestions()">
+              Dismiss
+            </button>
+            <button
+              type="button"
+              class="action-btn secondary"
+              [disabled]="!hasSelectedSuggestions() || isApplyingAiSuggestions()"
+              (click)="applySelected()">
+              @if (isApplyingAiSuggestions()) { Applying... } @else { Apply Selected ({{ selectedSuggestionIds().size }}) }
+            </button>
+            <button
+              type="button"
+              class="action-btn"
+              [disabled]="isApplyingAiSuggestions()"
+              (click)="applyAll()">
+              @if (isApplyingAiSuggestions()) { Applying... } @else { Apply All (Auto) }
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
 </section>
 
