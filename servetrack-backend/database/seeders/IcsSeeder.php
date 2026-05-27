@@ -90,7 +90,11 @@ class IcsSeeder extends Seeder
 
             return;
         }
-        $ics->teams()->sync($teams->pluck('id'));
+        $syncData = [];
+        foreach ($teams as $t) {
+            $syncData[$t->id] = ['team' => $t->name];
+        }
+        $ics->teams()->sync($syncData);
         $this->command->info("Attached {$teams->count()} teams to ICS.");
 
         // Get volunteers who RSVP'd and add them to ICS

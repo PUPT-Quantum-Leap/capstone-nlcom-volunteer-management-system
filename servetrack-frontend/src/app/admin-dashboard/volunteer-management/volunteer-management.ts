@@ -17,9 +17,9 @@ import {
   AdminDashboardService,
   ApiResponse,
   DashboardVolunteerRow,
-  VolunteerUser,
   VolunteersResponse,
 } from '../../services/admin-dashboard.service';
+import { VolunteerUser } from '../../models/user';
 import { GlobalSearchService } from '../../services/global-search.service';
 
 @Component({
@@ -34,16 +34,6 @@ export class VolunteerManagement implements OnInit {
   private destroyRef = inject(DestroyRef);
   private globalSearchService = inject(GlobalSearchService);
 
-  constructor() {
-    effect(() => {
-      const totalPages = this.volunteersTotalPages();
-      const currentPage = this.volunteersPage();
-      if (currentPage > totalPages) {
-        this.volunteersPage.set(Math.max(totalPages, 1));
-      }
-    });
-  }
-
   // Dropdown Options
   statusOptions: SelectOption<string>[] = [
     { label: 'Active Volunteers', value: 'active' },
@@ -54,24 +44,24 @@ export class VolunteerManagement implements OnInit {
   showSnackbar = output<{ message: string; type: 'success' | 'error' | 'info' }>();
 
   // Signals
-  readonly isLoading = signal(false);
-  readonly volunteerRows = signal<DashboardVolunteerRow[]>([]);
-  readonly archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
-  readonly showArchivedVolunteers = signal(false);
-  readonly volunteerSearchQuery = signal('');
-  readonly volunteersPage = signal(1);
-  readonly volunteersPerPage = signal(5);
-  readonly deletingVolunteerId = signal<number | null>(null);
-  readonly restoringVolunteerId = signal<number | null>(null);
-  readonly isSaving = signal(false);
-  readonly editingVolunteer = signal<DashboardVolunteerRow | null>(null);
-  readonly viewingVolunteer = signal<DashboardVolunteerRow | null>(null);
-  readonly showEditModal = signal(false);
-  readonly showDeleteModal = signal(false);
-  readonly showRestoreModal = signal(false);
-  readonly showViewModal = signal(false);
-  readonly showEditSuccess = signal(false);
-  readonly editFormData = signal<{
+  isLoading = signal(false);
+  volunteerRows = signal<DashboardVolunteerRow[]>([]);
+  archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
+  showArchivedVolunteers = signal(false);
+  volunteerSearchQuery = this.globalSearchService.searchQuery;
+  volunteersPage = signal(1);
+  volunteersPerPage = signal(5);
+  deletingVolunteerId = signal<number | null>(null);
+  isSaving = signal(false);
+  editingVolunteer = signal<DashboardVolunteerRow | null>(null);
+  viewingVolunteer = signal<DashboardVolunteerRow | null>(null);
+  showEditModal = signal(false);
+  showDeleteModal = signal(false);
+  showViewModal = signal(false);
+  showEditSuccess = signal(false);
+  showRestoreModal = signal(false);
+  restoringVolunteerId = signal<number | null>(null);
+  editFormData = signal<{
     first_name: string;
     last_name: string;
     email: string;
@@ -140,6 +130,15 @@ export class VolunteerManagement implements OnInit {
     this.loadArchivedVolunteers();
   }
 
+  constructor() {
+    effect(() => {
+      this.volunteerSearchQuery();
+      untracked(() => {
+        this.volunteersPage.set(1);
+      });
+    });
+  }
+
   private loadVolunteers(): void {
     this.isLoading.set(true);
     this.adminDashboardService
@@ -201,11 +200,7 @@ export class VolunteerManagement implements OnInit {
       });
   }
 
-  // Search
-  onSearchInput(query: string): void {
-    this.volunteerSearchQuery.set(query);
-    this.volunteersPage.set(1);
-  }
+  // Search removed, handled by global search effect
 
   // Tab switching
   switchToActiveVolunteers(): void {

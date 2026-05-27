@@ -133,6 +133,12 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::post('/admin/attendance-status', [AdminController::class, 'updateAttendanceStatus'])
         ->middleware('throttle:60,1')
         ->name('admin.attendance.status.update');
+    Route::get('/admin/attendance/export/pdf', [AdminController::class, 'exportAttendancePdf'])
+        ->middleware('throttle:analytics-exports')
+        ->name('admin.attendance.export.pdf');
+    Route::get('/admin/attendance/export/excel', [AdminController::class, 'exportAttendanceExcel'])
+        ->middleware('throttle:analytics-exports')
+        ->name('admin.attendance.export.excel');
 
     // Analytics & Reports — throttle: analytics-reports allows 30 req/min,
     // analytics-exports allows 5 req/min (PDF/Excel generation is expensive)

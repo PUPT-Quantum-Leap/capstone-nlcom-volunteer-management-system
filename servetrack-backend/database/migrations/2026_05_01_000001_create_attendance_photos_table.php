@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->timestamp('uploaded_at');
             $table->timestamp('archived_at')->nullable();
             $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

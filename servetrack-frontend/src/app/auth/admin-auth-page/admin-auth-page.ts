@@ -22,13 +22,14 @@ import { AuthService, AdminSignupData } from '../../services/auth.service';
 import { InputSanitizerService } from '../../services/input-sanitizer.service';
 import { passwordStrengthValidator, passwordMatchValidator } from '../../validators/password.validator';
 import { emailValidator } from '../../validators/form.validator';
+import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
 
 export type AuthTab = 'login' | 'signup';
 
 @Component({
   selector: 'app-admin-auth-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, NgOptimizedImage],
+  imports: [ReactiveFormsModule, RouterLink, NgOptimizedImage, LoadingScreenComponent],
   templateUrl: './admin-auth-page.html',
   styleUrl: './admin-auth-page.scss',
 })

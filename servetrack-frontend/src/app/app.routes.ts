@@ -11,7 +11,6 @@ import { OverviewComponent } from './volunteer-dashboard/overview/overview';
 import { ProfileComponent } from './volunteer-dashboard/profile/profile';
 import { AttendanceComponent } from './volunteer-dashboard/attendance/attendance';
 import { PollsComponent } from './volunteer-dashboard/polls/polls';
-import { RequestsComponent } from './volunteer-dashboard/requests/requests';
 import { AdminLayout } from './admin-dashboard/admin-layout/admin-layout';
 import { DashboardComponent } from './admin-dashboard/dashboard/dashboard';
 import { AnalyticsComponent } from './admin-dashboard/analytics/analytics';
@@ -57,7 +56,6 @@ export const routes: Routes = [
       { path: 'profile', component: ProfileComponent },
       { path: 'attendance', component: AttendanceComponent },
       { path: 'polls', component: PollsComponent },
-      { path: 'requests', component: RequestsComponent },
     ],
   },
   {

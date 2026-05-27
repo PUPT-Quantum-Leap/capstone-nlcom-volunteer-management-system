@@ -287,6 +287,12 @@
   padding: 0.75rem;
   border-radius: var(--radius-lg);
   background: var(--gray-50);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+
+  &:hover {
+    background: var(--gray-100);
+  }
 }
 
 .avatar-sm {

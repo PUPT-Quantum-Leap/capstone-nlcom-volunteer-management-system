@@ -4,6 +4,7 @@ import { Observable, catchError, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
+import { VolunteerUser } from '../models/user';
 
 export interface DashboardVolunteerRow {
   id: number;
@@ -14,24 +15,6 @@ export interface DashboardVolunteerRow {
   department: string;
   status: 'active' | 'inactive';
   joined_date: string | null;
-}
-
-export interface VolunteerUser {
-  volunteer_id: number;
-  first_name: string;
-  last_name: string;
-  full_name: string;
-  facebook_name: string | null;
-  email: string;
-  mobile_number: string;
-  birthdate: string | null;
-  address: string;
-  educational_attainment: string;
-  last_medical_examination: string | null;
-  profile_photo_url: string | null;
-  created_at: string;
-  updated_at: string;
-  positions?: string[];
 }
 
 export interface VolunteersResponse {
@@ -443,7 +426,7 @@ export class AdminDashboardService {
     );
   }
 
-  getAttendanceFromRsvp(rsvpId?: number): Observable<ApiResponse<any[]>> {
+  fetchAttendanceFromRsvp(rsvpId?: number): Observable<ApiResponse<any[]>> {
     let url = `${environment.apiUrl}/admin/attendance-from-rsvp`;
     if (rsvpId) {
       url += `?rsvp_id=${rsvpId}`;
@@ -500,6 +483,56 @@ export class AdminDashboardService {
           success: false,
           message: error.error?.message || 'Failed to update attendance status',
           data: null,
+        });
+      })
+    );
+  }
+
+  uploadAttendancePhoto(file: File): Observable<ApiResponse<{ photo: any; url: string }>> {
+    const formData = new FormData();
+    formData.append('photo', file);
+    return this.http.post<ApiResponse<{ photo: any; url: string }>>(
+      `${environment.apiUrl}/attendance-photos`,
+      formData,
+      { withCredentials: true }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error uploading attendance photo:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Failed to upload photo',
+          data: null as any
+        });
+      })
+    );
+  }
+
+  fetchAttendancePhotos(archived: boolean = false): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(
+      `${environment.apiUrl}/attendance-photos?archived=${archived}`,
+      { withCredentials: true }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error fetching attendance photos:', error);
+        return of({
+          success: false,
+          data: { data: [] }
+        } as ApiResponse<any>);
+      })
+    );
+  }
+
+  deleteAttendancePhoto(id: number): Observable<ApiResponse<any>> {
+    return this.http.delete<ApiResponse<any>>(
+      `${environment.apiUrl}/attendance-photos/${id}`,
+      { withCredentials: true }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error deleting attendance photo:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Failed to delete photo',
+          data: null
         });
       })
     );

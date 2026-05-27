@@ -98,24 +98,29 @@ export class DashboardComponent {
   });
 
   readonly nextEvents = computed<DashboardEventRow[]>(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     return this.rsvps()
       .map((rsvp) => {
         const parsedDate = this.safeDate(rsvp.date);
+        let dateYmd = '';
+        if (parsedDate) {
+          dateYmd = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`;
+        }
 
         return {
           id: rsvp.id,
           title: rsvp.title,
           dateLabel: rsvp.date,
+          dateYmd: dateYmd,
           timestamp: parsedDate?.getTime() ?? Number.MAX_SAFE_INTEGER,
           totalResponses: rsvp.totalResponses,
           status: rsvp.status,
           shifts: rsvp.shifts.length,
         };
       })
-      .filter((event) => event.timestamp >= today.getTime())
+      .filter((event) => event.status === 'active' && event.dateYmd >= todayStr)
       .sort((left, right) => left.timestamp - right.timestamp)
       .slice(0, 3);
   });
