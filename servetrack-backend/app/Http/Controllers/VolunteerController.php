@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class VolunteerController extends Controller
@@ -1211,10 +1212,17 @@ class VolunteerController extends Controller
             ], 404);
         }
 
+        $user = $volunteer->user;
+
         $validator = Validator::make($request->all(), [
             'first_name' => 'sometimes|string|max:50',
             'last_name' => 'sometimes|string|max:50',
-            'email' => 'sometimes|email|unique:volunteer,email,'.$id.',volunteer_id',
+            'email' => [
+                'sometimes',
+                'email',
+                Rule::unique('volunteer', 'email')->ignore($id, 'volunteer_id'),
+                Rule::unique('users', 'email')->ignore($user?->id),
+            ],
             'mobile_number' => 'sometimes|string|max:15',
             'facebook_name' => 'nullable|string|max:100',
             'address' => 'nullable|string|max:255',
