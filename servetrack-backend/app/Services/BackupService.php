@@ -584,8 +584,16 @@ class BackupService
      */
     public function deleteBackup(Backup $backup): void
     {
-        if ($backup->file_path && Storage::disk($this->backupDisk)->exists($backup->file_path)) {
-            Storage::disk($this->backupDisk)->delete($backup->file_path);
+        if ($backup->file_path) {
+            // Try the configured disk first, then fall back to direct path
+            if (Storage::disk($this->backupDisk)->exists($backup->file_path)) {
+                Storage::disk($this->backupDisk)->delete($backup->file_path);
+            } else {
+                $directPath = storage_path('app/private/'.$backup->file_path);
+                if (file_exists($directPath)) {
+                    unlink($directPath);
+                }
+            }
         }
 
         $backup->delete();
@@ -641,15 +649,13 @@ class BackupService
         $oldBackups = Backup::completed()
             ->latest()
             ->skip($keepCount)
-            ->take(1000) // Add limit to avoid memory issues
+            ->take(1000)
             ->get();
 
         foreach ($oldBackups as $backup) {
-            if ($backup instanceof Backup) {
-                $this->deleteBackup($backup);
-            }
+            $this->deleteBackup($backup);
         }
 
-        Log::info("Cleaned up {$oldBackups->count()} old backups");
+        Log::info("Cleaned up {$oldBackups->count()} old backups, keeping {$keepCount}");
     }
 }

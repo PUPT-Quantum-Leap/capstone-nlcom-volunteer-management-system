@@ -253,7 +253,7 @@ class BackupController extends Controller
     {
         try {
             $request->validate([
-                'keep_count' => 'sometimes|integer|min:1|max:50',
+                'keep_count' => 'sometimes|integer|min:1|max:1000',
             ]);
 
             $keepCount = $request->input('keep_count', 10);
