@@ -68,6 +68,21 @@ export class UserManagementComponent {
   readonly showResetPassword = signal(false);
   readonly resetPasswordValue = signal('');
   readonly isResettingPassword = signal(false);
+  readonly showResetPasswordField = signal(false);
+  readonly showPasswordRequirements = signal(false);
+  readonly resetPasswordError = signal<string | null>(null);
+  readonly resetPasswordSuccess = signal(false);
+
+  readonly passwordRequirementsMet = computed(() => {
+    const password = this.resetPasswordValue();
+    return (
+      password.length >= 8 &&
+      /[A-Z]/.test(password) &&
+      /[a-z]/.test(password) &&
+      /[0-9]/.test(password) &&
+      /[^A-Za-z0-9]/.test(password)
+    );
+  });
 
   readonly filteredUsers = computed(() => {
     const search = this.userSearchQuery().toLowerCase().trim();
@@ -272,6 +287,9 @@ export class UserManagementComponent {
     this.showInviteSuccess.set(false);
     this.showResetPassword.set(false);
     this.resetPasswordValue.set('');
+    this.showResetPasswordField.set(false);
+    this.showPasswordRequirements.set(false);
+    this.resetPasswordError.set(null);
   }
 
   updateEditForm(field: 'name' | 'email' | 'role', value: string): void {
@@ -342,9 +360,25 @@ export class UserManagementComponent {
 
   toggleResetPassword(): void {
     this.showResetPassword.update((v) => !v);
-    if (!this.showResetPassword()) {
-      this.resetPasswordValue.set('');
-    }
+    this.resetPasswordValue.set('');
+    this.resetPasswordError.set(null);
+    this.resetPasswordSuccess.set(false);
+  }
+
+  toggleResetPasswordFieldVisibility(): void {
+    this.showResetPasswordField.update((v) => !v);
+  }
+
+  getPasswordRequirements(): { label: string; met: boolean }[] {
+    const password = this.resetPasswordValue();
+
+    return [
+      { label: 'At least 8 characters', met: password.length >= 8 },
+      { label: 'One uppercase letter', met: /[A-Z]/.test(password) },
+      { label: 'One lowercase letter', met: /[a-z]/.test(password) },
+      { label: 'One number', met: /[0-9]/.test(password) },
+      { label: 'One special character', met: /[^A-Za-z0-9]/.test(password) },
+    ];
   }
 
   resetUserPassword(): void {
@@ -353,20 +387,31 @@ export class UserManagementComponent {
 
     if (!user || !password) return;
 
+    this.resetPasswordError.set(null);
     this.isResettingPassword.set(true);
     this.userService.resetPassword(user.id, password)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: () => {
-          this.showSnackbar.emit({ message: 'Password reset successfully', type: 'success' });
-          this.showResetPassword.set(false);
-          this.resetPasswordValue.set('');
+          this.resetPasswordSuccess.set(true);
+          this.showPasswordRequirements.set(false);
+          this.resetPasswordError.set(null);
           this.isResettingPassword.set(false);
         },
-        error: (error: Error) => {
-          console.error('Error resetting password:', error);
-          this.showSnackbar.emit({ message: 'Failed to reset password', type: 'error' });
+        error: (error: any) => {
           this.isResettingPassword.set(false);
+          if (error?.error?.errors?.password) {
+            this.resetPasswordError.set(error.error.errors.password.join(' '));
+          } else if (error?.status === 403) {
+            this.resetPasswordError.set('You cannot reset your own password');
+          } else if (error?.status === 404) {
+            this.resetPasswordError.set('User not found');
+          } else if (error?.error?.message) {
+            this.resetPasswordError.set(error.error.message);
+          } else {
+            this.resetPasswordError.set('Failed to reset password. Please try again.');
+            this.showSnackbar.emit({ message: 'Failed to reset password', type: 'error' });
+          }
         },
       });
   }

@@ -314,7 +314,7 @@
 
 <!-- Edit User Modal -->
 @if (showEditUserModal()) {
-  <div class="modal-backdrop" (click)="closeEditUserModal()">
+  <div class="modal-backdrop">
     <section class="modal-card modal-md" (click)="$event.stopPropagation()" role="dialog"
       aria-modal="true" aria-labelledby="user-edit-title">
       <div class="modal-header header-warning">
@@ -392,22 +392,61 @@
                 {{ showResetPassword() ? 'Cancel Password Reset' : 'Reset Password' }}
               </button>
               @if (showResetPassword()) {
-                <div class="password-reset-form">
+                  <div class="password-reset-form">
                   <div class="form-group">
+                    @if (resetPasswordSuccess()) {
+                      <span class="reset-success-text">Password updated successfully</span>
+                    }
                     <label for="reset-password">New Password</label>
-                    <input
-                      id="reset-password"
-                      type="password"
-                      [value]="resetPasswordValue()"
-                      (input)="resetPasswordValue.set($any($event.target).value)"
-                      placeholder="Enter new password"
-                      required />
+                    <div class="password-input-wrapper">
+                      <input
+                        id="reset-password"
+                        [type]="showResetPasswordField() ? 'text' : 'password'"
+                        [value]="resetPasswordValue()"
+                        (input)="resetPasswordValue.set($any($event.target).value); resetPasswordError.set(null)"
+                        (focus)="showPasswordRequirements.set(true)"
+                        placeholder="Enter new password"
+                        [class.error]="resetPasswordError()"
+                        required />
+                      <button
+                        type="button"
+                        class="password-toggle"
+                        (click)="toggleResetPasswordFieldVisibility()"
+                        [attr.aria-label]="showResetPasswordField() ? 'Hide password' : 'Show password'">
+                        @if (showResetPasswordField()) {
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="eye-icon">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/>
+                          </svg>
+                        } @else {
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="eye-icon">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                          </svg>
+                        }
+                      </button>
+                    </div>
+                    @if (resetPasswordError(); as error) {
+                      <span class="error-message">{{ error }}</span>
+                    }
+                    @if (showPasswordRequirements()) {
+                      <div class="password-requirements">
+                        <p class="requirements-title">Password must contain:</p>
+                        <ul class="requirements-list">
+                          @for (req of getPasswordRequirements(); track req.label) {
+                            <li [class.met]="req.met">
+                              <span class="requirement-icon">{{ req.met ? '✓' : '○' }}</span>
+                              {{ req.label }}
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
                   </div>
                   <button
                     type="button"
                     class="primary-btn"
                     (click)="resetUserPassword()"
-                    [disabled]="isResettingPassword() || !resetPasswordValue()">
+                    [disabled]="isResettingPassword() || !passwordRequirementsMet()">
                     @if (isResettingPassword()) { <span class="btn-spinner"></span> Resetting... } @else { Set New Password }
                   </button>
                 </div>
@@ -455,7 +494,7 @@
 
 <!-- Invite Success Popup -->
 @if (showInviteSuccess()) {
-  <div class="modal-backdrop" (click)="closeEditUserModal()">
+  <div class="modal-backdrop">
     <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
       <div class="modal-header header-success">
         <div class="modal-title-wrapper">
