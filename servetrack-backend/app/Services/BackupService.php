@@ -511,50 +511,51 @@ class BackupService
      */
     private function restoreDatabase(string $sqlFile): void
     {
-        try {
-            $sqlContent = file_get_contents($sqlFile);
+        $sqlContent = file_get_contents($sqlFile);
 
-            $statements = [];
-            $lines = explode("\n", $sqlContent);
-            $currentStatement = '';
-            $inMetadata = false;
+        $statements = [];
+        $lines = explode("\n", $sqlContent);
+        $currentStatement = '';
+        $inMetadata = false;
 
-            foreach ($lines as $line) {
-                $trimmedLine = trim($line);
+        foreach ($lines as $line) {
+            $trimmedLine = trim($line);
 
-                // Skip metadata section
-                if (str_starts_with($trimmedLine, '-- Backup Metadata')) {
-                    $inMetadata = true;
+            // Skip metadata section
+            if (str_starts_with($trimmedLine, '-- Backup Metadata')) {
+                $inMetadata = true;
 
-                    continue;
-                }
-                if ($inMetadata && str_starts_with($trimmedLine, '-- End Metadata')) {
-                    $inMetadata = false;
+                continue;
+            }
+            if ($inMetadata && str_starts_with($trimmedLine, '-- End Metadata')) {
+                $inMetadata = false;
 
-                    continue;
-                }
-                if ($inMetadata) {
-                    continue;
-                }
-
-                // Skip other comments
-                if (str_starts_with($trimmedLine, '--') || empty($trimmedLine)) {
-                    continue;
-                }
-
-                $currentStatement .= $line."\n";
-
-                // Check if statement ends with semicolon
-                if (str_ends_with($trimmedLine, ';')) {
-                    $statements[] = trim($currentStatement);
-                    $currentStatement = '';
-                }
+                continue;
+            }
+            if ($inMetadata) {
+                continue;
             }
 
-            // Execute each statement
+            // Skip other comments
+            if (str_starts_with($trimmedLine, '--') || empty($trimmedLine)) {
+                continue;
+            }
+
+            $currentStatement .= $line."\n";
+
+            // Check if statement ends with semicolon
+            if (str_ends_with($trimmedLine, ';')) {
+                $statements[] = trim($currentStatement);
+                $currentStatement = '';
+            }
+        }
+
+        // Execute all statements inside a single transaction so a failure
+        // rolls back every change, preventing a partially-restored state.
+        DB::transaction(function () use ($statements): void {
             foreach ($statements as $statement) {
                 if (! empty($statement)) {
-                    // Skip transaction statements if already in transaction (common in testing)
+                    // Skip transaction statements
                     if (preg_match('/^(BEGIN|START TRANSACTION|COMMIT|ROLLBACK)/i', trim($statement))) {
                         continue;
                     }
@@ -575,10 +576,7 @@ class BackupService
                     DB::statement($statement);
                 }
             }
-
-        } catch (Exception $e) {
-            throw new Exception('Database restoration failed: '.$e->getMessage());
-        }
+        });
     }
 
     /**
