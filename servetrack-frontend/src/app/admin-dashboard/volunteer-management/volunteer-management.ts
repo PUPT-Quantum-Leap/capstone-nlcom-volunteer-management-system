@@ -17,9 +17,9 @@ import {
   AdminDashboardService,
   ApiResponse,
   DashboardVolunteerRow,
-  VolunteerUser,
   VolunteersResponse,
 } from '../../services/admin-dashboard.service';
+import { VolunteerUser } from '../../models/user';
 import { GlobalSearchService } from '../../services/global-search.service';
 
 @Component({

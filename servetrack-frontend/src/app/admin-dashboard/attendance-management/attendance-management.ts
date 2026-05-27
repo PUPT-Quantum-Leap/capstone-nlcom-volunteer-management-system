@@ -10,7 +10,8 @@ import {
   OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AdminDashboardService, VolunteerUser } from '../../services/admin-dashboard.service';
+import { AdminDashboardService } from '../../services/admin-dashboard.service';
+import { VolunteerUser } from '../../models/user';
 import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
 import { GlobalSearchService } from '../../services/global-search.service';
 import { environment } from '../../../environments/environment';
@@ -155,7 +156,7 @@ export class AttendanceManagement implements OnInit {
   // Load attendance data from API
   loadAttendanceData(): void {
     this.isLoading.set(true);
-    this.adminDashboardService.getAttendanceFromRsvp().subscribe({
+    this.adminDashboardService.fetchAttendanceFromRsvp().subscribe({
       next: (response) => {
         if (response.success && response.data) {
           const mapped: AttendanceRecord[] = response.data.map((item: any) => {
@@ -504,7 +505,7 @@ export class AttendanceManagement implements OnInit {
   // Load photos from API
   loadPhotos(): void {
     this.isLoading.set(true);
-    this.adminDashboardService.getAttendancePhotos(this.showArchivedPhotos()).subscribe({
+    this.adminDashboardService.fetchAttendancePhotos(this.showArchivedPhotos()).subscribe({
       next: (response) => {
         if (response.success && response.data) {
           const items = response.data.data || [];

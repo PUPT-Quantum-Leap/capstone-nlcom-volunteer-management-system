@@ -642,14 +642,23 @@ export class RsvpsComponent {
         perPage: 25,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.nonRespondersLoading.set(false);
-        if (res.success) {
-          this.nonRespondersList.set(res.data);
-          this.nonRespondersTotalPages.set(res.meta.last_page);
-          this.nonRespondersTotal.set(res.meta.total);
-        } else {
-          this.nonRespondersError.set(res.message ?? 'Failed to load non-responders.');
+      .subscribe({
+        next: (res) => {
+          this.nonRespondersLoading.set(false);
+          if (res.success) {
+            this.nonRespondersList.set(res.data);
+            this.nonRespondersTotalPages.set(res.meta.last_page);
+            this.nonRespondersTotal.set(res.meta.total);
+          } else {
+            this.nonRespondersError.set(res.message ?? 'Failed to load non-responders.');
+            this.showFeedback(res.message ?? 'Failed to load non-responders.', 'error');
+          }
+        },
+        error: (error: Error) => {
+          console.error('Error loading non-responders:', error);
+          this.nonRespondersLoading.set(false);
+          this.nonRespondersError.set('Failed to load non-responders.');
+          this.showFeedback('Failed to load non-responders.', 'error');
         }
       });
   }
@@ -739,15 +748,24 @@ export class RsvpsComponent {
     this.responsesLoading.set(true);
     this.responsesError.set('');
     this.adminService
-      .getAttendanceFromRsvp(rsvpId)
+      .fetchAttendanceFromRsvp(rsvpId)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.responsesLoading.set(false);
-        if (res.success) {
-          this.respondedList.set(res.data ?? []);
-          this.resetExportColumns('responded');
-        } else {
-          this.responsesError.set(res.message ?? 'Failed to load responses.');
+      .subscribe({
+        next: (res) => {
+          this.responsesLoading.set(false);
+          if (res.success) {
+            this.respondedList.set(res.data ?? []);
+            this.resetExportColumns('responded');
+          } else {
+            this.responsesError.set(res.message ?? 'Failed to load responses.');
+            this.showFeedback(res.message ?? 'Failed to load responses.', 'error');
+          }
+        },
+        error: (error: Error) => {
+          console.error('Error loading responses:', error);
+          this.responsesLoading.set(false);
+          this.responsesError.set('Failed to load responses.');
+          this.showFeedback('Failed to load responses.', 'error');
         }
       });
   }

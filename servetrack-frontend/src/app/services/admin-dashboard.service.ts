@@ -4,6 +4,7 @@ import { Observable, catchError, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { NotificationItem } from '../models/notification-item';
 import { PerformanceMetric } from '../models/performance-metric';
+import { VolunteerUser } from '../models/user';
 
 export interface DashboardVolunteerRow {
   id: number;
@@ -14,24 +15,6 @@ export interface DashboardVolunteerRow {
   department: string;
   status: 'active' | 'inactive';
   joined_date: string | null;
-}
-
-export interface VolunteerUser {
-  volunteer_id: number;
-  first_name: string;
-  last_name: string;
-  full_name: string;
-  facebook_name: string | null;
-  email: string;
-  mobile_number: string;
-  birthdate: string | null;
-  address: string;
-  educational_attainment: string;
-  last_medical_examination: string | null;
-  profile_photo_url: string | null;
-  created_at: string;
-  updated_at: string;
-  positions?: string[];
 }
 
 export interface VolunteersResponse {
@@ -443,7 +426,7 @@ export class AdminDashboardService {
     );
   }
 
-  getAttendanceFromRsvp(rsvpId?: number): Observable<ApiResponse<any[]>> {
+  fetchAttendanceFromRsvp(rsvpId?: number): Observable<ApiResponse<any[]>> {
     let url = `${environment.apiUrl}/admin/attendance-from-rsvp`;
     if (rsvpId) {
       url += `?rsvp_id=${rsvpId}`;
@@ -524,7 +507,7 @@ export class AdminDashboardService {
     );
   }
 
-  getAttendancePhotos(archived: boolean = false): Observable<ApiResponse<any>> {
+  fetchAttendancePhotos(archived: boolean = false): Observable<ApiResponse<any>> {
     return this.http.get<ApiResponse<any>>(
       `${environment.apiUrl}/attendance-photos?archived=${archived}`,
       { withCredentials: true }
