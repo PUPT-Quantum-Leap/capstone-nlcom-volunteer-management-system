@@ -122,6 +122,19 @@ export interface HourlyTrend {
   entries: number;
 }
 
+export interface IcsRsvpData {
+  rsvp_id: number;
+  title: string;
+  date: string;
+}
+
+export interface IcsData {
+  id: number;
+  name: string;
+  date: string;
+  rsvp: IcsRsvpData;
+}
+
 export interface IcsTeamFeedingOperation {
   id: number;
   team: string;
@@ -132,6 +145,7 @@ export interface IcsTeamFeedingOperation {
   details: string;
   created_at: string;
   updated_at: string;
+  ics: IcsData | null;
 }
 
 export interface AnalyticsResponse {
