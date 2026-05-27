@@ -83,6 +83,7 @@ class RsvpResource extends JsonResource
             'votedAt' => $response->voted_at?->toIso8601String(),
             'editCount' => $response->edit_count,
             'remainingEdits' => 3 - $response->edit_count,
+            'attendanceStatus' => $response->attendance_status,
         ];
     }
 
