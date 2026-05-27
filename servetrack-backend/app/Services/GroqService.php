@@ -43,10 +43,26 @@ class GroqService
             ];
         }
 
+        Log::info('GroqService: Starting suggestion generation', [
+            'volunteer_count' => $volunteers->count(),
+            'team_count' => $teams->count(),
+            'event_name' => $eventName,
+        ]);
+
         $systemPrompt = $this->buildSystemPrompt();
         $userPrompt = $this->buildUserPrompt($volunteers, $teams, $eventName, $eventDescription);
 
+        Log::debug('GroqService: Prompts built', [
+            'system_prompt_length' => strlen($systemPrompt),
+            'user_prompt_length' => strlen($userPrompt),
+        ]);
+
         try {
+            Log::info('GroqService: Making API request to Groq', [
+                'url' => self::GROQ_API_URL,
+                'model' => $this->model,
+            ]);
+
             $response = Http::withToken($this->apiKey)
                 ->timeout(60)
                 ->post(self::GROQ_API_URL, [
@@ -59,6 +75,11 @@ class GroqService
                     'max_tokens' => $this->maxTokens,
                     'response_format' => ['type' => 'json_object'],
                 ]);
+
+            Log::info('GroqService: API response received', [
+                'status' => $response->status(),
+                'successful' => $response->successful(),
+            ]);
 
             if (! $response->successful()) {
                 Log::error('GroqService: API request failed', [
