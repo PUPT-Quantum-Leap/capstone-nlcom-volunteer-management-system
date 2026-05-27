@@ -13,12 +13,12 @@ class GroqService
 
     public function __construct(
         private string $apiKey = '',
-        private string $model = 'llama-3.3-70b-versatile',
-        private int $maxTokens = 4096,
-        private float $temperature = 0.1,
+        private string $model = '',
+        private int $maxTokens = 0,
+        private float $temperature = 0.0,
     ) {
-        $this->apiKey = config('services.groq.api_key', '');
-        $this->model = config('services.groq.model', 'llama-3.3-70b-versatile');
+        $this->apiKey = (string) config('services.groq.api_key', '');
+        $this->model = (string) config('services.groq.model', 'llama-3.3-70b-versatile');
         $this->maxTokens = (int) config('services.groq.max_tokens', 4096);
         $this->temperature = (float) config('services.groq.temperature', 0.1);
     }
@@ -102,7 +102,21 @@ class GroqService
                 'unassigned_count' => count($parsed['unassigned'] ?? []),
             ]);
 
-            return $parsed;
+            $assignments = isset($parsed['assignments']) && is_array($parsed['assignments'])
+                ? $parsed['assignments']
+                : [];
+            $unassigned = isset($parsed['unassigned']) && is_array($parsed['unassigned'])
+                ? $parsed['unassigned']
+                : [];
+
+            if ($assignments === [] && $unassigned === [] && ! empty($parsed)) {
+                Log::warning('GroqService: Unexpected response shape', ['keys' => array_keys($parsed)]);
+            }
+
+            return [
+                'assignments' => $assignments,
+                'unassigned' => $unassigned,
+            ];
 
         } catch (ConnectionException $e) {
             Log::error('GroqService: Connection timeout', [

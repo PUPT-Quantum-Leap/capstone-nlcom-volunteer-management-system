@@ -42,7 +42,8 @@ class IcsService
 
         $volunteers = Volunteer::query()
             ->whereHas('rsvpResponses', function ($query) use ($rsvp) {
-                $query->where('rsvp_id', $rsvp->rsvp_id);
+                $query->where('rsvp_id', $rsvp->rsvp_id)
+                    ->where('attendance_status', '!=', 'no_show');
             })
             ->with(['skills', 'trainings', 'positions', 'experiences'])
             ->get();
@@ -100,6 +101,10 @@ class IcsService
         foreach ($groqAssignments as $suggestion) {
             $volunteerId = $suggestion['volunteer_id'] ?? null;
             $teamId = $suggestion['team_id'] ?? null;
+
+            if ($volunteerId === null) {
+                continue;
+            }
 
             if (isset($seenVolunteerIds[$volunteerId])) {
                 continue;
