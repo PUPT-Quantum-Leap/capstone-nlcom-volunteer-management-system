@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RsvpService } from '../services/rsvp.service';
 import { IcsService } from '../services/ics.service';
 import { Rsvp } from '../models/rsvp';
-import { AiSuggestion, Ics } from '../models/ics';
+import { AiSuggestion, Ics, CommandRoleNode, AssignedVolunteer, TeamCard, BranchColumn } from '../models/ics';
 import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
 
 export interface Volunteer {
@@ -25,6 +25,7 @@ export interface Volunteer {
 export interface Team {
   name: string;
   volunteers: Volunteer[];
+  aiSuggestions?: AiSuggestion[]; // AI suggestions for this team from backend
 }
 
 export interface OperationalColumn {
@@ -132,6 +133,26 @@ export class IncidentCommandSystemComponent implements OnInit {
     return name.replace(/[\*\~\^]/g, '');
   }
 
+  /**
+   * Formats AI suggestion reasoning for display
+   */
+  formatAiSuggestionReasoning(suggestion: AiSuggestion): string {
+    if (suggestion.reasoning) {
+      return suggestion.reasoning;
+    }
+    // Fallback: generate from available data
+    const confidence = Math.round(suggestion.confidence * 100);
+    const skills = suggestion.skills?.join(', ') || 'N/A';
+    return `• Confidence: ${confidence}%\n• Skills: ${skills}\n• Role: ${suggestion.role}`;
+  }
+
+  /**
+   * Gets the confidence percentage for a suggestion
+   */
+  getConfidencePercentage(suggestion: AiSuggestion): number {
+    return Math.round(suggestion.confidence * 100);
+  }
+
   // New volunteer input for adding to teams
   newVolunteerName = '';
   mobileKitchenNewVolunteer = '';
@@ -208,6 +229,66 @@ export class IncidentCommandSystemComponent implements OnInit {
   }
 
   // Volunteer management
+  /**
+   * Assigns a volunteer from an AI suggestion to a team
+   * Called when user clicks "Try" button on AI suggestion
+   */
+  assignFromSuggestion(
+    columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution',
+    teamIndex: number,
+    suggestion: AiSuggestion,
+  ): void {
+    if (!this.currentIcsId()) {
+      this.error = 'No ICS event selected.';
+      return;
+    }
+
+    const column = this.getColumn(columnKey);
+    if (!column || !column.teams[teamIndex]) {
+      console.error('[ICS] Invalid team reference');
+      return;
+    }
+
+    const team = column.teams[teamIndex];
+
+    // Call backend API to assign volunteer
+    this.icsService.assignVolunteer(this.currentIcsId()!, {
+      volunteer_id: suggestion.volunteer_id,
+      team_id: suggestion.team_id,
+      role: suggestion.role,
+    }).subscribe({
+      next: (response) => {
+        console.log('[ICS] Volunteer assigned successfully', response);
+        // Add or update volunteer in the team
+        const existingIndex = team.volunteers.findIndex(v => v.name === suggestion.volunteer_name);
+        if (existingIndex >= 0) {
+          // Update existing volunteer
+          team.volunteers[existingIndex] = {
+            ...team.volunteers[existingIndex],
+            name: suggestion.volunteer_name,
+            skills: suggestion.skills,
+          };
+        } else {
+          // Add new volunteer
+          team.volunteers.push({
+            name: suggestion.volunteer_name,
+            isNew: false,
+            isDriver: false,
+            isLeader: suggestion.role === 'Leader' || suggestion.role === 'Team Leader',
+            skills: suggestion.skills,
+            training: [],
+            department: '',
+          });
+        }
+        this.updateVolunteerCount();
+      },
+      error: (error) => {
+        console.error('[ICS] Failed to assign volunteer:', error);
+        this.error = 'Failed to assign volunteer. Please try again.';
+      },
+    });
+  }
+
   swapVolunteer(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution', teamIndex: number, volunteerIndex: number, newName: string): void {
     const column = this.getColumn(columnKey);
     if (column && column.teams[teamIndex] && column.teams[teamIndex].volunteers[volunteerIndex]) {
@@ -734,66 +815,254 @@ export class IncidentCommandSystemComponent implements OnInit {
     });
   }
 
+  /**
+   * Populates ICS data from backend response
+   * Handles command roles, branches with teams, volunteers, AI suggestions, and vehicles
+   */
   private populateFromIcsData(ics: any): void {
-    if (!ics || !ics.volunteers) {
+    if (!ics) {
+      console.warn('[ICS] No ICS data to populate');
       return;
     }
 
-    const volunteersByTeam = new Map<number, any[]>();
-    ics.volunteers.forEach((volunteer: any) => {
-      const teamId = volunteer.team_id;
-      if (teamId) {
-        if (!volunteersByTeam.has(teamId)) {
-          volunteersByTeam.set(teamId, []);
-        }
-        volunteersByTeam.get(teamId)!.push({
-          name: volunteer.name,
-          isNew: false,
-          isDriver: false,
-          isLeader: volunteer.role === 'Leader',
-          skills: volunteer.skills || [],
-          training: [],
-          department: '',
-          rationale: '',
-          alternatives: [],
-        });
-      }
-    });
+    try {
+      // Load command roles from backend
+      this.loadCommandRoles(ics);
 
-    const teamMap = new Map<number, string>();
-    if (ics.teams) {
-      ics.teams.forEach((team: any) => teamMap.set(team.id, team.name));
+      // Load branches with teams and volunteers from backend
+      this.loadBranchesAndTeams(ics);
+
+      // Load vehicles from backend
+      this.loadVehicles(ics);
+
+      // Update volunteer count
+      this.updateVolunteerCount();
+
+      // Mark that ICS data is loaded
+      this.hasIcsData.set(true);
+
+      console.log('[ICS] Data populated successfully', {
+        commandRoles: {
+          responsibleOfficial: this.responsibleOfficial,
+          incidentCommander: this.incidentCommander,
+          sectionChiefs: [this.planning, this.purchasing, this.mwcCoordinator, this.safetyEmergency],
+        },
+        branches: [this.mobileKitchen, this.amDistribution, this.pmDistribution],
+        vehicles: this.vehicleAssignments,
+      });
+    } catch (error) {
+      console.error('[ICS] Error populating data:', error);
+      this.error = 'Failed to load ICS data. Please try again.';
+    }
+  }
+
+  /**
+   * Loads command roles from backend and populates org chart hierarchy
+   */
+  private loadCommandRoles(ics: any): void {
+    if (!ics.command_roles || !Array.isArray(ics.command_roles)) {
+      console.warn('[ICS] No command_roles in backend response');
+      return;
     }
 
-    this.mobileKitchen.teams.forEach((team) => (team.volunteers = []));
-    this.amDistribution.teams.forEach((team) => (team.volunteers = []));
-    this.pmDistribution.teams.forEach((team) => (team.volunteers = []));
+    const rolesMap = new Map<string, CommandRoleNode>();
+    ics.command_roles.forEach((role: any) => {
+      rolesMap.set(role.role.toLowerCase(), { role: role.role, name: role.name || '' });
+    });
 
-    volunteersByTeam.forEach((volunteers, teamId) => {
-      const teamNameNorm = (teamMap.get(teamId) || '').trim();
-      if (!teamNameNorm) {
+    // Populate org chart hierarchy
+    const responsibleOfficial = rolesMap.get('responsible official');
+    if (responsibleOfficial) {
+      this.responsibleOfficial = responsibleOfficial;
+    }
+
+    const incidentCommander = rolesMap.get('incident commander');
+    if (incidentCommander) {
+      this.incidentCommander = incidentCommander;
+    }
+
+    // Section Chiefs
+    const planning = rolesMap.get('planning');
+    if (planning) {
+      this.planning = planning;
+    }
+
+    const purchasing = rolesMap.get('purchasing');
+    if (purchasing) {
+      this.purchasing = purchasing;
+    }
+
+    const mwc = rolesMap.get('mwc coordinator');
+    if (mwc) {
+      this.mwcCoordinator = mwc;
+    }
+
+    const safety = rolesMap.get('safety & emergency');
+    if (safety) {
+      this.safetyEmergency = safety;
+    }
+
+    console.log('[ICS] Command roles loaded', rolesMap);
+  }
+
+  /**
+   * Loads branches with teams and volunteers from backend
+   */
+  private loadBranchesAndTeams(ics: any): void {
+    // Clear existing teams
+    this.mobileKitchen.teams = [];
+    this.amDistribution.teams = [];
+    this.pmDistribution.teams = [];
+
+    if (!ics.branches || !Array.isArray(ics.branches)) {
+      console.warn('[ICS] No branches in backend response');
+      return;
+    }
+
+    // Build a map of volunteers by team_id for quick lookup
+    const volunteersByTeamId = new Map<number, any[]>();
+    if (ics.volunteers && Array.isArray(ics.volunteers)) {
+      ics.volunteers.forEach((volunteer: any) => {
+        if (volunteer.team_id) {
+          if (!volunteersByTeamId.has(volunteer.team_id)) {
+            volunteersByTeamId.set(volunteer.team_id, []);
+          }
+          volunteersByTeamId.get(volunteer.team_id)!.push(volunteer);
+        }
+      });
+    }
+
+    // Build a map of AI suggestions by team_id
+    const suggestionsByTeamId = new Map<number, AiSuggestion[]>();
+    if (ics.ai_suggestions && Array.isArray(ics.ai_suggestions)) {
+      ics.ai_suggestions.forEach((suggestion: AiSuggestion) => {
+        if (suggestion.team_id) {
+          if (!suggestionsByTeamId.has(suggestion.team_id)) {
+            suggestionsByTeamId.set(suggestion.team_id, []);
+          }
+          suggestionsByTeamId.get(suggestion.team_id)!.push(suggestion);
+        }
+      });
+    }
+
+    // Process branches
+    ics.branches.forEach((branch: any) => {
+      const columnKey = this.getBranchColumnKey(branch.title);
+      if (!columnKey) {
+        console.warn(`[ICS] Unknown branch: ${branch.title}`);
         return;
       }
 
-      const allTeams = [
-        ...this.mobileKitchen.teams,
-        ...this.amDistribution.teams,
-        ...this.pmDistribution.teams,
-      ];
-
-      const matchingTeam = allTeams.find(
-        (t) =>
-          t.name &&
-          (t.name.toLowerCase().includes(teamNameNorm.toLowerCase()) ||
-            teamNameNorm.toLowerCase().includes(t.name.toLowerCase())),
-      );
-
-      if (matchingTeam) {
-        matchingTeam.volunteers = volunteers;
-      } else {
-        // No matching column team — add to mobileKitchen as a new team
-        this.mobileKitchen.teams.push({ name: teamNameNorm, volunteers });
+      const column = this.getColumn(columnKey);
+      if (!column) {
+        console.warn(`[ICS] Failed to get column for branch: ${branch.title}`);
+        return;
       }
+
+      // Set branch director name
+      column.title = branch.title;
+      column.leader = branch.leader || '';
+
+      // Process teams in this branch
+      if (branch.teams && Array.isArray(branch.teams)) {
+        branch.teams.forEach((team: any) => {
+          const teamVolunteers = volunteersByTeamId.get(team.id) || [];
+          const teamSuggestions = suggestionsByTeamId.get(team.id) || [];
+
+          // Convert backend volunteers to Volunteer interface
+          const volunteers: Volunteer[] = teamVolunteers.map((vol: any) => ({
+            name: vol.name,
+            isNew: false,
+            isDriver: false,
+            isLeader: vol.role === 'Leader' || vol.role === 'Team Leader',
+            skills: vol.skills || [],
+            training: [],
+            department: '',
+            rationale: this.generateAiRationaleFromSuggestions(teamSuggestions),
+            alternatives: this.extractAlternativesFromSuggestions(teamSuggestions),
+          }));
+
+          // Create team card
+          const teamCard: Team = {
+            name: team.name,
+            volunteers,
+            aiSuggestions: teamSuggestions, // Attach AI suggestions from backend
+          };
+
+          column.teams.push(teamCard);
+        });
+      }
+
+      console.log(`[ICS] Loaded branch: ${branch.title} with ${column.teams.length} teams`);
     });
+  }
+
+  /**
+   * Loads vehicle assignments from backend
+   */
+  private loadVehicles(ics: any): void {
+    this.vehicleAssignments = [];
+
+    if (!ics.vehicles || !Array.isArray(ics.vehicles)) {
+      console.warn('[ICS] No vehicles in backend response');
+      return;
+    }
+
+    ics.vehicles.forEach((vehicle: any) => {
+      this.vehicleAssignments.push({
+        code: vehicle.code || '',
+        vehicle: vehicle.vehicle || '',
+      });
+    });
+
+    console.log(`[ICS] Loaded ${this.vehicleAssignments.length} vehicles`);
+  }
+
+  /**
+   * Maps a branch title to column key for lookup
+   */
+  private getBranchColumnKey(
+    title: string,
+  ): 'mobileKitchen' | 'amDistribution' | 'pmDistribution' | null {
+    const normalized = (title || '').toLowerCase().trim();
+    if (normalized.includes('mobile') && normalized.includes('kitchen')) {
+      return 'mobileKitchen';
+    }
+    if (normalized.includes('am') && normalized.includes('distribution')) {
+      return 'amDistribution';
+    }
+    if (normalized.includes('pm') && normalized.includes('distribution')) {
+      return 'pmDistribution';
+    }
+    return null;
+  }
+
+  /**
+   * Generates AI rationale text from suggestions array
+   */
+  private generateAiRationaleFromSuggestions(suggestions: AiSuggestion[]): string {
+    if (suggestions.length === 0) {
+      return '• No AI suggestions available\n• Manual assignment recommended';
+    }
+
+    // Use the first suggestion's reasoning if available
+    const firstSuggestion = suggestions[0];
+    if (firstSuggestion.reasoning) {
+      return firstSuggestion.reasoning;
+    }
+
+    // Fallback: generate from confidence
+    const confidence = Math.round(firstSuggestion.confidence * 100);
+    return `• AI Confidence: ${confidence}%\n• Skills match: ${(firstSuggestion.skills || []).join(', ')}\n• Role: ${firstSuggestion.role}`;
+  }
+
+  /**
+   * Extracts alternative volunteer names from suggestions
+   */
+  private extractAlternativesFromSuggestions(suggestions: AiSuggestion[]): string[] {
+    return suggestions
+      .slice(0, 2) // Max 2 alternatives
+      .map((s) => s.volunteer_name)
+      .filter((name) => name);
   }
 }

@@ -259,23 +259,34 @@
                         </div>
                       </div>
 
-                      <!-- AI Suggestion block (always visible) -->
-                      <div class="ai-block">
-                        <div class="ai-block__label">AI SUGGESTION</div>
-                        <ul class="ai-block__bullets">
-                          @for (line of generateRationale(volunteer, team.name).split('\n'); track line) {
-                            @if (line.trim()) {
-                              <li>{{ line.replace('• ', '') }}</li>
-                            }
-                          }
-                        </ul>
-                        <div class="ai-block__try">
-                          <span>Try:</span>
-                          @for (alt of getAlternatives(team.name); track alt) {
-                            <button class="try-btn" (click)="swapVolunteer($any(col.key), teamIdx, volIdx, alt)">{{ alt }}</button>
-                          }
-                        </div>
-                      </div>
+                       <!-- AI Suggestion block (always visible) -->
+                       <div class="ai-block">
+                         <div class="ai-block__label">AI SUGGESTION</div>
+                         @if (team.aiSuggestions && team.aiSuggestions.length > 0) {
+                           <!-- Display AI suggestions from backend -->
+                           <ul class="ai-block__bullets">
+                             @for (line of formatAiSuggestionReasoning(team.aiSuggestions[0]).split('\n'); track line) {
+                               @if (line.trim()) {
+                                 <li>{{ line.replace('• ', '') }}</li>
+                               }
+                             }
+                           </ul>
+                           <div class="ai-block__try">
+                             <span>Try:</span>
+                             @for (suggestion of team.aiSuggestions.slice(0, 2); track suggestion.volunteer_id) {
+                               <button class="try-btn" (click)="assignFromSuggestion($any(col.key), teamIdx, suggestion)">
+                                 {{ suggestion.volunteer_name }}
+                               </button>
+                             }
+                           </div>
+                         } @else {
+                           <!-- Fallback when no AI suggestions -->
+                           <ul class="ai-block__bullets">
+                             <li>No AI suggestions available</li>
+                             <li>Manual assignment recommended</li>
+                           </ul>
+                         }
+                       </div>
                     </div>
 
                   }

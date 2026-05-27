@@ -83,3 +83,76 @@ export interface RsvpVolunteer {
   experiences: string[];
   trainings: string[];
 }
+
+/**
+ * Represents a node in the org chart hierarchy
+ * Used for Responsible Official, Incident Commander, Section Chiefs, and Branch Directors
+ */
+export interface CommandRoleNode {
+  role: string; // "Responsible Official", "Incident Commander", etc.
+  name: string; // Editable name of the person in this role
+  level?: number; // Optional: hierarchy level (1-4)
+}
+
+/**
+ * Represents a volunteer assigned to a team with assignment metadata
+ */
+export interface AssignedVolunteer {
+  id: number; // volunteer_id from backend
+  name: string;
+  team_id: number;
+  role: string; // e.g., "Team Member", "Team Leader"
+  skills: string[];
+  isNew?: boolean; // Display flag: new volunteer
+  isDriver?: boolean; // Display flag: assigned driver
+  isLeader?: boolean; // Display flag: team leader
+  rationale?: string; // AI reasoning for assignment
+  alternatives?: string[]; // Alternative volunteer suggestions
+}
+
+/**
+ * Represents a team with assigned volunteers and AI suggestions
+ */
+export interface TeamCard {
+  id: number;
+  name: string;
+  volunteers: AssignedVolunteer[];
+  aiSuggestions?: AiSuggestion[]; // AI-generated suggestions for this team from backend
+}
+
+/**
+ * Represents an operational branch (column) containing teams and a branch director
+ * Examples: Mobile Kitchen, AM Distribution, PM Distribution
+ */
+export interface BranchColumn {
+  title: string; // Display title
+  leader: string; // Branch Director name
+  label: string; // Unique identifier: "mobileKitchen", "amDistribution", "pmDistribution"
+  teams: TeamCard[];
+}
+
+/**
+ * Complete ICS data model combining org chart, operational structure, and assignments
+ * This is the shape that components receive after backend data is loaded
+ */
+export interface IcsDataModel {
+  id: number;
+  rsvp_id: number;
+  // Org chart hierarchy (4 levels)
+  responsibleOfficial: CommandRoleNode;
+  incidentCommander: CommandRoleNode;
+  sectionChiefs: CommandRoleNode[]; // Planning, Purchasing, MWC Coordinator, Safety & Emergency
+  // Operational columns with teams
+  branches: BranchColumn[];
+  // Meal breakdown statistics
+  mealBreakdown: {
+    breakfast: number;
+    lunch: number;
+    snacks: number;
+  };
+  // Vehicle assignments
+  vehicles: {
+    code: string;
+    vehicle: string;
+  }[];
+}
