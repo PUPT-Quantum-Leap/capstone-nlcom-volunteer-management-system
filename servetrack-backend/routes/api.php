@@ -5,6 +5,7 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Api\IcsTeamController;
 use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\AttendancePhotoController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ChatbotController;
@@ -35,6 +36,15 @@ Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(funct
 
         return redirect(config('app.frontend_url', 'http://localhost:4200').'/reset-password?token='.$token.'&email='.urlencode($email));
     })->name('password.reset');
+
+    // Forgot password — send reset link email (rate-limited: 3 req/min)
+    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])
+        ->middleware('throttle:3,1')
+        ->name('password.email');
+
+    // Reset password — validate token and update password
+    Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])
+        ->name('password.update');
 });
 
 // Volunteer registration - public signup with registration rate limit + email normalization
