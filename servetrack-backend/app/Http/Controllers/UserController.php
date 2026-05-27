@@ -418,27 +418,23 @@ class UserController extends Controller
     }
 
     /**
-     * Handle role change and create appropriate profile.
+     * Handle role change: clean up old profile and create new one.
      */
     private function handleRoleChange(User $user, string $oldRole, string $newRole): void
     {
-        switch ($newRole) {
-            case 'volunteer':
-                if (! $user->volunteer) {
-                    $this->createVolunteerProfile($user);
-                }
-                break;
-            case 'admin':
-                if (! $user->admin) {
-                    $this->createAdminProfile($user);
-                }
-                break;
-            case 'coordinator':
-                if (! $user->coordinator) {
-                    $this->createCoordinatorProfile($user);
-                }
-                break;
-        }
+        match ($oldRole) {
+            'volunteer' => $user->volunteer?->delete(),
+            'admin' => $user->admin?->delete(),
+            'coordinator' => $user->coordinator?->delete(),
+        };
+
+        $user->unsetRelation('volunteer')->unsetRelation('admin')->unsetRelation('coordinator');
+
+        match ($newRole) {
+            'volunteer' => $user->volunteer ?? $this->createVolunteerProfile($user),
+            'admin' => $user->admin ?? $this->createAdminProfile($user),
+            'coordinator' => $user->coordinator ?? $this->createCoordinatorProfile($user),
+        };
 
         Log::info('User role changed', [
             'user_id' => $user->id,
