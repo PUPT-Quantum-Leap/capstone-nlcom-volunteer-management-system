@@ -324,53 +324,6 @@
 
 .report-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-
-  thead {
-    background: #1e293b;
-
-    th {
-      padding: 0.875rem 1.25rem;
-      text-align: left;
-      font-size: 0.625rem;
-      font-weight: 700;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      border-bottom: 1px solid #334155;
-
-      &.actions-header {
-        text-align: center;
-      }
-    }
-  }
-
-  tbody {
-    tr {
-      transition: background 0.15s ease;
-
-      &:hover {
-        background: #f8fafc;
-      }
-
-      &:not(:last-child) td {
-        border-bottom: 1px solid #e2e8f0;
-      }
-    }
-
-    td {
-      padding: 1rem 1.25rem;
-      font-size: 0.875rem;
-      color: #334155;
-      vertical-align: middle;
-    }
-  }
-}
-
-// Report Table (blue header matching Dashboard)
-.report-table {
-  width: 100%;
   border-collapse: collapse;
 
   thead {
@@ -759,6 +712,99 @@
       background: var(--primary-50);
       color: var(--primary-600);
       border-color: var(--primary-300);
+    }
+  }
+}
+
+// Password Reset Section
+.password-reset-section {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--gray-200);
+
+  .reset-password-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--warning-600);
+    background: var(--warning-50);
+    border: 1px solid var(--warning-200);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    &:hover {
+      background: var(--warning-100);
+      border-color: var(--warning-300);
+    }
+  }
+
+  .password-reset-form {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--gray-700);
+      }
+
+      input {
+        padding: 0.625rem 1rem;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-md);
+        background: var(--gray-50);
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        transition: all var(--transition-base);
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary-400);
+          box-shadow: 0 0 0 3px var(--primary-100);
+          background: var(--white);
+        }
+      }
+    }
+
+    .primary-btn {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: white;
+      background: var(--primary-500);
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-base);
+
+      &:hover:not(:disabled) {
+        background: var(--primary-600);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
     }
   }
 }

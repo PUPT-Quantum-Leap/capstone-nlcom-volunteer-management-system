@@ -382,6 +382,39 @@
             <small class="form-hint">@if (editingUser()) { Changing role will update user permissions and create appropriate profile. } @else { The invited user will be assigned this role upon registration. }</small>
           </div>
 
+          @if (editingUser()) {
+            <div class="password-reset-section">
+              <button type="button" class="reset-password-toggle" (click)="toggleResetPassword()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                {{ showResetPassword() ? 'Cancel Password Reset' : 'Reset Password' }}
+              </button>
+              @if (showResetPassword()) {
+                <div class="password-reset-form">
+                  <div class="form-group">
+                    <label for="reset-password">New Password</label>
+                    <input
+                      id="reset-password"
+                      type="password"
+                      [value]="resetPasswordValue()"
+                      (input)="resetPasswordValue.set($any($event.target).value)"
+                      placeholder="Enter new password"
+                      required />
+                  </div>
+                  <button
+                    type="button"
+                    class="primary-btn"
+                    (click)="resetUserPassword()"
+                    [disabled]="isResettingPassword() || !resetPasswordValue()">
+                    @if (isResettingPassword()) { <span class="btn-spinner"></span> Resetting... } @else { Set New Password }
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
           @if (showInviteSuccess()) {
             <div class="invite-success-box">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
