@@ -234,13 +234,14 @@ class IcsController extends Controller
 
         $volunteers = Volunteer::query()->whereIn('volunteer_id', $volunteerIds)->get()->keyBy('volunteer_id');
         $teams = Team::query()->whereIn('id', $teamIds)->get()->keyBy('id');
+        $icsTeamIds = $ics->teams()->pluck('id')->flip();
 
-        DB::transaction(function () use ($request, $ics, $volunteers, $teams): void {
+        DB::transaction(function () use ($request, $ics, $volunteers, $teams, $icsTeamIds): void {
             foreach ($request->input('suggestions') as $suggestion) {
                 $volunteer = $volunteers->get($suggestion['volunteer_id']);
                 $team = $teams->get($suggestion['team_id']);
 
-                $isTeamInIcs = $team && $ics->teams()->whereKey($team->id)->exists();
+                $isTeamInIcs = $team && $icsTeamIds->has($team->id);
 
                 if ($volunteer && $isTeamInIcs) {
                     $ics->volunteers()->syncWithoutDetaching([
