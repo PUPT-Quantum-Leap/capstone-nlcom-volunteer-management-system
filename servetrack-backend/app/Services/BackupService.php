@@ -642,15 +642,18 @@ class BackupService
     }
 
     /**
-     * Clean up old backups based on retention policy
+     * Clean up old backups based on retention policy.
+     * Pass 0 to delete ALL backups.
      */
     public function cleanupOldBackups(int $keepCount = 10): void
     {
-        $oldBackups = Backup::completed()
-            ->latest()
-            ->skip($keepCount)
-            ->take(1000)
-            ->get();
+        $query = Backup::latest();
+
+        if ($keepCount > 0) {
+            $query->skip($keepCount);
+        }
+
+        $oldBackups = $query->take(1000)->get();
 
         foreach ($oldBackups as $backup) {
             $this->deleteBackup($backup);

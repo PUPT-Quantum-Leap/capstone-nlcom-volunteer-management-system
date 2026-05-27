@@ -47,7 +47,6 @@ export class BackupRecoveryComponent {
   confirmationDialogTitle = signal('');
   confirmationDialogMessage = signal('');
   confirmationDialogAction = signal<() => void>(() => {});
-  cleanupKeepCount = signal(10);
 
   // Server pagination metadata
   backupLastPage = signal(1);
@@ -313,36 +312,34 @@ export class BackupRecoveryComponent {
   }
 
   cleanupBackups(): void {
-    this.cleanupKeepCount.set(10);
     this.openConfirmationDialog(
-      'Cleanup Old Backups',
-      'Delete all but the most recent completed backups.',
+      'Delete All Backups',
+      'This will permanently delete ALL backup files and records. This action cannot be undone. Are you sure?',
       () => {
-        const keep = Math.max(1, Math.floor(this.cleanupKeepCount()));
         this.backupActionLoading.set(true);
 
         this.adminDashboardService
-          .cleanupBackups(keep)
+          .cleanupBackups(0)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: (response) => {
               if (response.success) {
                 this.loadBackups();
                 this.showSnackbar.emit({
-                  message: `Cleaned up old backups. Keeping the last ${keep}.`,
+                  message: 'All backups deleted successfully.',
                   type: 'success',
                 });
               } else {
                 this.showSnackbar.emit({
-                  message: response.message || 'Failed to cleanup backups',
+                  message: response.message || 'Failed to delete backups',
                   type: 'error',
                 });
               }
               this.backupActionLoading.set(false);
             },
             error: (error: Error) => {
-              console.error('Error cleaning up backups:', error);
-              this.showSnackbar.emit({ message: 'Failed to cleanup backups', type: 'error' });
+              console.error('Error deleting backups:', error);
+              this.showSnackbar.emit({ message: 'Failed to delete backups', type: 'error' });
               this.backupActionLoading.set(false);
             },
           });
