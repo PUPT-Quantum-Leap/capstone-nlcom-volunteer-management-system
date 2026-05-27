@@ -435,10 +435,13 @@ export class IncidentCommandSystemComponent implements OnInit {
     this.icsService
       .applyAiSuggestions(icsId, selected)
       .subscribe({
-        next: () => {
+        next: (response: any) => {
           this.isApplyingAiSuggestions.set(false);
           this.isSuggestionsModalOpen.set(false);
           this.aiSuggestions.set([]);
+          if (response?.data) {
+            this.populateFromIcsData(response.data);
+          }
         },
         error: () => {
           this.aiError.set('Failed to apply suggestions. Please try again.');
@@ -709,6 +712,66 @@ export class IncidentCommandSystemComponent implements OnInit {
       objective: this.objective,
       menu: this.menu,
       totalResponses: rsvp.totalResponses,
+    });
+  }
+
+  private populateFromIcsData(ics: any): void {
+    if (!ics || !ics.volunteers) {
+      return;
+    }
+
+    const volunteersByTeam = new Map<number, any[]>();
+    ics.volunteers.forEach((volunteer: any) => {
+      const teamId = volunteer.team_id;
+      if (teamId) {
+        if (!volunteersByTeam.has(teamId)) {
+          volunteersByTeam.set(teamId, []);
+        }
+        volunteersByTeam.get(teamId)!.push({
+          name: volunteer.name,
+          isNew: false,
+          isDriver: false,
+          isLeader: volunteer.role === 'Leader',
+          skills: volunteer.skills || [],
+          training: [],
+          department: '',
+          rationale: '',
+          alternatives: [],
+        });
+      }
+    });
+
+    const teamMap = new Map<number, string>();
+    if (ics.teams) {
+      ics.teams.forEach((team: any) => teamMap.set(team.id, team.name));
+    }
+
+    this.mobileKitchen.teams.forEach((team) => (team.volunteers = []));
+    this.amDistribution.teams.forEach((team) => (team.volunteers = []));
+    this.pmDistribution.teams.forEach((team) => (team.volunteers = []));
+
+    volunteersByTeam.forEach((volunteers, teamId) => {
+      const teamNameNorm = (teamMap.get(teamId) || '').trim();
+      if (!teamNameNorm) {
+        return;
+      }
+
+      const allTeams = [
+        ...this.mobileKitchen.teams,
+        ...this.amDistribution.teams,
+        ...this.pmDistribution.teams,
+      ];
+
+      const matchingTeam = allTeams.find(
+        (t) =>
+          t.name &&
+          (t.name.toLowerCase().includes(teamNameNorm.toLowerCase()) ||
+            teamNameNorm.toLowerCase().includes(t.name.toLowerCase())),
+      );
+
+      if (matchingTeam) {
+        matchingTeam.volunteers = volunteers;
+      }
     });
   }
 }
