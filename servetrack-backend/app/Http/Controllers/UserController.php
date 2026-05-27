@@ -429,6 +429,7 @@ class UserController extends Controller
             'volunteer' => $user->volunteer ?? $this->createVolunteerProfile($user),
             'admin' => $user->admin ?? $this->createAdminProfile($user),
             'coordinator' => $user->coordinator ?? $this->createCoordinatorProfile($user),
+            default => null,
         };
 
         Log::info('User role changed', [
