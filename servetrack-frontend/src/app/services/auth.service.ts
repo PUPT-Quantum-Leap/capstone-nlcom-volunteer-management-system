@@ -726,7 +726,30 @@ export class AuthService {
     this.error.set(null);
 
     return this.http
-      .post<{ message?: string }>(`${environment.apiUrl}/forgot-password`, { email }, { withCredentials: true })
+      .post<{ message?: string }>(`${environment.apiUrl}/admin/forgot-password`, { email }, { withCredentials: true })
+      .pipe(
+        map(() => ({ success: true, message: 'If this email is registered, you will receive a password reset link.' })),
+        tap(() => this.isLoading.set(false)),
+        catchError((err: HttpErrorResponse) => {
+          this.isLoading.set(false);
+          const message = typeof err.error?.message === 'string'
+            ? err.error.message
+            : 'Something went wrong. Please try again.';
+          this.error.set(message);
+          return of({ success: false, message } as { success: boolean; message?: string });
+        }),
+      );
+  }
+
+  /**
+   * Request a password reset link for volunteer/coordinator forgot-password flow.
+   */
+  volunteerForgotPassword$(email: string): Observable<{ success: boolean; message?: string }> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.http
+      .post<{ message?: string }>(`${environment.apiUrl}/volunteer/forgot-password`, { email }, { withCredentials: true })
       .pipe(
         map(() => ({ success: true, message: 'If this email is registered, you will receive a password reset link.' })),
         tap(() => this.isLoading.set(false)),
