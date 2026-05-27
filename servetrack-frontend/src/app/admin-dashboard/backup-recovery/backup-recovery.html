@@ -264,6 +264,22 @@
       </div>
       <div class="modal-body">
         <p>{{ confirmationDialogMessage() }}</p>
+        @if (confirmationDialogTitle() === 'Cleanup Old Backups') {
+          <div class="cleanup-keep-input">
+            <label for="keep-count">Keep the last</label>
+            <input
+              id="keep-count"
+              type="number"
+              class="form-input"
+              [value]="cleanupKeepCount()"
+              min="1"
+              max="1000"
+              (change)="cleanupKeepCount.set($any($event.target).value)"
+              (click)="$event.stopPropagation()"
+            />
+            <span>most recent completed backup(s).</span>
+          </div>
+        }
       </div>
       <div class="modal-footer">
         <button type="button" class="outline-btn" (click)="closeConfirmationDialog()">Cancel</button>

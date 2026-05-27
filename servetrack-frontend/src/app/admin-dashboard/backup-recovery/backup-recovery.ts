@@ -47,6 +47,7 @@ export class BackupRecoveryComponent {
   confirmationDialogTitle = signal('');
   confirmationDialogMessage = signal('');
   confirmationDialogAction = signal<() => void>(() => {});
+  cleanupKeepCount = signal(10);
 
   // Server pagination metadata
   backupLastPage = signal(1);
@@ -312,21 +313,23 @@ export class BackupRecoveryComponent {
   }
 
   cleanupBackups(): void {
+    this.cleanupKeepCount.set(10);
     this.openConfirmationDialog(
       'Cleanup Old Backups',
-      'This will delete all but the 10 most recent completed backups. This action cannot be undone.',
+      'Delete all but the most recent completed backups.',
       () => {
+        const keep = Math.max(1, Math.floor(this.cleanupKeepCount()));
         this.backupActionLoading.set(true);
 
         this.adminDashboardService
-          .cleanupBackups(10)
+          .cleanupBackups(keep)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: (response) => {
               if (response.success) {
                 this.loadBackups();
                 this.showSnackbar.emit({
-                  message: 'Old backups cleaned up successfully.',
+                  message: `Cleaned up old backups. Keeping the last ${keep}.`,
                   type: 'success',
                 });
               } else {
