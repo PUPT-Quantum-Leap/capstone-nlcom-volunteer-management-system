@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RsvpService } from '../services/rsvp.service';
 import { IcsService } from '../services/ics.service';
 import { Rsvp } from '../models/rsvp';
-import { AiSuggestion } from '../models/ics';
+import { AiSuggestion, Ics } from '../models/ics';
 import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
 
 export interface Volunteer {
@@ -436,7 +436,7 @@ export class IncidentCommandSystemComponent implements OnInit {
     this.icsService
       .applyAiSuggestions(icsId, selected)
       .subscribe({
-        next: (response: any) => {
+        next: (response: { data: Ics }) => {
           this.isApplyingAiSuggestions.set(false);
           this.isSuggestionsModalOpen.set(false);
           this.aiSuggestions.set([]);
@@ -790,6 +790,9 @@ export class IncidentCommandSystemComponent implements OnInit {
 
       if (matchingTeam) {
         matchingTeam.volunteers = volunteers;
+      } else {
+        // No matching column team — add to mobileKitchen as a new team
+        this.mobileKitchen.teams.push({ name: teamNameNorm, volunteers });
       }
     });
   }
