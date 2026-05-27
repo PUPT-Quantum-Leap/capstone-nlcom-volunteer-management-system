@@ -153,6 +153,7 @@
                         class="icon-btn icon-btn-primary"
                         [attr.aria-label]="'Download ' + backup.name"
                         title="Download"
+                        [disabled]="backupActionId() === backup.id"
                         (click)="downloadBackup(backup)"
                       >
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -165,6 +166,7 @@
                         class="icon-btn icon-btn-success"
                         [attr.aria-label]="'Restore ' + backup.name"
                         title="Restore"
+                        [disabled]="backupActionId() === backup.id"
                         (click)="restoreBackup(backup)"
                       >
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -177,6 +179,7 @@
                         class="icon-btn icon-btn-danger"
                         [attr.aria-label]="'Delete ' + backup.name"
                         title="Delete"
+                        [disabled]="backupActionId() === backup.id"
                         (click)="deleteBackup(backup.id)"
                       >
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
