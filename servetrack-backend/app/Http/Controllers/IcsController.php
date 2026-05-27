@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateIcsRequest;
 use App\Http\Resources\IcsResource;
 use App\Http\Resources\VolunteerResource;
 use App\Models\Ics;
+use App\Models\IcsTeam;
 use App\Models\Rsvp;
 use App\Models\Team;
 use App\Models\Volunteer;
@@ -67,8 +68,17 @@ class IcsController extends Controller
             return response()->json(['message' => 'RSVP not found.'], 404);
         }
 
+        $existingIcs = Ics::query()->where('rsvp_id', $rsvp->rsvp_id)->first();
+
+        if ($existingIcs) {
+            $existingIcs->load(['rsvp', 'teams', 'volunteers' => fn ($query) => $query->with('skills')]);
+
+            return (new IcsResource($existingIcs))
+                ->response()
+                ->setStatusCode(200);
+        }
+
         $ics = DB::transaction(function () use ($request, $rsvp): Ics {
-            // Determine location: use request location, or RSVP's linked location, or event_location
             $location = $request->input('location');
             if (! $location) {
                 $rsvp->load('location');
@@ -88,11 +98,23 @@ class IcsController extends Controller
                 'status' => $request->input('status', 'draft'),
             ]);
 
-            if ($request->has('team_ids')) {
-                $ics->teams()->sync($request->input('team_ids'));
+            $teamIds = $request->input('team_ids');
+            if (empty($teamIds)) {
+                $teamIds = Team::query()->pluck('id')->all();
             }
 
-            return $ics->load('teams');
+            if (! empty($teamIds)) {
+                $teams = Team::query()->whereIn('id', $teamIds)->get();
+                foreach ($teams as $team) {
+                    IcsTeam::query()->create([
+                        'ics_id' => $ics->id,
+                        'team_id' => $team->id,
+                        'team' => $team->name,
+                    ]);
+                }
+            }
+
+            return $ics->load(['rsvp', 'teams']);
         });
 
         return (new IcsResource($ics))
@@ -118,7 +140,19 @@ class IcsController extends Controller
             ], fn ($value) => $value !== null));
 
             if ($request->has('team_ids')) {
-                $ics->teams()->sync($request->input('team_ids'));
+                $teamIds = $request->input('team_ids');
+                IcsTeam::query()->where('ics_id', $ics->id)->delete();
+
+                if (! empty($teamIds)) {
+                    $teams = Team::query()->whereIn('id', $teamIds)->get();
+                    foreach ($teams as $team) {
+                        IcsTeam::query()->create([
+                            'ics_id' => $ics->id,
+                            'team_id' => $team->id,
+                            'team' => $team->name,
+                        ]);
+                    }
+                }
             }
         });
 

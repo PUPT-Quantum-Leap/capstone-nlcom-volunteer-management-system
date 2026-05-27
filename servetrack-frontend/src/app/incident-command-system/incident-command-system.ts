@@ -2,7 +2,9 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, computed, signal } 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RsvpService } from '../services/rsvp.service';
+import { IcsApiService } from '../services/ics-api.service';
 import { Rsvp } from '../models/rsvp';
+import { AiSuggestion } from '../models/ics';
 import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
 
 export interface Volunteer {
@@ -56,6 +58,7 @@ export interface CommandRole {
 })
 export class IncidentCommandSystemComponent implements OnInit {
   private rsvpService = inject(RsvpService);
+  private icsApiService = inject(IcsApiService);
 
   // Dropdown Options
   rsvpOptions = signal<SelectOption<string>[]>([]);
@@ -64,6 +67,29 @@ export class IncidentCommandSystemComponent implements OnInit {
   isEditMode = false;
   isLoading = false;
   error: string | null = null;
+
+  // AI suggestions state
+  aiSuggestions = signal<AiSuggestion[]>([]);
+  selectedSuggestionIds = signal<Set<number>>(new Set());
+  isLoadingAiSuggestions = signal(false);
+  isApplyingAiSuggestions = signal(false);
+  aiError = signal<string | null>(null);
+  isSuggestionsModalOpen = signal(false);
+  currentIcsId = signal<number | null>(null);
+
+  hasSelectedSuggestions = computed(() => this.selectedSuggestionIds().size > 0);
+  canGenerateAiSuggestions = computed(
+    () => !!this.selectedRsvp && (this.selectedRsvp.totalResponses ?? 0) > 0,
+  );
+  generateButtonTooltip = computed(() => {
+    if (!this.selectedRsvp) {
+      return 'Select an RSVP event first.';
+    }
+    if ((this.selectedRsvp.totalResponses ?? 0) === 0) {
+      return 'No volunteers have RSVP\'d for this event yet.';
+    }
+    return 'Generate AI-powered team assignments.';
+  });
 
   // Backend data
   rsvpList: Rsvp[] = [];
