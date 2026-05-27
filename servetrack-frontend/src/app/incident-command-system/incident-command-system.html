@@ -304,8 +304,19 @@
     </div>
   </div>
 
+  <!-- Empty State -->
+  @if (!hasIcsData()) {
+    <div class="ics-empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      </svg>
+      <h3>No assignments yet</h3>
+      <p>Select an RSVP event with volunteers, then click <strong>Generate AI Suggestions</strong> to assign volunteers to teams.</p>
+    </div>
+  }
+
   <!-- Operational Grid -->
-  <div class="ops-section">
+  @if (hasIcsData()) {
     <!-- Mobile Kitchen Column -->
     <div class="ops-column">
       <div class="ops-header">
@@ -599,7 +610,7 @@
         }
       </div>
     </div>
-  </div>
+  }
 
   <!-- Footer Grid Section -->
   <div class="footer-grid">

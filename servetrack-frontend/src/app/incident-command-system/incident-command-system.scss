@@ -1056,3 +1056,41 @@ $radius: 12px;
   border-top: 1px solid #e2e8f0;
   background: #f8fafc;
 }
+
+.ics-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: #fff;
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
+  color: #94a3b8;
+
+  svg {
+    width: 48px;
+    height: 48px;
+    opacity: 0.4;
+  }
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #475569;
+    margin: 0;
+  }
+
+  p {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    margin: 0;
+    max-width: 400px;
+
+    strong {
+      color: #475569;
+    }
+  }
+}
