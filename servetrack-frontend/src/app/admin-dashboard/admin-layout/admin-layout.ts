@@ -110,7 +110,7 @@ export class AdminLayout implements OnInit {
       case 'operations':
         return 'Operations';
       case 'sms':
-        return 'SMS Notifications';
+        return 'Email Notifications';
       case 'rsvps':
         return 'RSVP Management';
       case 'ics':

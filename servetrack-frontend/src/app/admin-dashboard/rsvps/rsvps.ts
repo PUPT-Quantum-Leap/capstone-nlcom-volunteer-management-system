@@ -519,16 +519,16 @@ export class RsvpsComponent {
           this.isNotifyingRsvpId.set(null);
           this.notifyType.set(null);
           this.showFeedback(
-            `SMS notifications sent: ${result.sent}/${result.total}`,
+            `Email notifications sent: ${result.sent}/${result.total}`,
             'success',
           );
         },
         error: (error: { error?: { message?: string }; message?: string }) => {
-          console.error('Error sending SMS notifications:', error);
+          console.error('Error sending Email notifications:', error);
           this.isNotifyingRsvpId.set(null);
           this.notifyType.set(null);
 
-          const errorMessage = error.error?.message || error.message || 'Failed to send SMS notifications.';
+          const errorMessage = error.error?.message || error.message || 'Failed to send Email notifications.';
           this.showFeedback(errorMessage, 'error');
         },
       });
