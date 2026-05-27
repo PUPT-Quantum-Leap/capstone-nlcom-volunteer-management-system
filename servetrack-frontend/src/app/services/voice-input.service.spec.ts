@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { VoiceInputService } from './voice-input.service';
+import { SpeechResult } from '../models/voice-input.model';
 
 function makeMockRecognition() {
   return {
@@ -10,6 +11,7 @@ function makeMockRecognition() {
     continuous: false,
     interimResults: false,
     lang: '',
+    maxAlternatives: 0,
     onstart: null as ((e: Event) => void) | null,
     onresult: null as ((e: any) => void) | null,
     onerror: null as ((e: any) => void) | null,
@@ -49,21 +51,27 @@ describe('VoiceInputService', () => {
     (window as any).SpeechRecognition = vi.fn(() => mockRecognition);
   });
 
-  it('start sets isListening to true via onstart', async () => {
+  it('start sets isListening to true via onstart', () => {
     mockRecognition.start.mockImplementation(() => {
       mockRecognition.onstart?.(new Event('start'));
     });
-    await service.start();
+    service.start();
     expect(service.isListening()).toBe(true);
+  });
+
+  it('start configures maxAlternatives and interimResults', () => {
+    service.start();
+    expect(mockRecognition.maxAlternatives).toBe(1);
+    expect(mockRecognition.interimResults).toBe(true);
+    expect(mockRecognition.continuous).toBe(true);
   });
 
   it('stop resolves with final transcript', async () => {
     mockRecognition.start.mockImplementation(() => {
       mockRecognition.onstart?.(new Event('start'));
     });
-    await service.start();
+    service.start();
 
-    // Simulate final result
     mockRecognition.onresult?.({
       resultIndex: 0,
       results: [
@@ -79,14 +87,14 @@ describe('VoiceInputService', () => {
     expect(transcript).toBe('Hello world');
   });
 
-  it('emits interim transcript via transcript$', async () => {
+  it('emits interim SpeechResult via transcript$', () => {
     mockRecognition.start.mockImplementation(() => {
       mockRecognition.onstart?.(new Event('start'));
     });
-    await service.start();
+    service.start();
 
-    const emitted: string[] = [];
-    service.transcript$.subscribe((t) => emitted.push(t));
+    const emitted: SpeechResult[] = [];
+    service.transcript$.subscribe((r) => emitted.push(r));
 
     mockRecognition.onresult?.({
       resultIndex: 0,
@@ -95,22 +103,67 @@ describe('VoiceInputService', () => {
       ],
     } as any);
 
-    expect(emitted).toContain('Hel');
+    expect(emitted.length).toBe(1);
+    expect(emitted[0].transcript).toBe('Hel');
+    expect(emitted[0].isFinal).toBe(false);
+    expect(emitted[0].confidence).toBe(0.5);
   });
 
-  it('sets error on permission denied', () => {
-    service.start();
-    mockRecognition.onerror?.({ error: 'not-allowed' } as any);
-    expect(service.error()).toContain('denied');
-  });
-
-  it('abort resets state', async () => {
+  it('emits final SpeechResult via transcript$', () => {
     mockRecognition.start.mockImplementation(() => {
       mockRecognition.onstart?.(new Event('start'));
     });
-    await service.start();
+    service.start();
+
+    const emitted: SpeechResult[] = [];
+    service.transcript$.subscribe((r) => emitted.push(r));
+
+    mockRecognition.onresult?.({
+      resultIndex: 0,
+      results: [
+        Object.assign([{ transcript: 'Hello world', confidence: 0.9 }], { isFinal: true }),
+      ],
+    } as any);
+
+    expect(emitted.length).toBe(1);
+    expect(emitted[0].transcript).toBe('Hello world');
+    expect(emitted[0].isFinal).toBe(true);
+    expect(emitted[0].confidence).toBe(0.9);
+  });
+
+  it('sets error on permission denied and stops listening', () => {
+    service.start();
+    mockRecognition.onerror?.({ error: 'not-allowed' } as any);
+    expect(service.error()).toContain('denied');
+    expect(service.isListening()).toBe(false);
+  });
+
+  it('sets error on network error and stops listening', () => {
+    service.start();
+    mockRecognition.onerror?.({ error: 'network' } as any);
+    expect(service.error()).toContain('Network');
+    expect(service.isListening()).toBe(false);
+  });
+
+  it('abort resets state', () => {
+    mockRecognition.start.mockImplementation(() => {
+      mockRecognition.onstart?.(new Event('start'));
+    });
+    service.start();
     service.abort();
     expect(service.isListening()).toBe(false);
     expect(service.transcript()).toBe('');
+  });
+
+  it('error$ emits SpeechError objects', () => {
+    const emitted: any[] = [];
+    service.error$.subscribe((e) => emitted.push(e));
+
+    service.start();
+    mockRecognition.onerror?.({ error: 'not-allowed' } as any);
+
+    expect(emitted.length).toBe(1);
+    expect(emitted[0].type).toBe('permission-denied');
+    expect(emitted[0].message).toContain('denied');
   });
 });
