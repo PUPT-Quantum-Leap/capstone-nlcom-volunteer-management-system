@@ -5,7 +5,9 @@ use App\Models\Volunteer;
 
 function validPassword(): string
 {
-    return Illuminate\Support\Str::random(10).'A1!';
+    $random = Illuminate\Support\Str::random(8);
+
+    return $random.'Ab1!';
 }
 
 beforeEach(function () {
@@ -252,7 +254,7 @@ describe('update', function (): void {
         $this->assertDatabaseHas('admin', ['email' => $user->email]);
     });
 
-    it('removes old profile on role change', function () {
+    it('preserves old profile data on role change', function () {
         $user = User::factory()->admin()->create();
         App\Models\Admin::create([
             'email' => $user->email,
@@ -270,7 +272,9 @@ describe('update', function (): void {
 
         $response->assertOk()
             ->assertJson(['message' => 'User updated successfully with role change']);
-        $this->assertDatabaseMissing('admin', ['email' => $user->email]);
+        // Old admin profile is preserved (not deleted) to avoid orphaning
+        // historical records tied to the admin profile
+        $this->assertDatabaseHas('admin', ['email' => $user->email]);
         $this->assertDatabaseHas('volunteer', ['user_id' => $user->id]);
     });
 
