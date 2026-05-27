@@ -252,6 +252,28 @@ describe('update', function (): void {
         $this->assertDatabaseHas('admin', ['email' => $user->email]);
     });
 
+    it('removes old profile on role change', function () {
+        $user = User::factory()->admin()->create();
+        App\Models\Admin::create([
+            'email' => $user->email,
+            'user_id' => $user->id,
+            'first_name' => 'Old',
+            'last_name' => 'Admin',
+            'contact_number' => '00000000000',
+        ]);
+
+        $response = $this->actingAs($this->adminUser)->putJson("/api/users/{$user->id}", [
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => 'volunteer',
+        ]);
+
+        $response->assertOk()
+            ->assertJson(['message' => 'User updated successfully with role change']);
+        $this->assertDatabaseMissing('admin', ['email' => $user->email]);
+        $this->assertDatabaseHas('volunteer', ['user_id' => $user->id]);
+    });
+
     it('forbids modifying own account', function () {
         $response = $this->actingAs($this->adminUser)->putJson("/api/users/{$this->adminUser->id}", [
             'name' => $this->adminUser->name,
