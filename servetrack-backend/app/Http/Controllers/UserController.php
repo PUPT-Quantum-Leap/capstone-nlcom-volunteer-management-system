@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ResetPasswordRequest;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\Admin;
 use App\Models\Coordinator;
 use App\Models\User;
@@ -11,19 +14,19 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
     /**
-     * Display a listing of the users.
-     * Excludes the current authenticated user to prevent self-modification/deletion.
+     * Display a paginated listing of users.
+     * Excludes the current authenticated user from the active list.
      */
     public function index(Request $request): JsonResponse
     {
         $showArchived = $request->query('archived') === 'true';
         $currentUserId = auth()->id();
+        $perPage = (int) $request->query('per_page', 20);
+        $perPage = min(max($perPage, 5), 100);
 
         if ($showArchived) {
             $query = User::onlyTrashed();
@@ -31,11 +34,10 @@ class UserController extends Controller
             $query = User::query();
         }
 
-        if ($currentUserId) {
+        if ($currentUserId && ! $showArchived) {
             $query->where('id', '!=', $currentUserId);
         }
 
-        // Search by name or email
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%'.$search.'%')
@@ -43,41 +45,31 @@ class UserController extends Controller
             });
         }
 
-        // Filter by role
         if ($role = $request->query('role')) {
             $query->where('role', $role);
         }
 
         $query->orderBy('created_at', 'desc');
 
-        $users = $query->get();
+        $users = $query->paginate($perPage);
 
         return response()->json([
             'success' => true,
-            'data' => $users,
+            'data' => $users->items(),
+            'meta' => [
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'per_page' => $users->perPage(),
+                'total' => $users->total(),
+            ],
         ]);
     }
 
     /**
      * Store a newly created user in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreUserRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => ['required', 'string', Password::defaults()],
-            'role' => 'required|in:admin,coordinator,volunteer',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
         try {
             DB::beginTransaction();
 
@@ -105,7 +97,7 @@ class UserController extends Controller
                         ->format('Y-m-d'),
                     'address' => '',
                     'educational_attainment' => '',
-                    'last_medical_examination' => null,
+                    'last_medical_examination' => now()->format('Y-m-d'),
                     'user_id' => $user->id,
                 ]);
             }
@@ -156,8 +148,15 @@ class UserController extends Controller
     /**
      * Update the specified user in storage.
      */
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateUserRequest $request, int $id): JsonResponse
     {
+        if ($id === auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot modify your own account.',
+            ], 403);
+        }
+
         $user = User::find($id);
 
         if (! $user) {
@@ -165,20 +164,6 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'User not found',
             ], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,'.$id,
-            'role' => 'required|in:admin,coordinator,volunteer',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
         }
 
         try {
@@ -244,6 +229,13 @@ class UserController extends Controller
      */
     public function destroy(int $id): JsonResponse
     {
+        if ($id === auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot delete your own account.',
+            ], 403);
+        }
+
         $user = User::withTrashed()->find($id);
 
         if (! $user) {
@@ -255,7 +247,6 @@ class UserController extends Controller
 
         DB::beginTransaction();
         try {
-            // Cascade force delete to associated volunteer
             if ($user->volunteer) {
                 $user->volunteer->forceDelete();
             }
@@ -290,6 +281,13 @@ class UserController extends Controller
      */
     public function softDelete(Request $request, int $id): JsonResponse
     {
+        if ($id === auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot archive your own account.',
+            ], 403);
+        }
+
         $user = User::withTrashed()->find($id);
 
         if (! $user) {
@@ -305,7 +303,6 @@ class UserController extends Controller
                 $user->delete();
             }
 
-            // Cascade soft delete to associated volunteer
             if ($user->volunteer
                 && ! $user->volunteer->trashed()) {
                 $user->volunteer->delete();
@@ -384,8 +381,15 @@ class UserController extends Controller
     /**
      * Reset user password.
      */
-    public function resetPassword(Request $request, int $id): JsonResponse
+    public function resetPassword(ResetPasswordRequest $request, int $id): JsonResponse
     {
+        if ($id === auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You cannot reset your own password here. Use the profile settings.',
+            ], 403);
+        }
+
         $user = User::find($id);
 
         if (! $user) {
@@ -393,18 +397,6 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'User not found',
             ], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'password' => ['required', 'string', Password::defaults()],
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
         }
 
         try {
