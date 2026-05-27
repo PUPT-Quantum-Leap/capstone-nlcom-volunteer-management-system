@@ -10,12 +10,12 @@ class ArchiveOldAttendancePhotos extends Command
 {
     protected $signature = 'attendance:archive-photos';
 
-    protected $description = 'Archive attendance photos older than 5 days';
+    protected $description = 'Archive attendance photos older than 30 days';
 
     public function handle(): int
     {
         $photosToArchive = AttendancePhoto::whereNull('archived_at')
-            ->where('uploaded_at', '<', now()->subDays(5))
+            ->where('uploaded_at', '<', now()->subDays(30))
             ->get();
 
         foreach ($photosToArchive as $photo) {

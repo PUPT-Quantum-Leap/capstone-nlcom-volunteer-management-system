@@ -42,6 +42,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command(RunScheduledBackup::class)
             ->dailyAt(config('backup.schedule.time'))
             ->timezone(config('backup.schedule.timezone'));
+
+        $schedule->command(App\Console\Commands\ArchiveOldAttendancePhotos::class)
+            ->daily()
+            ->description('Archive old attendance photos older than 30 days');
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(StripTags::class);

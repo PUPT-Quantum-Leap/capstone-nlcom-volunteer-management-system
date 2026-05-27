@@ -253,11 +253,12 @@ class AttendanceSeeder extends Seeder
         foreach ($eventTemplates as $index => $template) {
             // Spread events over the past 6 months, with more recent events
             $daysAgo = match (true) {
+                $index === 13 || $index === 14 => 0, // Force active events to be exactly today so there is always data today
                 $index < 3 => rand(7, 30),       // Recent (1-4 weeks ago)
                 $index < 6 => rand(31, 60),      // 1-2 months ago
                 $index < 9 => rand(61, 90),      // 2-3 months ago
                 $index < 12 => rand(91, 150),    // 3-5 months ago
-                default => rand(0, 7),           // Upcoming / very recent
+                default => rand(1, 7),           // Upcoming / very recent
             };
 
             $eventDate = $now->copy()->subDays($daysAgo);
@@ -398,7 +399,7 @@ class AttendanceSeeder extends Seeder
             $roll <= 60 => 'checked_out',   // 60% fully attended
             $roll <= 80 => 'checked_in',    // 20% checked in (still present or forgot to check out)
             $roll <= 90 => 'no_show',       // 10% no show
-            default => 'pending',           // 10% pending review
+            default => 'registered',        // 10% registered (default)
         };
     }
 

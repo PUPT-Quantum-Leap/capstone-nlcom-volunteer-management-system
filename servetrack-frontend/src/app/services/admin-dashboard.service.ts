@@ -557,5 +557,55 @@ export class AdminDashboardService {
       })
     );
   }
+
+  uploadAttendancePhoto(file: File): Observable<ApiResponse<{ photo: any; url: string }>> {
+    const formData = new FormData();
+    formData.append('photo', file);
+    return this.http.post<ApiResponse<{ photo: any; url: string }>>(
+      `${environment.apiUrl}/attendance-photos`,
+      formData,
+      { withCredentials: true }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error uploading attendance photo:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Failed to upload photo',
+          data: null as any
+        });
+      })
+    );
+  }
+
+  getAttendancePhotos(archived: boolean = false): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(
+      `${environment.apiUrl}/attendance-photos?archived=${archived}`,
+      { withCredentials: true }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error fetching attendance photos:', error);
+        return of({
+          success: false,
+          data: { data: [] }
+        } as ApiResponse<any>);
+      })
+    );
+  }
+
+  deleteAttendancePhoto(id: number): Observable<ApiResponse<any>> {
+    return this.http.delete<ApiResponse<any>>(
+      `${environment.apiUrl}/attendance-photos/${id}`,
+      { withCredentials: true }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error deleting attendance photo:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Failed to delete photo',
+          data: null
+        });
+      })
+    );
+  }
 }
 
