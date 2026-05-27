@@ -5,6 +5,8 @@ import {
   computed,
   inject,
   signal,
+  effect,
+  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormArray, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators, ValidatorFn } from '@angular/forms';
@@ -15,6 +17,7 @@ import { RsvpService } from '../../services/rsvp.service';
 import { AdminDashboardService, NonResponder } from '../../services/admin-dashboard.service';
 
 import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
+import { GlobalSearchService } from '../../services/global-search.service';
 
 export interface RespondedItem {
   id: number;
@@ -42,6 +45,7 @@ export class RsvpsComponent {
   private readonly rsvpService = inject(RsvpService);
   private readonly adminService = inject(AdminDashboardService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly globalSearchService = inject(GlobalSearchService);
   private readonly nonResponderSearch$ = new Subject<string>();
 
   // Dropdown Options
@@ -55,7 +59,7 @@ export class RsvpsComponent {
   readonly rsvps = signal<Rsvp[]>([]);
   readonly isLoading = signal(true);
   readonly rsvpFilterStatus = signal<'all' | 'active' | 'closed' | 'draft'>('all');
-  readonly rsvpSearchQuery = signal('');
+  readonly rsvpSearchQuery = this.globalSearchService.searchQuery;
   readonly currentPage = signal(1);
   readonly itemsPerPage = signal(10);
   readonly showRsvpModal = signal(false);
@@ -193,6 +197,13 @@ export class RsvpsComponent {
   constructor() {
     this.loadRsvps();
 
+    effect(() => {
+      this.rsvpSearchQuery();
+      untracked(() => {
+        this.currentPage.set(1);
+      });
+    });
+
     this.nonResponderSearch$
       .pipe(debounceTime(350), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe((q) => {
@@ -215,10 +226,7 @@ export class RsvpsComponent {
     this.currentPage.set(1);
   }
 
-  setRsvpSearchQuery(query: string): void {
-    this.rsvpSearchQuery.set(query);
-    this.currentPage.set(1);
-  }
+  // Search set query removed, handled by global search effect
 
   goToPage(page: number): void {
     this.currentPage.set(page);

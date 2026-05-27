@@ -7,6 +7,8 @@ import {
   signal,
   DestroyRef,
   output,
+  effect,
+  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -18,6 +20,7 @@ import {
   VolunteerUser,
   VolunteersResponse,
 } from '../../services/admin-dashboard.service';
+import { GlobalSearchService } from '../../services/global-search.service';
 
 @Component({
   selector: 'app-volunteer-management',
@@ -29,6 +32,7 @@ import {
 export class VolunteerManagement implements OnInit {
   private adminDashboardService = inject(AdminDashboardService);
   private destroyRef = inject(DestroyRef);
+  private globalSearchService = inject(GlobalSearchService);
 
   // Dropdown Options
   statusOptions: SelectOption<string>[] = [
@@ -44,7 +48,7 @@ export class VolunteerManagement implements OnInit {
   volunteerRows = signal<DashboardVolunteerRow[]>([]);
   archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
   showArchivedVolunteers = signal(false);
-  volunteerSearchQuery = signal('');
+  volunteerSearchQuery = this.globalSearchService.searchQuery;
   volunteersPage = signal(1);
   volunteersPerPage = signal(5);
   deletingVolunteerId = signal<number | null>(null);
@@ -121,7 +125,14 @@ export class VolunteerManagement implements OnInit {
     this.loadArchivedVolunteers();
   }
 
-  constructor() {}
+  constructor() {
+    effect(() => {
+      this.volunteerSearchQuery();
+      untracked(() => {
+        this.volunteersPage.set(1);
+      });
+    });
+  }
 
   private loadVolunteers(): void {
     this.isLoading.set(true);
@@ -183,11 +194,7 @@ export class VolunteerManagement implements OnInit {
       });
   }
 
-  // Search
-  setVolunteerSearchQuery(query: string): void {
-    this.volunteerSearchQuery.set(query);
-    this.volunteersPage.set(1);
-  }
+  // Search removed, handled by global search effect
 
   // Tab switching
   switchToActiveVolunteers(): void {

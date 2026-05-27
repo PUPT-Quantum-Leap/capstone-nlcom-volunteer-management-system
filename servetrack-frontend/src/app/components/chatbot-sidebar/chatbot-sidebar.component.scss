@@ -10,15 +10,14 @@ $surface: #ffffff;
 $surface-alt: #f9fafb;
 $user-msg-bg: $primary;
 $bot-msg-bg: #f3f4f6;
-$topbar-height: 72px;
 
 // ── Sidebar wrapper ──────────────────────────────────────────────────────
 .sidebar-wrapper {
   position: fixed;
-  top: $topbar-height;
+  top: 0;
   right: -400px;
   width: 400px;
-  height: calc(100vh - #{$topbar-height});
+  height: 100vh;
   background: $surface;
   border-left: 1px solid $border;
   display: flex;

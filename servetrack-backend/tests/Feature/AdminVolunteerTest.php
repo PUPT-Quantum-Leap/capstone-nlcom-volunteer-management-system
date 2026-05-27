@@ -10,9 +10,9 @@ describe('Admin Volunteer Search & Filter', function (): void {
         $this->actingAs($this->admin);
 
         // Seed test volunteers
-        Volunteer::factory()->create(['first_name' => 'Alice', 'last_name' => 'Smith']);
-        Volunteer::factory()->create(['first_name' => 'Bob', 'last_name' => 'Jones']);
-        Volunteer::factory()->create(['first_name' => 'Charlie', 'last_name' => 'Smith']);
+        Volunteer::factory()->create(['first_name' => 'Alice', 'last_name' => 'Smith', 'email' => 'alice@example.com']);
+        Volunteer::factory()->create(['first_name' => 'Bob', 'last_name' => 'Jones', 'email' => 'bob@example.com']);
+        Volunteer::factory()->create(['first_name' => 'Charlie', 'last_name' => 'Smith', 'email' => 'charlie@example.com']);
     });
 
     it('returns paginated volunteer list', function (): void {
