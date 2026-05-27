@@ -74,7 +74,14 @@ export class AttendanceManagement implements OnInit {
   selectedEventFilter = signal<number>(0);
 
   eventsOptions = computed(() => {
-    const records = this.attendanceRecords();
+    let records = this.attendanceRecords();
+    
+    // In calendar view, only show events for the selected date
+    if (this.attendanceView() === 'calendar') {
+      const selectedDate = this.attendanceDateFilter();
+      records = records.filter((r) => r.rsvp_date === selectedDate);
+    }
+
     const uniqueEvents = new Map<number, string>();
     records.forEach((r) => {
       if (r.rsvp_id && r.rsvp_title) {
@@ -212,14 +219,13 @@ export class AttendanceManagement implements OnInit {
     });
   }
 
-  // Computed signals for stats cards (based on filtered list by date if in daily, or overall)
   presentCount = computed(() => {
     const selectedDate = this.attendanceDateFilter();
     const selectedEventId = this.selectedEventFilter();
     const records = this.attendanceRecords();
     
     if (this.attendanceView() === 'calendar') {
-      return records.filter((r) => r.rsvp_date === selectedDate && r.status === 'present').length;
+      return records.filter((r) => r.rsvp_date === selectedDate && (selectedEventId === 0 || r.rsvp_id === selectedEventId) && r.status === 'present').length;
     } else if (this.attendanceView() === 'history' && selectedEventId !== 0) {
       return records.filter((r) => r.rsvp_id === selectedEventId && r.status === 'present').length;
     }
@@ -232,7 +238,7 @@ export class AttendanceManagement implements OnInit {
     const records = this.attendanceRecords();
     
     if (this.attendanceView() === 'calendar') {
-      return records.filter((r) => r.rsvp_date === selectedDate && r.status === 'absent').length;
+      return records.filter((r) => r.rsvp_date === selectedDate && (selectedEventId === 0 || r.rsvp_id === selectedEventId) && r.status === 'absent').length;
     } else if (this.attendanceView() === 'history' && selectedEventId !== 0) {
       return records.filter((r) => r.rsvp_id === selectedEventId && r.status === 'absent').length;
     }
@@ -245,7 +251,7 @@ export class AttendanceManagement implements OnInit {
     const records = this.attendanceRecords();
     
     if (this.attendanceView() === 'calendar') {
-      return records.filter((r) => r.rsvp_date === selectedDate).length;
+      return records.filter((r) => r.rsvp_date === selectedDate && (selectedEventId === 0 || r.rsvp_id === selectedEventId)).length;
     } else if (this.attendanceView() === 'history' && selectedEventId !== 0) {
       return records.filter((r) => r.rsvp_id === selectedEventId).length;
     }
@@ -259,7 +265,7 @@ export class AttendanceManagement implements OnInit {
     
     let targetRecords = records;
     if (this.attendanceView() === 'calendar') {
-      targetRecords = records.filter((r) => r.rsvp_date === selectedDate);
+      targetRecords = records.filter((r) => r.rsvp_date === selectedDate && (selectedEventId === 0 || r.rsvp_id === selectedEventId));
     } else if (this.attendanceView() === 'history' && selectedEventId !== 0) {
       targetRecords = records.filter((r) => r.rsvp_id === selectedEventId);
     }
@@ -277,6 +283,9 @@ export class AttendanceManagement implements OnInit {
     // Filter by selected date in calendar view
     if (this.attendanceView() === 'calendar') {
       records = records.filter((r) => r.rsvp_date === selectedDate);
+      if (selectedEventId !== 0) {
+        records = records.filter((r) => r.rsvp_id === selectedEventId);
+      }
     } else if (this.attendanceView() === 'history') {
       if (selectedEventId !== 0) {
         records = records.filter((r) => r.rsvp_id === selectedEventId);
@@ -334,6 +343,7 @@ export class AttendanceManagement implements OnInit {
   setAttendanceDateFilter(date: string): void {
     this.attendanceDateFilter.set(date);
     this.attendancePage.set(1);
+    this.selectedEventFilter.set(0);
   }
 
   // Pagination
@@ -610,6 +620,7 @@ export class AttendanceManagement implements OnInit {
   selectCalendarDay(dateStr: string): void {
     this.attendanceDateFilter.set(dateStr);
     this.attendancePage.set(1);
+    this.selectedEventFilter.set(0);
     this.attendanceView.set('calendar');
     this.showCalendarModal.set(false);
     this.showSnackbar.emit({ message: `Viewing attendance for ${dateStr}`, type: 'success' });

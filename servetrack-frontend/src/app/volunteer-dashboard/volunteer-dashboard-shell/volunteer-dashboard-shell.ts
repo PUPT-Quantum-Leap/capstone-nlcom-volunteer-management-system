@@ -237,10 +237,6 @@ export class VolunteerDashboardShell implements OnInit {
       this.navigateTo('attendance');
       return;
     }
-    if (query.includes('request') || query.includes('change')) {
-      this.navigateTo('requests');
-      return;
-    }
     if (query.includes('poll')) {
       this.navigateTo('polls');
       return;

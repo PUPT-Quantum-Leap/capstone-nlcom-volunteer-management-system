@@ -78,10 +78,17 @@ export class OverviewDashboard implements OnInit {
   );
 
   upcomingEventRows = computed<EventRow[]>(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     return this.rsvps()
+      .filter((rsvp) => {
+        if (rsvp.status !== 'active') return false;
+        const parsedDate = this.safeDate(rsvp.date);
+        if (!parsedDate) return false;
+        const dateYmd = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`;
+        return dateYmd >= todayStr;
+      })
       .map((rsvp) => {
         const parsedDate = this.safeDate(rsvp.date);
         return {
@@ -93,7 +100,6 @@ export class OverviewDashboard implements OnInit {
           responses: rsvp.totalResponses,
         };
       })
-      .filter((event) => event.dateValue >= today.getTime())
       .sort((a, b) => a.dateValue - b.dateValue)
       .slice(0, 5);
   });

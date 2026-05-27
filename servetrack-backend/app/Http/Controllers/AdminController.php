@@ -64,7 +64,7 @@ class AdminController extends Controller
             });
         })->count();
 
-        $upcomingEvents = Attendance::query()->whereDate('date', '>', today())->count();
+        $upcomingEvents = Rsvp::query()->where('status', 'active')->whereDate('date', '>=', today())->count();
         $completedMissions = Attendance::query()->where('status', 'approved')->count();
 
         $pendingAttendance = Attendance::query()->where('status', 'pending')->count();
