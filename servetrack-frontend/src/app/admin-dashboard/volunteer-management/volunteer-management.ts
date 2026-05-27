@@ -34,6 +34,16 @@ export class VolunteerManagement implements OnInit {
   private destroyRef = inject(DestroyRef);
   private globalSearchService = inject(GlobalSearchService);
 
+  constructor() {
+    effect(() => {
+      const totalPages = this.volunteersTotalPages();
+      const currentPage = this.volunteersPage();
+      if (currentPage > totalPages) {
+        this.volunteersPage.set(Math.max(totalPages, 1));
+      }
+    });
+  }
+
   // Dropdown Options
   statusOptions: SelectOption<string>[] = [
     { label: 'Active Volunteers', value: 'active' },
@@ -191,7 +201,11 @@ export class VolunteerManagement implements OnInit {
       });
   }
 
-  // Search removed, handled by global search effect
+  // Search
+  onSearchInput(query: string): void {
+    this.volunteerSearchQuery.set(query);
+    this.volunteersPage.set(1);
+  }
 
   // Tab switching
   switchToActiveVolunteers(): void {
