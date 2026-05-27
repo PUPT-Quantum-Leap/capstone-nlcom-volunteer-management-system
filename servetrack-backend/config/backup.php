@@ -132,109 +132,11 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | File Backup Settings
+    | Require Admin Role
     |--------------------------------------------------------------------------
     |
-    | Settings for backing up additional files and directories.
+    | All backup operations require admin role.
     |
     */
-    'files' => [
-        /*
-        |--------------------------------------------------------------------------
-        | Include Files
-        |--------------------------------------------------------------------------
-        |
-        | Array of directories or files to include in backups.
-        | Paths are relative to the application root.
-        |
-        */
-        'include' => [
-            // 'storage/app/public',
-            // 'resources/views',
-        ],
-
-        /*
-        |--------------------------------------------------------------------------
-        | Exclude Files
-        |--------------------------------------------------------------------------
-        |
-        | Array of patterns to exclude from file backups.
-        |
-        */
-        'exclude' => [
-            'node_modules',
-            'vendor',
-            '.git',
-            'storage/framework/cache',
-            'storage/framework/sessions',
-            'storage/framework/views',
-            'storage/logs',
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Security Settings
-    |--------------------------------------------------------------------------
-    |
-    | Security-related configuration for backups.
-    |
-    */
-    'security' => [
-        /*
-        |--------------------------------------------------------------------------
-        | Encrypt Backups
-        |--------------------------------------------------------------------------
-        |
-        | Whether to encrypt backup files using OpenSSL.
-        |
-        */
-        'encrypt' => env('BACKUP_ENCRYPT', false),
-
-        /*
-        |--------------------------------------------------------------------------
-        | Encryption Password
-        |--------------------------------------------------------------------------
-        |
-        | Password used for encrypting/decrypting backup files.
-        | If encrypt is true, this must be set.
-        |
-        */
-        'encryption_password' => env('BACKUP_ENCRYPTION_PASSWORD'),
-
-        /*
-        |--------------------------------------------------------------------------
-        | Require Admin Role
-        |--------------------------------------------------------------------------
-        |
-        | Whether to require admin role for all backup operations.
-        |
-        */
-        'require_admin' => env('BACKUP_REQUIRE_ADMIN', true),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Notifications
-    |--------------------------------------------------------------------------
-    |
-    | Configuration for backup notifications.
-    |
-    */
-    'notifications' => [
-        /*
-        |--------------------------------------------------------------------------
-        | Email Notifications
-        |--------------------------------------------------------------------------
-        |
-        | Whether to send email notifications for backup operations.
-        |
-        */
-        'email' => [
-            'enabled' => env('BACKUP_EMAIL_NOTIFICATIONS', false),
-            'to' => env('BACKUP_EMAIL_TO', 'admin@example.com'),
-            'on_success' => env('BACKUP_EMAIL_ON_SUCCESS', true),
-            'on_failure' => env('BACKUP_EMAIL_ON_FAILURE', true),
-        ],
-    ],
+    'require_admin' => env('BACKUP_REQUIRE_ADMIN', true),
 ];
