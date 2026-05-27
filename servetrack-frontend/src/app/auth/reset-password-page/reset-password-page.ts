@@ -26,6 +26,7 @@ export class ResetPasswordPage implements OnInit, OnDestroy {
   isLoading = signal(false);
   isSuccess = signal(false);
   error = signal<string | null>(null);
+  signInLink = signal('/admin-auth');
 
   showPassword = signal(false);
   showConfirmPassword = signal(false);
@@ -53,6 +54,7 @@ export class ResetPasswordPage implements OnInit, OnDestroy {
     this.querySub = this.route.queryParams.subscribe((params) => {
       this.token.set(params['token'] ?? '');
       this.email.set(params['email'] ?? '');
+      this.signInLink.set(params['role'] === 'volunteer' || params['role'] === 'coordinator' ? '/volunteer-auth' : '/admin-auth');
 
       if (!this.token() || !this.email()) {
         this.error.set('Invalid reset link. Please request a new password reset.');
@@ -131,7 +133,7 @@ export class ResetPasswordPage implements OnInit, OnDestroy {
       if (response.success) {
         this.isSuccess.set(true);
         setTimeout(() => {
-          this.router.navigateByUrl('/admin-auth');
+          this.router.navigateByUrl(this.signInLink());
         }, 2000);
       } else {
         this.error.set(response.message || 'Failed to reset password. The link may have expired.');
