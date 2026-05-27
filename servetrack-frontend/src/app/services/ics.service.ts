@@ -88,10 +88,10 @@ export class IcsService {
   /**
    * Apply AI suggestions to assign volunteers to teams.
    */
-  applyAiSuggestions(icsId: number, suggestions: AiSuggestion[]): Observable<{ message: string }> {
+  applyAiSuggestions(icsId: number, suggestions: AiSuggestion[]): Observable<{ data: Ics }> {
     return this.ensureCsrf().pipe(
       switchMap(() =>
-        this.http.post<{ message: string }>(
+        this.http.post<{ data: Ics }>(
           `${this.apiUrl}/${icsId}/apply-suggestions`,
           { suggestions },
           { withCredentials: true }

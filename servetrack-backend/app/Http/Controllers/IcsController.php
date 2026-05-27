@@ -220,7 +220,7 @@ class IcsController extends Controller
     /**
      * Apply AI suggestions to assign volunteers to teams.
      */
-    public function applyAiSuggestions(ApplyAiSuggestionsRequest $request, int $icsId): JsonResponse
+    public function applyAiSuggestions(ApplyAiSuggestionsRequest $request, int $icsId): IcsResource|JsonResponse
     {
         $ics = Ics::query()->find($icsId);
 
@@ -256,7 +256,7 @@ class IcsController extends Controller
             $ics->update(['ai_suggestions' => $request->input('suggestions')]);
         });
 
-        return response()->json(['message' => 'AI suggestions applied successfully.']);
+        return new IcsResource($ics->fresh(['rsvp', 'teams', 'volunteers' => fn ($query) => $query->with('skills')]));
     }
 
     /**
