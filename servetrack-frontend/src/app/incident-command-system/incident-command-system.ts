@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RsvpService } from '../services/rsvp.service';
 import { IcsService } from '../services/ics.service';
 import { Rsvp } from '../models/rsvp';
-import { AiSuggestion } from '../models/ics';
+import { AiSuggestion, Ics } from '../models/ics';
 import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
 
 export interface Volunteer {
@@ -76,6 +76,7 @@ export class IncidentCommandSystemComponent implements OnInit {
   aiError = signal<string | null>(null);
   isSuggestionsModalOpen = signal(false);
   currentIcsId = signal<number | null>(null);
+  hasIcsData = signal(false);
 
   hasSelectedSuggestions = computed(() => this.selectedSuggestionIds().size > 0);
   canGenerateAiSuggestions = computed(
@@ -435,10 +436,14 @@ export class IncidentCommandSystemComponent implements OnInit {
     this.icsService
       .applyAiSuggestions(icsId, selected)
       .subscribe({
-        next: () => {
+        next: (response: { data: Ics }) => {
           this.isApplyingAiSuggestions.set(false);
           this.isSuggestionsModalOpen.set(false);
           this.aiSuggestions.set([]);
+          if (response?.data) {
+            this.populateFromIcsData(response.data);
+            this.hasIcsData.set(true);
+          }
         },
         error: () => {
           this.aiError.set('Failed to apply suggestions. Please try again.');
@@ -672,9 +677,26 @@ export class IncidentCommandSystemComponent implements OnInit {
       if (found) {
         this.selectedRsvp.set(found);
         this.rsvpId = id;
-        console.log('Selected RSVP for generation:', found.title);
+        this.loadExistingIcsForRsvp(id);
       }
     }
+  }
+
+  private loadExistingIcsForRsvp(rsvpId: number): void {
+    this.hasIcsData.set(false);
+    this.clearAllData();
+
+    this.icsService.getIcs().subscribe({
+      next: (response) => {
+        const existing = response.data?.find((ics: any) => ics.rsvp_id === rsvpId);
+        if (existing?.volunteers?.length) {
+          this.currentIcsId.set(existing.id);
+          this.populateFromIcsData(existing);
+          this.hasIcsData.set(true);
+        }
+      },
+      error: () => {},
+    });
   }
 
   /**
@@ -709,6 +731,69 @@ export class IncidentCommandSystemComponent implements OnInit {
       objective: this.objective,
       menu: this.menu,
       totalResponses: rsvp.totalResponses,
+    });
+  }
+
+  private populateFromIcsData(ics: any): void {
+    if (!ics || !ics.volunteers) {
+      return;
+    }
+
+    const volunteersByTeam = new Map<number, any[]>();
+    ics.volunteers.forEach((volunteer: any) => {
+      const teamId = volunteer.team_id;
+      if (teamId) {
+        if (!volunteersByTeam.has(teamId)) {
+          volunteersByTeam.set(teamId, []);
+        }
+        volunteersByTeam.get(teamId)!.push({
+          name: volunteer.name,
+          isNew: false,
+          isDriver: false,
+          isLeader: volunteer.role === 'Leader',
+          skills: volunteer.skills || [],
+          training: [],
+          department: '',
+          rationale: '',
+          alternatives: [],
+        });
+      }
+    });
+
+    const teamMap = new Map<number, string>();
+    if (ics.teams) {
+      ics.teams.forEach((team: any) => teamMap.set(team.id, team.name));
+    }
+
+    this.mobileKitchen.teams.forEach((team) => (team.volunteers = []));
+    this.amDistribution.teams.forEach((team) => (team.volunteers = []));
+    this.pmDistribution.teams.forEach((team) => (team.volunteers = []));
+
+    volunteersByTeam.forEach((volunteers, teamId) => {
+      const teamNameNorm = (teamMap.get(teamId) || '').trim();
+      if (!teamNameNorm) {
+        return;
+      }
+
+      const allTeams = [
+        ...this.mobileKitchen.teams,
+        ...this.amDistribution.teams,
+        ...this.pmDistribution.teams,
+      ];
+
+      const matchingTeam = allTeams.find(
+        (t) =>
+          t.name &&
+          (t.name.toLowerCase().includes(teamNameNorm.toLowerCase()) ||
+            teamNameNorm.toLowerCase().includes(t.name.toLowerCase())),
+      );
+
+      if (matchingTeam) {
+        matchingTeam.volunteers = volunteers;
+      } else {
+        // No matching column team — add to mobileKitchen as a new team
+        this.mobileKitchen.teams.push({ name: teamNameNorm, volunteers });
+      }
     });
   }
 }

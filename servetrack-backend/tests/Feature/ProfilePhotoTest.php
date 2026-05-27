@@ -70,7 +70,7 @@ describe('Profile Photo Upload', function (): void {
             'emergencyContactName' => 'Jane Doe',
             'emergencyContactNumber' => '09987654321',
             'emergencyContactRelationship' => 'Mother',
-            'clearPhoto' => false,
+            'clearPhoto' => true,
         ])->assertSuccessful();
 
         $this->volunteer->refresh();
