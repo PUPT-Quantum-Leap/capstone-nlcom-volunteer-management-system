@@ -38,9 +38,13 @@ Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(funct
     })->name('password.reset');
 
     // Forgot password — send reset link email (rate-limited: 3 req/min)
-    Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])
+    Route::post('/admin/forgot-password', [ForgotPasswordController::class, 'sendAdminResetLink'])
         ->middleware('throttle:3,1')
-        ->name('password.email');
+        ->name('password.admin.email');
+
+    Route::post('/volunteer/forgot-password', [ForgotPasswordController::class, 'sendVolunteerResetLink'])
+        ->middleware('throttle:3,1')
+        ->name('password.volunteer.email');
 
     // Reset password — validate token and update password
     Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])
