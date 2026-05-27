@@ -41,7 +41,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $schedule->command(RunScheduledBackup::class)
             ->dailyAt(config('backup.schedule.time'))
-            ->timezone(config('backup.schedule.timezone'));
+            ->timezone(config('backup.schedule.timezone'))
+            ->withoutOverlapping()
+            ->description('Create scheduled automatic database backup');
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(StripTags::class);
