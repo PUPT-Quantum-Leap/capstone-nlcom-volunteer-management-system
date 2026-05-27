@@ -719,6 +719,52 @@ export class AuthService {
   }
 
   /**
+   * Request a password reset link for admin forgot-password flow.
+   */
+  forgotPassword$(email: string): Observable<{ success: boolean; message?: string }> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.http
+      .post<{ message?: string }>(`${environment.apiUrl}/forgot-password`, { email }, { withCredentials: true })
+      .pipe(
+        map(() => ({ success: true, message: 'If this email is registered, you will receive a password reset link.' })),
+        tap(() => this.isLoading.set(false)),
+        catchError((err: HttpErrorResponse) => {
+          this.isLoading.set(false);
+          const message = typeof err.error?.message === 'string'
+            ? err.error.message
+            : 'Something went wrong. Please try again.';
+          this.error.set(message);
+          return of({ success: false, message } as { success: boolean; message?: string });
+        }),
+      );
+  }
+
+  /**
+   * Reset the password using the token from the reset link email.
+   */
+  resetPassword$(data: { email: string; token: string; password: string; password_confirmation: string }): Observable<{ success: boolean; message?: string }> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.http
+      .post<{ message?: string }>(`${environment.apiUrl}/reset-password`, data, { withCredentials: true })
+      .pipe(
+        map((response) => ({ success: true, message: response.message })),
+        tap(() => this.isLoading.set(false)),
+        catchError((err: HttpErrorResponse) => {
+          this.isLoading.set(false);
+          const message = typeof err.error?.message === 'string'
+            ? err.error.message
+            : 'Failed to reset password. The link may have expired.';
+          this.error.set(message);
+          return of({ success: false, message } as { success: boolean; message?: string });
+        }),
+      );
+  }
+
+  /**
    * Register a new admin user
    */
   adminRegister(data: AdminSignupData): Promise<AuthResponse> {
