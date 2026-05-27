@@ -37,6 +37,7 @@ export class BackupRecoveryComponent {
   backupHistoryPageSize = signal(5);
   backupActionLoading = signal(false);
   backupActionId = signal<number | null>(null);
+  cleanupLoading = signal(false);
   scheduledBackupEnabled = signal(false);
   scheduledBackupFrequency = signal<'daily' | 'weekly' | 'monthly'>('weekly');
   scheduledBackupRunTime = signal<string>('02:00');
@@ -330,7 +331,7 @@ export class BackupRecoveryComponent {
       'Delete All Backups',
       'This will permanently delete ALL backup files and records. This action cannot be undone. Are you sure?',
       () => {
-        this.backupActionLoading.set(true);
+        this.cleanupLoading.set(true);
 
         this.adminDashboardService
           .cleanupBackups(0)
@@ -349,12 +350,12 @@ export class BackupRecoveryComponent {
                   type: 'error',
                 });
               }
-              this.backupActionLoading.set(false);
+              this.cleanupLoading.set(false);
             },
             error: (error: Error) => {
               console.error('Error deleting backups:', error);
               this.showSnackbar.emit({ message: 'Failed to delete backups', type: 'error' });
-              this.backupActionLoading.set(false);
+              this.cleanupLoading.set(false);
             },
           });
       }
