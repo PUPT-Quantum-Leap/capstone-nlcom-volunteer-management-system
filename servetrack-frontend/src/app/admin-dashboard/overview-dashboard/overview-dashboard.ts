@@ -39,6 +39,7 @@ export class OverviewDashboard implements OnInit {
 
   // Outputs to communicate with parent
   setView = output<string>();
+  showSnackbar = output<{ message: string; type: 'success' | 'error' | 'info' }>();
 
   // Signals
   isLoading = signal(false);
@@ -77,10 +78,17 @@ export class OverviewDashboard implements OnInit {
   );
 
   upcomingEventRows = computed<EventRow[]>(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     return this.rsvps()
+      .filter((rsvp) => {
+        if (rsvp.status !== 'active') return false;
+        const parsedDate = this.safeDate(rsvp.date);
+        if (!parsedDate) return false;
+        const dateYmd = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`;
+        return dateYmd >= todayStr;
+      })
       .map((rsvp) => {
         const parsedDate = this.safeDate(rsvp.date);
         return {
@@ -92,7 +100,6 @@ export class OverviewDashboard implements OnInit {
           responses: rsvp.totalResponses,
         };
       })
-      .filter((event) => event.dateValue >= today.getTime())
       .sort((a, b) => a.dateValue - b.dateValue)
       .slice(0, 5);
   });
@@ -120,22 +127,31 @@ export class OverviewDashboard implements OnInit {
   private loadDashboardData(): void {
     this.isLoading.set(true);
 
-    this.adminDashboardService.getDashboardData().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
-      if (response.success && response.data) {
-        this.totalVolunteers.set(response.data.stats.totalVolunteers);
-        this.activeVolunteers.set(response.data.stats.activeVolunteers);
-        this.upcomingEvents.set(response.data.stats.upcomingEvents);
-        this.completedMissions.set(response.data.stats.completedMissions);
-        this.notifications.set(response.data.notifications ?? []);
-        this.volunteerRows.set(response.data.volunteers ?? []);
-        this.performanceMetrics.set(response.data.performanceMetrics ?? []);
-      } else {
+    this.adminDashboardService.getDashboardData().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.totalVolunteers.set(response.data.stats.totalVolunteers);
+          this.activeVolunteers.set(response.data.stats.activeVolunteers);
+          this.upcomingEvents.set(response.data.stats.upcomingEvents);
+          this.completedMissions.set(response.data.stats.completedMissions);
+          this.notifications.set(response.data.notifications ?? []);
+          this.volunteerRows.set(response.data.volunteers ?? []);
+          this.performanceMetrics.set(response.data.performanceMetrics ?? []);
+        } else {
+          this.notifications.set([]);
+          this.volunteerRows.set([]);
+          this.performanceMetrics.set([]);
+        }
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading dashboard data:', err);
         this.notifications.set([]);
         this.volunteerRows.set([]);
         this.performanceMetrics.set([]);
+        this.isLoading.set(false);
+        this.showSnackbar.emit({ message: 'Failed to load dashboard statistics', type: 'error' });
       }
-
-      this.isLoading.set(false);
     });
   }
 
@@ -146,6 +162,7 @@ export class OverviewDashboard implements OnInit {
       },
       error: (error: Error) => {
         console.error('Error loading RSVPs:', error);
+        this.showSnackbar.emit({ message: 'Failed to load upcoming events', type: 'error' });
       },
     });
   }

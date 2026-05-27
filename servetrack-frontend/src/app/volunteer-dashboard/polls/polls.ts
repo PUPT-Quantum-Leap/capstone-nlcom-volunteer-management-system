@@ -7,6 +7,7 @@ import {
   computed,
   DestroyRef,
 } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RsvpService } from '../../services/rsvp.service';
 import { Rsvp, UserVote } from '../../models/rsvp';
@@ -36,7 +37,7 @@ interface Poll {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [],
+  imports: [NgClass],
   templateUrl: './polls.html',
   styleUrl: './polls.scss',
 })
@@ -50,6 +51,13 @@ export class PollsComponent implements OnInit {
   selectedPastPoll = signal<Poll | null>(null);
   isLoading = signal(true);
   pollError = signal<string | null>(null);
+
+  /**
+   * Past polls from the last 7 days.
+   * The backend already filters closed RSVPs to those with cutoff_day >= 7 days ago,
+   * so this simply mirrors all closed polls returned by the API.
+   */
+  recentPastPolls = computed(() => this.pastPolls());
 
   hasSubmittedVote = signal(false);
   selectedOptionId = signal<number | null>(null);
@@ -254,6 +262,22 @@ export class PollsComponent implements OnInit {
     if (!poll || optionId === null) return '';
     const option = poll.options.find((o) => o.id === optionId);
     return option?.timeSlot ?? '';
+  }
+
+  getAttendanceStatus(poll: Poll): { label: string; cssClass: string; icon: 'attended' | 'absent' | 'no-vote' } {
+    const vote = poll.userVote;
+    if (!vote) {
+      return { label: "Didn't Vote", cssClass: 'status-no-vote', icon: 'no-vote' };
+    }
+    const status = vote.attendanceStatus;
+    if (status === 'checked_in' || status === 'checked_out') {
+      return { label: 'Attended', cssClass: 'status-attended', icon: 'attended' };
+    }
+    if (status === 'no_show') {
+      return { label: 'Absent', cssClass: 'status-absent', icon: 'absent' };
+    }
+    // 'registered' — voted but event hasn't occurred yet or status not updated
+    return { label: 'Voted', cssClass: 'status-voted', icon: 'attended' };
   }
 
   private parseLocalISO(dateStr: string): Date {

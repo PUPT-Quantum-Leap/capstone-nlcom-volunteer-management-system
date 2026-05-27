@@ -31,6 +31,7 @@ export interface UserVote {
   votedAt: string;
   editCount: number;
   remainingEdits: number;
+  attendanceStatus?: 'registered' | 'checked_in' | 'checked_out' | 'no_show';
 }
 
 export interface RsvpShift {

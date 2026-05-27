@@ -188,8 +188,14 @@ export class SmsManagementComponent {
     this.adminDashboardService
       .getDashboardData()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
-        this.activeVolunteers.set(response.success ? response.data.stats.activeVolunteers : 0);
+      .subscribe({
+        next: (response) => {
+          this.activeVolunteers.set(response.success ? response.data.stats.activeVolunteers : 0);
+        },
+        error: (error) => {
+          console.error('Error loading active volunteers for SMS:', error);
+          this.activeVolunteers.set(0);
+        }
       });
 
     this.userService

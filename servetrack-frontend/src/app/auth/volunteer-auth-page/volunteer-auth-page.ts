@@ -406,25 +406,6 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
     }
   }
 
-  async loginWithFacebook(): Promise<void> {
-    this.isLoginLoading.set(true);
-    this.loginErrorMessage.set(null);
-
-    try {
-      const response = await firstValueFrom(this.authService.getFacebookAuthUrl$());
-
-      if (response.redirect_url) {
-        window.location.assign(response.redirect_url);
-      } else {
-        this.loginErrorMessage.set('Failed to initialize Facebook login.');
-      }
-    } catch (error) {
-      this.loginErrorMessage.set(this.authService.error() || 'An error occurred. Please try again.');
-    } finally {
-      this.isLoginLoading.set(false);
-    }
-  }
-
   // ─── Signup Logic ─────────────────────────────────────────────────────────
   getCurrentForm(): FormGroup {
     if (this.currentStep() === 1) return this.personalInfoForm;

@@ -64,7 +64,7 @@ class AdminController extends Controller
             });
         })->count();
 
-        $upcomingEvents = Attendance::query()->whereDate('date', '>', today())->count();
+        $upcomingEvents = Rsvp::query()->where('status', 'active')->whereDate('date', '>=', today())->count();
         $completedMissions = Attendance::query()->where('status', 'approved')->count();
 
         $pendingAttendance = Attendance::query()->where('status', 'pending')->count();
@@ -473,6 +473,77 @@ class AdminController extends Controller
     }
 
     /**
+     * Helper to get filtered attendance data.
+     */
+    private function getFilteredAttendanceData(Request $request): array
+    {
+        $rsvpId = $request->query('rsvp_id') ? (int) $request->query('rsvp_id') : null;
+        $date = $request->query('date');
+        $search = $request->query('search');
+
+        $query = Rsvp::query()
+            ->whereIn('status', ['active', 'closed'])
+            ->with(['responses.volunteer.positions', 'responses.timeSlot', 'location']);
+
+        if ($rsvpId) {
+            $query->where('rsvp_id', $rsvpId);
+        }
+
+        if ($date) {
+            $query->whereDate('date', $date);
+        }
+
+        $rsvps = $query->get();
+
+        $attendanceData = [];
+        $searchTerm = $search ? strtolower(trim($search)) : null;
+
+        foreach ($rsvps as $rsvp) {
+            $isCutoffPassed = $rsvp->isCutoffPassed();
+
+            foreach ($rsvp->responses as $response) {
+                $v = $response->volunteer;
+                $volunteerName = trim(($v?->first_name ?? '').' '.($v?->last_name ?? ''));
+                $volunteerEmail = $v?->email ?? '';
+                $volunteerDept = $v?->positions?->first()?->name ?? 'Unassigned';
+                $rsvpTitle = $rsvp->title ?? '';
+
+                // Apply search filter if present
+                if ($searchTerm) {
+                    $matchesName = str_contains(strtolower($volunteerName), $searchTerm);
+                    $matchesEmail = str_contains(strtolower($volunteerEmail), $searchTerm);
+                    $matchesDept = str_contains(strtolower($volunteerDept), $searchTerm);
+                    $matchesTitle = str_contains(strtolower($rsvpTitle), $searchTerm);
+
+                    if (! $matchesName && ! $matchesEmail && ! $matchesDept && ! $matchesTitle) {
+                        continue;
+                    }
+                }
+
+                $attendanceData[] = [
+                    'id' => $response->rsvp_response_id,
+                    'rsvp_id' => $rsvp->rsvp_id,
+                    'rsvp_title' => $rsvp->title,
+                    'rsvp_date' => $rsvp->date ? (is_string($rsvp->date) ? $rsvp->date : $rsvp->date->toDateString()) : null,
+                    'rsvp_location' => $rsvp->event_location,
+                    'cutoff_passed' => $isCutoffPassed,
+                    'volunteer_id' => $response->volunteer_id,
+                    'volunteer_name' => $volunteerName,
+                    'volunteer_email' => $volunteerEmail,
+                    'volunteer_department' => $volunteerDept,
+                    'time_slot' => $response->timeSlot->text ?? null,
+                    'voted_at' => $response->voted_at,
+                    'checked_in_at' => $response->checked_in_at,
+                    'checked_out_at' => $response->checked_out_at,
+                    'attendance_status' => $response->attendance_status,
+                ];
+            }
+        }
+
+        return $attendanceData;
+    }
+
+    /**
      * Get attendance from RSVP responses after cutoff.
      * Supports filtering by specific RSVP/event.
      */
@@ -486,49 +557,190 @@ class AdminController extends Controller
             ], 403);
         }
 
-        $rsvpId = $request->query('rsvp_id') ? (int) $request->query('rsvp_id') : null;
-
-        $query = Rsvp::query()
-            ->where('status', 'active')
-            ->with(['responses.volunteer.positions', 'responses.timeSlot', 'location']);
-
-        // Filter by specific RSVP if provided
-        if ($rsvpId) {
-            $query->where('rsvp_id', $rsvpId);
-        }
-
-        $rsvps = $query->get();
-
-        $attendanceData = [];
-
-        foreach ($rsvps as $rsvp) {
-            $isCutoffPassed = $rsvp->isCutoffPassed();
-
-            foreach ($rsvp->responses as $response) {
-                $v = $response->volunteer;
-                $attendanceData[] = [
-                    'id' => $response->rsvp_response_id,
-                    'rsvp_id' => $rsvp->rsvp_id,
-                    'rsvp_title' => $rsvp->title,
-                    'rsvp_date' => $rsvp->date,
-                    'rsvp_location' => $rsvp->event_location,
-                    'cutoff_passed' => $isCutoffPassed,
-                    'volunteer_id' => $response->volunteer_id,
-                    'volunteer_name' => trim(($v?->first_name ?? '').' '.($v?->last_name ?? '')),
-                    'volunteer_email' => $v?->email ?? '',
-                    'volunteer_department' => $v?->positions?->first()?->name ?? 'Unassigned',
-                    'time_slot' => $response->timeSlot->text ?? null,
-                    'voted_at' => $response->voted_at,
-                    'checked_in_at' => $response->checked_in_at,
-                    'checked_out_at' => $response->checked_out_at,
-                    'attendance_status' => $response->attendance_status,
-                ];
-            }
-        }
+        $attendanceData = $this->getFilteredAttendanceData($request);
 
         return response()->json([
             'success' => true,
             'data' => $attendanceData,
+        ]);
+    }
+
+    /**
+     * Export attendance to PDF (landscape A4).
+     */
+    public function exportAttendancePdf(Request $request): \Illuminate\Http\Response|JsonResponse
+    {
+        $role = $request->user()?->role;
+        if ($role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden. Admin access only.',
+            ], 403);
+        }
+
+        $date = $request->query('date');
+        $rsvpId = $request->query('rsvp_id');
+        $records = $this->getFilteredAttendanceData($request);
+
+        $eventSubtitle = 'All Dates';
+        $filenameSuffix = 'all';
+        if ($rsvpId) {
+            $rsvp = Rsvp::find($rsvpId);
+            if ($rsvp) {
+                $eventSubtitle = $rsvp->title.' ('.\Carbon\Carbon::parse($rsvp->date)->format('F d, Y').')';
+                $filenameSuffix = 'event-'.$rsvpId;
+            }
+        } elseif ($date) {
+            $eventSubtitle = \Carbon\Carbon::parse($date)->format('F d, Y');
+            $filenameSuffix = $date;
+        }
+
+        $html = view('pdfs.attendance', [
+            'records' => $records,
+            'date' => $eventSubtitle,
+            'generated_at' => now()->format('Y-m-d H:i:s'),
+        ])->render();
+
+        $dompdf = new \Dompdf\Dompdf;
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->render();
+
+        $filename = 'attendance-report-'.$filenameSuffix.'-'.date('YmdHis').'.pdf';
+
+        return response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
+    }
+
+    /**
+     * Export attendance to Excel spreadsheet.
+     */
+    public function exportAttendanceExcel(Request $request): \Illuminate\Http\Response|JsonResponse
+    {
+        $role = $request->user()?->role;
+        if ($role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden. Admin access only.',
+            ], 403);
+        }
+
+        $date = $request->query('date');
+        $rsvpId = $request->query('rsvp_id');
+        $records = $this->getFilteredAttendanceData($request);
+
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Attendance Report');
+
+        $spreadsheet->getDefaultStyle()->getFont()->setName('Calibri');
+
+        // Title
+        $sheet->setCellValue('A1', 'Volunteer Attendance Report');
+        $sheet->mergeCells('A1:G1');
+        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(15);
+        $sheet->getStyle('A1')
+            ->getAlignment()
+            ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        $subtitle = 'Generated: '.date('Y-m-d H:i:s');
+        if ($rsvpId) {
+            $rsvp = Rsvp::find($rsvpId);
+            if ($rsvp) {
+                $subtitle .= ' | Event: '.$rsvp->title.' ('.\Carbon\Carbon::parse($rsvp->date)->format('F d, Y').')';
+            }
+        } elseif ($date) {
+            $subtitle .= ' | Date: '.\Carbon\Carbon::parse($date)->format('F d, Y');
+        }
+        $sheet->setCellValue('A2', $subtitle);
+        $sheet->mergeCells('A2:G2');
+        $sheet->getStyle('A2')->getFont()->setSize(11);
+        $sheet->getStyle('A2')
+            ->getAlignment()
+            ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+        // Headers
+        $sheet->setCellValue('A4', 'Volunteer Name');
+        $sheet->setCellValue('B4', 'Email');
+        $sheet->setCellValue('C4', 'Department');
+        $sheet->setCellValue('D4', 'Check-In');
+        $sheet->setCellValue('E4', 'Check-Out');
+        $sheet->setCellValue('F4', 'Duration/Shift');
+        $sheet->setCellValue('G4', 'Status');
+
+        $headerRange = 'A4:G4';
+        $sheet->getStyle($headerRange)->getFont()->setBold(true)->setSize(10);
+        $sheet->getStyle($headerRange)
+            ->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()
+            ->setARGB('FF1e40af'); // primary blue color
+        $sheet->getStyle($headerRange)->getFont()->getColor()->setARGB('FFFFFFFF'); // white text
+
+        $row = 5;
+        foreach ($records as $record) {
+            $formatTime = function ($timeStr) {
+                if (! $timeStr) {
+                    return '—';
+                }
+                try {
+                    return \Carbon\Carbon::parse($timeStr)->format('h:i A');
+                } catch (\Exception $e) {
+                    return $timeStr;
+                }
+            };
+
+            $statusText = $record['attendance_status'] === 'checked_in' ? 'Present' : 'Absent';
+
+            $sheet->setCellValue('A'.$row, $this->spreadsheetText($record['volunteer_name']));
+            $sheet->setCellValue('B'.$row, $record['volunteer_email']);
+            $sheet->setCellValue('C'.$row, $this->spreadsheetText($record['volunteer_department']));
+            $sheet->setCellValue('D'.$row, $formatTime($record['checked_in_at']));
+            $sheet->setCellValue('E'.$row, $formatTime($record['checked_out_at']));
+            $sheet->setCellValue('F'.$row, $record['time_slot'] ?: '—');
+            $sheet->setCellValue('G'.$row, $statusText);
+
+            $statusCell = 'G'.$row;
+            if ($statusText === 'Present') {
+                $sheet->getStyle($statusCell)->getFont()->getColor()->setARGB('FF15803d');
+            } else {
+                $sheet->getStyle($statusCell)->getFont()->getColor()->setARGB('FFb91c1c');
+            }
+
+            $sheet->getStyle("A{$row}:G{$row}")->getFont()->setSize(10);
+            $row++;
+        }
+
+        $lastRow = $row - 1;
+
+        if ($lastRow >= 5) {
+            $sheet->getStyle("A4:G{$lastRow}")
+                ->getBorders()->getAllBorders()
+                ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+        }
+
+        foreach (range('A', 'G') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $filenameSuffix = 'all';
+        if ($rsvpId) {
+            $filenameSuffix = 'event-'.$rsvpId;
+        } elseif ($date) {
+            $filenameSuffix = $date;
+        }
+        $filename = 'attendance-report-'.$filenameSuffix.'-'.date('YmdHis').'.xlsx';
+
+        ob_start();
+        $writer->save('php://output');
+        $content = ob_get_clean();
+
+        return response($content, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 
@@ -604,6 +816,17 @@ class AdminController extends Controller
                 'success' => false,
                 'message' => 'RSVP response not found.',
             ], 404);
+        }
+
+        if ($rsvpResponse->rsvp && $rsvpResponse->rsvp->date) {
+            $eventDate = \Carbon\Carbon::parse($rsvpResponse->rsvp->date)->startOfDay();
+            $today = \Carbon\Carbon::today();
+            if ($eventDate->diffInDays($today, false) > 7) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Attendance for events older than 1 week cannot be modified.',
+                ], 422);
+            }
         }
 
         Log::debug('RSVP response loaded', [
@@ -719,5 +942,15 @@ class AdminController extends Controller
 
             return 0;
         }
+    }
+
+    /**
+     * Prevent formula injection when generating spreadsheet cells.
+     */
+    private function spreadsheetText(mixed $value): string
+    {
+        $text = (string) $value;
+
+        return preg_match('/^[=+\-@]/', $text) === 1 ? "'".$text : $text;
     }
 }

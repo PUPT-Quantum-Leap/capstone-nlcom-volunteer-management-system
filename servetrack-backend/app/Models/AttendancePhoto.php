@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -38,7 +39,7 @@ class AttendancePhoto extends Model
 
     public function shouldArchive(): bool
     {
-        return $this->archived_at === null && $this->uploaded_at->lt(now()->subDays(5));
+        return $this->archived_at === null && $this->uploaded_at->lt(now()->subDays(30));
     }
 
     public function archive(): void
