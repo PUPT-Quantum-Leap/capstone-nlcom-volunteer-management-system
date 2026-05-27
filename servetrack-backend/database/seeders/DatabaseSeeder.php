@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             VolunteerSeeder::class,
             TeamSeeder::class,
             IcsSeeder::class,
+            IcsTeamSeeder::class,
         ]);
     }
 }
