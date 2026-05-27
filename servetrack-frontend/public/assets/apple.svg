@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient: Soft warm cream/yellow to peach -->
+    <linearGradient id="appleBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#facc15" />
+    </linearGradient>
+    <!-- Apple Body Gradient: Vibrant red to deep rich crimson -->
+    <linearGradient id="appleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f87171" />
+      <stop offset="60%" stop-color="#dc2626" />
+      <stop offset="100%" stop-color="#991b1b" />
+    </linearGradient>
+    <!-- Leaf Gradient: Fresh green -->
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80" />
+      <stop offset="100%" stop-color="#15803d" />
+    </linearGradient>
+    <!-- Shadow Filter -->
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Circular Background -->
+  <circle cx="50" cy="50" r="50" fill="url(#appleBg)" />
+
+  <!-- Apple Stem -->
+  <path d="M50 35 C48 25, 53 18, 55 18 C57 18, 52 25, 50 35 Z" fill="#78350f" />
+
+  <!-- Leaf -->
+  <path d="M53 20 C62 16, 68 22, 68 22 C68 22, 60 26, 53 20 Z" fill="url(#leafGrad)" />
+  <!-- Leaf vein -->
+  <path d="M53 20 Q60 21 68 22" stroke="#14532d" stroke-width="0.8" fill="none" />
+
+  <!-- Apple Body (Cute stylized apple shape) -->
+  <path d="M50 38 
+           C43 33, 27 34, 25 48 
+           C23 60, 31 82, 48 84 
+           C49 84, 51 84, 52 84 
+           C69 82, 77 60, 75 48 
+           C73 34, 57 33, 50 38 Z" 
+        fill="url(#appleGrad)" 
+        filter="url(#softShadow)" />
+
+  <!-- Apple Highlight/Shine -->
+  <path d="M30 46 C34 40, 42 42, 42 42 C42 42, 35 46, 30 46 Z" fill="#ffffff" opacity="0.4" />
+
+  <!-- Cute Eyes -->
+  <g fill="#111827">
+    <circle cx="42" cy="56" r="2.8" />
+    <circle cx="58" cy="56" r="2.8" />
+  </g>
+  <!-- Eye Highlights -->
+  <g fill="#ffffff">
+    <circle cx="41.2" cy="55.2" r="0.9" />
+    <circle cx="57.2" cy="55.2" r="0.9" />
+    <circle cx="42.8" cy="56.8" r="0.4" />
+    <circle cx="58.8" cy="56.8" r="0.4" />
+  </g>
+
+  <!-- Sweet Smile -->
+  <path d="M47 62.5 Q50 66 53 62.5" stroke="#7f1d1d" stroke-width="2.2" stroke-linecap="round" fill="none" />
+
+  <!-- Rosy Blushing Cheeks -->
+  <circle cx="36" cy="62" r="3" fill="#f43f5e" opacity="0.6" />
+  <circle cx="64" cy="62" r="3" fill="#f43f5e" opacity="0.6" />
+</svg>

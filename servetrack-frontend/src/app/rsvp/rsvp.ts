@@ -45,8 +45,19 @@ export class RsvpComponent implements OnInit {
   isEditSubmitting = signal(false);
   editError = signal<string | null>(null);
 
+  showCodeModal = signal(false);
+  accessCode = signal('');
+
   isAuthenticated = computed(() => this.authService.isAuthenticated());
-  canVote = computed(() => this.isAuthenticated() === true);
+  isVolunteer = computed(() => {
+    const user = this.authService.currentUser();
+    return user ? user.role === 'volunteer' || user.user_type === 'volunteer' : false;
+  });
+  isAdmin = computed(() => {
+    const user = this.authService.currentUser();
+    return user ? user.role === 'admin' || user.user_type === 'admin' : false;
+  });
+  canVote = computed(() => this.isAuthenticated() && this.isVolunteer());
 
   totalResponses = computed(() => this.rsvp()?.totalResponses ?? 0);
   hasSelectedShift = computed(() => this.selectedShiftId() !== null);
@@ -122,6 +133,10 @@ export class RsvpComponent implements OnInit {
           this.isLoading.set(false);
           // Try to load the volunteer's response
           this.loadMyResponse(response.data.id);
+
+          if (!this.isAuthenticated()) {
+            this.showCodeModal.set(true);
+          }
         },
         error: () => {
           this.error.set('RSVP not found or is no longer available.');
@@ -159,6 +174,28 @@ export class RsvpComponent implements OnInit {
         redirect: `/rsvp/${this.currentRsvpSlug}?logged_in=true`,
       },
     });
+  }
+
+  openCodeModal(): void {
+    this.showCodeModal.set(true);
+  }
+
+  closeCodeModal(): void {
+    this.showCodeModal.set(false);
+    this.accessCode.set('');
+  }
+
+  updateAccessCode(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value.toUpperCase();
+    input.value = value;
+    this.accessCode.set(value);
+  }
+
+  submitCode(): void {
+    // For now, redirect to login page with the code conceptually (or just close modal & redirect)
+    this.closeCodeModal();
+    this.redirectToLogin();
   }
 
   getResponsePercentage(responses: number): number {

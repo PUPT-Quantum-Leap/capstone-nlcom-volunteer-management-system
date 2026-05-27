@@ -52,6 +52,24 @@ export class VolunteerService {
     );
   }
 
+  /** Upload the volunteer's profile photo. */
+  uploadProfilePhoto(file: File): Observable<ApiResponse<{ profile_photo_url: string }>> {
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    return this.authService.ensureCsrf$().pipe(
+      switchMap(() =>
+        this.http.post<ApiResponse<{ profile_photo_url: string }>>(`${this.baseUrl}/profile/photo`, formData, {
+          withCredentials: true,
+        })
+      ),
+      catchError((error) => {
+        console.error('[VolunteerService] uploadProfilePhoto failed:', error);
+        throw error;
+      }),
+    );
+  }
+
   /**
    * List attendance records with optional period filter and search term.
    */
