@@ -15,7 +15,8 @@ class BackupFactory extends Factory
 
     public function definition(): array
     {
-        $name = 'backup_'.Str::random(8);
+        $ts = now()->format('Y-m-d_His');
+        $name = $ts.'_manual_'.Str::random(4);
 
         return [
             'name' => $name,

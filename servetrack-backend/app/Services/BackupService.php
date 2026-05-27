@@ -26,7 +26,7 @@ class BackupService
      */
     public function createBackup(string $type = 'manual', ?string $description = null): Backup
     {
-        $backupName = $this->generateBackupName();
+        $backupName = $this->generateBackupName($type);
         $backup = Backup::create([
             'name' => $backupName,
             'file_path' => $this->backupPath.'/'.$backupName.'.sql',
@@ -609,11 +609,11 @@ class BackupService
     }
 
     /**
-     * Generate unique backup name
+     * Generate unique backup name in the format: YYYY-MM-DD_HHMMSS_type_random
      */
-    private function generateBackupName(): string
+    private function generateBackupName(string $type): string
     {
-        return 'servetrack_backup_'.now()->format('Y_m_d_His').'_'.Str::random(6);
+        return now()->format('Y-m-d_His').'_'.$type.'_'.Str::random(4);
     }
 
     /**
