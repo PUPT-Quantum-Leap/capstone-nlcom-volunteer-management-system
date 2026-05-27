@@ -7,11 +7,11 @@ import {
   signal,
   DestroyRef,
 } from '@angular/core';
-import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterOutlet, Event as RouterEvent } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { AdminDashboardService } from '../../services/admin-dashboard.service';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { filter } from 'rxjs';
+import { filter, Subscription } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
 import { ChatbotService } from '../../services/chatbot.service';
@@ -56,6 +56,10 @@ export class AdminLayout implements OnInit {
   showNotifications = signal(false);
   showLogoutModal = signal(false);
   isLoading = signal(false);
+  snackbarState = signal<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  snackbarLeaving = signal(false);
+  private snackbarSubscription: Subscription | null = null;
+  private snackbarTimeout: ReturnType<typeof setTimeout> | null = null;
 
   searchQuery = this.globalSearchService.searchQuery;
   currentUrl = signal(this.router.url); 
@@ -394,6 +398,39 @@ export class AdminLayout implements OnInit {
     if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.setItem('admin-sidebar-collapsed', collapsed.toString());
     }
+  }
+
+  onChildActivate(component: unknown): void {
+    this.snackbarSubscription?.unsubscribe();
+    const comp = component as { showSnackbar?: { subscribe: (fn: (msg: { message: string; type: 'success' | 'error' | 'info' }) => void) => import('rxjs').Subscription } };
+    if (comp?.showSnackbar) {
+      this.snackbarSubscription = comp.showSnackbar.subscribe((msg) => {
+        this.showSnackbar(msg);
+      });
+    }
+  }
+
+  private showSnackbar(msg: { message: string; type: 'success' | 'error' | 'info' }): void {
+    if (this.snackbarTimeout) {
+      clearTimeout(this.snackbarTimeout);
+    }
+    this.snackbarLeaving.set(false);
+    this.snackbarState.set(msg);
+    this.snackbarTimeout = setTimeout(() => {
+      this.dismissSnackbar();
+    }, 4000);
+  }
+
+  dismissSnackbar(): void {
+    if (this.snackbarTimeout) {
+      clearTimeout(this.snackbarTimeout);
+      this.snackbarTimeout = null;
+    }
+    this.snackbarLeaving.set(true);
+    setTimeout(() => {
+      this.snackbarState.set(null);
+      this.snackbarLeaving.set(false);
+    }, 300);
   }
 
   private updateIsMobile(): void {
