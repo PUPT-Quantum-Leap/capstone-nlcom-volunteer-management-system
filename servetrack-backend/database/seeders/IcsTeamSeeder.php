@@ -9,8 +9,10 @@ class IcsTeamSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    public function run(?int $icsId = null): void
     {
+        $icsId ??= \App\Models\Ics::query()->where('status', 'active')->value('id');
+
         $operations = [
             // TEAM ALPHA
             [
@@ -117,7 +119,7 @@ class IcsTeamSeeder extends Seeder
         ];
 
         foreach ($operations as $operation) {
-            \App\Models\IcsTeam::create($operation);
+            \App\Models\IcsTeam::create(array_merge($operation, ['ics_id' => $icsId]));
         }
     }
 }
