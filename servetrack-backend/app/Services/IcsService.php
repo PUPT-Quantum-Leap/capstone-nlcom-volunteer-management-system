@@ -10,8 +10,13 @@ use Illuminate\Support\Collection;
 
 class IcsService
 {
+    public function __construct(
+        private GroqService $groqService
+    ) {}
+
     /**
      * Generate AI-based team assignments for volunteers based on their skills.
+     * Attempts Groq AI first; falls back to hardcoded skill-to-team mapping on failure.
      */
     public function generateTeamAssignments(Ics $ics): array
     {
@@ -35,15 +40,94 @@ class IcsService
             ];
         }
 
-        // Get volunteers who RSVP'd for this event
+        // Get volunteers who RSVP'd for this event with full profile data
         $volunteers = Volunteer::query()
             ->whereHas('rsvpResponses', function ($query) use ($rsvp) {
                 $query->where('rsvp_id', $rsvp->rsvp_id);
             })
-            ->with(['skills', 'positions', 'experiences'])
+            ->with(['skills', 'trainings', 'positions', 'experiences'])
             ->get();
 
-        // Define skill-to-team mappings (can be customized or AI-generated)
+        if ($volunteers->isEmpty()) {
+            return [
+                'message' => 'No volunteers have RSVP\'d for this event.',
+                'total_volunteers' => 0,
+                'assignments' => [],
+            ];
+        }
+
+        // Attempt Groq AI-powered suggestions
+        if ($this->groqService->isConfigured()) {
+            $groqResult = $this->groqService->suggestAssignments(
+                $volunteers,
+                $teams,
+                $rsvp->title,
+                $rsvp->description,
+            );
+
+            $assignments = $this->normalizeGroqAssignments(
+                $groqResult['assignments'] ?? [],
+                $volunteers,
+                $teams,
+            );
+
+            if (! empty($assignments)) {
+                return [
+                    'message' => 'AI-generated team assignments using Groq LLM.',
+                    'total_volunteers' => count($assignments),
+                    'assignments' => $assignments,
+                ];
+            }
+        }
+
+        // Fallback to hardcoded skill-to-team mapping
+        return $this->fallbackAssignments($volunteers, $teams);
+    }
+
+    /**
+     * Normalize Groq API response into the standard assignment format.
+     */
+    private function normalizeGroqAssignments(
+        array $groqAssignments,
+        Collection $volunteers,
+        Collection $teams,
+    ): array {
+        $volunteersById = $volunteers->keyBy('volunteer_id');
+        $teamsById = $teams->keyBy('id');
+
+        $assignments = [];
+
+        foreach ($groqAssignments as $suggestion) {
+            $volunteerId = $suggestion['volunteer_id'] ?? null;
+            $teamId = $suggestion['team_id'] ?? null;
+
+            $volunteer = $volunteersById->get($volunteerId);
+            $team = $teamsById->get($teamId);
+
+            if (! $volunteer || ! $team) {
+                continue;
+            }
+
+            $assignments[] = [
+                'volunteer_id' => $volunteer->volunteer_id,
+                'volunteer_name' => $volunteer->first_name.' '.$volunteer->last_name,
+                'team_id' => $team->id,
+                'team_name' => $team->name,
+                'role' => $suggestion['role'] ?? 'Team Member',
+                'skills' => $volunteer->skills->pluck('name')->toArray(),
+                'confidence' => $suggestion['confidence'] ?? 0.5,
+                'reasoning' => $suggestion['reasoning'] ?? null,
+            ];
+        }
+
+        return $assignments;
+    }
+
+    /**
+     * Fallback: use hardcoded skill-to-team mapping when Groq is unavailable.
+     */
+    private function fallbackAssignments(Collection $volunteers, Collection $teams): array
+    {
         $skillTeamMappings = $this->getSkillTeamMappings();
 
         $assignments = [];
@@ -70,11 +154,10 @@ class IcsService
             }
         }
 
-        // Sort by confidence score
         usort($assignments, fn ($a, $b) => $b['confidence'] <=> $a['confidence']);
 
         return [
-            'message' => 'AI-generated team assignments based on volunteer skills.',
+            'message' => 'AI-generated team assignments based on volunteer skills (fallback).',
             'total_volunteers' => count($assignments),
             'assignments' => $assignments,
         ];

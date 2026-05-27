@@ -14,6 +14,7 @@ use App\Models\Rsvp;
 use App\Models\Team;
 use App\Models\Volunteer;
 use App\Services\IcsService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -21,6 +22,8 @@ use Illuminate\Support\Facades\DB;
 
 class IcsController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(
         private IcsService $icsService
     ) {}
@@ -166,6 +169,8 @@ class IcsController extends Controller
         if (! $ics) {
             return response()->json(['message' => 'ICS not found.'], 404);
         }
+
+        $this->authorize('getAiSuggestions', $ics);
 
         $result = $this->icsService->generateTeamAssignments($ics);
 

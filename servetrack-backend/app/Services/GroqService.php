@@ -1,0 +1,207 @@
+<?php
+
+namespace App\Services;
+
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class GroqService
+{
+    private const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+    public function __construct(
+        private string $apiKey = '',
+        private string $model = 'llama-3.3-70b-versatile',
+        private int $maxTokens = 4096,
+        private float $temperature = 0.1,
+    ) {
+        $this->apiKey = config('services.groq.api_key', '');
+        $this->model = config('services.groq.model', 'llama-3.3-70b-versatile');
+        $this->maxTokens = (int) config('services.groq.max_tokens', 4096);
+        $this->temperature = (float) config('services.groq.temperature', 0.1);
+    }
+
+    public function isConfigured(): bool
+    {
+        return ! empty($this->apiKey);
+    }
+
+    public function suggestAssignments(
+        Collection $volunteers,
+        Collection $teams,
+        string $eventName,
+        ?string $eventDescription,
+    ): array {
+        if (! $this->isConfigured()) {
+            Log::warning('GroqService: API key not configured, returning empty suggestions');
+
+            return [
+                'assignments' => [],
+                'unassigned' => [],
+            ];
+        }
+
+        $systemPrompt = $this->buildSystemPrompt();
+        $userPrompt = $this->buildUserPrompt($volunteers, $teams, $eventName, $eventDescription);
+
+        try {
+            $response = Http::withToken($this->apiKey)
+                ->timeout(60)
+                ->post(self::GROQ_API_URL, [
+                    'model' => $this->model,
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => $userPrompt],
+                    ],
+                    'temperature' => $this->temperature,
+                    'max_tokens' => $this->maxTokens,
+                    'response_format' => ['type' => 'json_object'],
+                ]);
+
+            if (! $response->successful()) {
+                Log::error('GroqService: API request failed', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return [
+                    'assignments' => [],
+                    'unassigned' => [],
+                ];
+            }
+
+            $data = $response->json();
+            $content = $data['choices'][0]['message']['content'] ?? null;
+
+            if (! $content) {
+                Log::warning('GroqService: Empty response content');
+
+                return [
+                    'assignments' => [],
+                    'unassigned' => [],
+                ];
+            }
+
+            $parsed = json_decode($content, true);
+
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Log::error('GroqService: Failed to parse JSON response', [
+                    'error' => json_last_error_msg(),
+                ]);
+
+                return [
+                    'assignments' => [],
+                    'unassigned' => [],
+                ];
+            }
+
+            Log::info('GroqService: Successfully generated suggestions', [
+                'assignments_count' => count($parsed['assignments'] ?? []),
+                'unassigned_count' => count($parsed['unassigned'] ?? []),
+            ]);
+
+            return $parsed;
+
+        } catch (ConnectionException $e) {
+            Log::error('GroqService: Connection timeout', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'assignments' => [],
+                'unassigned' => [],
+            ];
+        } catch (\Exception $e) {
+            Log::error('GroqService: Unexpected error', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'assignments' => [],
+                'unassigned' => [],
+            ];
+        }
+    }
+
+    private function buildSystemPrompt(): string
+    {
+        return <<<'PROMPT'
+You are an ICS (Incident Command System) team assignment specialist for a church volunteer organization called NLCOM.
+Your task is to assign volunteers to the most suitable ICS teams based on their skills, training, experience, and positions.
+
+Analyze each volunteer's profile and determine the best team fit. Consider:
+1. Skills matching - match volunteer skills to team requirements
+2. Training relevance - relevant training increases suitability
+3. Leadership positions - volunteers with leader positions should lead teams
+4. Prior experience - relevant experience is a strong indicator
+5. Lifegroup membership - can be useful for team cohesion
+
+Return ONLY a JSON object with exactly this structure - no markdown, no code fences:
+{
+  "assignments": [
+    {
+      "volunteer_id": integer,
+      "team_id": integer,
+      "role": "string (specific role like 'Team Lead', 'Medical Officer', etc.)",
+      "confidence": float between 0 and 1,
+      "reasoning": "brief explanation of why this volunteer fits this team"
+    }
+  ],
+  "unassigned": [
+    {
+      "volunteer_id": integer,
+      "reason": "why this volunteer could not be assigned"
+    }
+  ]
+}
+PROMPT;
+    }
+
+    private function buildUserPrompt(
+        Collection $volunteers,
+        Collection $teams,
+        string $eventName,
+        ?string $eventDescription,
+    ): string {
+        $parts = [];
+
+        $parts[] = "Event: $eventName";
+        if ($eventDescription) {
+            $parts[] = "Description: $eventDescription";
+        }
+
+        $parts[] = '';
+        $parts[] = 'Available Teams:';
+        foreach ($teams as $team) {
+            $parts[] = "- Team ID {$team->id}: {$team->name}";
+        }
+
+        $parts[] = '';
+        $parts[] = 'Volunteers to Assign:';
+        foreach ($volunteers as $volunteer) {
+            $name = $volunteer->first_name.' '.$volunteer->last_name;
+            $skills = $volunteer->relationLoaded('skills')
+                ? $volunteer->skills->pluck('name')->implode(', ')
+                : 'N/A';
+            $training = $volunteer->relationLoaded('trainings')
+                ? $volunteer->trainings->pluck('name')->implode(', ')
+                : 'N/A';
+            $positions = $volunteer->relationLoaded('positions')
+                ? $volunteer->positions->pluck('name')->implode(', ')
+                : 'N/A';
+            $experiences = $volunteer->relationLoaded('experiences')
+                ? $volunteer->experiences->pluck('name')->implode(', ')
+                : 'N/A';
+
+            $parts[] = "- Volunteer ID {$volunteer->volunteer_id}: $name";
+            $parts[] = "  Skills: $skills";
+            $parts[] = "  Training: $training";
+            $parts[] = "  Positions: $positions";
+            $parts[] = "  Experience: $experiences";
+        }
+
+        return implode("\n", $parts);
+    }
+}
