@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
@@ -18,14 +18,26 @@ export class ForgotPasswordPage {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private sanitizer = inject(InputSanitizerService);
+  private route = inject(ActivatedRoute);
 
   isLoading = signal(false);
   isSuccess = signal(false);
   error = signal<string | null>(null);
+  role = signal<'admin' | 'volunteer'>('admin');
+
+  signInLink = signal('/admin-auth');
 
   form: FormGroup = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
   });
+
+  constructor() {
+    const role = this.route.snapshot.data['role'];
+    if (role === 'volunteer') {
+      this.role.set('volunteer');
+      this.signInLink.set('/volunteer-auth');
+    }
+  }
 
   get emailControl(): AbstractControl | null {
     return this.form.get('email');
@@ -53,7 +65,11 @@ export class ForgotPasswordPage {
       const raw = this.form.value;
       const email = this.sanitizer.sanitizeInput(raw.email ?? '', 'text');
 
-      const response = await firstValueFrom(this.authService.forgotPassword$(email));
+      const forgotPasswordFn = this.role() === 'volunteer'
+        ? this.authService.volunteerForgotPassword$(email)
+        : this.authService.forgotPassword$(email);
+
+      const response = await firstValueFrom(forgotPasswordFn);
 
       if (response.success) {
         this.isSuccess.set(true);
