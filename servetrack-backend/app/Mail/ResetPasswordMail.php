@@ -20,7 +20,7 @@ class ResetPasswordMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Reset Your Admin Password',
+            subject: 'Reset Your Password',
             replyTo: $this->user->email,
             tags: ['password-reset'],
         );
@@ -54,7 +54,7 @@ class ResetPasswordMail extends Mailable implements ShouldQueue
         }
         $frontendUrl = rtrim($frontendUrl, '/');
 
-        $resetUrl = $frontendUrl.'/reset-password?token='.$this->token.'&email='.urlencode($this->user->email);
+        $resetUrl = $frontendUrl.'/reset-password?token='.$this->token.'&email='.urlencode($this->user->email).'&role='.$this->user->role;
 
         return new Content(
             view: 'emails.auth.reset-password',
