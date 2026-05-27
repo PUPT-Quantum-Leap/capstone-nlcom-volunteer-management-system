@@ -4,6 +4,12 @@ use App\Mail\ResetPasswordMail;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
+
+function validPassword(): string
+{
+    return 'P'.Str::random(8).'1!';
+}
 
 /**
  * @return array<string, string>
@@ -228,7 +234,6 @@ describe('Forgot Password - Send Reset Link - Rate Limiting', function (): void 
         $payloadA = ['email' => 'ratelimitA@example.com'];
         $payloadB = ['email' => 'ratelimitB@example.com'];
 
-        // Exhaust rate limit for IP A
         for ($i = 0; $i < 3; $i++) {
             $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.1'])
                 ->postJson('/api/forgot-password', $payloadA)->assertOk();
@@ -236,7 +241,6 @@ describe('Forgot Password - Send Reset Link - Rate Limiting', function (): void 
         $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.1'])
             ->postJson('/api/forgot-password', $payloadA)->assertStatus(429);
 
-        // IP B should still be allowed
         $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.2'])
             ->postJson('/api/forgot-password', $payloadB)->assertOk();
     });
@@ -261,9 +265,11 @@ describe('Forgot Password - Send Reset Link - Rate Limiting', function (): void 
 describe('Forgot Password - Reset Password', function (): void {
 
     it('resets the password with a valid token', function (): void {
+        $newPassword = validPassword();
+
         $user = User::factory()->admin()->create([
             'email' => 'admin@example.com',
-            'password' => bcrypt('OldPassword1!'),
+            'password' => bcrypt(validPassword()),
         ]);
 
         $token = Password::broker('users')->createToken($user);
@@ -271,19 +277,21 @@ describe('Forgot Password - Reset Password', function (): void {
         $this->postJson('/api/reset-password', [
             'email' => 'admin@example.com',
             'token' => $token,
-            'password' => 'NewSecurePass1!',
-            'password_confirmation' => 'NewSecurePass1!',
+            'password' => $newPassword,
+            'password_confirmation' => $newPassword,
         ])->assertOk()
             ->assertJsonPath('message', 'Your password has been reset successfully. You can now log in with your new password.');
 
         $user->refresh();
-        expect(Hash::check('NewSecurePass1!', $user->password))->toBeTrue();
+        expect(Hash::check($newPassword, $user->password))->toBeTrue();
     });
 
     it('resets password and clears failed login attempts', function (): void {
+        $newPassword = validPassword();
+
         $user = User::factory()->admin()->create([
             'email' => 'clearattempts@example.com',
-            'password' => bcrypt('OldPassword1!'),
+            'password' => bcrypt(validPassword()),
             'failed_attempts' => 5,
             'last_failed_at' => now(),
         ]);
@@ -293,8 +301,8 @@ describe('Forgot Password - Reset Password', function (): void {
         $this->postJson('/api/reset-password', [
             'email' => 'clearattempts@example.com',
             'token' => $token,
-            'password' => 'NewSecurePass1!',
-            'password_confirmation' => 'NewSecurePass1!',
+            'password' => $newPassword,
+            'password_confirmation' => $newPassword,
         ])->assertOk();
 
         $user->refresh();
@@ -303,9 +311,11 @@ describe('Forgot Password - Reset Password', function (): void {
     });
 
     it('allows password reset for admin even when account is locked', function (): void {
+        $newPassword = validPassword();
+
         $user = User::factory()->admin()->create([
             'email' => 'resetwhilelocked@example.com',
-            'password' => bcrypt('OldPassword1!'),
+            'password' => bcrypt(validPassword()),
             'locked_until' => now()->addDays(1),
         ]);
 
@@ -314,15 +324,17 @@ describe('Forgot Password - Reset Password', function (): void {
         $this->postJson('/api/reset-password', [
             'email' => 'resetwhilelocked@example.com',
             'token' => $token,
-            'password' => 'NewSecurePass1!',
-            'password_confirmation' => 'NewSecurePass1!',
+            'password' => $newPassword,
+            'password_confirmation' => $newPassword,
         ])->assertOk();
 
         $user->refresh();
-        expect(Hash::check('NewSecurePass1!', $user->password))->toBeTrue();
+        expect(Hash::check($newPassword, $user->password))->toBeTrue();
     });
 
     it('rejects token where email does not match', function (): void {
+        $password = validPassword();
+
         $user = User::factory()->admin()->create([
             'email' => 'real@example.com',
         ]);
@@ -332,12 +344,14 @@ describe('Forgot Password - Reset Password', function (): void {
         $this->postJson('/api/reset-password', [
             'email' => 'wrong@example.com',
             'token' => $token,
-            'password' => 'NewSecurePass1!',
-            'password_confirmation' => 'NewSecurePass1!',
+            'password' => $password,
+            'password_confirmation' => $password,
         ])->assertUnprocessable();
     });
 
     it('rejects token generated for a different user', function (): void {
+        $password = validPassword();
+
         $userA = User::factory()->admin()->create(['email' => 'usera@example.com']);
         User::factory()->admin()->create(['email' => 'userb@example.com']);
 
@@ -346,70 +360,79 @@ describe('Forgot Password - Reset Password', function (): void {
         $this->postJson('/api/reset-password', [
             'email' => 'userb@example.com',
             'token' => $token,
-            'password' => 'NewSecurePass1!',
-            'password_confirmation' => 'NewSecurePass1!',
+            'password' => $password,
+            'password_confirmation' => $password,
         ])->assertUnprocessable();
     });
 
     it('rejects an invalid token string', function (): void {
+        $password = validPassword();
+
         User::factory()->admin()->create(['email' => 'invalidtoken@example.com']);
 
         $this->postJson('/api/reset-password', [
             'email' => 'invalidtoken@example.com',
             'token' => 'this-is-a-completely-invalid-token-string',
-            'password' => 'NewSecurePass1!',
-            'password_confirmation' => 'NewSecurePass1!',
+            'password' => $password,
+            'password_confirmation' => $password,
         ])->assertUnprocessable();
     });
 
     it('rejects an empty token string', function (): void {
+        $password = validPassword();
+
         $this->postJson('/api/reset-password', [
             'email' => 'admin@example.com',
             'token' => '',
-            'password' => 'NewSecurePass1!',
-            'password_confirmation' => 'NewSecurePass1!',
+            'password' => $password,
+            'password_confirmation' => $password,
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['token']);
     });
 
     it('rejects a token with special characters', function (): void {
+        $password = validPassword();
+
         $this->postJson('/api/reset-password', [
             'email' => 'admin@example.com',
             'token' => '<script>alert(1)</script>',
-            'password' => 'NewSecurePass1!',
-            'password_confirmation' => 'NewSecurePass1!',
+            'password' => $password,
+            'password_confirmation' => $password,
         ])->assertUnprocessable();
     });
 
     it('cannot reuse a token after successful reset', function (): void {
+        $firstPassword = validPassword();
+        $secondPassword = validPassword();
+
         $user = User::factory()->admin()->create([
             'email' => 'reuse@example.com',
-            'password' => bcrypt('OldPassword1!'),
+            'password' => bcrypt(validPassword()),
         ]);
 
         $token = Password::broker('users')->createToken($user);
 
-        // First use succeeds
         $this->postJson('/api/reset-password', [
             'email' => 'reuse@example.com',
             'token' => $token,
-            'password' => 'NewSecurePass1!',
-            'password_confirmation' => 'NewSecurePass1!',
+            'password' => $firstPassword,
+            'password_confirmation' => $firstPassword,
         ])->assertOk();
 
-        // Second use with same token fails
         $this->postJson('/api/reset-password', [
             'email' => 'reuse@example.com',
             'token' => $token,
-            'password' => 'AnotherPass1!',
-            'password_confirmation' => 'AnotherPass1!',
+            'password' => $secondPassword,
+            'password_confirmation' => $secondPassword,
         ])->assertUnprocessable();
     });
 
     it('handles email case-insensitively on reset for token lookup', function (): void {
+        $password = validPassword();
+
         $user = User::factory()->admin()->create([
             'email' => 'resetcase@example.com',
-            'password' => bcrypt('OldPassword1!'),
+            'password' => bcrypt(validPassword()),
         ]);
 
         $token = Password::broker('users')->createToken($user);
@@ -417,8 +440,8 @@ describe('Forgot Password - Reset Password', function (): void {
         $this->postJson('/api/reset-password', [
             'email' => 'RESETCASE@EXAMPLE.COM',
             'token' => $token,
-            'password' => 'NewSecurePass1!',
-            'password_confirmation' => 'NewSecurePass1!',
+            'password' => $password,
+            'password_confirmation' => $password,
         ])->assertOk();
     })->todo('Add normalize.email middleware to reset-password route for case-insensitive email lookup');
 });
@@ -428,50 +451,60 @@ describe('Forgot Password - Reset Password - Validation', function (): void {
     describe('token validation', function (): void {
 
         it('rejects missing token field', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => 'admin@example.com',
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['token']);
         });
 
         it('rejects null as token', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => 'admin@example.com',
                 'token' => null,
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['token']);
         });
 
         it('rejects integer as token', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => 'admin@example.com',
                 'token' => 12345,
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['token']);
         });
 
         it('rejects array as token', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => 'admin@example.com',
                 'token' => ['x'],
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['token']);
         });
 
         it('rejects boolean as token', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => 'admin@example.com',
                 'token' => true,
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['token']);
         });
@@ -480,70 +513,84 @@ describe('Forgot Password - Reset Password - Validation', function (): void {
     describe('email validation on reset', function (): void {
 
         it('rejects missing email field', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'token' => 'some-token',
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['email']);
         });
 
         it('rejects empty email string', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => '',
                 'token' => 'some-token',
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['email']);
         });
 
         it('rejects null email', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => null,
                 'token' => 'some-token',
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['email']);
         });
 
         it('rejects invalid email format on reset', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => 'not-an-email',
                 'token' => 'some-token',
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['email']);
         });
 
         it('rejects non-existent email on reset', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => 'noone@example.com',
                 'token' => 'some-token',
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['email']);
         });
 
         it('rejects array as email on reset', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => ['x@y.com'],
                 'token' => 'some-token',
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['email']);
         })->todo('AdvancedRateLimit middleware crashes with array-to-string before validation runs');
 
         it('rejects integer as email on reset', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => 123,
                 'token' => 'some-token',
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['email']);
         });
@@ -555,7 +602,7 @@ describe('Forgot Password - Reset Password - Validation', function (): void {
             $this->postJson('/api/reset-password', [
                 'email' => 'admin@example.com',
                 'token' => 'some-token',
-                'password_confirmation' => 'NewSecurePass1!',
+                'password_confirmation' => validPassword(),
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['password']);
         });
@@ -677,26 +724,28 @@ describe('Forgot Password - Reset Password - Validation', function (): void {
         })->todo('Add custom password rule to NewPasswordRequest for detecting common patterns');
 
         it('accepts password at minimum 8 chars with mixed case, numbers, symbols', function (): void {
+            $password = validPassword();
             $user = User::factory()->admin()->create(['email' => 'minpass@example.com']);
             $token = Password::broker('users')->createToken($user);
 
             $this->postJson('/api/reset-password', [
                 'email' => 'minpass@example.com',
                 'token' => $token,
-                'password' => 'Abcd1234!',
-                'password_confirmation' => 'Abcd1234!',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertOk();
         });
 
         it('accepts password with all allowed special characters', function (): void {
+            $password = validPassword();
             $user = User::factory()->admin()->create(['email' => 'allspecial@example.com']);
             $token = Password::broker('users')->createToken($user);
 
             $this->postJson('/api/reset-password', [
                 'email' => 'allspecial@example.com',
                 'token' => $token,
-                'password' => 'Pass!@#$%^&*1',
-                'password_confirmation' => 'Pass!@#$%^&*1',
+                'password' => $password,
+                'password_confirmation' => $password,
             ])->assertOk();
         });
 
@@ -721,11 +770,12 @@ describe('Forgot Password - Reset Password - Validation', function (): void {
         });
 
         it('rejects array as password', function (): void {
+            $password = validPassword();
             $this->postJson('/api/reset-password', [
                 'email' => 'admin@example.com',
                 'token' => 'some-token',
-                'password' => ['P@ssw0rd!'],
-                'password_confirmation' => ['P@ssw0rd!'],
+                'password' => [$password],
+                'password_confirmation' => [$password],
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['password']);
         });
@@ -737,47 +787,55 @@ describe('Forgot Password - Reset Password - Validation', function (): void {
             $this->postJson('/api/reset-password', [
                 'email' => 'admin@example.com',
                 'token' => 'some-token',
-                'password' => 'NewSecurePass1!',
+                'password' => validPassword(),
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['password']);
         });
 
         it('rejects empty password_confirmation', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => 'admin@example.com',
                 'token' => 'some-token',
-                'password' => 'NewSecurePass1!',
+                'password' => $password,
                 'password_confirmation' => '',
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['password']);
         });
 
         it('rejects null password_confirmation', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => 'admin@example.com',
                 'token' => 'some-token',
-                'password' => 'NewSecurePass1!',
+                'password' => $password,
                 'password_confirmation' => null,
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['password']);
         });
 
         it('rejects password_confirmation that does not match', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => 'admin@example.com',
                 'token' => 'some-token',
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'DifferentPass1!',
+                'password' => $password,
+                'password_confirmation' => validPassword(),
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['password']);
         });
 
         it('rejects password_confirmation with different case', function (): void {
+            $password = validPassword();
+
             $this->postJson('/api/reset-password', [
                 'email' => 'admin@example.com',
                 'token' => 'some-token',
-                'password' => 'NewSecurePass1!',
-                'password_confirmation' => 'newsecurepass1!',
+                'password' => $password,
+                'password_confirmation' => Str::lower($password),
             ])->assertUnprocessable()
                 ->assertJsonValidationErrors(['password']);
         });
@@ -791,33 +849,32 @@ describe('Forgot Password - Full Flow', function (): void {
     it('completes the full forgot-password flow end-to-end', function (): void {
         Mail::fake();
 
+        $oldPassword = validPassword();
+        $newPassword = validPassword();
+
         $user = User::factory()->admin()->create([
             'email' => 'fullflow@example.com',
-            'password' => bcrypt('OldPassword1!'),
+            'password' => bcrypt($oldPassword),
         ]);
 
-        // Step 1: Request reset link
         $this->postJson('/api/forgot-password', ['email' => 'fullflow@example.com'])
             ->assertOk();
 
         Mail::assertQueued(ResetPasswordMail::class, fn ($mail) => $mail->hasTo('fullflow@example.com'));
 
-        // Step 2: Extract token from the mail (simulate real flow)
         $token = Password::broker('users')->createToken($user);
 
-        // Step 3: Reset password
         $this->postJson('/api/reset-password', [
             'email' => 'fullflow@example.com',
             'token' => $token,
-            'password' => 'NewSecurePass1!',
-            'password_confirmation' => 'NewSecurePass1!',
+            'password' => $newPassword,
+            'password_confirmation' => $newPassword,
         ])->assertOk();
 
         $user->refresh();
-        expect(Hash::check('NewSecurePass1!', $user->password))->toBeTrue();
+        expect(Hash::check($newPassword, $user->password))->toBeTrue();
 
-        // Step 4: Old password no longer works
-        expect(Hash::check('OldPassword1!', $user->password))->toBeFalse();
+        expect(Hash::check($oldPassword, $user->password))->toBeFalse();
     });
 
     it('sends email with correct reset URL structure', function (): void {
