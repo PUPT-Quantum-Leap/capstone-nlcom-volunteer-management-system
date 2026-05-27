@@ -5,6 +5,8 @@ import {
   computed,
   inject,
   signal,
+  effect,
+  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -12,6 +14,7 @@ import { AdminDashboardService } from '../../services/admin-dashboard.service';
 import { PerformanceMetric } from '../../models/performance-metric';
 
 import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
+import { GlobalSearchService } from '../../services/global-search.service';
 
 @Component({
   selector: 'app-performance',
@@ -23,6 +26,7 @@ import { CustomSelect, SelectOption } from '../../components/custom-select/custo
 export class PerformanceComponent {
   private readonly adminDashboardService = inject(AdminDashboardService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly globalSearchService = inject(GlobalSearchService);
 
   // Dropdown Options
   sortOptions: SelectOption<'attendance' | 'name' | 'hours' | 'tasks' | 'rating'>[] = [
@@ -39,9 +43,18 @@ export class PerformanceComponent {
   readonly sortDirection = signal<'asc' | 'desc'>('desc');
   readonly performancePage = signal(1);
   readonly performancePerPage = signal(10);
+  readonly performanceSearchQuery = this.globalSearchService.searchQuery;
 
   readonly sortedPerformanceMetrics = computed(() => {
-    const metrics = [...this.performanceMetrics()];
+    const search = this.performanceSearchQuery().toLowerCase().trim();
+    let metrics = [...this.performanceMetrics()];
+
+    if (search) {
+      metrics = metrics.filter((m) =>
+        m.volunteerName.toLowerCase().includes(search)
+      );
+    }
+
     const field = this.sortField();
     const direction = this.sortDirection();
 
@@ -108,6 +121,12 @@ export class PerformanceComponent {
 
   constructor() {
     this.loadPerformanceData();
+    effect(() => {
+      this.performanceSearchQuery();
+      untracked(() => {
+        this.performancePage.set(1);
+      });
+    });
   }
 
   sortBy(field: 'name' | 'attendance' | 'hours' | 'tasks' | 'rating'): void {

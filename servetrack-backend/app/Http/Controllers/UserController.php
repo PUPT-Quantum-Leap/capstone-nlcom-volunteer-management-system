@@ -379,7 +379,7 @@ class UserController extends Controller
     }
 
     /**
-     * Reset user password.
+     * Reset user password (send reset email).
      */
     public function resetPassword(ResetPasswordRequest $request, int $id): JsonResponse
     {
@@ -411,7 +411,7 @@ class UserController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to reset password',
+                'message' => 'Failed to send password reset email',
                 'error' => $e->getMessage(),
             ], 500);
         }
