@@ -58,6 +58,9 @@ export class VolunteerManagement implements OnInit {
   showEditModal = signal(false);
   showDeleteModal = signal(false);
   showViewModal = signal(false);
+  showEditSuccess = signal(false);
+  showRestoreModal = signal(false);
+  restoringVolunteerId = signal<number | null>(null);
   editFormData = signal<{
     first_name: string;
     last_name: string;

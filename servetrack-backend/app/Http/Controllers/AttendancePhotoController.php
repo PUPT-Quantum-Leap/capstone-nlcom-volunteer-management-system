@@ -158,13 +158,13 @@ class AttendancePhotoController extends Controller
 
         switch ($type) {
             case IMAGETYPE_JPEG:
-                $srcImage = imagecreatefromjpeg($realPath);
+                $srcImage = @imagecreatefromjpeg($realPath);
                 break;
             case IMAGETYPE_PNG:
-                $srcImage = imagecreatefrompng($realPath);
+                $srcImage = @imagecreatefrompng($realPath);
                 break;
             case IMAGETYPE_WEBP:
-                $srcImage = imagecreatefromwebp($realPath);
+                $srcImage = @imagecreatefromwebp($realPath);
                 break;
             default:
                 Log::info('Unsupported image type for compression: '.$type);
@@ -191,22 +191,22 @@ class AttendancePhotoController extends Controller
             $newHeight = $height;
         }
 
-        $dstImage = imagecreatetruecolor($newWidth, $newHeight);
+        $dstImage = @imagecreatetruecolor($newWidth, $newHeight);
 
         // Retain transparency for PNG/WEBP
         if ($type === IMAGETYPE_PNG || $type === IMAGETYPE_WEBP) {
-            imagealphablending($dstImage, false);
-            imagesavealpha($dstImage, true);
-            $transparent = imagecolorallocatealpha($dstImage, 255, 255, 255, 127);
-            imagefilledrectangle($dstImage, 0, 0, $newWidth, $newHeight, $transparent);
+            @imagealphablending($dstImage, false);
+            @imagesavealpha($dstImage, true);
+            $transparent = @imagecolorallocatealpha($dstImage, 255, 255, 255, 127);
+            @imagefilledrectangle($dstImage, 0, 0, $newWidth, $newHeight, $transparent);
         }
 
-        imagecopyresampled($dstImage, $srcImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+        @imagecopyresampled($dstImage, $srcImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
 
         $tempPath = tempnam(sys_get_temp_dir(), 'attendance_resized_');
 
         // Output JPEG at the specified quality
-        if (imagejpeg($dstImage, $tempPath, $quality)) {
+        if (@imagejpeg($dstImage, $tempPath, $quality)) {
             imagedestroy($srcImage);
             imagedestroy($dstImage);
 
