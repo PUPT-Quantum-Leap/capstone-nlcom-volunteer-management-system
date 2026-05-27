@@ -63,7 +63,7 @@ class GroqService
             if (! $response->successful()) {
                 Log::error('GroqService: API request failed', [
                     'status' => $response->status(),
-                    'body' => $response->body(),
+                    'body_snippet' => substr($response->body(), 0, 200),
                 ]);
 
                 return [
@@ -86,7 +86,7 @@ class GroqService
 
             $parsed = json_decode($content, true);
 
-            if (json_last_error() !== JSON_ERROR_NONE) {
+            if (json_last_error() !== JSON_ERROR_NONE || ! is_array($parsed)) {
                 Log::error('GroqService: Failed to parse JSON response', [
                     'error' => json_last_error_msg(),
                 ]);
@@ -113,7 +113,7 @@ class GroqService
                 'assignments' => [],
                 'unassigned' => [],
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('GroqService: Unexpected error', [
                 'error' => $e->getMessage(),
             ]);
