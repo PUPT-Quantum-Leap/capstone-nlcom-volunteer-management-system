@@ -28,6 +28,8 @@ describe('TTSService', () => {
   beforeEach(() => {
     localStorage.clear();
 
+    // Delete first in case a previous spec already defined it as non-configurable
+    delete (window as any).speechSynthesis;
     Object.defineProperty(window, 'speechSynthesis', {
       writable: true,
       configurable: true,
