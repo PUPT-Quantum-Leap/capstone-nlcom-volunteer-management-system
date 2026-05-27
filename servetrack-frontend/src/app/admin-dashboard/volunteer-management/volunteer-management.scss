@@ -603,11 +603,45 @@
         background: var(--white);
       }
     }
+
+    .input-error {
+      border-color: var(--danger-500) !important;
+      background: var(--danger-50);
+
+      &:focus {
+        box-shadow: 0 0 0 3px var(--danger-100);
+      }
+    }
+
+    .field-error {
+      font-size: 0.8rem;
+      color: var(--danger-600);
+      margin-top: 0.25rem;
+    }
   }
 }
 
 .volunteer-details-modal {
   max-width: 500px;
+}
+
+.success-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--radius-md);
+  background: var(--success-50);
+  color: var(--success-500);
+  font-size: 0.875rem;
+  font-weight: 600;
+
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+  }
 }
 
 .volunteer-details-content {
