@@ -217,12 +217,7 @@
 // SMS Layout
 .sms-layout {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: 1fr;
 }
 
 // SMS Panel
@@ -406,91 +401,6 @@
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-}
-
-// Auto SMS Content
-.auto-sms-content {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  flex: 1;
-}
-
-.auto-sms-toggle {
-  .toggle-label {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    cursor: pointer;
-
-    input[type="checkbox"] {
-      width: 1.25rem;
-      height: 1.25rem;
-      accent-color: var(--primary-600);
-    }
-
-    .toggle-text {
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--gray-700);
-    }
-  }
-}
-
-.auto-sms-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-
-  &.disabled {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-
-  label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--gray-700);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .time-selector {
-    .form-input {
-      padding: 0.625rem 0.75rem;
-      border: 1px solid var(--gray-200);
-      border-radius: 8px;
-      font-size: 0.875rem;
-      color: var(--gray-700);
-      background: var(--white);
-      width: 100%;
-    }
-  }
-}
-
-.auto-sms-status {
-  padding: 1rem;
-  background: var(--gray-50);
-  border-radius: 8px;
-
-  .status-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    .status-label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--gray-600);
-    }
-
-    .status-badge {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--primary-600);
-    }
   }
 }
 
