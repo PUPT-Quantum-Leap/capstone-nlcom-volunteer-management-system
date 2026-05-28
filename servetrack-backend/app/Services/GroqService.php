@@ -172,6 +172,9 @@ Analyze each volunteer's profile and determine the best team fit. Consider:
 3. Leadership positions - volunteers with leader positions should lead teams
 4. Prior experience - relevant experience is a strong indicator
 5. Lifegroup membership - can be useful for team cohesion
+6. Time preference - CRITICAL: volunteers who chose AM shift MUST only be assigned to AM Distribution teams or Mobile Kitchen teams. Volunteers who chose PM shift MUST only be assigned to PM Distribution teams or Mobile Kitchen teams. Mobile Kitchen teams accept all shifts.
+7. Maximum capacity - each team should have a MAXIMUM of 3-5 volunteers assigned. Distribute evenly.
+8. Profession - consider the volunteer's profession/occupation when available for better matching
 
 Return ONLY a JSON object with exactly this structure - no markdown, no code fences:
 {
@@ -209,6 +212,13 @@ PROMPT;
 
         $parts[] = '';
         $parts[] = 'Available Teams:';
+        $parts[] = 'Branch: Mobile Kitchen (teams for ALL shifts):';
+        $parts[] = '  Kitchen Truck, Food Prep, Volunteer Care, Wash / Clean Up, Inventory';
+        $parts[] = 'Branch: AM Distribution (teams for AM-shift volunteers ONLY):';
+        $parts[] = '  Alpha, Bravo, Charlie 1, Charlie 2';
+        $parts[] = 'Branch: PM Distribution (teams for PM-shift volunteers ONLY):';
+        $parts[] = '  Delta 1, Delta 2, Echo, Foxtrot';
+        $parts[] = '';
         foreach ($teams as $team) {
             $parts[] = "- Team ID {$team->id}: {$team->name}";
         }
@@ -229,12 +239,19 @@ PROMPT;
             $experiences = $volunteer->relationLoaded('experiences')
                 ? $volunteer->experiences->pluck('name')->implode(', ')
                 : 'N/A';
+            $shiftPreference = 'Unknown';
+            if ($volunteer->relationLoaded('rsvpResponses') && $volunteer->rsvpResponses->isNotEmpty()) {
+                $response = $volunteer->rsvpResponses->first();
+                $shiftPreference = $response->timeSlot?->text ?? 'Unknown';
+            }
 
             $parts[] = "- Volunteer ID {$volunteer->volunteer_id}: $name";
+            $parts[] = "  Time Preference: $shiftPreference";
             $parts[] = "  Skills: $skills";
             $parts[] = "  Training: $training";
             $parts[] = "  Positions: $positions";
             $parts[] = "  Experience: $experiences";
+            $parts[] = "  Education/Profession: ".($volunteer->educational_attainment ?? 'N/A');
         }
 
         return implode("\n", $parts);

@@ -276,12 +276,22 @@ class IcsController extends Controller
             ->with(['skills', 'positions', 'experiences']);
 
         // Filter by shift if requested (am/pm)
+        // Uses position-based detection: first slot = AM, last slot = PM
         $shift = $request->query('shift');
         if ($shift) {
-            $query->whereHas('rsvpResponses', function ($q) use ($rsvpId, $shift) {
-                $q->where('rsvp_id', $rsvpId)
-                    ->whereHas('timeSlot', fn ($ts) => $ts->whereRaw('LOWER(text) LIKE ?', ['%'.strtolower($shift).'%']));
-            });
+            $slotIds = $rsvp->shifts()->pluck('time_slot.time_slot_id')->sort()->values();
+
+            $targetSlotId = match (strtolower($shift)) {
+                'am' => $slotIds->first(),
+                'pm' => $slotIds->last(),
+                default => null,
+            };
+
+            if ($targetSlotId) {
+                $query->whereHas('rsvpResponses', function ($q) use ($rsvpId, $targetSlotId) {
+                    $q->where('rsvp_id', $rsvpId)->where('time_slot_id', $targetSlotId);
+                });
+            }
         }
 
         $volunteers = $query->get();

@@ -305,10 +305,13 @@
             @for (team of branch.teams; track team.key) {
               <article
                 class="team-card"
-                [class.move-target]="movingVolunteer() && movingVolunteer()!.fromTeamId !== team.id"
-                (click)="movingVolunteer() && movingVolunteer()!.fromTeamId !== team.id ? confirmMoveToTeam(team) : null">
+                [class.move-target]="movingVolunteer() && movingVolunteer()!.fromTeamId !== team.id && team.assigned_volunteers.length < 3"
+                (click)="movingVolunteer() && movingVolunteer()!.fromTeamId !== team.id && team.assigned_volunteers.length < 3 ? confirmMoveToTeam(team) : null">
                 <header class="team-card__header">
                   <span class="team-card__title">{{ team.name }}</span>
+                  @if (team.assigned_volunteers.length >= 3) {
+                    <span class="team-card__full">FULL</span>
+                  }
                   @if (team.vehicle) {
                     <span class="team-card__vehicle">{{ team.vehicle }}</span>
                   }
@@ -343,7 +346,7 @@
                   }
 
                   <!-- AI SUGGESTION BLOCK -->
-                  @if (team.ai_suggestion && team.ai_suggestion.candidates.length > 0) {
+                  @if (team.ai_suggestion && team.ai_suggestion.candidates.length > 0 && team.assigned_volunteers.length < 3) {
                     <div class="ai-suggestion-block">
                       <div class="ai-suggestion-header">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -372,7 +375,7 @@
                   }
 
                   <!-- ADD VOLUNTEER SEARCH -->
-                  @if (!movingVolunteer()) {
+                  @if (!movingVolunteer() && team.assigned_volunteers.length < 3) {
                     <div class="add-volunteer-row">
                       <input
                         type="text"
