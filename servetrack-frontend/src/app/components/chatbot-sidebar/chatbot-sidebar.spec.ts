@@ -6,14 +6,21 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ChatbotSidebarComponent } from './chatbot-sidebar.component';
 import { ChatbotService } from '../../services/chatbot.service';
-import { TTSService } from '../../services/tts.service';
-import { VoiceInputService } from '../../services/voice-input.service';
+import { SpeechService } from '../../services/speech.service';
 import { CommandPaletteService } from '../../services/command-palette.service';
 
 function setupSpeechMocks(): void {
   Object.defineProperty(window, 'speechSynthesis', {
     writable: true,
-    value: { speak: vi.fn(), cancel: vi.fn(), getVoices: vi.fn(() => []), onvoiceschanged: null },
+    configurable: true,
+    value: {
+      speak: vi.fn(),
+      cancel: vi.fn(),
+      getVoices: vi.fn(() => [
+        { name: 'Google US English', lang: 'en-US', default: false, localService: true, voiceURI: 'Google US English' } as SpeechSynthesisVoice,
+      ]),
+      onvoiceschanged: null,
+    },
   });
   (window as any).SpeechRecognition = undefined;
   (window as any).webkitSpeechRecognition = undefined;
@@ -38,8 +45,7 @@ describe('ChatbotSidebarComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         ChatbotService,
-        TTSService,
-        VoiceInputService,
+        SpeechService,
         CommandPaletteService,
       ],
     }).compileComponents();
@@ -128,9 +134,9 @@ describe('ChatbotSidebarComponent', () => {
     expect(localStorage.getItem('chatbot_auto_speak')).toBe('true');
   });
 
-  it('selectVoice updates currentVoiceName', () => {
+  it('selectVoice updates speechService voice', () => {
     component.selectVoice('Google US English');
-    expect(component.currentVoiceName()).toBe('Google US English');
+    expect(component.speechService.currentVoiceName()).toBe('Google US English');
   });
 
   it('copyMessage sets copiedIndex', async () => {
@@ -157,8 +163,8 @@ describe('ChatbotSidebarComponent', () => {
     expect(result).toMatch(/\d{1,2}:\d{2}/);
   });
 
-  it('isTTSSupported reflects ttsService', () => {
-    expect(component.isTTSSupported()).toBe(component.ttsService.isSupported());
+  it('isTTSSupported reflects speechService', () => {
+    expect(component.isTTSSupported()).toBe(component.speechService.isTTSSupported());
   });
 
   it('isSTTSupported is false when SpeechRecognition unavailable', () => {
@@ -208,8 +214,7 @@ describe('ChatbotSidebarComponent - command integration', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         ChatbotService,
-        TTSService,
-        VoiceInputService,
+        SpeechService,
         CommandPaletteService,
       ],
     }).compileComponents();
