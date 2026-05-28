@@ -10,7 +10,7 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('backups', function (Blueprint $table) {
+        Schema::createTableIfNotExists('backups', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
             $table->string('file_path');
