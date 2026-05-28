@@ -272,7 +272,7 @@ class IcsController extends Controller
             ->whereHas('rsvpResponses', function ($query) use ($rsvpId) {
                 $query->where('rsvp_id', $rsvpId);
             })
-            ->with(['skills', 'positions', 'experiences']);
+            ->with(['skills', 'positions', 'experiences', 'trainings']);
 
         // Filter by shift if requested (am/pm)
         // Uses position-based detection: first slot ID = AM, last slot ID = PM
@@ -300,6 +300,7 @@ class IcsController extends Controller
                 'skills' => $v->skills->pluck('name')->toArray(),
                 'positions' => $v->positions->pluck('name')->toArray(),
                 'experiences' => $v->experiences->pluck('name')->toArray(),
+                'trainings' => $v->trainings->pluck('name')->toArray(),
             ]),
         ]);
     }
