@@ -336,7 +336,9 @@ export class ProfileComponent implements OnInit {
       // Update task info
     }
 
-    const positionKey = this.getPositionKey(data.positions?.[0]?.name || '');
+    const positionName = data.positions?.[0]?.name || '';
+    const positionKey = this.getPositionKey(positionName);
+    const isCustomOther = positionName !== '' && !(positionName in this.positionToKeyMap);
     const availabilityName = data.availabilities?.[0]?.name || '';
     const otherAvailability = data.availabilities?.[0]?.pivot?.custom_description ?? '';
     const availabilityKey = this.getAvailabilityKey(availabilityName);
@@ -368,7 +370,8 @@ export class ProfileComponent implements OnInit {
       trainingExperience: data.training_experience ?? '',
       skillsHobbies: data.skills_hobbies ?? '',
       classesTraining: data.classes_training ?? '',
-      volunteerPreference: positionKey,
+      volunteerPreference: isCustomOther ? 'other' : positionKey,
+      otherPreference: isCustomOther ? positionName : '',
       availability: availabilityKey,
       otherAvailability: otherAvailability,
       partOfLifegroup: isPartLifegroup,
@@ -379,7 +382,7 @@ export class ProfileComponent implements OnInit {
       emergencyContactRelationship: data.emergency_contact?.relationship ?? '',
     });
 
-    this.showOtherPreference.set(positionKey === 'other');
+    this.showOtherPreference.set(isCustomOther || positionKey === 'other');
   }
 
   toggleSection(section: 'personal' | 'service' | 'emergency'): void {
@@ -411,7 +414,9 @@ export class ProfileComponent implements OnInit {
     if (cancel) {
       const savedData = this.savedProfileData();
       if (savedData) {
-        const positionKey = this.getPositionKey(savedData.positions?.[0]?.name || '');
+        const positionName = savedData.positions?.[0]?.name || '';
+        const positionKey = this.getPositionKey(positionName);
+        const isCustomOther = positionName !== '' && !(positionName in this.positionToKeyMap);
         const availabilityKey = this.getAvailabilityKey(savedData.availabilities?.[0]?.name || '');
         this.profileForm.patchValue({
           firstName: savedData.first_name,
@@ -427,7 +432,8 @@ export class ProfileComponent implements OnInit {
           trainingExperience: savedData.training_experience ?? '',
           skillsHobbies: savedData.skills_hobbies ?? '',
           classesTraining: savedData.classes_training ?? '',
-          volunteerPreference: positionKey,
+          volunteerPreference: isCustomOther ? 'other' : positionKey,
+          otherPreference: isCustomOther ? positionName : '',
           availability: availabilityKey,
           otherAvailability: savedData.availabilities?.[0]?.pivot?.custom_description ?? '',
           partOfLifegroup: savedData.lifegroups?.length ? 'yes' : 'no',
@@ -438,7 +444,7 @@ export class ProfileComponent implements OnInit {
           emergencyContactRelationship: savedData.emergency_contact?.relationship ?? '',
         });
         // Reset UI-only state to match saved data
-        this.showOtherPreference.set(positionKey === 'other');
+    this.showOtherPreference.set(isCustomOther || positionKey === 'other');
         if (savedData.photo_url) {
           this.profilePreviewUrl.set(savedData.photo_url);
         } else if (savedData.gender === 'girl' || savedData.gender === 'female') {
