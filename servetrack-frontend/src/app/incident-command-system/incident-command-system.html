@@ -95,7 +95,7 @@
       <div class="summary-card">
         <div class="card-content">
           <span class="label">Date</span>
-          <span class="value">{{ icsData()!.rsvp.date }}</span>
+          <span class="value">{{ icsData()!.rsvp.date | date: 'MMMM d, yyyy' }}</span>
         </div>
       </div>
       <div class="summary-card">
@@ -380,14 +380,11 @@
                       <input
                         type="text"
                         class="add-volunteer-input"
-                        placeholder="Search volunteer..."
+                        placeholder="Type name to search..."
                         [value]="volunteerSearchByTeam()[team.id] || ''"
-                        (input)="setVolunteerSearch(team.id, $any($event.target).value)"
-                        (keyup.enter)="searchVolunteersForTeam(team)"
+                        (input)="setVolunteerSearch(team.id, $any($event.target).value); searchVolunteersForTeam(team)"
+                        (focus)="searchVolunteersForTeam(team)"
                         (click)="$event.stopPropagation()" />
-                      <button class="sym-btn" type="button" (click)="searchVolunteersForTeam(team); $event.stopPropagation()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                      </button>
                     </div>
 
                     <!-- SEARCH RESULTS DROPDOWN -->
