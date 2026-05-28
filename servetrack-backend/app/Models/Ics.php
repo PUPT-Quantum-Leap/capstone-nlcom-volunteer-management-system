@@ -21,6 +21,11 @@ class Ics extends Model
         'date',
         'location',
         'status',
+        'objective',
+        'menu',
+        'meal_breakfast',
+        'meal_lunch',
+        'meal_snacks',
         'ai_suggestions',
     ];
 

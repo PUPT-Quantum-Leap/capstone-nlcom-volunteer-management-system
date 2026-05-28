@@ -61,6 +61,7 @@ export interface IcsVehicleAssignment {
 
 export interface IcsDashboard {
   ics_id: number;
+  metadata: IcsMetadata;
   rsvp: {
     id: number;
     title: string;
@@ -70,6 +71,14 @@ export interface IcsDashboard {
   command_roles: IcsCommandRole[];
   branches: IcsDashboardBranch[];
   vehicles: IcsVehicleAssignment[];
+}
+
+export interface IcsMetadata {
+  objective: number | null;
+  menu: string | null;
+  meal_breakfast: number;
+  meal_lunch: number;
+  meal_snacks: number;
 }
 
 export interface AiSuggestionsResponse {
@@ -111,6 +120,13 @@ export interface IcsResourceResponse {
 export interface ApplySuggestionPayload {
   volunteer_id: number;
   team_id: number;
+  role?: string;
+}
+
+export interface MoveVolunteerRequest {
+  volunteer_id: number;
+  from_team_id: number;
+  to_team_id: number;
   role?: string;
 }
 

@@ -234,4 +234,5 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::post('/ics/{icsId}/apply-suggestions', [IcsController::class, 'applyAiSuggestions'])->name('ics.apply-suggestions');
     Route::post('/ics/{icsId}/assign-volunteer', [IcsController::class, 'assignVolunteer'])->name('ics.assign-volunteer');
     Route::post('/ics/{icsId}/remove-volunteer', [IcsController::class, 'removeVolunteer'])->name('ics.remove-volunteer');
+    Route::post('/ics/{icsId}/move-volunteer', [IcsController::class, 'moveVolunteer'])->name('ics.move-volunteer');
 });

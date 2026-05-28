@@ -63,6 +63,13 @@ class IcsDashboardResource extends JsonResource
 
         return [
             'ics_id' => $this->id,
+            'metadata' => [
+                'objective' => $this->objective,
+                'menu' => $this->menu,
+                'meal_breakfast' => $this->meal_breakfast ?? 0,
+                'meal_lunch' => $this->meal_lunch ?? 0,
+                'meal_snacks' => $this->meal_snacks ?? 0,
+            ],
             'rsvp' => [
                 'id' => $this->rsvp?->rsvp_id,
                 'title' => $this->rsvp?->title,
