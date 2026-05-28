@@ -3,82 +3,93 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ChatbotMessageRequest;
-use Firebase\JWT\JWT;
+use App\Services\ChatbotService;
+use App\Services\UserContextService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ChatbotController extends Controller
 {
+    public function __construct(
+        private readonly ChatbotService $chatbotService,
+        private readonly UserContextService $userContextService,
+    ) {}
+
     /**
      * Send a message to the n8n chatbot workflow via webhook.
      *
      * Authenticates the upstream call using JWT (HS256) signed with the
-     * shared webhook secret. Returns the assistant reply alongside the
-     * session id used (generated server-side if the client did not supply
-     * one) so the client can persist it for follow-up messages.
+     * shared webhook secret. Injects the authenticated user's context so
+     * the AI can personalise its responses. Returns the assistant reply
+     * alongside the session id used so the client can persist it for
+     * follow-up messages.
      */
     public function message(ChatbotMessageRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        $user      = $request->user();
 
-        $webhookUrl = config('services.chatbot.webhook_url');
-        $jwtSecret = config('services.chatbot.webhook_jwt_secret');
+        // Build or reuse a traceable session id
+        $sessionId = $validated['session_id']
+            ?? $this->chatbotService->buildSessionId($user?->email ?? 'guest');
 
-        if (! $webhookUrl || ! $jwtSecret) {
-            return response()->json([
-                'error' => 'Chatbot webhook not configured',
-            ], 500);
+        // Collect user context for the AI agent
+        $userContext = [];
+        $userContextError = null;
+
+        if ($user) {
+            try {
+                $userContext = $this->userContextService->buildContext($user);
+            } catch (\Throwable $e) {
+                Log::warning('chatbot.context.build_failed', [
+                    'user_id' => $user->id,
+                    'error'   => $e->getMessage(),
+                ]);
+                $userContextError = 'Context unavailable';
+            }
         }
 
-        $sessionId = $validated['session_id'] ?? (string) Str::uuid();
-
         Log::info('chatbot.message.dispatched', [
-            'user_id' => $request->user()?->id,
+            'user_id'    => $user?->id,
             'session_id' => $sessionId,
-            'message_length' => strlen($validated['message']),
+            'msg_length' => strlen($validated['message']),
+            'role'       => $userContext['role'] ?? 'guest',
         ]);
 
-        $jwt = JWT::encode([
-            'iss' => 'servetrack-backend',
-            'exp' => time() + 300,
-        ], $jwtSecret, 'HS256');
-
         try {
-            $response = Http::withToken($jwt)
-                ->timeout(30)
-                ->post($webhookUrl, [
-                    'message' => $validated['message'],
-                    'sessionId' => $sessionId,
-                ]);
-
-            if (! $response->successful()) {
-                Log::warning('chatbot.webhook.unsuccessful', [
-                    'user_id' => $request->user()?->id,
-                    'status' => $response->status(),
-                ]);
-
-                return response()->json([
-                    'error' => 'Chatbot service unavailable',
-                ], 503);
-            }
-
-            $n8nData = $response->json();
+            $result = $this->chatbotService->sendMessage(
+                message:     $validated['message'],
+                sessionId:   $sessionId,
+                userContext: $userContext,
+            );
 
             return response()->json([
-                'success' => true,
-                'message' => $n8nData['output'] ?? $n8nData['response'] ?? '',
+                'success'    => true,
+                'message'    => $result['output'],
+                'session_id' => $result['session_id'] ?? $sessionId,
+                'metadata'   => $result['metadata'] ?? null,
+            ]);
+        } catch (\RuntimeException $e) {
+            Log::error('chatbot.message.all_webhooks_failed', [
+                'user_id'    => $user?->id,
                 'session_id' => $sessionId,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('chatbot.webhook.error', [
-                'user_id' => $request->user()?->id,
-                'error' => $e->getMessage(),
+                'error'      => $e->getMessage(),
             ]);
 
             return response()->json([
-                'error' => 'Failed to communicate with chatbot service',
+                'success' => false,
+                'message' => 'Sorry, I am temporarily unavailable. Please try again in a moment.',
+            ], 503);
+        } catch (\Throwable $e) {
+            Log::error('chatbot.message.unexpected_error', [
+                'user_id' => $user?->id,
+                'error'   => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred.',
             ], 500);
         }
     }

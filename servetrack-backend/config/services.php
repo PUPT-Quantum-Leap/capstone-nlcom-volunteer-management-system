@@ -60,8 +60,10 @@ return [
     ],
 
     'chatbot' => [
-        'webhook_url' => env('N8N_CHAT_WEBHOOK_URL'),
-        'webhook_jwt_secret' => env('N8N_WEBHOOK_JWT_SECRET'),
+        'webhook_url'          => env('N8N_CHAT_WEBHOOK_URL'),
+        'fallback_webhook_url' => env('N8N_CHAT_FALLBACK_WEBHOOK_URL'),
+        'webhook_jwt_secret'   => env('N8N_WEBHOOK_JWT_SECRET'),
+        'timeout'              => env('N8N_CHAT_TIMEOUT', 30),
     ],
 
     'groq' => [
