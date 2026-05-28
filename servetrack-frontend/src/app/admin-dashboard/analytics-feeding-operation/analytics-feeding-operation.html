@@ -50,7 +50,15 @@
           </tr>
         </thead>
         <tbody>
-          @for (operation of operationsData(); track operation.id) {
+          @if (analyticsLoading()) {
+            <tr>
+              <td colspan="6" class="loading-cell">
+                <div class="loading-spinner"></div>
+                <span>Loading operations...</span>
+              </td>
+            </tr>
+          } @else {
+            @for (operation of operationsData(); track operation.id) {
             <tr>
               @if (operation.showTeamCell) {
                 <td class="team-cell" [attr.rowspan]="operation.teamRowSpan">
@@ -151,6 +159,7 @@
                 }
               </td>
             </tr>
+            }
           }
         </tbody>
       </table>
