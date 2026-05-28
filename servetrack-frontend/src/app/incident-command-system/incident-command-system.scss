@@ -551,6 +551,17 @@ $radius: 12px;
     letter-spacing: 0.025em;
   }
 
+  &__full {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #dc2626;
+    background: #fee2e2;
+    padding: 1px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
   &__vehicle {
     font-size: 0.675rem;
     font-weight: 600;

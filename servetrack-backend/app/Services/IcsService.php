@@ -49,7 +49,7 @@ class IcsService
                 $query->where('rsvp_id', $rsvp->rsvp_id)
                     ->where('attendance_status', '!=', 'no_show');
             })
-            ->with(['skills', 'trainings', 'positions', 'experiences'])
+            ->with(['skills', 'trainings', 'positions', 'experiences', 'rsvpResponses' => fn ($q) => $q->where('rsvp_id', $rsvp->rsvp_id)->with('timeSlot')])
             ->get();
 
         \Illuminate\Support\Facades\Log::info('IcsService: Volunteers loaded', [
@@ -205,26 +205,29 @@ class IcsService
     private function getSkillTeamMappings(): array
     {
         return [
-            'medical' => ['Medical Team', 'Response Team'],
-            'first aid' => ['Medical Team', 'Response Team'],
-            'nursing' => ['Medical Team'],
-            'emergency response' => ['Response Team'],
-            'leadership' => ['Command Team', 'Operations Team'],
-            'management' => ['Command Team', 'Operations Team'],
-            'communication' => ['Communications Team'],
-            'radio' => ['Communications Team'],
-            'logistics' => ['Logistics Team'],
-            'transportation' => ['Logistics Team'],
-            'driving' => ['Logistics Team'],
-            'cooking' => ['Support Team'],
-            'food preparation' => ['Support Team'],
-            'construction' => ['Response Team'],
-            'engineering' => ['Response Team'],
-            'search and rescue' => ['Response Team'],
-            'it' => ['Communications Team', 'Support Team'],
-            'technical' => ['Communications Team', 'Support Team'],
-            'teaching' => ['Support Team'],
-            'counseling' => ['Support Team', 'Medical Team'],
+            // Mobile Kitchen
+            'cooking'            => ['Kitchen Truck', 'Food Prep'],
+            'food prep'          => ['Kitchen Truck', 'Food Prep'],
+            'food preparation'   => ['Kitchen Truck', 'Food Prep'],
+            'baking'             => ['Kitchen Truck', 'Food Prep'],
+            'cleaning'           => ['Wash / Clean Up'],
+            'sanitation'         => ['Wash / Clean Up'],
+            'dishwashing'        => ['Wash / Clean Up'],
+            'inventory'          => ['Inventory'],
+            'accounting'         => ['Inventory'],
+            'record keeping'     => ['Inventory'],
+            'caregiving'         => ['Volunteer Care'],
+            'first aid'          => ['Volunteer Care'],
+            'nursing'            => ['Volunteer Care'],
+            'medical'            => ['Volunteer Care'],
+            // Distribution (generic — shift filter handles AM/PM split)
+            'driving'            => ['Alpha', 'Bravo', 'Charlie 1', 'Charlie 2', 'Delta 1', 'Delta 2', 'Echo', 'Foxtrot'],
+            'logistics'          => ['Alpha', 'Bravo', 'Delta 1', 'Delta 2'],
+            'leadership'         => ['Alpha', 'Delta 1'],
+            'management'         => ['Alpha', 'Delta 1'],
+            'communication'      => ['Charlie 1', 'Echo'],
+            'physical fitness'   => ['Bravo', 'Charlie 2', 'Delta 2', 'Foxtrot'],
+            'lifting'            => ['Bravo', 'Charlie 2', 'Delta 2', 'Foxtrot'],
         ];
     }
 
