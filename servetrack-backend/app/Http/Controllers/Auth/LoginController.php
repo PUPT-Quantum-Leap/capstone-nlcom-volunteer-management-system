@@ -310,6 +310,64 @@ class LoginController extends Controller
     }
 
     /**
+     * Handle login via RSVP access code.
+     */
+    public function loginByRsvpCode(Request $request): JsonResponse
+    {
+        $request->validate([
+            'code' => ['required', 'string', 'regex:/^[A-Za-z]{2}[0-9]{4}$/'],
+        ]);
+
+        $code = strtoupper($request->input('code'));
+        $prefix = substr($code, 0, 2);
+        $year = (int) substr($code, 2, 4);
+
+        $volunteers = Volunteer::query()
+            ->where('last_name', 'like', $prefix.'%')
+            ->whereYear('birthdate', $year)
+            ->with('user')
+            ->get()
+            ->filter(function (Volunteer $v) use ($prefix, $year): bool {
+                $lastNamePrefix = strtoupper(substr($v->last_name, 0, 2));
+
+                return $lastNamePrefix === $prefix && $v->birthdate?->year === $year;
+            });
+
+        if ($volunteers->isEmpty()) {
+            return response()->json([
+                'message' => 'No volunteer profile found with the provided code.',
+            ], 401);
+        }
+
+        if ($volunteers->count() > 1) {
+            return response()->json([
+                'message' => 'Multiple accounts found matching this code. Please sign in with your email and password instead.',
+            ], 422);
+        }
+
+        $volunteer = $volunteers->first();
+        $user = $volunteer->user;
+
+        if (! $user) {
+            return response()->json([
+                'message' => 'User account not found for this profile.',
+            ], 404);
+        }
+
+        Auth::guard('web')->login($user);
+
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
+
+        $userData = $user->toArray();
+        $userData['user_type'] = 'volunteer';
+        $userData['volunteer_profile'] = $volunteer;
+
+        return $this->buildAuthenticatedResponse($userData, $user, TokenAbilities::VOLUNTEER);
+    }
+
+    /**
      * Resolve Sanctum token abilities for the given user role.
      *
      * @return string[]
