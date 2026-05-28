@@ -153,7 +153,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
   private transformApiData(apiData: IcsTeamFeedingOperation[]): FeedingOperation[] {
     return apiData.map((item) => ({
       id: item.id,
-      team: item.team,
+      team: (item as any).parent_team || item.team,
       volunteers: (item.assigned_volunteers || []).map((v) => v.name),
       location: item.location || '',
       time: item.time || '',

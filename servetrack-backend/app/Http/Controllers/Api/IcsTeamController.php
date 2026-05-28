@@ -13,41 +13,42 @@ class IcsTeamController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * Returns distribution teams (Alpha→Foxtrot) from the latest ICS,
+     * grouped by parent team (Charlie 1+2 → Team Charlie, Delta 1+2 → Team Delta).
      */
     public function index(): JsonResponse
     {
-        // Return legacy operational teams (those with deployment data)
-        // These are the "TEAM ALPHA", "TEAM BRAVO", etc. rows with locations/times/pax
+        // Get the latest ICS record
+        $latestIcs = Ics::query()->with('rsvp')->latest()->first();
+
+        if (! $latestIcs) {
+            return response()->json([]);
+        }
+
+        // Get distribution teams (AM + PM) from the latest ICS, ordered logically
         $teams = IcsTeam::with('ics.rsvp')
-            ->whereNotNull('departure_note')
+            ->where('ics_id', $latestIcs->id)
+            ->whereIn('branch_key', ['am_distribution', 'pm_distribution'])
+            ->orderByRaw("FIELD(team_key, 'alpha', 'bravo', 'charlie_1', 'charlie_2', 'delta_1', 'delta_2', 'echo', 'foxtrot')")
             ->get();
 
-        // Cross-reference volunteers from ICS-assigned teams by matching team name.
-        // TEAM CHARLIE → matches ICS "Charlie 1" + "Charlie 2" → combines volunteers.
-        $teams->each(function ($icsTeam) {
-            // Strip "Team " prefix: "Team Alpha" → "Alpha", "Team Charlie" → "Charlie"
-            $teamName = preg_replace('/^team\s+/i', '', $icsTeam->team ?? '');
-            $teamName = trim($teamName);
+        if ($teams->isEmpty()) {
+            return response()->json([]);
+        }
 
-            if (! $teamName || ! $icsTeam->ics_id) {
-                $icsTeam->setAttribute('assigned_volunteers', []);
+        // Get RSVP shifts for time auto-fill
+        $rsvp = $latestIcs->rsvp;
+        $shifts = $rsvp ? $rsvp->shifts()->orderBy('time_slot.time_slot_id', 'asc')->get() : collect();
+        $totalRows = $teams->count();
 
-                return;
-            }
-
-            // Find ALL matching ICS structure teams (e.g., "Charlie" matches "Charlie 1" + "Charlie 2")
-            $matchingTeamIds = IcsTeam::query()
-                ->whereNotNull('branch_key')
-                ->where('team', 'LIKE', '%'.$teamName.'%')
-                ->where('ics_id', $icsTeam->ics_id)
-                ->whereNotNull('team_id')
-                ->pluck('team_id');
-
-            if ($matchingTeamIds->isNotEmpty()) {
+        // Load volunteers + auto-fill for each team row
+        $teams->each(function ($icsTeam) use ($latestIcs, $rsvp, $shifts, $totalRows) {
+            // --- Volunteers ---
+            if ($icsTeam->team_id && $icsTeam->ics_id) {
                 $volunteers = DB::table('ics_volunteer')
                     ->join('volunteer', 'volunteer.volunteer_id', '=', 'ics_volunteer.volunteer_id')
                     ->where('ics_volunteer.ics_id', $icsTeam->ics_id)
-                    ->whereIn('ics_volunteer.team_id', $matchingTeamIds)
+                    ->where('ics_volunteer.team_id', $icsTeam->team_id)
                     ->select('volunteer.volunteer_id', 'volunteer.first_name', 'volunteer.last_name', 'ics_volunteer.role', 'ics_volunteer.is_driver', 'ics_volunteer.is_leader')
                     ->get();
 
@@ -61,51 +62,35 @@ class IcsTeamController extends Controller
             } else {
                 $icsTeam->setAttribute('assigned_volunteers', []);
             }
-        });
 
-        // Auto-fill empty Location/Time/Pax from ICS + RSVP data (admin can still override via edit)
-        $teams->each(function ($icsTeam) {
-            $ics = $icsTeam->ics;
-            if (! $ics) {
-                return;
-            }
-
-            $rsvp = $ics->rsvp;
-
-            // Auto-fill Location: use RSVP event_location if team row has no location
+            // --- Auto-fill Location (from RSVP, if empty) ---
             if (empty($icsTeam->location) && $rsvp) {
                 $icsTeam->setAttribute('location', $rsvp->event_location ?? '');
             }
 
-            // Auto-fill Time: determine from team name (AM or PM shift from RSVP time slots)
-            if (empty($icsTeam->time) && $rsvp) {
-                $teamName = strtolower($icsTeam->team ?? '');
-                $shifts = $rsvp->shifts()->orderBy('time_slot.time_slot_id', 'asc')->get();
-
-                if ($shifts->isNotEmpty()) {
-                    // Alpha/Bravo/Charlie = AM (first shift), Delta/Echo/Foxtrot = PM (last shift)
-                    $isAm = str_contains($teamName, 'alpha') || str_contains($teamName, 'bravo') || str_contains($teamName, 'charlie');
-                    $shift = $isAm ? $shifts->first() : $shifts->last();
-                    $icsTeam->setAttribute('time', $shift->text ?? '');
-                }
+            // --- Auto-fill Time (AM or PM shift from RSVP, if empty) ---
+            if (empty($icsTeam->time) && $shifts->isNotEmpty()) {
+                $isAm = $icsTeam->branch_key === 'am_distribution';
+                $shift = $isAm ? $shifts->first() : $shifts->last();
+                $icsTeam->setAttribute('time', $shift->text ?? '');
             }
 
-            // Auto-fill Pax: ICS objective equally divided among all teams
-            if (($icsTeam->no_of_pax === 0 || $icsTeam->no_of_pax === null) && $ics->objective) {
-                $totalTeams = IcsTeam::where('ics_id', $ics->id)
-                    ->whereNotNull('departure_note')
-                    ->count();
-
-                if ($totalTeams > 0) {
-                    $icsTeam->setAttribute('no_of_pax', (int) round($ics->objective / $totalTeams));
-                }
+            // --- Auto-fill Pax (ICS objective ÷ total rows, if 0/null) ---
+            if (($icsTeam->no_of_pax === 0 || $icsTeam->no_of_pax === null) && $latestIcs->objective && $totalRows > 0) {
+                $icsTeam->setAttribute('no_of_pax', (int) round($latestIcs->objective / $totalRows));
             }
+
+            // --- Parent team grouping (for frontend rowspan) ---
+            // "Charlie 1" → "Team Charlie", "Delta 2" → "Team Delta", "Alpha" → "Team Alpha"
+            $teamName = $icsTeam->team ?? '';
+            $parentTeam = trim(preg_replace('/\s*\d+$/', '', $teamName));
+            $icsTeam->setAttribute('parent_team', 'Team '.$parentTeam);
         });
 
         return response()->json($teams);
     }
 
-    public function getTeams()
+    public function getTeams(): JsonResponse
     {
         return response()->json(IcsTeam::distinct()->pluck('team'));
     }
@@ -113,7 +98,7 @@ class IcsTeamController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'team' => 'required|string',
@@ -139,7 +124,7 @@ class IcsTeamController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id): JsonResponse
     {
         $icsTeam = IcsTeam::findOrFail($id);
 
@@ -149,7 +134,7 @@ class IcsTeamController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
         $icsTeam = IcsTeam::findOrFail($id);
 
