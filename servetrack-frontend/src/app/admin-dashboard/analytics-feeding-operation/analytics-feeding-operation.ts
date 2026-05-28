@@ -55,6 +55,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
   }
 
   private loadOperations(): void {
+    this.analyticsLoading.set(true);
     this.analyticsService.getFeedingOperations().subscribe({
       next: (data) => {
         const transformedData = this.transformApiData(data);
@@ -67,7 +68,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
         const firstWithRsvp = data.find((op) => op.ics?.rsvp);
         if (firstWithRsvp?.ics?.rsvp) {
           this.operationTitle.set(firstWithRsvp.ics.rsvp.title);
-          this.operationDate.set(formatDate(firstWithRsvp.ics.rsvp.date));
+          this.operationDate.set(formatDate(firstWithRsvp.ics.rsvp.created_at));
         } else {
           const firstWithIcs = data.find((op) => op.ics?.date);
           if (firstWithIcs?.ics?.date) {
@@ -75,7 +76,11 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
           }
         }
       },
-      error: (err) => console.error('Failed to load operations:', err),
+      error: (err) => {
+        console.error('Failed to load operations:', err);
+        this.analyticsLoading.set(false);
+      },
+      complete: () => this.analyticsLoading.set(false),
     });
   }
 
