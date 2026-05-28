@@ -192,21 +192,6 @@
               </button>
               <button
                 type="button"
-                class="icon-btn"
-                (click)="notifyRsvpSms(rsvp.id)"
-                [disabled]="isNotifyingRsvpId() === rsvp.id && notifyType() === 'sms'"
-                [attr.aria-label]="'Send SMS for ' + rsvp.title"
-                title="SMS Notify">
-                @if (isNotifyingRsvpId() === rsvp.id && notifyType() === 'sms') {
-                  <span class="btn-spinner"></span>
-                } @else {
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                  </svg>
-                }
-              </button>
-              <button
-                type="button"
                 class="icon-btn icon-btn-warning"
                 (click)="openEditRsvpModal(rsvp)"
                 [attr.aria-label]="'Edit ' + rsvp.title"

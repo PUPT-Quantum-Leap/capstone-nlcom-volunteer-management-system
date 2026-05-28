@@ -70,8 +70,6 @@ export class RsvpsComponent {
   readonly deletingRsvpId = signal<number | null>(null);
   readonly isCreatingRsvp = signal(false);
   readonly isDeletingRsvp = signal(false);
-  readonly isNotifyingRsvpId = signal<number | null>(null);
-  readonly notifyType = signal<'sms' | null>(null);
   readonly feedbackMessage = signal('');
   readonly feedbackType = signal<'success' | 'error' | 'info'>('info');
 
@@ -511,33 +509,6 @@ export class RsvpsComponent {
           console.error('Error deleting RSVP:', error);
           this.isDeletingRsvp.set(false);
           this.showFeedback('RSVP deletion failed.', 'error');
-        },
-      });
-  }
-
-  notifyRsvpSms(rsvpId: number): void {
-    this.isNotifyingRsvpId.set(rsvpId);
-    this.notifyType.set('sms');
-
-    this.rsvpService
-      .notifySms(rsvpId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (result) => {
-          this.isNotifyingRsvpId.set(null);
-          this.notifyType.set(null);
-          this.showFeedback(
-            `Email notifications sent: ${result.sent}/${result.total}`,
-            'success',
-          );
-        },
-        error: (error: { error?: { message?: string }; message?: string }) => {
-          console.error('Error sending Email notifications:', error);
-          this.isNotifyingRsvpId.set(null);
-          this.notifyType.set(null);
-
-          const errorMessage = error.error?.message || error.message || 'Failed to send Email notifications.';
-          this.showFeedback(errorMessage, 'error');
         },
       });
   }
