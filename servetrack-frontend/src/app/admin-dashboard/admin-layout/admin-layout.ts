@@ -65,6 +65,7 @@ export class AdminLayout implements OnInit {
   currentUrl = signal(this.router.url); 
   // Profile Edit Signals
   showProfileModal = signal(false);
+  showAvatarSelectorModal = signal(false);
   isSavingProfile = signal(false);
   profileFormData = signal({
     first_name: '',
@@ -281,6 +282,32 @@ export class AdminLayout implements OnInit {
   closeProfileModal(): void {
     this.showProfileModal.set(false);
     this.profileErrors.set({});
+  }
+
+  openAvatarSelector(): void {
+    this.showAvatarSelectorModal.set(true);
+  }
+
+  closeAvatarSelector(): void {
+    this.showAvatarSelectorModal.set(false);
+  }
+
+  selectPersona(persona: string | null): void {
+    let photoUrl: string;
+    if (persona === 'boy') {
+      photoUrl = '/assets/boy.svg';
+    } else if (persona === 'girl') {
+      photoUrl = '/assets/girl.svg';
+    } else {
+      photoUrl = '/assets/apple.svg';
+    }
+
+    this.profileFormData.update((current) => ({
+      ...current,
+      profile_photo: photoUrl,
+      profile_photo_url: photoUrl,
+    }));
+    this.showAvatarSelectorModal.set(false);
   }
 
   updateProfileField(field: string, value: string): void {
