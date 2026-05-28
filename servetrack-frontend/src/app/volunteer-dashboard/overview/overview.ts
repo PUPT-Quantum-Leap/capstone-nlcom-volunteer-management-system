@@ -131,7 +131,7 @@ export class OverviewComponent implements OnInit {
         const rsvpData = results.rsvps.data;
         if (rsvpData.length > 0) {
           const activeAssignments = rsvpData
-            .filter(r => r.userVote !== null && r.userVote !== undefined && r.status === 'active')
+            .filter(r => r.userVote != null && r.status === 'active')
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
           if (activeAssignments.length > 0) {
