@@ -27,8 +27,6 @@ class UpdateIcsRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'location' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'in:draft,active,completed'],
-            'team_ids' => ['nullable', 'array'],
-            'team_ids.*' => ['exists:teams,id'],
             'ai_suggestions' => ['nullable', 'array'],
             'objective' => ['nullable', 'integer', 'min:0'],
             'menu' => ['nullable', 'string', 'max:255'],
