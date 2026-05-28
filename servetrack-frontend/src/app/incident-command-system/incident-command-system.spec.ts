@@ -104,6 +104,10 @@ class MockIcsService {
     return of({ message: 'Volunteer removed successfully.' });
   }
 
+  getRsvpVolunteers() {
+    return of({ data: [] });
+  }
+
   applyAiSuggestions() {
     return of({ data: dashboard });
   }
