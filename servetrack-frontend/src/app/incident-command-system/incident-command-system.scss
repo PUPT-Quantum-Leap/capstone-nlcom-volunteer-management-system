@@ -474,6 +474,8 @@ $radius: 12px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 .ops-column {
@@ -484,10 +486,9 @@ $radius: 12px;
   display: flex;
   flex-direction: column;
   position: relative;
-  z-index: 1;
   overflow: visible;
-
-  &:hover, &:focus-within { z-index: 50; }
+  
+  &:hover, &:focus-within { z-index: 10; }
 }
 
 .ops-header {
