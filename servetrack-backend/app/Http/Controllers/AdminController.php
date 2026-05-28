@@ -132,6 +132,23 @@ class AdminController extends Controller
             ] : null,
         ])->filter()->values();
 
+        $upcomingEventsList = Rsvp::query()
+            ->where('status', 'active')
+            ->whereDate('date', '>=', today())
+            ->withCount('responses')
+            ->orderBy('date', 'asc')
+            ->limit(5)
+            ->get()
+            ->map(function ($rsvp) {
+                return [
+                    'id' => $rsvp->rsvp_id,
+                    'title' => $rsvp->title,
+                    'date' => $rsvp->date ? $rsvp->date->format('M d, Y') : null,
+                    'responses_count' => $rsvp->responses_count,
+                    'status' => $rsvp->status,
+                ];
+            });
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -144,6 +161,7 @@ class AdminController extends Controller
                 'notifications' => $notifications,
                 'volunteers' => $volunteerRows,
                 'performanceMetrics' => $performance,
+                'upcomingEventsList' => $upcomingEventsList,
             ],
         ]);
     }
