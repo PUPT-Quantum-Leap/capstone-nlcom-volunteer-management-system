@@ -56,7 +56,6 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
   readonly isRecording = signal(false);
   readonly liveTranscript = signal('');
   readonly speechError = signal('');
-  private pendingTranscript = '';
 
   // TTS state
   readonly autoSpeak = signal(
@@ -116,10 +115,15 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
     // Subscribe to speech results and errors
     this.subs.push(
       this.speechService.transcript$.subscribe((result: SpeechResult) => {
+        this.liveTranscript.set(result.transcript);
         if (result.isFinal) {
-          this.pendingTranscript += result.transcript + ' ';
-        } else {
-          this.liveTranscript.set(result.transcript);
+          const existingText = this.userInput().trim();
+          const newText = result.transcript.trim();
+          const combined = existingText
+            ? `${existingText} ${newText}`
+            : newText;
+          this.userInput.set(combined);
+          this.liveTranscript.set('');
         }
       }),
       this.speechService.error$.subscribe((e) => {
@@ -230,20 +234,13 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
     this.chatbotService.sendMessage(cmd.command).subscribe({ error: () => undefined });
   }
 
-  async toggleRecording(): Promise<void> {
+  toggleRecording(): void {
     this.speechError.set('');
     if (this.isRecording()) {
       this.isRecording.set(false);
-      await this.speechService.stopListening();
+      this.speechService.stopListening();
       this.liveTranscript.set('');
-      const transcript = this.pendingTranscript.trim();
-      this.pendingTranscript = '';
-      if (transcript) {
-        this.userInput.set(transcript);
-        this.sendMessage();
-      }
     } else {
-      this.pendingTranscript = '';
       this.speechService.startListening();
       if (!this.speechService.error()) {
         this.isRecording.set(true);
