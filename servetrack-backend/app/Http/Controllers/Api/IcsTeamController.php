@@ -13,7 +13,7 @@ class IcsTeamController extends Controller
      */
     public function index()
     {
-        return response()->json(IcsTeam::all());
+        return response()->json(IcsTeam::whereNotNull('departure_note')->get());
     }
 
     public function getTeams()
