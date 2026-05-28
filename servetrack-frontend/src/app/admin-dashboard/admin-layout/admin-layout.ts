@@ -316,33 +316,7 @@ export class AdminLayout implements OnInit {
   }
 
   toggleNotifications(): void {
-    const nextState = !this.showNotifications();
-    this.showNotifications.set(nextState);
-    if (nextState) this.showUserMenu.set(false);
-  }
-
-  toggleUserMenu(): void {
-    const nextState = !this.showUserMenu();
-    this.showUserMenu.set(nextState);
-    if (nextState) this.showNotifications.set(false);
-    
-    if (nextState) {
-      // Mark all current notifications as read when opening dropdown
-      this.notificationsList.update(list => list.map(n => ({ ...n, read: true })));
-      
-      // Persist the current descriptions to LocalStorage
-      if (typeof window !== 'undefined' && window.localStorage) {
-        try {
-          const viewed: Record<string, string> = {};
-          this.notificationsList().forEach(n => {
-            viewed[n.id] = n.description;
-          });
-          localStorage.setItem('admin-viewed-notifications', JSON.stringify(viewed));
-        } catch (e) {
-          console.error('Failed to save viewed notifications', e);
-        }
-      }
-    }
+    this.showNotifications.update(v => !v);
   }
 
   toggleChatbot(): void {
