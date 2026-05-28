@@ -391,6 +391,7 @@ class VolunteerController extends Controller
 
             // Sync trainings - detach first to avoid duplicates
             $volunteer->trainings()->detach();
+            $volunteer->experiences()->detach();
             if ($request->trainingExperience) {
                 $this->processTrainingExperience($volunteer, $request->trainingExperience);
             }

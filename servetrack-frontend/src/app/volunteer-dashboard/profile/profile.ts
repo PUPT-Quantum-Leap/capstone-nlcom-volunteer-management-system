@@ -248,7 +248,7 @@ export class ProfileComponent implements OnInit {
       savedData.training_experience,
       savedData.skills_hobbies,
       savedData.classes_training,
-      savedData.lifegroups?.length ? true : false,
+      savedData.lifegroups !== undefined,
     ];
 
     let completedRequired = 0;
