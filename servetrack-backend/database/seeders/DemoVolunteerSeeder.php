@@ -9,20 +9,12 @@ use App\Models\Training;
 use App\Models\User;
 use App\Models\Volunteer;
 use Carbon\Carbon;
-use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class DemoVolunteerSeeder extends Seeder
 {
-    private \Faker\Generator $faker;
-
-    public function __construct()
-    {
-        $this->faker = Faker::create();
-    }
-
     private const FAKE_VOLUNTEERS = [
         ['first_name' => 'Juan', 'last_name' => 'Dela Cruz', 'skills' => ['Cooking', 'Food Prep', 'Team Leadership'], 'position' => 'Mobile Kitchen Operations', 'availability' => 'Anytime / On Call', 'training' => 'Food Safety & Handling'],
         ['first_name' => 'Maria', 'last_name' => 'Santos', 'skills' => ['Logistics', 'Driving', 'Inventory'], 'position' => 'Transportation & Logistics Team', 'availability' => 'Weekends Only', 'training' => 'Logistics Management'],
@@ -175,11 +167,11 @@ class DemoVolunteerSeeder extends Seeder
                 'last_name' => $lastName,
                 'facebook_name' => $firstName.' '.$lastName,
                 'email' => $email,
-                'birthdate' => Carbon::createFromFormat('Y-m-d', $this->faker->dateTimeBetween('-50 years', '-18 years')->format('Y-m-d')),
-                'address' => $this->faker->streetAddress().', '.$this->faker->city().', Philippines',
-                'mobile_number' => '0917'.str_pad((string) $this->faker->unique()->randomNumber(7, true), 7, '0', STR_PAD_LEFT),
-                'educational_attainment' => $this->faker->randomElement(['College Graduate', 'College Undergraduate', 'High School Graduate', 'Vocational']),
-                'last_medical_examination' => Carbon::createFromFormat('Y-m-d', $this->faker->dateTimeBetween('-1 year', 'today')->format('Y-m-d')),
+                'birthdate' => $this->randomBirthdate(),
+                'address' => $this->randomAddress(),
+                'mobile_number' => $this->randomMobileNumber(),
+                'educational_attainment' => $this->randomEducationalAttainment(),
+                'last_medical_examination' => $this->randomMedicalExamination(),
             ]
         );
 
@@ -253,5 +245,57 @@ class DemoVolunteerSeeder extends Seeder
             Str::contains($normalized, 'day off') => 'Day Off',
             default => 'Other',
         };
+    }
+
+    private static array $cities = [
+        'Quezon City', 'Manila', 'Makati', 'Taguig', 'Pasig', 'Mandaluyong',
+        'Muntinlupa', 'Las Piñas', 'Parañaque', 'Pasay', 'Valenzuela',
+        'Marikina', 'San Juan', 'Bacoor', 'Imus', 'San Pedro', 'Biñan',
+        'Santa Rosa', 'Cabuyao', 'Dasmariñas', 'General Trias', 'Silang',
+    ];
+
+    private static array $streets = [
+        '123 Rizal St', '456 Mabini Ave', '789 Luna Blvd', '321 Bonifacio St',
+        '654 Aguinaldo Hwy', '987 Katipunan Ave', '147 Yakal St', '258 Narra St',
+        '369 Acacia Rd', '741 Molave St', '852 Mahogany St', '963 Laurel Ave',
+        '159 Sampaguita St', '753 Rosal St', '951 Ilang-Ilang Ave', 'Blk 1 Lot 1',
+        'Blk 5 Lot 10', 'Blk 12 Lot 8', 'Blk 3 Lot 15', 'Blk 8 Lot 22',
+    ];
+
+    private static array $educations = [
+        'College Graduate', 'College Undergraduate', 'High School Graduate', 'Vocational',
+    ];
+
+    private function randomBirthdate(): Carbon
+    {
+        $year = rand(1976, 2006);
+        $month = rand(1, 12);
+        $day = rand(1, 28);
+
+        return Carbon::createFromFormat('Y-m-d', sprintf('%04d-%02d-%02d', $year, $month, $day));
+    }
+
+    private function randomAddress(): string
+    {
+        return self::$streets[array_rand(self::$streets)].', '.self::$cities[array_rand(self::$cities)].', Philippines';
+    }
+
+    private function randomMobileNumber(): string
+    {
+        return '0917'.str_pad((string) rand(1000000, 9999999), 7, '0', STR_PAD_LEFT);
+    }
+
+    private function randomEducationalAttainment(): string
+    {
+        return self::$educations[array_rand(self::$educations)];
+    }
+
+    private function randomMedicalExamination(): Carbon
+    {
+        $year = rand(2025, 2026);
+        $month = rand(1, 12);
+        $day = rand(1, 28);
+
+        return Carbon::createFromFormat('Y-m-d', sprintf('%04d-%02d-%02d', $year, $month, $day));
     }
 }

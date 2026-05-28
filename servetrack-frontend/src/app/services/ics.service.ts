@@ -6,6 +6,8 @@ import {
   CreateIcsRequest,
   UpdateIcsRequest,
   AiSuggestion,
+  MoveVolunteerRequest,
+  IcsMetadata,
   AssignVolunteerRequest,
   RsvpVolunteer,
   IcsDashboard,
@@ -64,6 +66,45 @@ export class IcsService {
           body,
           { withCredentials: true },
         ),
+      ),
+    );
+  }
+
+  /**
+   * Move a volunteer between teams within the same ICS.
+   */
+  moveVolunteer(icsId: number, body: MoveVolunteerRequest): Observable<{ message: string }> {
+    return this.ensureCsrf().pipe(
+      switchMap(() =>
+        this.http.post<{ message: string }>(
+          `${this.apiUrl}/${icsId}/move-volunteer`,
+          body,
+          { withCredentials: true },
+        ),
+      ),
+    );
+  }
+
+  /**
+   * Search volunteers from the RSVP pool with optional shift filter.
+   */
+  searchRsvpVolunteers(rsvpId: number, shift?: string): Observable<{ data: RsvpVolunteer[] }> {
+    const params: Record<string, string> = {};
+    if (shift) params['shift'] = shift;
+
+    return this.http.get<{ data: RsvpVolunteer[] }>(
+      `${this.apiUrl}/${rsvpId}/rsvp-volunteers`,
+      { params, withCredentials: true },
+    );
+  }
+
+  /**
+   * Update ICS metadata (objective, menu, meal counts).
+   */
+  updateMetadata(icsId: number, body: Partial<IcsMetadata>): Observable<{ data: Ics }> {
+    return this.ensureCsrf().pipe(
+      switchMap(() =>
+        this.http.put<{ data: Ics }>(`${this.apiUrl}/${icsId}`, body, { withCredentials: true }),
       ),
     );
   }

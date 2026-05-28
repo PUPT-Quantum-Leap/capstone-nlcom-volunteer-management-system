@@ -218,6 +218,11 @@ class IcsController extends Controller
                 'location' => $request->input('location'),
                 'status' => $request->input('status'),
                 'ai_suggestions' => $request->input('ai_suggestions'),
+                'objective' => $request->input('objective'),
+                'menu' => $request->input('menu'),
+                'meal_breakfast' => $request->input('meal_breakfast'),
+                'meal_lunch' => $request->input('meal_lunch'),
+                'meal_snacks' => $request->input('meal_snacks'),
             ], fn ($value) => $value !== null));
 
             if ($request->has('team_ids')) {
@@ -256,7 +261,7 @@ class IcsController extends Controller
     /**
      * Get volunteers who RSVP'd for a specific event.
      */
-    public function getRsvpVolunteers(int $rsvpId): AnonymousResourceCollection|JsonResponse
+    public function getRsvpVolunteers(int $rsvpId, Request $request): AnonymousResourceCollection|JsonResponse
     {
         $rsvp = Rsvp::query()->find($rsvpId);
 
@@ -264,12 +269,22 @@ class IcsController extends Controller
             return response()->json(['message' => 'RSVP not found.'], 404);
         }
 
-        $volunteers = Volunteer::query()
+        $query = Volunteer::query()
             ->whereHas('rsvpResponses', function ($query) use ($rsvpId) {
                 $query->where('rsvp_id', $rsvpId);
             })
-            ->with(['skills', 'positions', 'experiences'])
-            ->get();
+            ->with(['skills', 'positions', 'experiences']);
+
+        // Filter by shift if requested (am/pm)
+        $shift = $request->query('shift');
+        if ($shift) {
+            $query->whereHas('rsvpResponses', function ($q) use ($rsvpId, $shift) {
+                $q->where('rsvp_id', $rsvpId)
+                    ->whereHas('timeSlot', fn ($ts) => $ts->whereRaw('LOWER(text) LIKE ?', ['%'.strtolower($shift).'%']));
+            });
+        }
+
+        $volunteers = $query->get();
 
         return VolunteerResource::collection($volunteers);
     }
@@ -398,6 +413,44 @@ class IcsController extends Controller
         $ics->volunteers()->detach($request->input('volunteer_id'));
 
         return response()->json(['message' => 'Volunteer removed successfully.']);
+    }
+
+    /**
+     * Move a volunteer from one team to another within the same ICS.
+     */
+    public function moveVolunteer(Request $request, int $icsId): JsonResponse
+    {
+        $request->validate([
+            'volunteer_id' => ['required', 'integer'],
+            'from_team_id' => ['required', 'integer'],
+            'to_team_id' => ['required', 'integer'],
+            'role' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $ics = Ics::query()->find($icsId);
+
+        if (! $ics) {
+            return response()->json(['message' => 'ICS not found.'], 404);
+        }
+
+        $volunteerId = $request->input('volunteer_id');
+        $toTeamId = $request->input('to_team_id');
+
+        // Verify the target team belongs to this ICS
+        $isTeamInIcs = $ics->icsTeams()->where('team_id', $toTeamId)->exists();
+
+        if (! $isTeamInIcs) {
+            return response()->json(['message' => 'Target team does not belong to this ICS.'], 422);
+        }
+
+        DB::transaction(function () use ($ics, $volunteerId, $toTeamId, $request): void {
+            $ics->volunteers()->updateExistingPivot($volunteerId, [
+                'team_id' => $toTeamId,
+                'role' => $request->input('role', 'Team Member'),
+            ]);
+        });
+
+        return response()->json(['message' => 'Volunteer moved successfully.']);
     }
 
     /**

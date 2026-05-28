@@ -1,4 +1,5 @@
 <section class="ics-container">
+  <!-- HEADER -->
   <header class="report-header">
     <div class="report-header-left">
       <div class="report-badge" aria-hidden="true">
@@ -15,6 +16,25 @@
     <div class="report-header-right">
       <button
         type="button"
+        class="action-btn secondary"
+        [disabled]="!hasIcsData() || isExporting()"
+        (click)="exportPdf()">
+        @if (isExporting()) {
+          <span class="btn-spinner" aria-hidden="true"></span>
+          <span>Exporting...</span>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          <span>Export PDF</span>
+        }
+      </button>
+
+      <button
+        type="button"
         class="action-btn"
         [disabled]="!hasIcsData() || isLoadingAiSuggestions()"
         (click)="generateAiSuggestions()">
@@ -22,21 +42,21 @@
           <span class="btn-spinner" aria-hidden="true"></span>
           <span>Generating...</span>
         } @else {
-          <span>Generate AI Suggestions</span>
+          <span>AI Suggestions</span>
         }
       </button>
     </div>
   </header>
 
+  <!-- ERROR -->
   @if (error()) {
     <div class="error-message">
-      <div class="error-content">
-        <span>{{ error() }}</span>
-      </div>
+      <div class="error-content"><span>{{ error() }}</span></div>
       <button class="action-btn secondary btn-sm" type="button" (click)="loadRsvpList()">Retry</button>
     </div>
   }
 
+  <!-- RSVP SELECTOR -->
   @if (rsvpOptions().length > 0) {
     <div class="rsvp-selector-container">
       <label class="filter-label">Target RSVP Event</label>
@@ -49,6 +69,7 @@
     </div>
   }
 
+  <!-- LOADING / EMPTY -->
   @if (isLoading()) {
     <div class="ics-empty-state">
       <span class="btn-spinner dark" aria-hidden="true"></span>
@@ -63,10 +84,11 @@
       <p>Select an RSVP event to initialize the operational dashboard.</p>
     </div>
   } @else {
+    <!-- SUMMARY GRID -->
     <div class="summary-grid">
       <div class="summary-card">
         <div class="card-content">
-          <span class="label">RSVP</span>
+          <span class="label">RSVP Event</span>
           <span class="value">{{ icsData()!.rsvp.title }}</span>
         </div>
       </div>
@@ -85,27 +107,105 @@
       <div class="summary-card">
         <div class="card-content">
           <span class="label">Assigned Volunteers</span>
-          <span class="value">{{ dashboardVolunteers() }}</span>
+          <span class="value highlight">{{ dashboardVolunteers() }}</span>
         </div>
       </div>
     </div>
 
+    <!-- OPERATION DETAILS (Metadata) -->
+    <section class="metadata-section">
+      <div class="metadata-header">
+        <h3 class="metadata-title">Operation Details</h3>
+        @if (!isEditingMetadata()) {
+          <button class="action-btn secondary btn-sm" type="button" (click)="startEditMetadata()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <span>Edit</span>
+          </button>
+        }
+      </div>
+
+      @if (isEditingMetadata()) {
+        <div class="metadata-form">
+          <div class="metadata-form-grid">
+            <div class="form-group">
+              <label class="form-label">Objective (target meals)</label>
+              <input
+                type="number"
+                class="form-input"
+                [ngModel]="metadataDraft().objective"
+                (ngModelChange)="metadataDraft.update(d => ({...d, objective: $event}))"
+                placeholder="e.g. 2400" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Menu</label>
+              <input
+                type="text"
+                class="form-input"
+                [ngModel]="metadataDraft().menu"
+                (ngModelChange)="metadataDraft.update(d => ({...d, menu: $event}))"
+                placeholder="e.g. Champorado" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Breakfast</label>
+              <input
+                type="number"
+                class="form-input"
+                [ngModel]="metadataDraft().meal_breakfast"
+                (ngModelChange)="metadataDraft.update(d => ({...d, meal_breakfast: $event}))" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lunch</label>
+              <input
+                type="number"
+                class="form-input"
+                [ngModel]="metadataDraft().meal_lunch"
+                (ngModelChange)="metadataDraft.update(d => ({...d, meal_lunch: $event}))" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Snacks</label>
+              <input
+                type="number"
+                class="form-input"
+                [ngModel]="metadataDraft().meal_snacks"
+                (ngModelChange)="metadataDraft.update(d => ({...d, meal_snacks: $event}))" />
+            </div>
+          </div>
+          <div class="metadata-form-actions">
+            <button class="action-btn secondary btn-sm" type="button" (click)="cancelEditMetadata()">Cancel</button>
+            <button class="action-btn btn-sm" type="button" (click)="saveMetadata()">Save Details</button>
+          </div>
+        </div>
+      } @else {
+        <div class="metadata-display">
+          <div class="meta-chip"><span class="meta-label">Objective</span><span class="meta-value">{{ icsData()!.metadata.objective || '—' }}</span></div>
+          <div class="meta-chip"><span class="meta-label">Menu</span><span class="meta-value">{{ icsData()!.metadata.menu || '—' }}</span></div>
+          <div class="meta-chip"><span class="meta-label">Breakfast</span><span class="meta-value">{{ icsData()!.metadata.meal_breakfast }}</span></div>
+          <div class="meta-chip"><span class="meta-label">Lunch</span><span class="meta-value">{{ icsData()!.metadata.meal_lunch }}</span></div>
+          <div class="meta-chip"><span class="meta-label">Snacks</span><span class="meta-value">{{ icsData()!.metadata.meal_snacks }}</span></div>
+        </div>
+      }
+    </section>
+
+    <!-- COMMAND STRUCTURE (ORG CHART) -->
     <section class="hierarchy-section" aria-labelledby="org-chart-title">
       <h3 id="org-chart-title" class="section-title">Command Structure</h3>
       <div class="org-chart">
+        <!-- Level 1: Responsible Official -->
         @if (roleByKey('responsible_official'); as role) {
           <div class="org-level org-level--center">
             <article class="org-node org-node--root">
               <div class="org-node__role">{{ role.title }}</div>
               @if (editingRoleKey() === role.key) {
                 <div class="org-node__edit-row">
-                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" />
-                  <button class="sym-btn active" type="button" (click)="saveRole(role)">OK</button>
-                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">Cancel</button>
+                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" (keyup.enter)="saveRole(role)" />
+                  <button class="sym-btn active" type="button" (click)="saveRole(role)">✓</button>
+                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">✕</button>
                 </div>
               } @else {
                 <div class="org-node__name">{{ role.assigned_name || 'Unassigned' }}</div>
-                <button class="org-node__edit" type="button" (click)="editRole(role)">Edit</button>
+                <button class="org-node__edit" type="button" (click)="editRole(role)" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
               }
             </article>
           </div>
@@ -113,19 +213,22 @@
 
         <div class="org-connector org-connector--v"></div>
 
+        <!-- Level 2: Incident Commander -->
         @if (roleByKey('incident_commander'); as role) {
           <div class="org-level org-level--center">
             <article class="org-node org-node--commander">
               <div class="org-node__role">{{ role.title }}</div>
               @if (editingRoleKey() === role.key) {
                 <div class="org-node__edit-row">
-                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" />
-                  <button class="sym-btn active" type="button" (click)="saveRole(role)">OK</button>
-                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">Cancel</button>
+                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" (keyup.enter)="saveRole(role)" />
+                  <button class="sym-btn active" type="button" (click)="saveRole(role)">✓</button>
+                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">✕</button>
                 </div>
               } @else {
                 <div class="org-node__name">{{ role.assigned_name || 'Unassigned' }}</div>
-                <button class="org-node__edit" type="button" (click)="editRole(role)">Edit</button>
+                <button class="org-node__edit" type="button" (click)="editRole(role)" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
               }
             </article>
           </div>
@@ -133,19 +236,22 @@
 
         <div class="org-connector org-connector--v"></div>
 
+        <!-- Level 3: Section Chiefs -->
         <div class="org-level org-level--chiefs">
           @for (role of sectionChiefRoles(); track role.key) {
             <article class="org-node org-node--chief">
               <div class="org-node__role">{{ role.title }}</div>
               @if (editingRoleKey() === role.key) {
                 <div class="org-node__edit-row">
-                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" />
-                  <button class="sym-btn active" type="button" (click)="saveRole(role)">OK</button>
-                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">Cancel</button>
+                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" (keyup.enter)="saveRole(role)" />
+                  <button class="sym-btn active" type="button" (click)="saveRole(role)">✓</button>
+                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">✕</button>
                 </div>
               } @else {
                 <div class="org-node__name">{{ role.assigned_name || 'Unassigned' }}</div>
-                <button class="org-node__edit" type="button" (click)="editRole(role)">Edit</button>
+                <button class="org-node__edit" type="button" (click)="editRole(role)" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
               }
             </article>
           }
@@ -153,19 +259,22 @@
 
         <div class="org-connector org-connector--v"></div>
 
+        <!-- Level 4: Branch Directors -->
         <div class="org-level org-level--branches">
           @for (role of branchDirectorRoles(); track role.key) {
             <article class="org-node org-node--branch">
               <div class="org-node__role">{{ role.title }}</div>
               @if (editingRoleKey() === role.key) {
                 <div class="org-node__edit-row">
-                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" />
-                  <button class="sym-btn active" type="button" (click)="saveRole(role)">OK</button>
-                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">Cancel</button>
+                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" (keyup.enter)="saveRole(role)" />
+                  <button class="sym-btn active" type="button" (click)="saveRole(role)">✓</button>
+                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">✕</button>
                 </div>
               } @else {
                 <div class="org-node__name">{{ role.assigned_name || 'Unassigned' }}</div>
-                <button class="org-node__edit" type="button" (click)="editRole(role)">Edit</button>
+                <button class="org-node__edit" type="button" (click)="editRole(role)" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
               }
             </article>
           }
@@ -173,17 +282,31 @@
       </div>
     </section>
 
+    <!-- OPERATIONAL TEAMS (Kanban Board) -->
     <section class="ops-section" aria-label="Operational teams">
+      <!-- MOVE MODE BANNER -->
+      @if (movingVolunteer()) {
+        <div class="move-banner">
+          <span>🔀 Select a team to move the volunteer to</span>
+          <button class="action-btn secondary btn-sm" type="button" (click)="cancelMove()">Cancel</button>
+        </div>
+      }
+
       @for (branch of icsData()!.branches; track branch.key) {
         <section class="ops-column">
           <header class="ops-header">
-            <h3>{{ branch.title }}</h3>
+            <div class="header-info">
+              <h3>{{ branch.title }}</h3>
+            </div>
             <span class="team-count">{{ branch.teams.length }} teams</span>
           </header>
 
           <div class="ops-content">
             @for (team of branch.teams; track team.key) {
-              <article class="team-card">
+              <article
+                class="team-card"
+                [class.move-target]="movingVolunteer() && movingVolunteer()!.fromTeamId !== team.id"
+                (click)="movingVolunteer() && movingVolunteer()!.fromTeamId !== team.id ? confirmMoveToTeam(team) : null">
                 <header class="team-card__header">
                   <span class="team-card__title">{{ team.name }}</span>
                   @if (team.vehicle) {
@@ -192,58 +315,90 @@
                 </header>
 
                 <div class="team-card__body">
+                  <!-- ASSIGNED VOLUNTEERS -->
                   @if (team.assigned_volunteers.length === 0) {
                     <p class="team-card__empty">No assigned volunteers yet.</p>
                   }
 
                   @for (volunteer of team.assigned_volunteers; track volunteer.id) {
                     <div class="vol-row">
-                      <div
-                        class="vol-tag"
-                        [class.is-driver]="volunteer.is_driver"
-                        [class.is-leader]="volunteer.is_leader">
+                      <div class="vol-tag" [class.is-driver]="volunteer.is_driver" [class.is-leader]="volunteer.is_leader">
                         <span class="vol-tag__name">{{ volunteer.name }}</span>
-                        @if (volunteer.is_driver) {
-                          <span class="vol-tag__symbols">Driver</span>
-                        }
                         @if (volunteer.is_leader) {
-                          <span class="vol-tag__symbols">Lead</span>
+                          <span class="vol-badge leader">Lead</span>
+                        }
+                        @if (volunteer.is_driver) {
+                          <span class="vol-badge driver">Driver</span>
                         }
                         <div class="vol-tag__actions">
-                          <button class="sym-btn" type="button" (click)="moveVolunteer(team, volunteer.id)">Move</button>
-                          <button class="sym-btn sym-btn--danger" type="button" (click)="removeVolunteer(team, volunteer.id)">Remove</button>
+                          <button class="sym-btn" type="button" (click)="startMoveVolunteer(team, volunteer.id); $event.stopPropagation()" title="Move to another team">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                          </button>
+                          <button class="sym-btn sym-btn--danger" type="button" (click)="removeVolunteer(team, volunteer.id); $event.stopPropagation()" title="Remove">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                          </button>
                         </div>
                       </div>
                     </div>
                   }
 
-                  <aside class="ai-block">
-                    <div class="ai-block__label">AI Suggestion</div>
-                    <ul class="ai-block__bullets">
-                      @for (line of team.ai_suggestion.rationale; track line) {
-                        <li>{{ line }}</li>
-                      }
-                    </ul>
-                    <div class="ai-block__try">
-                      <span>Try:</span>
-                      @for (candidate of team.ai_suggestion.candidates.slice(0, 2); track candidate.volunteer_id) {
-                        <button class="try-btn" type="button" (click)="acceptSuggestion(team, candidate)">
-                          {{ candidate.name }}
-                        </button>
-                      }
+                  <!-- AI SUGGESTION BLOCK -->
+                  @if (team.ai_suggestion && team.ai_suggestion.candidates.length > 0) {
+                    <div class="ai-suggestion-block">
+                      <div class="ai-suggestion-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                          <circle cx="12" cy="12" r="3"/>
+                          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                        </svg>
+                        <span>AI Suggestion</span>
+                      </div>
+                      <ul class="ai-rationale">
+                        @for (line of team.ai_suggestion.rationale; track $index) {
+                          <li>{{ line }}</li>
+                        }
+                      </ul>
+                      <div class="ai-candidates">
+                        <span class="try-label">Try:</span>
+                        @for (candidate of team.ai_suggestion.candidates; track candidate.volunteer_id) {
+                          <button class="candidate-pill" type="button" (click)="acceptSuggestion(team, candidate); $event.stopPropagation()">
+                            {{ candidate.name }}
+                            <span class="pill-confidence" [class]="confidenceClass(candidate.confidence)">
+                              {{ (candidate.confidence * 100) | number: '1.0-0' }}%
+                            </span>
+                          </button>
+                        }
+                      </div>
                     </div>
-                  </aside>
+                  }
 
-                  <div class="add-vol-row">
-                    <input
-                      class="add-vol-input"
-                      type="search"
-                      placeholder="Add volunteer..."
-                      [ngModel]="volunteerSearchByTeam()[team.id] ?? ''"
-                      (ngModelChange)="setVolunteerSearch(team.id, $event)"
-                      (keyup.enter)="addVolunteer(team)" />
-                    <button class="add-vol-btn" type="button" (click)="addVolunteer(team)">+</button>
-                  </div>
+                  <!-- ADD VOLUNTEER SEARCH -->
+                  @if (!movingVolunteer()) {
+                    <div class="add-volunteer-row">
+                      <input
+                        type="text"
+                        class="add-volunteer-input"
+                        placeholder="Search volunteer..."
+                        [value]="volunteerSearchByTeam()[team.id] || ''"
+                        (input)="setVolunteerSearch(team.id, $any($event.target).value)"
+                        (keyup.enter)="searchVolunteersForTeam(team)"
+                        (click)="$event.stopPropagation()" />
+                      <button class="sym-btn" type="button" (click)="searchVolunteersForTeam(team); $event.stopPropagation()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                      </button>
+                    </div>
+
+                    <!-- SEARCH RESULTS DROPDOWN -->
+                    @if (searchResultsByTeam()[team.id]?.length) {
+                      <div class="search-results-dropdown" (click)="$event.stopPropagation()">
+                        @for (vol of searchResultsByTeam()[team.id]!; track vol.volunteer_id) {
+                          <button class="search-result-item" type="button" (click)="assignSearchedVolunteer(team, vol)">
+                            <span class="sr-name">{{ vol.first_name }} {{ vol.last_name }}</span>
+                            <span class="sr-skills">{{ vol.skills.slice(0, 2).join(', ') }}</span>
+                          </button>
+                        }
+                      </div>
+                    }
+                  }
                 </div>
               </article>
             }
@@ -252,105 +407,87 @@
       }
     </section>
 
+    <!-- VEHICLE ASSIGNMENTS -->
     @if (icsData()!.vehicles.length > 0) {
-      <section class="footer-card vehicle-assignment-panel">
-        <h4>Vehicle Assignments</h4>
-        <table class="vehicle-table">
-          @for (vehicle of icsData()!.vehicles; track vehicle.team_key) {
-            <tr>
-              <td>{{ vehicle.team_name }}</td>
-              <td>{{ vehicle.vehicle }}</td>
-            </tr>
+      <section class="vehicles-section">
+        <h3 class="section-title">Vehicle Assignments</h3>
+        <div class="vehicles-grid">
+          @for (v of icsData()!.vehicles; track v.team_key) {
+            <div class="vehicle-chip">
+              <span class="vehicle-team">{{ v.team_name }}</span>
+              <span class="vehicle-separator">—</span>
+              <span class="vehicle-name">{{ v.vehicle }}</span>
+            </div>
           }
-        </table>
+        </div>
       </section>
     }
+
+    <!-- LEGEND -->
+    <section class="legend-section">
+      <div class="legend-grid">
+        <div class="legend-item"><span class="vol-badge leader">Lead</span> Team Leader</div>
+        <div class="legend-item"><span class="vol-badge driver">Driver</span> Assigned Driver</div>
+        <div class="legend-item"><span class="vol-badge new">New</span> New Volunteer</div>
+      </div>
+    </section>
   }
 
-  @if (aiError()) {
-    <div class="ai-error-banner">
-      <span>{{ aiError() }}</span>
-      <button type="button" (click)="aiError.set(null)" aria-label="Dismiss error">×</button>
-    </div>
-  }
-
+  <!-- AI SUGGESTIONS MODAL -->
   @if (isSuggestionsModalOpen()) {
-    <div class="modal-backdrop" (click)="dismissSuggestions()">
-      <div
-        class="modal-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="ai-suggestions-title"
-        tabindex="0"
-        (keydown.escape)="dismissSuggestions()"
-        (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3 id="ai-suggestions-title">AI-Generated Volunteer Assignments</h3>
-          <button type="button" class="modal-close" (click)="dismissSuggestions()" aria-label="Close">×</button>
+    <div class="modal-overlay" (click)="dismissSuggestions()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h3>AI Team Assignment Suggestions</h3>
+          <button class="sym-btn" type="button" (click)="dismissSuggestions()">✕</button>
+        </header>
+
+        @if (aiError()) {
+          <div class="error-message" style="margin: 1rem;">{{ aiError() }}</div>
+        }
+
+        <div class="modal-body">
+          <table class="suggestions-table">
+            <thead>
+              <tr>
+                <th style="width: 40px;"></th>
+                <th>Volunteer</th>
+                <th>Team</th>
+                <th>Role</th>
+                <th>Confidence</th>
+                <th>Reasoning</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (suggestion of aiSuggestions(); track suggestion.volunteer_id) {
+                <tr>
+                  <td><input type="checkbox" [checked]="selectedSuggestionIds().has(suggestion.volunteer_id)" (change)="toggleSuggestion(suggestion.volunteer_id)" /></td>
+                  <td class="cell-name">{{ suggestion.volunteer_name }}</td>
+                  <td>{{ suggestion.team_name }}</td>
+                  <td>{{ suggestion.role }}</td>
+                  <td>
+                    <span class="confidence-badge" [class]="confidenceClass(suggestion.confidence)">
+                      {{ (suggestion.confidence * 100) | number: '1.0-0' }}%
+                    </span>
+                  </td>
+                  <td class="cell-reasoning">{{ suggestion.reasoning || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
         </div>
 
-        @if (aiSuggestions().length === 0) {
-          <div class="modal-empty">
-            <p>No suggestions were generated. Groq could not match volunteers to teams.</p>
-          </div>
-        } @else {
-          <div class="modal-body">
-            <table class="suggestions-table">
-              <thead>
-                <tr>
-                  <th class="col-check"></th>
-                  <th>Volunteer</th>
-                  <th>Team</th>
-                  <th>Role</th>
-                  <th>Confidence</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (suggestion of aiSuggestions(); track suggestion.volunteer_id) {
-                  <tr [class.row-selected]="selectedSuggestionIds().has(suggestion.volunteer_id)">
-                    <td class="col-check">
-                      <input
-                        type="checkbox"
-                        [checked]="selectedSuggestionIds().has(suggestion.volunteer_id)"
-                        (change)="toggleSuggestion(suggestion.volunteer_id)"
-                        [attr.aria-label]="'Select ' + suggestion.volunteer_name" />
-                    </td>
-                    <td>
-                      <span class="volunteer-name">{{ suggestion.volunteer_name }}</span>
-                      @if (suggestion.skills.length) {
-                        <span class="volunteer-skills">{{ suggestion.skills.join(', ') }}</span>
-                      }
-                    </td>
-                    <td>{{ suggestion.team_name }}</td>
-                    <td>{{ suggestion.role }}</td>
-                    <td>
-                      <span class="confidence-badge" [class]="confidenceClass(suggestion.confidence)">
-                        {{ (suggestion.confidence * 100).toFixed(0) }}%
-                      </span>
-                      @if (suggestion.reasoning) {
-                        <span class="reasoning-text">{{ suggestion.reasoning }}</span>
-                      }
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="action-btn secondary" (click)="dismissSuggestions()">Dismiss</button>
-            <button
-              type="button"
-              class="action-btn secondary"
-              [disabled]="!hasSelectedSuggestions() || isApplyingAiSuggestions()"
-              (click)="applySelected()">
-              @if (isApplyingAiSuggestions()) { Applying... } @else { Apply Selected ({{ selectedSuggestionIds().size }}) }
-            </button>
-            <button type="button" class="action-btn" [disabled]="isApplyingAiSuggestions()" (click)="applyAll()">
-              @if (isApplyingAiSuggestions()) { Applying... } @else { Apply All }
-            </button>
-          </div>
-        }
+        <footer class="modal-footer">
+          <button class="action-btn secondary" type="button" (click)="dismissSuggestions()">Dismiss</button>
+          <button class="action-btn" type="button" [disabled]="!hasSelectedSuggestions() || isApplyingAiSuggestions()" (click)="applySelected()">
+            @if (isApplyingAiSuggestions()) {
+              <span class="btn-spinner" aria-hidden="true"></span> Applying...
+            } @else {
+              Apply Selected ({{ selectedSuggestionIds().size }})
+            }
+          </button>
+          <button class="action-btn" type="button" [disabled]="isApplyingAiSuggestions()" (click)="applyAll()">Apply All</button>
+        </footer>
       </div>
     </div>
   }
