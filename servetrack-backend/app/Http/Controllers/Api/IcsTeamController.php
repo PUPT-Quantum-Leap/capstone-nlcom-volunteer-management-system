@@ -14,9 +14,15 @@ class IcsTeamController extends Controller
      */
     public function index()
     {
-        // Only return distribution teams (AM + PM) with assigned volunteers
+        // Return distribution teams: new ICS structure (branch_key) + legacy feeding ops (departure_note)
         $teams = IcsTeam::with('ics.rsvp')
-            ->whereIn('branch_key', ['am_distribution', 'pm_distribution'])
+            ->where(function ($query) {
+                $query->whereIn('branch_key', ['am_distribution', 'pm_distribution'])
+                    ->orWhere(function ($q) {
+                        $q->whereNull('branch_key')
+                            ->whereNotNull('departure_note');
+                    });
+            })
             ->get();
 
         // Load volunteers assigned to each team via the ics_volunteer pivot
