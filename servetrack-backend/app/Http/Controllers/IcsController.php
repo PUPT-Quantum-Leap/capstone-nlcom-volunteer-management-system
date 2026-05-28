@@ -87,7 +87,15 @@ class IcsController extends Controller
                 ]
             );
 
-            $this->ensureDashboardDefaults($ics);
+            // Only seed the full set of default teams on first creation.
+            // For existing ICS records we only ensure command roles exist — never
+            // re-insert IcsTeam rows, which would create phantom ghost entries
+            // alongside any real custom team data already in the table.
+            if ($ics->wasRecentlyCreated) {
+                $this->ensureDashboardDefaults($ics);
+            } else {
+                $this->ensureCommandRoleDefaults($ics);
+            }
 
             return $ics;
         });
@@ -103,7 +111,8 @@ class IcsController extends Controller
             return response()->json(['message' => 'ICS not found.'], 404);
         }
 
-        $this->ensureDashboardDefaults($ics);
+        // Only seed command roles here — never re-seed IcsTeam rows on a role update.
+        $this->ensureCommandRoleDefaults($ics);
 
         $defaults = collect(IcsDashboardResource::COMMAND_ROLES)->keyBy('key');
         $defaultRole = $defaults->get($roleKey);
@@ -391,7 +400,12 @@ class IcsController extends Controller
         return response()->json(['message' => 'Volunteer removed successfully.']);
     }
 
-    private function ensureDashboardDefaults(Ics $ics): void
+    /**
+     * Seed only the 9 fixed command roles for a given ICS.
+     * Safe to call at any time — uses firstOrCreate so it never overwrites
+     * existing assignments and never touches the ics_team table.
+     */
+    private function ensureCommandRoleDefaults(Ics $ics): void
     {
         foreach (IcsDashboardResource::COMMAND_ROLES as $role) {
             IcsCommandRole::query()->firstOrCreate(
@@ -402,6 +416,17 @@ class IcsController extends Controller
                 ]
             );
         }
+    }
+
+    /**
+     * Seed both command roles and all 13 default operational teams.
+     * Should only be called when the ICS record is first created
+     * (wasRecentlyCreated === true) to avoid duplicating IcsTeam rows
+     * for ICS records that already have real custom team data.
+     */
+    private function ensureDashboardDefaults(Ics $ics): void
+    {
+        $this->ensureCommandRoleDefaults($ics);
 
         foreach (IcsDashboardResource::OPERATIONAL_BRANCHES as $branch) {
             foreach ($branch['teams'] as $teamDefinition) {
