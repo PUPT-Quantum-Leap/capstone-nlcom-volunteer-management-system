@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, switchMap, tap } from 'rxjs';
+import { Observable, catchError, switchMap, tap, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Attendance, AttendanceStats, AttendancePeriod } from '../models/attendance';
 import { VolunteerPoll } from '../models/volunteer-poll';
@@ -21,13 +21,35 @@ export class VolunteerService {
   private authService = inject(AuthService);
   private readonly baseUrl = `${environment.apiUrl}/volunteer`;
 
-  /** Fetch the authenticated volunteer's profile. */
+  /** In-memory cache of the last fetched profile. */
+  private profileCache = signal<VolunteerProfileResponse | null>(null);
+  private attendanceStatsCache = signal<ApiResponse<AttendanceStats> | null>(null);
+  private attendanceCache = signal<Map<AttendancePeriod, ApiResponse<Attendance[]>>>(new Map());
+
+  getCachedProfile(): VolunteerProfileResponse | null {
+    return this.profileCache();
+  }
+
+  getCachedAttendanceStats(): ApiResponse<AttendanceStats> | null {
+    return this.attendanceStatsCache();
+  }
+
+  getCachedAttendance(period: AttendancePeriod): ApiResponse<Attendance[]> | null {
+    return this.attendanceCache().get(period) ?? null;
+  }
+
+  /** Fetch the authenticated volunteer's profile — updates the cache on success. */
   getProfile(): Observable<ApiResponse<VolunteerProfileResponse>> {
     return this.http
       .get<ApiResponse<VolunteerProfileResponse>>(`${this.baseUrl}/profile`, {
         withCredentials: true,
       })
       .pipe(
+        tap((response) => {
+          if (response.success && response.data) {
+            this.profileCache.set(response.data);
+          }
+        }),
         catchError((error) => {
           console.error('[VolunteerService] getProfile failed:', error);
           throw error;
@@ -35,7 +57,7 @@ export class VolunteerService {
       );
   }
 
-  /** Update the authenticated volunteer's profile. */
+  /** Update the authenticated volunteer's profile — updates the cache on success. */
   updateProfile(
     payload: Record<string, unknown>,
   ): Observable<ApiResponse<VolunteerProfileResponse>> {
@@ -45,8 +67,31 @@ export class VolunteerService {
           withCredentials: true,
         })
       ),
+      tap((response) => {
+        if (response.success && response.data) {
+          this.profileCache.set(response.data);
+        }
+      }),
       catchError((error) => {
         console.error('[VolunteerService] updateProfile failed:', error);
+        throw error;
+      }),
+    );
+  }
+
+  /** Upload the volunteer's profile photo. */
+  uploadProfilePhoto(file: File): Observable<ApiResponse<{ profile_photo_url: string }>> {
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    return this.authService.ensureCsrf$().pipe(
+      switchMap(() =>
+        this.http.post<ApiResponse<{ profile_photo_url: string }>>(`${this.baseUrl}/profile/photo`, formData, {
+          withCredentials: true,
+        })
+      ),
+      catchError((error) => {
+        console.error('[VolunteerService] uploadProfilePhoto failed:', error);
         throw error;
       }),
     );
@@ -82,7 +127,12 @@ export class VolunteerService {
       })
       .pipe(
         tap((response) => {
-          console.log('[VolunteerService] getAttendance raw response:', response);
+          if (period) {
+            this.attendanceCache.update((map) => {
+              map.set(period, response);
+              return new Map(map);
+            });
+          }
         }),
         catchError((error) => {
           console.error('[VolunteerService] getAttendance failed:', error);
@@ -98,11 +148,12 @@ export class VolunteerService {
         withCredentials: true,
       })
       .pipe(
+        tap((response) => this.attendanceStatsCache.set(response)),
         catchError((error) => {
           console.error('[VolunteerService] getAttendanceStats failed:', error);
-        throw error;
-      }),
-    );
+          throw error;
+        }),
+      );
   }
 
   /** Fetch volunteer polls from the backend. */

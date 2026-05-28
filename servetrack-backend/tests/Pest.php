@@ -46,6 +46,11 @@ expect()->extend('toBeOne', function () {
 |
 */
 
+function validPassword(): string
+{
+    return Illuminate\Support\Str::random(8).'Ab1!';
+}
+
 function createVolunteerUser(array $userOverrides = [], array $volunteerOverrides = []): array
 {
     $user = User::factory()->create($userOverrides);

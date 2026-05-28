@@ -71,8 +71,8 @@ export class UserService {
     });
   }
 
-  resetPassword(id: number, password: string): Observable<ApiResponse<void>> {
-    return this.http.post<ApiResponse<void>>(`${this.baseUrl}/${id}/reset-password`, { password }, {
+  resetPassword(id: number): Observable<ApiResponse<void>> {
+    return this.http.post<ApiResponse<void>>(`${this.baseUrl}/${id}/reset-password`, {}, {
       withCredentials: true,
     });
   }

@@ -4,17 +4,17 @@ import { RsvpComponent } from './rsvp/rsvp';
 import { VolunteerAuthPage } from './auth/volunteer-auth-page/volunteer-auth-page';
 import { FacebookOAuthCallbackComponent } from './auth/facebook-oauth-callback/facebook-oauth-callback';
 import { AdminAuthPage } from './auth/admin-auth-page/admin-auth-page';
+import { ForgotPasswordPage } from './auth/forgot-password-page/forgot-password-page';
+import { ResetPasswordPage } from './auth/reset-password-page/reset-password-page';
 import { VolunteerDashboardShell } from './volunteer-dashboard/volunteer-dashboard-shell/volunteer-dashboard-shell';
 import { OverviewComponent } from './volunteer-dashboard/overview/overview';
 import { ProfileComponent } from './volunteer-dashboard/profile/profile';
 import { AttendanceComponent } from './volunteer-dashboard/attendance/attendance';
 import { PollsComponent } from './volunteer-dashboard/polls/polls';
-import { RequestsComponent } from './volunteer-dashboard/requests/requests';
 import { AdminLayout } from './admin-dashboard/admin-layout/admin-layout';
 import { DashboardComponent } from './admin-dashboard/dashboard/dashboard';
 import { AnalyticsComponent } from './admin-dashboard/analytics/analytics';
 import { AnalyticsFeedingOperationComponent } from './admin-dashboard/analytics-feeding-operation/analytics-feeding-operation';
-import { UserManagementComponent } from './admin-dashboard/user-management/user-management';
 import { OverviewDashboard } from './admin-dashboard/overview-dashboard/overview-dashboard';
 import { VolunteerManagement } from './admin-dashboard/volunteer-management/volunteer-management';
 import { AttendanceManagement } from './admin-dashboard/attendance-management/attendance-management';
@@ -33,6 +33,9 @@ export const routes: Routes = [
   { path: 'signup-form', redirectTo: 'volunteer-auth?tab=signup', pathMatch: 'full' },
   { path: 'auth/facebook/callback', component: FacebookOAuthCallbackComponent, canActivate: [guestGuard] },
   { path: 'admin-auth', component: AdminAuthPage, canActivate: [guestGuard] },
+  { path: 'forgot-password', component: ForgotPasswordPage, canActivate: [guestGuard], data: { role: 'admin' } },
+  { path: 'volunteer/forgot-password', component: ForgotPasswordPage, canActivate: [guestGuard], data: { role: 'volunteer' } },
+  { path: 'reset-password', component: ResetPasswordPage, canActivate: [guestGuard] },
   { path: 'admin-login', redirectTo: 'admin-auth', pathMatch: 'full' },
   { path: 'admin-signup', redirectTo: 'admin-auth?tab=signup', pathMatch: 'full' },
   { path: 'rsvp', component: RsvpComponent },
@@ -53,7 +56,6 @@ export const routes: Routes = [
       { path: 'profile', component: ProfileComponent },
       { path: 'attendance', component: AttendanceComponent },
       { path: 'polls', component: PollsComponent },
-      { path: 'requests', component: RequestsComponent },
     ],
   },
   {
@@ -65,7 +67,6 @@ export const routes: Routes = [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'analytics/feeding-operation', redirectTo: 'operations', pathMatch: 'full' },
       { path: 'analytics', component: AnalyticsComponent },
-      { path: 'user-management', component: UserManagementComponent },
       { path: 'volunteers', component: VolunteerManagement },
       { path: 'attendance', component: AttendanceManagement },
       { path: 'performance', component: PerformanceComponent },

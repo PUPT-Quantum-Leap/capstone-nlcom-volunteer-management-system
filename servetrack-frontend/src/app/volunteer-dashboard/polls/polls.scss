@@ -731,16 +731,6 @@
     box-shadow: var(--shadow-lg);
     transform: translateY(-6px);
     background: linear-gradient(to bottom, var(--surface-primary), var(--primary-50));
-
-    .view-details-hint {
-      color: var(--primary-600);
-      svg { transform: translateX(4px); }
-    }
-
-    .past-poll-winner {
-      background: rgba(255, 255, 255, 0.8);
-      border-color: var(--primary-200);
-    }
   }
 }
 
@@ -864,53 +854,51 @@
   }
 }
 
-.past-poll-winner {
-  padding: 1rem;
-  background: white;
-  border: 1px solid var(--gray-100);
-  border-radius: var(--radius-lg);
-  transition: all var(--transition-base);
-
-  .winner-label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--warning-500);
-    margin-bottom: 0.25rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-
-    svg {
-      width: 0.875rem;
-      height: 0.875rem;
-    }
-  }
-
-  .winner-value {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--gray-900);
-  }
-}
-
-.view-details-hint {
-  display: flex;
+// Attendance Status Badge on past poll cards
+.attendance-status {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-lg);
   font-size: 0.8125rem;
   font-weight: 700;
-  color: var(--gray-400);
-  transition: all var(--transition-fast);
-  margin-top: 0.25rem;
+  border: 1.5px solid transparent;
+  transition: all var(--transition-base);
+  width: fit-content;
+  margin-top: auto;
 
   svg {
     width: 1.125rem;
     height: 1.125rem;
-    transition: transform var(--transition-fast);
+    flex-shrink: 0;
+  }
+
+  &.status-attended {
+    background: var(--success-50);
+    color: var(--success-700);
+    border-color: #a7f3d0;
+  }
+
+  &.status-absent {
+    background: var(--danger-50);
+    color: #b91c1c;
+    border-color: #fecaca;
+  }
+
+  &.status-no-vote {
+    background: var(--gray-100);
+    color: var(--gray-600);
+    border-color: var(--gray-200);
+  }
+
+  &.status-voted {
+    background: var(--primary-50);
+    color: var(--primary-700);
+    border-color: var(--primary-200);
   }
 }
+
 
 @media (max-width: 640px) {
   .poll-card-body {

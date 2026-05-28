@@ -46,7 +46,15 @@ export class RsvpComponent implements OnInit {
   editError = signal<string | null>(null);
 
   isAuthenticated = computed(() => this.authService.isAuthenticated());
-  canVote = computed(() => this.isAuthenticated() === true);
+  isVolunteer = computed(() => {
+    const user = this.authService.currentUser();
+    return user ? user.role === 'volunteer' || user.user_type === 'volunteer' : false;
+  });
+  isAdmin = computed(() => {
+    const user = this.authService.currentUser();
+    return user ? user.role === 'admin' || user.user_type === 'admin' : false;
+  });
+  canVote = computed(() => this.isAuthenticated() && this.isVolunteer());
 
   totalResponses = computed(() => this.rsvp()?.totalResponses ?? 0);
   hasSelectedShift = computed(() => this.selectedShiftId() !== null);

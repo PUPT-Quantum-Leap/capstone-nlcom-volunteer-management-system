@@ -1,10 +1,10 @@
 <section class="ics-container">
-  <!-- Modern Header Bar -->
+  <!-- HEADER -->
   <header class="report-header">
     <div class="report-header-left">
-      <div class="report-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      <div class="report-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5" />
         </svg>
       </div>
       <div class="report-title-group">
@@ -12,688 +12,483 @@
         <h2 class="report-title">Incident Command System</h2>
       </div>
     </div>
+
     <div class="report-header-right">
-      <button type="button" class="action-btn secondary" (click)="toggleEditMode()">
-        @if (isEditMode) {
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-          <span>Save Changes</span>
+      <button
+        type="button"
+        class="action-btn secondary"
+        [disabled]="!hasIcsData() || isExporting()"
+        (click)="exportPdf()">
+        @if (isExporting()) {
+          <span class="btn-spinner" aria-hidden="true"></span>
+          <span>Exporting...</span>
         } @else {
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14,2 14,8 20,8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
           </svg>
-          <span>Edit ICS</span>
+          <span>Export PDF</span>
         }
       </button>
-      <button type="button" class="action-btn" (click)="generateNewICS()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"></polyline>
-          <polyline points="1 20 1 14 7 14"></polyline>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-        </svg>
-        <span>Generate Data</span>
+
+      <button
+        type="button"
+        class="action-btn"
+        [disabled]="!hasIcsData() || isLoadingAiSuggestions()"
+        (click)="generateAiSuggestions()">
+        @if (isLoadingAiSuggestions()) {
+          <span class="btn-spinner" aria-hidden="true"></span>
+          <span>Generating...</span>
+        } @else {
+          <span>AI Suggestions</span>
+        }
       </button>
     </div>
   </header>
 
-  <!-- Error State -->
-  @if (error) {
+  <!-- ERROR -->
+  @if (error()) {
     <div class="error-message">
-      <div class="error-content">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-        <span>{{ error }}</span>
-      </div>
-      <button class="action-btn secondary btn-sm" (click)="loadRsvpList()">Retry</button>
+      <div class="error-content"><span>{{ error() }}</span></div>
+      <button class="action-btn secondary btn-sm" type="button" (click)="loadRsvpList()">Retry</button>
     </div>
   }
 
-  <!-- RSVP Selector -->
-  @if (rsvpList.length > 0) {
+  <!-- RSVP SELECTOR -->
+  @if (rsvpOptions().length > 0) {
     <div class="rsvp-selector-container">
       <label class="filter-label">Target RSVP Event</label>
-      <app-custom-select 
-        [options]="rsvpOptions()" 
-        [value]="rsvpId?.toString() || ''"
+      <app-custom-select
+        [options]="rsvpOptions()"
+        [value]="selectedRsvpId()?.toString() || ''"
         (valueChange)="selectRsvp($event)"
-        variant="admin">
+        variant="volunteer">
       </app-custom-select>
     </div>
   }
 
-  <!-- Info Summary Cards -->
-  <div class="summary-grid">
-    <div class="summary-card">
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-      </div>
-      <div class="card-content">
-        <span class="label">Objective</span>
-        @if (!isEditMode) {
-          <span class="value">{{ objective }}</span>
-        } @else {
-          <input type="number" [(ngModel)]="newObjective" class="edit-input" placeholder="Value">
-        }
-      </div>
+  <!-- LOADING / EMPTY -->
+  @if (isLoading()) {
+    <div class="ics-empty-state">
+      <span class="btn-spinner dark" aria-hidden="true"></span>
+      <h3>Loading ICS dashboard</h3>
     </div>
-
-    <div class="summary-card">
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-      </div>
-      <div class="card-content">
-        <span class="label">Menu</span>
-        @if (!isEditMode) {
-          <span class="value">{{ menu || 'Not Set' }}</span>
-        } @else {
-          <input type="text" [(ngModel)]="newMenu" class="edit-input" placeholder="Enter menu">
-        }
-      </div>
+  } @else if (!hasIcsData()) {
+    <div class="ics-empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <path d="M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5" />
+      </svg>
+      <h3>No ICS dashboard loaded</h3>
+      <p>Select an RSVP event to initialize the operational dashboard.</p>
     </div>
-
-    <div class="summary-card">
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-      </div>
-      <div class="card-content">
-        <span class="label">Date</span>
-        @if (!isEditMode) {
-          <span class="value">{{ date || 'Select Date' }}</span>
-        } @else {
-          <input type="text" [(ngModel)]="newDate" class="edit-input" placeholder="Enter date">
-        }
-      </div>
-    </div>
-
-    <div class="summary-card">
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-      </div>
-      <div class="card-content">
-        <span class="label">Volunteers</span>
-        <span class="value">{{ volunteers }}</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Command Hierarchy Section -->
-  <div class="hierarchy-section">
-    <div class="tree-container">
-      <!-- Level 1 -->
-      <div class="tree-node root" 
-           (mouseenter)="setHoveredVolunteer(responsibleOfficial, 'Leadership')" 
-           (mouseleave)="clearHover()">
-        <div class="node-role">Responsible Official</div>
-        @if (!isEditMode) {
-          <div class="node-name">{{ responsibleOfficial.name || '---' }}</div>
-        } @else {
-          <input type="text" [(ngModel)]="responsibleOfficial.name" class="edit-input" placeholder="Name">
-        }
-
-        <!-- AI Tooltip for Hierarchy -->
-        @if (!isEditMode && hoveredVolunteer === responsibleOfficial) {
-          <div class="ai-tooltip">
-            <div class="ai-tooltip-header">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-              <span>AI Leadership Insight</span>
-            </div>
-            <div class="ai-rationale">
-              <p class="rationale-text">• Senior leadership with verified oversight experience
-• Historical success in large-scale incident management
-• Direct accountability for regional operations</p>
-            </div>
-          </div>
-        }
-      </div>
-      
-      <div class="tree-connector"></div>
-      
-      <!-- Level 2 -->
-      <div class="tree-node"
-           (mouseenter)="setHoveredVolunteer(incidentCommander, 'Leadership')" 
-           (mouseleave)="clearHover()">
-        <div class="node-role">Incident Commander</div>
-        @if (!isEditMode) {
-          <div class="node-name">{{ incidentCommander.name || '---' }}</div>
-        } @else {
-          <input type="text" [(ngModel)]="incidentCommander.name" class="edit-input" placeholder="Name">
-        }
-
-        <!-- AI Tooltip for Hierarchy -->
-        @if (!isEditMode && hoveredVolunteer === incidentCommander) {
-          <div class="ai-tooltip">
-            <div class="ai-tooltip-header">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-              <span>AI Command Insight</span>
-            </div>
-            <div class="ai-rationale">
-              <p class="rationale-text">• Expert in field coordination and team management
-• High-stress resilience and decision-making skills
-• Certified Incident Management Professional</p>
-            </div>
-          </div>
-        }
-      </div>
-
-      <div class="tree-connector"></div>
-
-      <!-- Level 3 Branches -->
-      <div class="tree-branch-container">
-        <div class="tree-branch">
-          <div class="tree-node"
-             (mouseenter)="setHoveredVolunteer(pio, 'Leadership')" 
-             (mouseleave)="clearHover()">
-          <div class="node-role">Public Information Officer</div>
-          @if (!isEditMode) {
-            <div class="node-name">{{ pio.name || '---' }}</div>
-          } @else {
-            <input type="text" [(ngModel)]="pio.name" class="edit-input" placeholder="Name">
-          }
-
-          <!-- AI Tooltip -->
-          @if (!isEditMode && hoveredVolunteer === pio) {
-            <div class="ai-tooltip">
-              <div class="ai-tooltip-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                <span>AI Media Insight</span>
-              </div>
-              <div class="ai-rationale">
-                <p class="rationale-text">• Skilled in crisis communication
-• Experienced in multi-agency PR
-• Strategic media response lead</p>
-              </div>
-            </div>
-          }
-        </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-node"
-               (mouseenter)="setHoveredVolunteer(purchasing, 'Leadership')" 
-               (mouseleave)="clearHover()">
-            <div class="node-role">Purchasing</div>
-            @if (!isEditMode) {
-              <div class="node-name">{{ purchasing.name || '---' }}</div>
-            } @else {
-              <input type="text" [(ngModel)]="purchasing.name" class="edit-input" placeholder="Name">
-            }
-
-            <!-- AI Tooltip -->
-            @if (!isEditMode && hoveredVolunteer === purchasing) {
-              <div class="ai-tooltip">
-                <div class="ai-tooltip-header">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                  <span>AI Procurement Insight</span>
-                </div>
-                <div class="ai-rationale">
-                  <p class="rationale-text">• Senior logistics lead with resource expertise
-• Proven efficiency in vendor management
-• Critical supply chain oversight experience</p>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-node"
-               (mouseenter)="setHoveredVolunteer(liaisonOfficer, 'Leadership')" 
-               (mouseleave)="clearHover()">
-            <div class="node-role">Liaison Officer</div>
-            @if (!isEditMode) {
-              <div class="node-name">{{ liaisonOfficer.name || '---' }}</div>
-            } @else {
-              <input type="text" [(ngModel)]="liaisonOfficer.name" class="edit-input" placeholder="Name">
-            }
-
-            <!-- AI Tooltip -->
-            @if (!isEditMode && hoveredVolunteer === liaisonOfficer) {
-              <div class="ai-tooltip">
-                <div class="ai-tooltip-header">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                  <span>AI Liaison Insight</span>
-                </div>
-                <div class="ai-rationale">
-                  <p class="rationale-text">• Expert in multi-agency collaboration
-• Diplomatic coordination skills
-• Direct link for external partner integration</p>
-                </div>
-              </div>
-            }
-          </div>
-        </div>
-        <div class="tree-branch">
-          <div class="tree-node"
-             (mouseenter)="setHoveredVolunteer(safetyOfficer, 'Leadership')" 
-             (mouseleave)="clearHover()">
-          <div class="node-role">Safety Officer</div>
-          @if (!isEditMode) {
-            <div class="node-name">{{ safetyOfficer.name || '---' }}</div>
-          } @else {
-            <input type="text" [(ngModel)]="safetyOfficer.name" class="edit-input" placeholder="Name">
-          }
-
-          <!-- AI Tooltip -->
-          @if (!isEditMode && hoveredVolunteer === safetyOfficer) {
-            <div class="ai-tooltip">
-              <div class="ai-tooltip-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                <span>AI Safety Insight</span>
-              </div>
-              <div class="ai-rationale">
-                <p class="rationale-text">• Certified Safety Auditor
-• Expert in OSHA/EMS protocols
-• Proven track record in hazard mitigation</p>
-              </div>
-            </div>
-          }
-        </div>
+  } @else {
+    <!-- SUMMARY GRID -->
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="card-content">
+          <span class="label">RSVP Event</span>
+          <span class="value">{{ icsData()!.rsvp.title }}</span>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Operational Grid -->
-  <div class="ops-section">
-    <!-- Mobile Kitchen Column -->
-    <div class="ops-column">
-      <div class="ops-header">
-        <div class="header-info">
-          @if (!isEditMode) {
-            <h3>{{ mobileKitchen.title || 'Mobile Kitchen' }}</h3>
-            <p>{{ mobileKitchen.leader || 'Leader Not Assigned' }}</p>
-          } @else {
-            <input type="text" [(ngModel)]="mobileKitchen.title" class="edit-input mb-1" placeholder="Title">
-            <input type="text" [(ngModel)]="mobileKitchen.leader" class="edit-input" placeholder="Leader">
-          }
+      <div class="summary-card">
+        <div class="card-content">
+          <span class="label">Date</span>
+          <span class="value">{{ icsData()!.rsvp.date }}</span>
         </div>
-        <span class="team-count">{{ mobileKitchen.teams.length }} Teams</span>
       </div>
-      <div class="ops-content">
-        @for (team of mobileKitchen.teams; track teamIdx; let teamIdx = $index) {
-          <div class="team-card">
-            <div class="team-title">
-              @if (!isEditMode) {
-                <span>{{ team.name }}</span>
-              } @else {
-                <input type="text" [(ngModel)]="team.name" class="edit-input" placeholder="Team Name">
-                <button class="btn-danger" style="padding: 2px 6px; border: none; border-radius: 4px; margin-left: 8px;" (click)="removeTeam('mobileKitchen', teamIdx)">×</button>
-              }
-            </div>
-            <div class="team-body">
-              <div class="volunteer-list">
-                @for (volunteer of team.volunteers; track volIdx; let volIdx = $index) {
-                  <div class="volunteer-wrapper" 
-                       (mouseenter)="setHoveredVolunteer(volunteer, team.name)" 
-                       (mouseleave)="clearHover()">
-                    <span class="volunteer-tag" [class.is-new]="volunteer.isNew" [class.is-driver]="volunteer.isDriver" [class.is-leader]="volunteer.isLeader">
-                      {{ getDisplayName(volunteer) }}
-                      @if (getVolunteerSymbols(volunteer)) {
-                        <span class="symbol">{{ getVolunteerSymbols(volunteer) }}</span>
-                      }
-                      @if (isEditMode) {
-                        <div class="volunteer-actions">
-                          <button (click)="toggleNewVolunteer('mobileKitchen', teamIdx, volIdx)" [class.active]="volunteer.isNew" title="New">*</button>
-                          <button (click)="toggleDriver('mobileKitchen', teamIdx, volIdx)" [class.active]="volunteer.isDriver" title="Driver">~</button>
-                          <button (click)="toggleLeader('mobileKitchen', teamIdx, volIdx)" [class.active]="volunteer.isLeader" title="Leader">^</button>
-                          <button (click)="removeVolunteer('mobileKitchen', teamIdx, volIdx)" class="btn-danger" title="Remove">×</button>
-                        </div>
-                      }
-                    </span>
-
-                    <!-- Floating AI Tooltip (View Mode) -->
-                    @if (!isEditMode && hoveredVolunteer === volunteer) {
-                      <div class="ai-tooltip align-left">
-                        <div class="ai-tooltip-header">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                          <span>AI Insights</span>
-                        </div>
-                        <div class="ai-rationale">
-                          <p class="rationale-text">{{ generateRationale(volunteer, team.name) }}</p>
-                        </div>
-                        <div class="ai-alternatives">
-                          <span class="alt-label">Recommended Alternatives:</span>
-                          <div class="alt-list">
-                            @for (alt of getAlternatives(team.name); track alt) {
-                              <span class="alt-name">{{ alt }}</span>
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    }
-                  </div>
-
-                  <!-- Inline AI Suggestion (Edit Mode) -->
-                  @if (isEditMode) {
-                    <div class="edit-suggestion-box">
-                      <div class="suggestion-header">AI SUGGESTION</div>
-                      <p class="suggestion-text">{{ generateRationale(volunteer, team.name) }}</p>
-                      <div class="suggestion-alternatives">
-                        <span>Try: </span>
-                        @for (alt of getAlternatives(team.name); track alt) {
-                          <button class="alt-swap-btn" (click)="swapVolunteer('mobileKitchen', teamIdx, volIdx, alt)">{{ alt }}</button>
-                        }
-                      </div>
-                    </div>
-                  }
-                }
-              </div>
-              @if (isEditMode) {
-                <div class="add-volunteer" style="margin-top: 12px; display: flex; gap: 8px;">
-                  <input type="text" [(ngModel)]="mobileKitchenNewVolunteer" class="edit-input" placeholder="Add volunteer..." (keyup.enter)="addVolunteer('mobileKitchen', teamIdx)">
-                  <button class="action-btn" style="padding: 4px 12px;" (click)="addVolunteer('mobileKitchen', teamIdx)">+</button>
-                </div>
-              }
-            </div>
-          </div>
-        }
-        @if (isEditMode) {
-          <button class="add-btn" (click)="addTeam('mobileKitchen')">+ Add New Team</button>
-        }
-      </div>
-    </div>
-
-    <!-- AM Distribution Column -->
-    <div class="ops-column">
-      <div class="ops-header">
-        <div class="header-info">
-          @if (!isEditMode) {
-            <h3>{{ amDistribution.title || 'AM Distribution' }}</h3>
-            <p>{{ amDistribution.leader || 'Leader Not Assigned' }}</p>
-          } @else {
-            <input type="text" [(ngModel)]="amDistribution.title" class="edit-input mb-1" placeholder="Title">
-            <input type="text" [(ngModel)]="amDistribution.leader" class="edit-input" placeholder="Leader">
-          }
+      <div class="summary-card">
+        <div class="card-content">
+          <span class="label">Location</span>
+          <span class="value">{{ icsData()!.rsvp.location || 'Not set' }}</span>
         </div>
-        <span class="team-count">{{ amDistribution.teams.length }} Teams</span>
       </div>
-      <div class="ops-content">
-        @for (team of amDistribution.teams; track teamIdx; let teamIdx = $index) {
-          <div class="team-card">
-            <div class="team-title">
-              @if (!isEditMode) {
-                <span>{{ team.name }}</span>
-              } @else {
-                <input type="text" [(ngModel)]="team.name" class="edit-input" placeholder="Team Name">
-                <button class="btn-danger" style="padding: 2px 6px; border: none; border-radius: 4px; margin-left: 8px;" (click)="removeTeam('amDistribution', teamIdx)">×</button>
-              }
-            </div>
-            <div class="team-body">
-              <div class="volunteer-list">
-                @for (volunteer of team.volunteers; track volIdx; let volIdx = $index) {
-                  <div class="volunteer-wrapper" 
-                       (mouseenter)="setHoveredVolunteer(volunteer, team.name)" 
-                       (mouseleave)="clearHover()">
-                    <span class="volunteer-tag" [class.is-new]="volunteer.isNew" [class.is-driver]="volunteer.isDriver" [class.is-leader]="volunteer.isLeader">
-                      {{ getDisplayName(volunteer) }}
-                      @if (getVolunteerSymbols(volunteer)) {
-                        <span class="symbol">{{ getVolunteerSymbols(volunteer) }}</span>
-                      }
-                      @if (isEditMode) {
-                        <div class="volunteer-actions">
-                          <button (click)="toggleNewVolunteer('amDistribution', teamIdx, volIdx)" [class.active]="volunteer.isNew" title="New">*</button>
-                          <button (click)="toggleDriver('amDistribution', teamIdx, volIdx)" [class.active]="volunteer.isDriver" title="Driver">~</button>
-                          <button (click)="toggleLeader('amDistribution', teamIdx, volIdx)" [class.active]="volunteer.isLeader" title="Leader">^</button>
-                          <button (click)="removeVolunteer('amDistribution', teamIdx, volIdx)" class="btn-danger" title="Remove">×</button>
-                        </div>
-                      }
-                    </span>
-
-                    <!-- Floating AI Tooltip (View Mode) -->
-                    @if (!isEditMode && hoveredVolunteer === volunteer) {
-                      <div class="ai-tooltip">
-                        <div class="ai-tooltip-header">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                          <span>AI Insights</span>
-                        </div>
-                        <div class="ai-rationale">
-                          <p class="rationale-text">{{ generateRationale(volunteer, team.name) }}</p>
-                        </div>
-                        <div class="ai-alternatives">
-                          <span class="alt-label">Recommended Alternatives:</span>
-                          <div class="alt-list">
-                            @for (alt of getAlternatives(team.name); track alt) {
-                              <span class="alt-name">{{ alt }}</span>
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    }
-                  </div>
-
-                  <!-- Inline AI Suggestion (Edit Mode) -->
-                  @if (isEditMode) {
-                    <div class="edit-suggestion-box">
-                      <div class="suggestion-header">AI SUGGESTION</div>
-                      <p class="suggestion-text">{{ generateRationale(volunteer, team.name) }}</p>
-                      <div class="suggestion-alternatives">
-                        <span>Try: </span>
-                        @for (alt of getAlternatives(team.name); track alt) {
-                          <button class="alt-swap-btn" (click)="swapVolunteer('amDistribution', teamIdx, volIdx, alt)">{{ alt }}</button>
-                        }
-                      </div>
-                    </div>
-                  }
-                }
-              </div>
-              @if (isEditMode) {
-                <div class="add-volunteer" style="margin-top: 12px; display: flex; gap: 8px;">
-                  <input type="text" [(ngModel)]="amDistributionNewVolunteer" class="edit-input" placeholder="Add volunteer..." (keyup.enter)="addVolunteer('amDistribution', teamIdx)">
-                  <button class="action-btn" style="padding: 4px 12px;" (click)="addVolunteer('amDistribution', teamIdx)">+</button>
-                </div>
-              }
-            </div>
-          </div>
-        }
-        @if (isEditMode) {
-          <button class="add-btn" (click)="addTeam('amDistribution')">+ Add New Team</button>
-        }
-      </div>
-    </div>
-
-    <!-- PM Distribution Column -->
-    <div class="ops-column">
-      <div class="ops-header">
-        <div class="header-info">
-          @if (!isEditMode) {
-            <h3>{{ pmDistribution.title || 'PM Distribution' }}</h3>
-            <p>{{ pmDistribution.leader || 'Leader Not Assigned' }}</p>
-          } @else {
-            <input type="text" [(ngModel)]="pmDistribution.title" class="edit-input mb-1" placeholder="Title">
-            <input type="text" [(ngModel)]="pmDistribution.leader" class="edit-input" placeholder="Leader">
-          }
-        </div>
-        <span class="team-count">{{ pmDistribution.teams.length }} Teams</span>
-      </div>
-      <div class="ops-content">
-        @for (team of pmDistribution.teams; track teamIdx; let teamIdx = $index) {
-          <div class="team-card">
-            <div class="team-title">
-              @if (!isEditMode) {
-                <span>{{ team.name }}</span>
-              } @else {
-                <input type="text" [(ngModel)]="team.name" class="edit-input" placeholder="Team Name">
-                <button class="btn-danger" style="padding: 2px 6px; border: none; border-radius: 4px; margin-left: 8px;" (click)="removeTeam('pmDistribution', teamIdx)">×</button>
-              }
-            </div>
-            <div class="team-body">
-              <div class="volunteer-list">
-                @for (volunteer of team.volunteers; track volIdx; let volIdx = $index) {
-                  <div class="volunteer-wrapper" 
-                       (mouseenter)="setHoveredVolunteer(volunteer, team.name)" 
-                       (mouseleave)="clearHover()">
-                    <span class="volunteer-tag" [class.is-new]="volunteer.isNew" [class.is-driver]="volunteer.isDriver" [class.is-leader]="volunteer.isLeader">
-                      {{ getDisplayName(volunteer) }}
-                      @if (getVolunteerSymbols(volunteer)) {
-                        <span class="symbol">{{ getVolunteerSymbols(volunteer) }}</span>
-                      }
-                      @if (isEditMode) {
-                        <div class="volunteer-actions">
-                          <button (click)="toggleNewVolunteer('pmDistribution', teamIdx, volIdx)" [class.active]="volunteer.isNew" title="New">*</button>
-                          <button (click)="toggleDriver('pmDistribution', teamIdx, volIdx)" [class.active]="volunteer.isDriver" title="Driver">~</button>
-                          <button (click)="toggleLeader('pmDistribution', teamIdx, volIdx)" [class.active]="volunteer.isLeader" title="Leader">^</button>
-                          <button (click)="removeVolunteer('pmDistribution', teamIdx, volIdx)" class="btn-danger" title="Remove">×</button>
-                        </div>
-                      }
-                    </span>
-
-                    <!-- Floating AI Tooltip (View Mode) -->
-                    @if (!isEditMode && hoveredVolunteer === volunteer) {
-                      <div class="ai-tooltip align-right">
-                        <div class="ai-tooltip-header">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="ai-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                          <span>AI Insights</span>
-                        </div>
-                        <div class="ai-rationale">
-                          <p class="rationale-text">{{ generateRationale(volunteer, team.name) }}</p>
-                        </div>
-                        <div class="ai-alternatives">
-                          <span class="alt-label">Recommended Alternatives:</span>
-                          <div class="alt-list">
-                            @for (alt of getAlternatives(team.name); track alt) {
-                              <span class="alt-name">{{ alt }}</span>
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    }
-                  </div>
-
-                  <!-- Inline AI Suggestion (Edit Mode) -->
-                  @if (isEditMode) {
-                    <div class="edit-suggestion-box">
-                      <div class="suggestion-header">AI SUGGESTION</div>
-                      <p class="suggestion-text">{{ generateRationale(volunteer, team.name) }}</p>
-                      <div class="suggestion-alternatives">
-                        <span>Try: </span>
-                        @for (alt of getAlternatives(team.name); track alt) {
-                          <button class="alt-swap-btn" (click)="swapVolunteer('pmDistribution', teamIdx, volIdx, alt)">{{ alt }}</button>
-                        }
-                      </div>
-                    </div>
-                  }
-                }
-              </div>
-              @if (isEditMode) {
-                <div class="add-volunteer" style="margin-top: 12px; display: flex; gap: 8px;">
-                  <input type="text" [(ngModel)]="pmDistributionNewVolunteer" class="edit-input" placeholder="Add volunteer..." (keyup.enter)="addVolunteer('pmDistribution', teamIdx)">
-                  <button class="action-btn" style="padding: 4px 12px;" (click)="addVolunteer('pmDistribution', teamIdx)">+</button>
-                </div>
-              }
-            </div>
-          </div>
-        }
-        @if (isEditMode) {
-          <button class="add-btn" (click)="addTeam('pmDistribution')">+ Add New Team</button>
-        }
-      </div>
-    </div>
-  </div>
-
-  <!-- Footer Grid Section -->
-  <div class="footer-grid">
-    <div class="footer-card">
-      <h4>Operational Symbols</h4>
-      <div class="legend-list">
-        <div class="legend-item">
-          <span class="symbol">*</span>
-          <span>New Volunteer</span>
-        </div>
-        <div class="legend-item">
-          <span class="symbol">~</span>
-          <span>Assigned Driver</span>
-        </div>
-        <div class="legend-item">
-          <span class="symbol">^</span>
-          <span>Team Leader</span>
+      <div class="summary-card">
+        <div class="card-content">
+          <span class="label">Assigned Volunteers</span>
+          <span class="value highlight">{{ dashboardVolunteers() }}</span>
         </div>
       </div>
     </div>
 
-    <div class="footer-card">
-      <h4>Meal Statistics</h4>
-      @if (!isEditMode) {
-        <div class="meal-stats">
-          <div class="stat">
-            <div class="stat-label">Breakfast</div>
-            <div class="stat-value">{{ mealBreakdown.breakfast }}</div>
+    <!-- OPERATION DETAILS (Metadata) -->
+    <section class="metadata-section">
+      <div class="metadata-header">
+        <h3 class="metadata-title">Operation Details</h3>
+        @if (!isEditingMetadata()) {
+          <button class="action-btn secondary btn-sm" type="button" (click)="startEditMetadata()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <span>Edit</span>
+          </button>
+        }
+      </div>
+
+      @if (isEditingMetadata()) {
+        <div class="metadata-form">
+          <div class="metadata-form-grid">
+            <div class="form-group">
+              <label class="form-label">Objective (target meals)</label>
+              <input
+                type="number"
+                class="form-input"
+                [ngModel]="metadataDraft().objective"
+                (ngModelChange)="metadataDraft.update(d => ({...d, objective: $event}))"
+                placeholder="e.g. 2400" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Menu</label>
+              <input
+                type="text"
+                class="form-input"
+                [ngModel]="metadataDraft().menu"
+                (ngModelChange)="metadataDraft.update(d => ({...d, menu: $event}))"
+                placeholder="e.g. Champorado" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Breakfast</label>
+              <input
+                type="number"
+                class="form-input"
+                [ngModel]="metadataDraft().meal_breakfast"
+                (ngModelChange)="metadataDraft.update(d => ({...d, meal_breakfast: $event}))" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lunch</label>
+              <input
+                type="number"
+                class="form-input"
+                [ngModel]="metadataDraft().meal_lunch"
+                (ngModelChange)="metadataDraft.update(d => ({...d, meal_lunch: $event}))" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Snacks</label>
+              <input
+                type="number"
+                class="form-input"
+                [ngModel]="metadataDraft().meal_snacks"
+                (ngModelChange)="metadataDraft.update(d => ({...d, meal_snacks: $event}))" />
+            </div>
           </div>
-          <div class="stat">
-            <div class="stat-label">Lunch</div>
-            <div class="stat-value">{{ mealBreakdown.lunch }}</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">Snacks</div>
-            <div class="stat-value">{{ mealBreakdown.snacks }}</div>
+          <div class="metadata-form-actions">
+            <button class="action-btn secondary btn-sm" type="button" (click)="cancelEditMetadata()">Cancel</button>
+            <button class="action-btn btn-sm" type="button" (click)="saveMetadata()">Save Details</button>
           </div>
         </div>
       } @else {
-        <div class="edit-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <div class="input-group">
-            <label style="font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block;">Breakfast</label>
-            <input type="number" [(ngModel)]="mealBreakdown.breakfast" class="edit-input">
-          </div>
-          <div class="input-group">
-            <label style="font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block;">Lunch</label>
-            <input type="number" [(ngModel)]="mealBreakdown.lunch" class="edit-input">
-          </div>
-          <div class="input-group">
-            <label style="font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block;">Snacks</label>
-            <input type="number" [(ngModel)]="mealBreakdown.snacks" class="edit-input">
-          </div>
+        <div class="metadata-display">
+          <div class="meta-chip"><span class="meta-label">Objective</span><span class="meta-value">{{ icsData()!.metadata.objective || '—' }}</span></div>
+          <div class="meta-chip"><span class="meta-label">Menu</span><span class="meta-value">{{ icsData()!.metadata.menu || '—' }}</span></div>
+          <div class="meta-chip"><span class="meta-label">Breakfast</span><span class="meta-value">{{ icsData()!.metadata.meal_breakfast }}</span></div>
+          <div class="meta-chip"><span class="meta-label">Lunch</span><span class="meta-value">{{ icsData()!.metadata.meal_lunch }}</span></div>
+          <div class="meta-chip"><span class="meta-label">Snacks</span><span class="meta-value">{{ icsData()!.metadata.meal_snacks }}</span></div>
         </div>
       }
-    </div>
+    </section>
 
-    <div class="footer-card">
-      <h4>Vehicle Assignments</h4>
-      <table class="vehicle-table">
-        @for (v of vehicleAssignments; track i; let i = $index) {
-          <tr>
-            @if (!isEditMode) {
-              <td>{{ v.code }}</td>
-              <td>{{ v.vehicle }}</td>
-            } @else {
-              <td colspan="2">
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <input type="text" [(ngModel)]="v.code" class="edit-input" style="width: 80px;" placeholder="Code">
-                  <input type="text" [(ngModel)]="v.vehicle" class="edit-input" placeholder="Vehicle">
-                  <button class="btn-danger" style="padding: 2px 6px; border: none; border-radius: 4px;" (click)="removeVehicle(i)">×</button>
+    <!-- COMMAND STRUCTURE (ORG CHART) -->
+    <section class="hierarchy-section" aria-labelledby="org-chart-title">
+      <h3 id="org-chart-title" class="section-title">Command Structure</h3>
+      <div class="org-chart">
+        <!-- Level 1: Responsible Official -->
+        @if (roleByKey('responsible_official'); as role) {
+          <div class="org-level org-level--center">
+            <article class="org-node org-node--root">
+              <div class="org-node__role">{{ role.title }}</div>
+              @if (editingRoleKey() === role.key) {
+                <div class="org-node__edit-row">
+                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" (keyup.enter)="saveRole(role)" />
+                  <button class="sym-btn active" type="button" (click)="saveRole(role)">✓</button>
+                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">✕</button>
                 </div>
-              </td>
-            }
-          </tr>
+              } @else {
+                <div class="org-node__name">{{ role.assigned_name || 'Unassigned' }}</div>
+                <button class="org-node__edit" type="button" (click)="editRole(role)" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+              }
+            </article>
+          </div>
         }
-      </table>
-      @if (isEditMode) {
-        <button class="add-btn" style="margin-top: 12px;" (click)="addVehicle()">+ Assign Vehicle</button>
+
+        <div class="org-connector org-connector--v"></div>
+
+        <!-- Level 2: Incident Commander -->
+        @if (roleByKey('incident_commander'); as role) {
+          <div class="org-level org-level--center">
+            <article class="org-node org-node--commander">
+              <div class="org-node__role">{{ role.title }}</div>
+              @if (editingRoleKey() === role.key) {
+                <div class="org-node__edit-row">
+                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" (keyup.enter)="saveRole(role)" />
+                  <button class="sym-btn active" type="button" (click)="saveRole(role)">✓</button>
+                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">✕</button>
+                </div>
+              } @else {
+                <div class="org-node__name">{{ role.assigned_name || 'Unassigned' }}</div>
+                <button class="org-node__edit" type="button" (click)="editRole(role)" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+              }
+            </article>
+          </div>
+        }
+
+        <div class="org-connector org-connector--v"></div>
+
+        <!-- Level 3: Section Chiefs -->
+        <div class="org-level org-level--chiefs">
+          @for (role of sectionChiefRoles(); track role.key) {
+            <article class="org-node org-node--chief">
+              <div class="org-node__role">{{ role.title }}</div>
+              @if (editingRoleKey() === role.key) {
+                <div class="org-node__edit-row">
+                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" (keyup.enter)="saveRole(role)" />
+                  <button class="sym-btn active" type="button" (click)="saveRole(role)">✓</button>
+                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">✕</button>
+                </div>
+              } @else {
+                <div class="org-node__name">{{ role.assigned_name || 'Unassigned' }}</div>
+                <button class="org-node__edit" type="button" (click)="editRole(role)" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+              }
+            </article>
+          }
+        </div>
+
+        <div class="org-connector org-connector--v"></div>
+
+        <!-- Level 4: Branch Directors -->
+        <div class="org-level org-level--branches">
+          @for (role of branchDirectorRoles(); track role.key) {
+            <article class="org-node org-node--branch">
+              <div class="org-node__role">{{ role.title }}</div>
+              @if (editingRoleKey() === role.key) {
+                <div class="org-node__edit-row">
+                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" (keyup.enter)="saveRole(role)" />
+                  <button class="sym-btn active" type="button" (click)="saveRole(role)">✓</button>
+                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">✕</button>
+                </div>
+              } @else {
+                <div class="org-node__name">{{ role.assigned_name || 'Unassigned' }}</div>
+                <button class="org-node__edit" type="button" (click)="editRole(role)" title="Edit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+              }
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- OPERATIONAL TEAMS (Kanban Board) -->
+    <section class="ops-section" aria-label="Operational teams">
+      <!-- MOVE MODE BANNER -->
+      @if (movingVolunteer()) {
+        <div class="move-banner">
+          <span>🔀 Select a team to move the volunteer to</span>
+          <button class="action-btn secondary btn-sm" type="button" (click)="cancelMove()">Cancel</button>
+        </div>
       }
+
+      @for (branch of icsData()!.branches; track branch.key) {
+        <section class="ops-column">
+          <header class="ops-header">
+            <div class="header-info">
+              <h3>{{ branch.title }}</h3>
+            </div>
+            <span class="team-count">{{ branch.teams.length }} teams</span>
+          </header>
+
+          <div class="ops-content">
+            @for (team of branch.teams; track team.key) {
+              <article
+                class="team-card"
+                [class.move-target]="movingVolunteer() && movingVolunteer()!.fromTeamId !== team.id"
+                (click)="movingVolunteer() && movingVolunteer()!.fromTeamId !== team.id ? confirmMoveToTeam(team) : null">
+                <header class="team-card__header">
+                  <span class="team-card__title">{{ team.name }}</span>
+                  @if (team.vehicle) {
+                    <span class="team-card__vehicle">{{ team.vehicle }}</span>
+                  }
+                </header>
+
+                <div class="team-card__body">
+                  <!-- ASSIGNED VOLUNTEERS -->
+                  @if (team.assigned_volunteers.length === 0) {
+                    <p class="team-card__empty">No assigned volunteers yet.</p>
+                  }
+
+                  @for (volunteer of team.assigned_volunteers; track volunteer.id) {
+                    <div class="vol-row">
+                      <div class="vol-tag" [class.is-driver]="volunteer.is_driver" [class.is-leader]="volunteer.is_leader">
+                        <span class="vol-tag__name">{{ volunteer.name }}</span>
+                        @if (volunteer.is_leader) {
+                          <span class="vol-badge leader">Lead</span>
+                        }
+                        @if (volunteer.is_driver) {
+                          <span class="vol-badge driver">Driver</span>
+                        }
+                        <div class="vol-tag__actions">
+                          <button class="sym-btn" type="button" (click)="startMoveVolunteer(team, volunteer.id); $event.stopPropagation()" title="Move to another team">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                          </button>
+                          <button class="sym-btn sym-btn--danger" type="button" (click)="removeVolunteer(team, volunteer.id); $event.stopPropagation()" title="Remove">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- AI SUGGESTION BLOCK -->
+                  @if (team.ai_suggestion && team.ai_suggestion.candidates.length > 0) {
+                    <div class="ai-suggestion-block">
+                      <div class="ai-suggestion-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                          <circle cx="12" cy="12" r="3"/>
+                          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                        </svg>
+                        <span>AI Suggestion</span>
+                      </div>
+                      <ul class="ai-rationale">
+                        @for (line of team.ai_suggestion.rationale; track $index) {
+                          <li>{{ line }}</li>
+                        }
+                      </ul>
+                      <div class="ai-candidates">
+                        <span class="try-label">Try:</span>
+                        @for (candidate of team.ai_suggestion.candidates; track candidate.volunteer_id) {
+                          <button class="candidate-pill" type="button" (click)="acceptSuggestion(team, candidate); $event.stopPropagation()">
+                            {{ candidate.name }}
+                            <span class="pill-confidence" [class]="confidenceClass(candidate.confidence)">
+                              {{ (candidate.confidence * 100) | number: '1.0-0' }}%
+                            </span>
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  <!-- ADD VOLUNTEER SEARCH -->
+                  @if (!movingVolunteer()) {
+                    <div class="add-volunteer-row">
+                      <input
+                        type="text"
+                        class="add-volunteer-input"
+                        placeholder="Search volunteer..."
+                        [value]="volunteerSearchByTeam()[team.id] || ''"
+                        (input)="setVolunteerSearch(team.id, $any($event.target).value)"
+                        (keyup.enter)="searchVolunteersForTeam(team)"
+                        (click)="$event.stopPropagation()" />
+                      <button class="sym-btn" type="button" (click)="searchVolunteersForTeam(team); $event.stopPropagation()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                      </button>
+                    </div>
+
+                    <!-- SEARCH RESULTS DROPDOWN -->
+                    @if (searchResultsByTeam()[team.id]?.length) {
+                      <div class="search-results-dropdown" (click)="$event.stopPropagation()">
+                        @for (vol of searchResultsByTeam()[team.id]!; track vol.volunteer_id) {
+                          <button class="search-result-item" type="button" (click)="assignSearchedVolunteer(team, vol)">
+                            <span class="sr-name">{{ vol.first_name }} {{ vol.last_name }}</span>
+                            <span class="sr-skills">{{ vol.skills.slice(0, 2).join(', ') }}</span>
+                          </button>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      }
+    </section>
+
+    <!-- VEHICLE ASSIGNMENTS -->
+    @if (icsData()!.vehicles.length > 0) {
+      <section class="vehicles-section">
+        <h3 class="section-title">Vehicle Assignments</h3>
+        <div class="vehicles-grid">
+          @for (v of icsData()!.vehicles; track v.team_key) {
+            <div class="vehicle-chip">
+              <span class="vehicle-team">{{ v.team_name }}</span>
+              <span class="vehicle-separator">—</span>
+              <span class="vehicle-name">{{ v.vehicle }}</span>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- LEGEND -->
+    <section class="legend-section">
+      <div class="legend-grid">
+        <div class="legend-item"><span class="vol-badge leader">Lead</span> Team Leader</div>
+        <div class="legend-item"><span class="vol-badge driver">Driver</span> Assigned Driver</div>
+        <div class="legend-item"><span class="vol-badge new">New</span> New Volunteer</div>
+      </div>
+    </section>
+  }
+
+  <!-- AI SUGGESTIONS MODAL -->
+  @if (isSuggestionsModalOpen()) {
+    <div class="modal-overlay" (click)="dismissSuggestions()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h3>AI Team Assignment Suggestions</h3>
+          <button class="sym-btn" type="button" (click)="dismissSuggestions()">✕</button>
+        </header>
+
+        @if (aiError()) {
+          <div class="error-message" style="margin: 1rem;">{{ aiError() }}</div>
+        }
+
+        <div class="modal-body">
+          <table class="suggestions-table">
+            <thead>
+              <tr>
+                <th style="width: 40px;"></th>
+                <th>Volunteer</th>
+                <th>Team</th>
+                <th>Role</th>
+                <th>Confidence</th>
+                <th>Reasoning</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (suggestion of aiSuggestions(); track suggestion.volunteer_id) {
+                <tr>
+                  <td><input type="checkbox" [checked]="selectedSuggestionIds().has(suggestion.volunteer_id)" (change)="toggleSuggestion(suggestion.volunteer_id)" /></td>
+                  <td class="cell-name">{{ suggestion.volunteer_name }}</td>
+                  <td>{{ suggestion.team_name }}</td>
+                  <td>{{ suggestion.role }}</td>
+                  <td>
+                    <span class="confidence-badge" [class]="confidenceClass(suggestion.confidence)">
+                      {{ (suggestion.confidence * 100) | number: '1.0-0' }}%
+                    </span>
+                  </td>
+                  <td class="cell-reasoning">{{ suggestion.reasoning || '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <footer class="modal-footer">
+          <button class="action-btn secondary" type="button" (click)="dismissSuggestions()">Dismiss</button>
+          <button class="action-btn" type="button" [disabled]="!hasSelectedSuggestions() || isApplyingAiSuggestions()" (click)="applySelected()">
+            @if (isApplyingAiSuggestions()) {
+              <span class="btn-spinner" aria-hidden="true"></span> Applying...
+            } @else {
+              Apply Selected ({{ selectedSuggestionIds().size }})
+            }
+          </button>
+          <button class="action-btn" type="button" [disabled]="isApplyingAiSuggestions()" (click)="applyAll()">Apply All</button>
+        </footer>
+      </div>
     </div>
-  </div>
-
-  <!-- Export Actions -->
-  <div class="export-actions">
-    <button class="action-btn secondary" (click)="exportToPdf()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-        <polyline points="14 2 14 8 20 8"></polyline>
-        <line x1="16" y1="13" x2="8" y2="13"></line>
-        <line x1="16" y1="17" x2="8" y2="17"></line>
-        <polyline points="10 9 9 9 8 9"></polyline>
-      </svg>
-      <span>Export PDF</span>
-    </button>
-    <button class="action-btn secondary" (click)="exportToExcel()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-        <line x1="3" y1="9" x2="21" y2="9"></line>
-        <line x1="9" y1="21" x2="9" y2="9"></line>
-      </svg>
-      <span>Export Excel</span>
-    </button>
-  </div>
+  }
 </section>
-

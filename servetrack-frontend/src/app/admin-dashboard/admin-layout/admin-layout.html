@@ -35,19 +35,6 @@
 
         <li class="menu-label" aria-hidden="true">Management</li>
         <li>
-          <button type="button" [class.active]="isActive('users')" (click)="navigateTo('users')"
-            [attr.aria-current]="currentView() === 'users' ? 'page' : null">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-            <span class="nav-text">User Management</span>
-          </button>
-        </li>
-        <li>
           <button type="button" [class.active]="isActive('volunteers')" (click)="navigateTo('volunteers')"
             [attr.aria-current]="currentView() === 'volunteers' ? 'page' : null">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -99,11 +86,11 @@
         <li>
           <button type="button" [class.active]="isActive('sms')" (click)="navigateTo('sms')"
             [attr.aria-current]="currentView() === 'sms' ? 'page' : null">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
             </svg>
-            <span class="nav-text">SMS</span>
+            <span class="nav-text">Email</span>
           </button>
         </li>
         <li>
@@ -267,13 +254,31 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
-      <router-outlet></router-outlet>
+      <router-outlet (activate)="onChildActivate($event)"></router-outlet>
     </main>
   </div>
 </div>
 
 @if (chatbotService.showChatbot()) {
   <app-chatbot-sidebar></app-chatbot-sidebar>
+}
+
+<!-- Snackbar -->
+@let snack = snackbarState();
+@if (snack) {
+  <div class="snackbar" [class.snackbar-leaving]="snackbarLeaving()"
+    [class.snackbar-success]="snack.type === 'success'"
+    [class.snackbar-error]="snack.type === 'error'"
+    [class.snackbar-info]="snack.type === 'info'" role="alert" aria-live="polite">
+    <span class="snackbar-text">{{ snack.message }}</span>
+    <button type="button" class="snackbar-close" (click)="dismissSnackbar()" aria-label="Dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+  </div>
 }
 
 <!-- Admin Profile Edit Modal -->

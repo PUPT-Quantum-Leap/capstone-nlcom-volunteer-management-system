@@ -111,23 +111,6 @@
     </div>
   }
 
-  <!-- Search Bar -->
-  <div class="search-bar">
-    <div class="search-wrapper">
-      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.35-4.35" />
-      </svg>
-      <input
-        #rsvpSearchInput
-        type="text"
-        placeholder="Search RSVPs by title or location..."
-        [value]="rsvpSearchQuery()"
-        (input)="setRsvpSearchQuery(rsvpSearchInput.value)"
-        aria-label="Search RSVPs" />
-    </div>
-  </div>
-
   <!-- RSVPs Table -->
   <div class="report-table-container">
     <table class="report-table">
@@ -592,7 +575,7 @@
                 [options]="responseShiftOptions()"
                 [value]="responseFilterShift()"
                 (valueChange)="setResponseFilterShift($event)"
-                variant="admin">
+                variant="volunteer">
               </app-custom-select>
             </div>
             <div class="response-status-chips" role="group" aria-label="Filter by status">

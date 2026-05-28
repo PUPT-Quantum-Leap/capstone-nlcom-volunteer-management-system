@@ -14,7 +14,7 @@
       </div>
     </div>
     <div class="report-header-right">
-      <button type="button" class="action-btn" [disabled]="backupActionLoading()" (click)="refreshBackups()">
+      <button type="button" class="action-btn" [disabled]="backupActionLoading() || backupActionId() !== null || cleanupLoading()" (click)="refreshBackups()">
         @if (backupActionLoading()) {
           <span class="btn-spinner"></span> Refreshing...
         } @else {
@@ -39,7 +39,7 @@
         <div class="backup-card-content">
           <h3>Create Backup</h3>
           <p>Create a manual snapshot of your current system data and records.</p>
-          <button type="button" class="primary-btn btn-lg" [disabled]="backupActionLoading()"
+          <button type="button" class="primary-btn btn-lg" [disabled]="backupActionLoading() || backupActionId() !== null || cleanupLoading()"
             (click)="createBackup()">
             @if (backupActionLoading()) {
               <span class="btn-spinner"></span> Creating Backup...
@@ -65,7 +65,7 @@
               #freqSelect
               class="form-input"
               [value]="scheduledBackupFrequency()"
-              [disabled]="scheduleSettingsSaving()"
+              [disabled]="scheduleSettingsSaving() || cleanupLoading()"
               (change)="onScheduledFrequencyChange(freqSelect.value)"
               aria-label="Backup frequency"
             >
@@ -76,7 +76,7 @@
             <button
               type="button"
               class="outline-btn"
-              [disabled]="scheduleSettingsSaving()"
+              [disabled]="scheduleSettingsSaving() || cleanupLoading()"
               (click)="toggleScheduledBackups()"
             >
               @if (scheduleSettingsSaving()) {
@@ -92,7 +92,7 @@
       </article>
     </div>
 
-    <!-- Backup History -->
+      <!-- Backup History -->
     <section class="backup-history">
       <div class="backup-health-row">
         @if (latestBackup(); as latest) {
@@ -100,6 +100,12 @@
         } @else {
           <p>No backups available.</p>
         }
+        <button type="button" class="outline-btn outline-btn-sm" [disabled]="backupActionLoading() || backupActionId() !== null || cleanupLoading()" (click)="cleanupBackups()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" aria-hidden="true">
+            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          Cleanup
+        </button>
       </div>
 
       <div class="report-table-container">
@@ -147,6 +153,7 @@
                         class="icon-btn icon-btn-primary"
                         [attr.aria-label]="'Download ' + backup.name"
                         title="Download"
+                        [disabled]="backupActionId() === backup.id"
                         (click)="downloadBackup(backup)"
                       >
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -159,6 +166,7 @@
                         class="icon-btn icon-btn-success"
                         [attr.aria-label]="'Restore ' + backup.name"
                         title="Restore"
+                        [disabled]="backupActionId() === backup.id"
                         (click)="restoreBackup(backup)"
                       >
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -171,6 +179,7 @@
                         class="icon-btn icon-btn-danger"
                         [attr.aria-label]="'Delete ' + backup.name"
                         title="Delete"
+                        [disabled]="backupActionId() === backup.id"
                         (click)="deleteBackup(backup.id)"
                       >
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">

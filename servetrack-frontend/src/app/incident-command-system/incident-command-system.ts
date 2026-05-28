@@ -1,51 +1,28 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RsvpService } from '../services/rsvp.service';
-import { Rsvp } from '../models/rsvp';
+import { finalize, switchMap } from 'rxjs';
 import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
+import jsPDF from 'jspdf';
+import autoTable, { RowInput } from 'jspdf-autotable';
+import {
+  AiCandidate,
+  AiSuggestion,
+  IcsCommandRole,
+  IcsDashboard,
+  IcsDashboardTeam,
+  RsvpVolunteer,
+} from '../models/ics';
+import { Rsvp } from '../models/rsvp';
+import { IcsService } from '../services/ics.service';
+import { RsvpService } from '../services/rsvp.service';
 
-export interface Volunteer {
-  name: string;
-  isNew: boolean;
-  isDriver: boolean;
-  isLeader: boolean;
-  // AI Metadata
-  age?: number;
-  attendance?: string;
-  skills?: string[];
-  training?: string[];
-  department?: string;
-  rationale?: string;
-  alternatives?: string[];
-}
-
-export interface Team {
-  name: string;
-  volunteers: Volunteer[];
-}
-
-export interface OperationalColumn {
-  title: string;
-  leader: string;
-  teams: Team[];
-}
-
-export interface MealBreakdown {
-  breakfast: number;
-  lunch: number;
-  snacks: number;
-}
-
-export interface VehicleAssignment {
-  code: string;
-  vehicle: string;
-}
-
-export interface CommandRole {
-  role: string;
-  name: string;
-}
+const SECTION_CHIEF_KEYS = ['planning', 'purchasing', 'mwc_coordinator', 'safety_emergency'];
+const BRANCH_DIRECTOR_KEYS = [
+  'mobile_kitchen_director',
+  'am_distribution_director',
+  'pm_distribution_director',
+];
 
 @Component({
   selector: 'app-incident-command-system',
@@ -55,536 +32,538 @@ export interface CommandRole {
   imports: [CommonModule, FormsModule, CustomSelect],
 })
 export class IncidentCommandSystemComponent implements OnInit {
-  private rsvpService = inject(RsvpService);
+  private readonly rsvpService = inject(RsvpService);
+  private readonly icsService = inject(IcsService);
 
-  // Dropdown Options
-  rsvpOptions = signal<SelectOption<string>[]>([]);
+  // --- State Signals ---
+  readonly rsvpOptions = signal<SelectOption<string>[]>([]);
+  readonly selectedRsvp = signal<Rsvp | null>(null);
+  readonly icsData = signal<IcsDashboard | null>(null);
+  readonly aiSuggestions = signal<AiSuggestion[]>([]);
+  readonly selectedSuggestionIds = signal<Set<number>>(new Set());
+  readonly volunteerSearchByTeam = signal<Record<number, string>>({});
+  readonly searchResultsByTeam = signal<Record<number, RsvpVolunteer[]>>({});
+  readonly editingRoleKey = signal<string | null>(null);
+  readonly roleDraft = signal('');
+  readonly isLoading = signal(false);
+  readonly isLoadingAiSuggestions = signal(false);
+  readonly isApplyingAiSuggestions = signal(false);
+  readonly isSuggestionsModalOpen = signal(false);
+  readonly isExporting = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly aiError = signal<string | null>(null);
 
-  // Edit mode state
-  isEditMode = false;
-  isLoading = false;
-  error: string | null = null;
+  // Move volunteer state
+  readonly movingVolunteer = signal<{ volunteerId: number; fromTeamId: number } | null>(null);
 
-  // Backend data
-  rsvpList: Rsvp[] = [];
-  selectedRsvp: Rsvp | null = null;
+  // Metadata editing
+  readonly isEditingMetadata = signal(false);
+  readonly metadataDraft = signal({
+    objective: null as number | null,
+    menu: '',
+    meal_breakfast: 0,
+    meal_lunch: 0,
+    meal_snacks: 0,
+  });
 
-  // Header Information - Connected to backend
-  objective = 0;
-  menu = '';
-  date = '';
-  volunteers = 0;
+  // --- Computed ---
+  readonly selectedRsvpId = computed(() => this.selectedRsvp()?.id ?? null);
+  readonly hasIcsData = computed(() => !!this.icsData());
+  readonly sectionChiefRoles = computed(() => this.rolesByKeys(SECTION_CHIEF_KEYS));
+  readonly branchDirectorRoles = computed(() => this.rolesByKeys(BRANCH_DIRECTOR_KEYS));
+  readonly hasSelectedSuggestions = computed(() => this.selectedSuggestionIds().size > 0);
 
-  // RSVP ID to link with (passed via route or selected)
-  rsvpId: number | null = null;
+  readonly dashboardVolunteers = computed(() => {
+    const dashboard = this.icsData();
+    return dashboard?.branches.reduce(
+      (total, branch) =>
+        total + branch.teams.reduce((bt, team) => bt + team.assigned_volunteers.length, 0),
+      0,
+    ) ?? 0;
+  });
 
-  // Command Hierarchy - Start empty
-  responsibleOfficial: CommandRole = { role: 'Responsible Official', name: '' };
-  incidentCommander: CommandRole = { role: 'Incident Commander', name: '' };
-  pio: CommandRole = { role: 'Public Information Officer', name: '' };
-  liaisonOfficer: CommandRole = { role: 'Liaison Officer', name: '' };
-  safetyOfficer: CommandRole = { role: 'Safety Officer', name: '' };
-  planning: CommandRole = { role: 'Planning', name: '' };
-  purchasing: CommandRole = { role: 'Purchasing', name: '' };
-  mwcCoordinator: CommandRole = { role: 'MWC Coordinator', name: '' };
-  safetyEmergency: CommandRole = { role: 'Safety & Emergency', name: '' };
-
-  // Operational Columns - Start empty
-  mobileKitchen: OperationalColumn = { title: '', leader: '', teams: [] };
-  amDistribution: OperationalColumn = { title: '', leader: '', teams: [] };
-  pmDistribution: OperationalColumn = { title: '', leader: '', teams: [] };
-
-  // Meal Breakdown - Start empty
-  mealBreakdown: MealBreakdown = { breakfast: 0, lunch: 0, snacks: 0 };
-
-  // Vehicle Assignments - Start empty
-  vehicleAssignments: VehicleAssignment[] = [];
-
-  // Helper to get clean name without symbols
-  getCleanName(name: string): string {
-    return name.replace(/[\*\~\^]/g, '');
-  }
-
-  // New volunteer input for adding to teams
-  newVolunteerName = '';
-  mobileKitchenNewVolunteer = '';
-  amDistributionNewVolunteer = '';
-  pmDistributionNewVolunteer = '';
-  selectedColumn: 'mobileKitchen' | 'amDistribution' | 'pmDistribution' | null = null;
-  selectedTeamIndex = -1;
-
-  // Edit mode for new values
-  newObjective = '';
-  newMenu = '';
-  newDate = '';
-
-  // Hover state for AI suggestions
-  hoveredVolunteer: Volunteer | CommandRole | null = null;
-  hoveredRole = '';
-
-  setHoveredVolunteer(volunteer: Volunteer | CommandRole, role: string): void {
-    if (!this.isEditMode) {
-      this.hoveredVolunteer = volunteer;
-      this.hoveredRole = role;
-    }
-  }
-
-  clearHover(): void {
-    this.hoveredVolunteer = null;
-    this.hoveredRole = '';
-  }
-
-  // Generate AI Rationale Mock
-  generateRationale(v: Volunteer | CommandRole, role: string): string {
-    // Handle CommandRole (Leadership nodes)
-    if ('role' in v) {
-      if (v.role === 'Responsible Official') return '• Senior leadership with verified oversight experience\n• Historical success in large-scale incident management';
-      if (v.role === 'Incident Commander') return '• Expert in field coordination and team management\n• High-stress resilience and decision-making skills';
-      return '• Specialized leadership with certified expertise\n• Deep institutional knowledge in assigned domain';
-    }
-
-    const skills = v.skills || ['General Ops'];
-    const attendance = v.attendance || '95%';
-    const training = v.training || ['Basic Safety'];
-    
-    return `• Exceptional ${attendance} attendance record
-• Expert in ${skills.join(', ')}
-• Certified in ${training.join(', ')}
-• ${v.age}-year veteran with deep experience in ${v.department || 'Operations'}`;
-  }
-
-  getAlternatives(role: string): string[] {
-    const allNames = ['Mark S.', 'Elena R.', 'David K.', 'Sarah J.', 'Tom H.', 'Lisa M.'];
-    // Return 2 random names that aren't the current one (simplified)
-    return allNames.sort(() => 0.5 - Math.random()).slice(0, 2);
-  }
-
-  toggleEditMode(): void {
-    if (this.isEditMode) {
-      // Save changes - update the actual values
-      if (this.newObjective) {
-        this.objective = parseInt(this.newObjective, 10) || this.objective;
-      }
-      if (this.newMenu) {
-        this.menu = this.newMenu;
-      }
-      if (this.newDate) {
-        this.date = this.newDate;
-      }
-    } else {
-      // Enter edit mode - initialize new values
-      this.newObjective = this.objective.toString();
-      this.newMenu = this.menu;
-      this.newDate = this.date;
-    }
-    this.isEditMode = !this.isEditMode;
-  }
-
-  // Volunteer management
-  swapVolunteer(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution', teamIndex: number, volunteerIndex: number, newName: string): void {
-    const column = this.getColumn(columnKey);
-    if (column && column.teams[teamIndex] && column.teams[teamIndex].volunteers[volunteerIndex]) {
-      const oldVolunteer = column.teams[teamIndex].volunteers[volunteerIndex];
-      column.teams[teamIndex].volunteers[volunteerIndex] = {
-        ...oldVolunteer,
-        name: newName,
-        // Reset metadata to trigger new rationale for the new person
-        age: Math.floor(Math.random() * 25) + 20,
-        attendance: (Math.floor(Math.random() * 20) + 80) + '%',
-        skills: ['Ops', 'Coordination'],
-        training: ['Basic Safety'],
-        department: 'Ops'
-      };
-    }
-  }
-
-  addVolunteer(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution', teamIndex: number): void {
-    const volunteerName = this.getVolunteerNameForColumn(columnKey);
-    if (volunteerName.trim()) {
-      const column = this.getColumn(columnKey);
-      if (column && column.teams[teamIndex]) {
-        column.teams[teamIndex].volunteers.push({
-          name: volunteerName.trim(),
-          isNew: false,
-          isDriver: false,
-          isLeader: false
-        });
-        this.clearVolunteerNameForColumn(columnKey);
-        this.updateVolunteerCount();
-      }
-    }
-  }
-
-  removeVolunteer(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution', teamIndex: number, volunteerIndex: number): void {
-    const column = this.getColumn(columnKey);
-    if (column && column.teams[teamIndex]) {
-      column.teams[teamIndex].volunteers.splice(volunteerIndex, 1);
-      this.updateVolunteerCount();
-    }
-  }
-
-  toggleNewVolunteer(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution', teamIndex: number, volunteerIndex: number): void {
-    const column = this.getColumn(columnKey);
-    if (column && column.teams[teamIndex] && column.teams[teamIndex].volunteers[volunteerIndex]) {
-      column.teams[teamIndex].volunteers[volunteerIndex].isNew = !column.teams[teamIndex].volunteers[volunteerIndex].isNew;
-    }
-  }
-
-  toggleDriver(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution', teamIndex: number, volunteerIndex: number): void {
-    const column = this.getColumn(columnKey);
-    if (column && column.teams[teamIndex] && column.teams[teamIndex].volunteers[volunteerIndex]) {
-      column.teams[teamIndex].volunteers[volunteerIndex].isDriver = !column.teams[teamIndex].volunteers[volunteerIndex].isDriver;
-    }
-  }
-
-  toggleLeader(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution', teamIndex: number, volunteerIndex: number): void {
-    const column = this.getColumn(columnKey);
-    if (column && column.teams[teamIndex] && column.teams[teamIndex].volunteers[volunteerIndex]) {
-      column.teams[teamIndex].volunteers[volunteerIndex].isLeader = !column.teams[teamIndex].volunteers[volunteerIndex].isLeader;
-    }
-  }
-
-  private getColumn(key: 'mobileKitchen' | 'amDistribution' | 'pmDistribution'): OperationalColumn | null {
-    switch (key) {
-      case 'mobileKitchen': return this.mobileKitchen;
-      case 'amDistribution': return this.amDistribution;
-      case 'pmDistribution': return this.pmDistribution;
-      default: return null;
-    }
-  }
-
-  private updateVolunteerCount(): void {
-    let count = 0;
-    this.mobileKitchen.teams.forEach(team => count += team.volunteers.length);
-    this.amDistribution.teams.forEach(team => count += team.volunteers.length);
-    this.pmDistribution.teams.forEach(team => count += team.volunteers.length);
-    this.volunteers = count;
-  }
-
-  // Team management
-  addTeam(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution'): void {
-    const column = this.getColumn(columnKey);
-    if (column) {
-      column.teams.push({ name: 'New Team', volunteers: [] });
-    }
-  }
-
-  removeTeam(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution', teamIndex: number): void {
-    const column = this.getColumn(columnKey);
-    if (column && column.teams[teamIndex]) {
-      column.teams.splice(teamIndex, 1);
-      this.updateVolunteerCount();
-    }
-  }
-
-  // Vehicle management
-  addVehicle(): void {
-    this.vehicleAssignments.push({ code: 'New', vehicle: 'Vehicle' });
-  }
-
-  removeVehicle(index: number): void {
-    this.vehicleAssignments.splice(index, 1);
-  }
-
-  // Symbol display helper - applies symbols properly
-  getVolunteerSymbols(volunteer: Volunteer): string {
-    let symbols = '';
-    if (volunteer.isNew) symbols += '*';
-    if (volunteer.isDriver) symbols += '~';
-    if (volunteer.isLeader) symbols += '^';
-    return symbols;
-  }
-
-  // Get display name with symbols after
-  getDisplayName(volunteer: Volunteer): string {
-    const cleanName = volunteer.name.replace(/[\*\~\^]/g, '');
-    return cleanName;
-  }
-
-  // Get all operational columns for template iteration
-  getOperationalColumns(): OperationalColumn[] {
-    return [this.mobileKitchen, this.amDistribution, this.pmDistribution];
-  }
-
-  // Helper methods for volunteer name management
-  private getVolunteerNameForColumn(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution'): string {
-    switch (columnKey) {
-      case 'mobileKitchen': return this.mobileKitchenNewVolunteer;
-      case 'amDistribution': return this.amDistributionNewVolunteer;
-      case 'pmDistribution': return this.pmDistributionNewVolunteer;
-      default: return '';
-    }
-  }
-
-  private clearVolunteerNameForColumn(columnKey: 'mobileKitchen' | 'amDistribution' | 'pmDistribution'): void {
-    switch (columnKey) {
-      case 'mobileKitchen': this.mobileKitchenNewVolunteer = ''; break;
-      case 'amDistribution': this.amDistributionNewVolunteer = ''; break;
-      case 'pmDistribution': this.pmDistributionNewVolunteer = ''; break;
-    }
-  }
-
-  // Get column key for template
-  getColumnKey(column: OperationalColumn): string {
-    if (column === this.mobileKitchen) return 'mobileKitchen';
-    if (column === this.amDistribution) return 'amDistribution';
-    if (column === this.pmDistribution) return 'pmDistribution';
-    return '';
-  }
-
-  // Export to PDF - placeholder
-  exportToPdf(): void {
-    // Will be implemented later
-    console.log('Export to PDF clicked');
-  }
-
-  // Export to Excel - placeholder
-  exportToExcel(): void {
-    // Will be implemented later
-    console.log('Export to Excel clicked');
-  }
-
-  // Generate New ICS - populates all data including RSVP header and volunteer teams
-  generateNewICS(): void {
-    if (this.selectedRsvp) {
-      // Display the RSVP header data
-      this.mapRsvpToComponent(this.selectedRsvp);
-      // Populate the sample volunteer and team data
-      this.populateSampleData();
-      console.log('Generated ICS with data from:', this.selectedRsvp.title);
-    } else {
-      // Clear all fields if no RSVP selected
-      this.clearAllData();
-      console.log('Generated blank ICS - no RSVP selected');
-    }
-  }
-
-  // Populate sample volunteer and team data
-  private populateSampleData(): void {
-    // Command Hierarchy
-    this.responsibleOfficial = { role: 'Responsible Official', name: 'Paul Giague' };
-    this.incidentCommander = { role: 'Incident Commander', name: 'Catherine Tolentino' };
-    this.planning = { role: 'Planning', name: 'Heidi Glague' };
-    this.purchasing = { role: 'Purchasing', name: 'Stephanie Tan' };
-    this.mwcCoordinator = { role: 'MWC Coordinator', name: 'Kevin Tabares' };
-    this.safetyEmergency = { role: 'Safety & Emergency', name: 'Sam Omberga' };
-
-    // Mobile Kitchen
-    this.mobileKitchen = {
-      title: 'Mobile Kitchen',
-      leader: 'Elisa Aguipo^',
-      teams: [
-        { 
-          name: 'KITCHEN TRUCK', 
-          volunteers: [
-            { name: 'Miah', isNew: false, isDriver: false, isLeader: false, age: 24, attendance: '98%', skills: ['Cooking', 'Inventory'], training: ['Food Safety'], department: 'Logistics' },
-            { name: 'Jones', isNew: false, isDriver: false, isLeader: false, age: 29, attendance: '92%', skills: ['Heavy Lifting'], training: ['Safety 101'], department: 'Ops' },
-            { name: 'Sam', isNew: false, isDriver: false, isLeader: false, age: 22, attendance: '85%', skills: ['Cleaning'], training: ['Basic Hygiene'], department: 'Ops' },
-            { name: 'Rice: Blessing', isNew: false, isDriver: false, isLeader: false, age: 27, attendance: '100%', skills: ['Coordination'], training: ['Leadership'], department: 'Admin' }
-          ] 
-        },
-        { 
-          name: 'FOOD PREP', 
-          volunteers: [
-            { name: 'Teresa^', isNew: false, isDriver: false, isLeader: true, age: 35, attendance: '96%', skills: ['Culinary Arts'], training: ['Advanced Food Safety'], department: 'Logistics' },
-            { name: 'Cath^a', isNew: false, isDriver: false, isLeader: false, age: 31, attendance: '90%', skills: ['Prep Work'], training: ['Hygiene Cert'], department: 'Logistics' },
-            { name: 'Natasya', isNew: false, isDriver: false, isLeader: false, age: 23, attendance: '88%', skills: ['Speed Cutting'], training: ['Safety 101'], department: 'Ops' },
-            { name: 'Michay', isNew: false, isDriver: false, isLeader: false, age: 26, attendance: '94%', skills: ['Organization'], training: ['Food Safety'], department: 'Ops' },
-            { name: 'Aly', isNew: false, isDriver: false, isLeader: false, age: 24, attendance: '91%', skills: ['Sanitization'], training: ['Basic Safety'], department: 'Ops' },
-            { name: 'Evenmae', isNew: false, isDriver: false, isLeader: false, age: 25, attendance: '93%', skills: ['Plating'], training: ['Food Safety'], department: 'Logistics' }
-          ] 
-        },
-        { 
-          name: 'VOLUNTEER CARE', 
-          volunteers: [
-            { name: 'Myrrh^', isNew: false, isDriver: false, isLeader: true, age: 33, attendance: '99%', skills: ['First Aid', 'Counseling'], training: ['Advanced Safety'], department: 'Care' },
-            { name: 'Rhia^a', isNew: false, isDriver: false, isLeader: false, age: 28, attendance: '95%', skills: ['Communication'], training: ['First Aid'], department: 'Care' },
-            { name: 'Lady', isNew: false, isDriver: false, isLeader: false, age: 26, attendance: '87%', skills: ['Hospitality'], training: ['Basic Safety'], department: 'Ops' }
-          ] 
-        },
-        { 
-          name: 'WASH / CLEAN UP', 
-          volunteers: [
-            { name: 'Orly^', isNew: false, isDriver: false, isLeader: false, age: 40, attendance: '97%', skills: ['Sanitization'], training: ['Chemical Handling'], department: 'Ops' },
-            { name: 'John', isNew: false, isDriver: false, isLeader: false, age: 22, attendance: '84%', skills: ['Labor'], training: ['Basic Safety'], department: 'Ops' },
-            { name: 'Daniel', isNew: false, isDriver: false, isLeader: false, age: 23, attendance: '89%', skills: ['Labor'], training: ['Basic Safety'], department: 'Ops' },
-            { name: 'Ariel', isNew: false, isDriver: false, isLeader: false, age: 25, attendance: '92%', skills: ['Labor'], training: ['Basic Safety'], department: 'Ops' }
-          ] 
-        },
-        { 
-          name: 'INVENTORY', 
-          volunteers: [
-            { name: 'Beth^', isNew: false, isDriver: false, isLeader: false, age: 38, attendance: '100%', skills: ['Audit', 'XLS'], training: ['Logistics Management'], department: 'Logistics' },
-            { name: 'Nestor', isNew: false, isDriver: false, isLeader: false, age: 42, attendance: '95%', skills: ['Warehousing'], training: ['Safety 101'], department: 'Logistics' },
-            { name: 'Johan (pm)', isNew: false, isDriver: false, isLeader: false, age: 30, attendance: '91%', skills: ['Stock Control'], training: ['Basic Safety'], department: 'Ops' }
-          ] 
-        },
-      ]
-    };
-
-    // AM Distribution
-    this.amDistribution = {
-      title: 'AM DISTRIBUTION',
-      leader: 'Steph Tan',
-      teams: [
-        { name: 'TEAM ALPHA (PYP/GANNET)', volunteers: [{ name: 'Kevin~', isNew: false, isDriver: true, isLeader: false, age: 32, attendance: '98%', skills: ['Driving', 'Nav'], training: ['Advanced Driving'], department: 'Logistics' }] },
-        { name: 'TEAM BRAVO (MX/NBN)', volunteers: [{ name: 'John~', isNew: false, isDriver: true, isLeader: false, age: 34, attendance: '96%', skills: ['Driving'], training: ['Defensive Driving'], department: 'Logistics' }, { name: 'Blessing', isNew: false, isDriver: false, isLeader: false, age: 27, attendance: '100%', skills: ['Coordination'], training: ['Leadership'], department: 'Admin' }, { name: 'Natasya', isNew: false, isDriver: false, isLeader: false, age: 23, attendance: '88%', skills: ['Speed Cutting'], training: ['Safety 101'], department: 'Ops' }, { name: 'Jhay2', isNew: false, isDriver: false, isLeader: false, age: 25, attendance: '90%', skills: ['Ops'], training: ['Basic Safety'], department: 'Ops' }, { name: 'Evenmae', isNew: false, isDriver: false, isLeader: false, age: 25, attendance: '93%', skills: ['Plating'], training: ['Food Safety'], department: 'Logistics' }] },
-        { name: 'TEAM CHARLIE1 (MASVILLE)', volunteers: [{ name: 'Sam~', isNew: false, isDriver: true, isLeader: false, age: 29, attendance: '94%', skills: ['Driving'], training: ['Basic Safety'], department: 'Logistics' }, { name: 'Michay^', isNew: false, isDriver: false, isLeader: true, age: 26, attendance: '94%', skills: ['Organization'], training: ['Food Safety'], department: 'Ops' }, { name: 'Aly', isNew: false, isDriver: false, isLeader: false, age: 24, attendance: '91%', skills: ['Sanitization'], training: ['Basic Safety'], department: 'Ops' }] },
-        { name: 'TEAM CHARLIE2 (BANAJ)', volunteers: [{ name: 'Orly~', isNew: false, isDriver: true, isLeader: false, age: 40, attendance: '97%', skills: ['Driving'], training: ['Chemical Handling'], department: 'Ops' }, { name: 'Daniel', isNew: false, isDriver: false, isLeader: false, age: 23, attendance: '89%', skills: ['Labor'], training: ['Basic Safety'], department: 'Ops' }, { name: 'Rhia', isNew: false, isDriver: false, isLeader: false, age: 28, attendance: '95%', skills: ['Communication'], training: ['First Aid'], department: 'Care' }] },
-      ]
-    };
-
-    // PM Distribution
-    this.pmDistribution = {
-      title: 'PM DISTRIBUTION',
-      leader: 'Steph Tan',
-      teams: [
-        { name: 'TEAM DELTA1 (SITIO P)', volunteers: [{ name: 'Cedie~', isNew: false, isDriver: true, isLeader: false, age: 28, attendance: '93%', skills: ['Driving'], training: ['Basic Safety'], department: 'Logistics' }, { name: 'Lady~', isNew: false, isDriver: true, isLeader: false, age: 26, attendance: '87%', skills: ['Driving'], training: ['Basic Safety'], department: 'Ops' }] },
-        { name: 'TEAM DELTA2 (SUCAT H)', volunteers: [{ name: 'Michael S~', isNew: false, isDriver: true, isLeader: false, age: 31, attendance: '95%', skills: ['Driving'], training: ['Advanced Driving'], department: 'Logistics' }, { name: 'Karl', isNew: false, isDriver: false, isLeader: false, age: 24, attendance: '90%', skills: ['Ops'], training: ['Basic Safety'], department: 'Ops' }, { name: 'Aly', isNew: false, isDriver: false, isLeader: false, age: 24, attendance: '91%', skills: ['Sanitization'], training: ['Basic Safety'], department: 'Ops' }] },
-        { name: 'TEAM ECHO (DELPAN)', volunteers: [{ name: 'John~', isNew: false, isDriver: true, isLeader: false, age: 34, attendance: '96%', skills: ['Driving'], training: ['Defensive Driving'], department: 'Logistics' }, { name: 'Cath^', isNew: false, isDriver: false, isLeader: true, age: 31, attendance: '90%', skills: ['Coordination'], training: ['Hygiene Cert'], department: 'Logistics' }, { name: 'Johan', isNew: false, isDriver: false, isLeader: false, age: 30, attendance: '91%', skills: ['Stock Control'], training: ['Basic Safety'], department: 'Ops' }] },
-        { name: 'TEAM FOXTROT (PAR/SUN)', volunteers: [] },
-      ]
-    };
-
-    // Meal Breakdown
-    this.mealBreakdown = { breakfast: 40, lunch: 50, snacks: 50 };
-
-    // Vehicle Assignments
-    this.vehicleAssignments = [
-      { code: 'Alpha', vehicle: 'Flexi' },
-      { code: 'Bravo', vehicle: 'Hilux' },
-      { code: 'Charlie 1', vehicle: 'Clipper' },
-      { code: 'Charlie 2', vehicle: 'Chevy' },
-      { code: 'Delta 1', vehicle: 'Hilux' },
-      { code: 'Delta 2', vehicle: 'Black' },
-      { code: 'Echo', vehicle: 'Chevy' },
-      { code: 'Foxtrot', vehicle: 'Flexi/Clipper' },
-    ];
-  }
-
-  // Clear all data
-  private clearAllData(): void {
-    this.objective = 0;
-    this.menu = '';
-    this.date = '';
-    this.volunteers = 0;
-    this.responsibleOfficial = { role: 'Responsible Official', name: '' };
-    this.incidentCommander = { role: 'Incident Commander', name: '' };
-    this.planning = { role: 'Planning', name: '' };
-    this.purchasing = { role: 'Purchasing', name: '' };
-    this.mwcCoordinator = { role: 'MWC Coordinator', name: '' };
-    this.safetyEmergency = { role: 'Safety & Emergency', name: '' };
-    this.mobileKitchen = { title: '', leader: '', teams: [] };
-    this.amDistribution = { title: '', leader: '', teams: [] };
-    this.pmDistribution = { title: '', leader: '', teams: [] };
-    this.mealBreakdown = { breakfast: 0, lunch: 0, snacks: 0 };
-    this.vehicleAssignments = [];
-  }
-
-  // Backend Connection Methods
   ngOnInit(): void {
-    // Load RSVP list only, don't auto-load data
     this.loadRsvpList();
   }
 
-  /**
-   * Load list of RSVP events from backend.
-   */
+  // ===== RSVP & DASHBOARD =====
+
   loadRsvpList(): void {
-    this.error = null;
+    this.error.set(null);
+    this.isLoading.set(true);
 
-    this.rsvpService.getRsvps().subscribe({
-      next: (response) => {
-        console.log('RSVP list loaded:', response);
-        this.rsvpList = response.data || [];
-        this.rsvpOptions.set(this.rsvpList.map(r => ({ label: r.title, value: r.id.toString() })));
+    this.rsvpService
+      .getRsvps()
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response) => {
+          const rsvps = response.data ?? [];
+          this.rsvpOptions.set(rsvps.map((rsvp) => ({ label: rsvp.title, value: rsvp.id.toString() })));
 
-        if (this.rsvpList.length === 0) {
-          this.error = 'No RSVP events found. Please create an RSVP event first.';
-        } else {
-          // Select first RSVP but DON'T display data yet
-          this.selectedRsvp = this.rsvpList[0];
-          this.rsvpId = this.rsvpList[0].id;
-          console.log('Selected RSVP (data not displayed yet):', this.selectedRsvp.title);
-        }
-      },
-      error: (err) => {
-        this.error = 'Failed to load RSVP events. Check if backend is running.';
-        console.error('Error loading RSVP list:', err);
-      },
-    });
+          if (rsvps.length === 0) {
+            this.error.set('No RSVP events found. Please create an RSVP event first.');
+            return;
+          }
+
+          this.selectedRsvp.set(rsvps[0]);
+          this.loadDashboard(rsvps[0].id);
+        },
+        error: () => this.error.set('Failed to load RSVP events. Check if backend is running.'),
+      });
   }
 
-  /**
-   * Load RSVP data and populate ICS fields.
-   */
-  loadRsvpData(rsvpId: number): void {
-    this.isLoading = true;
-    this.rsvpId = rsvpId;
-    this.error = null;
-
-    this.rsvpService.getRsvpById(rsvpId).subscribe({
-      next: (response) => {
-        console.log('RSVP data loaded:', response);
-        this.selectedRsvp = response.data;
-        this.mapRsvpToComponent(response.data);
-        this.isLoading = false;
-      },
-      error: (err) => {
-        this.error = 'Failed to load RSVP data. Check if backend is running.';
-        this.isLoading = false;
-        console.error('Error loading RSVP:', err);
-      },
-    });
-  }
-
-  /**
-   * Select a different RSVP event - only stores selection, doesn't display data yet.
-   */
   selectRsvp(rsvpId: number | string): void {
-    const id = typeof rsvpId === 'string' ? parseInt(rsvpId, 10) : rsvpId;
-    if (!isNaN(id)) {
-      const found = this.rsvpList.find(r => r.id === id);
-      if (found) {
-        this.selectedRsvp = found;
-        this.rsvpId = id;
-        console.log('Selected RSVP for generation:', found.title);
-      }
+    const id = typeof rsvpId === 'string' ? Number.parseInt(rsvpId, 10) : rsvpId;
+    if (Number.isNaN(id)) return;
+
+    const option = this.rsvpOptions().find((rsvp) => Number(rsvp.value) === id);
+    this.selectedRsvp.set(option ? ({ id, title: option.label } as Rsvp) : this.selectedRsvp());
+    this.loadDashboard(id);
+  }
+
+  loadDashboard(rsvpId: number): void {
+    this.error.set(null);
+    this.isLoading.set(true);
+
+    this.icsService
+      .getDashboard(rsvpId)
+      .pipe(finalize(() => this.isLoading.set(false)))
+      .subscribe({
+        next: (response) => this.icsData.set(response.data),
+        error: () => this.error.set('Failed to load ICS dashboard. Please try again.'),
+      });
+  }
+
+  // ===== COMMAND ROLE EDITING =====
+
+  roleByKey(key: string): IcsCommandRole | null {
+    return this.icsData()?.command_roles.find((role) => role.key === key) ?? null;
+  }
+
+  editRole(role: IcsCommandRole): void {
+    this.editingRoleKey.set(role.key);
+    this.roleDraft.set(role.assigned_name ?? '');
+  }
+
+  cancelRoleEdit(): void {
+    this.editingRoleKey.set(null);
+    this.roleDraft.set('');
+  }
+
+  saveRole(role: IcsCommandRole): void {
+    const dashboard = this.icsData();
+    if (!dashboard) return;
+
+    this.icsService
+      .updateCommandRole(dashboard.ics_id, role.key, { assigned_name: this.roleDraft() })
+      .subscribe({
+        next: (response) => {
+          this.icsData.set(response.data);
+          this.cancelRoleEdit();
+        },
+        error: () => this.error.set('Failed to update command role.'),
+      });
+  }
+
+  // ===== AI SUGGESTIONS =====
+
+  generateAiSuggestions(): void {
+    const dashboard = this.icsData();
+    if (!dashboard) return;
+
+    this.aiError.set(null);
+    this.isLoadingAiSuggestions.set(true);
+
+    this.icsService
+      .getAiSuggestions(dashboard.ics_id)
+      .pipe(finalize(() => this.isLoadingAiSuggestions.set(false)))
+      .subscribe({
+        next: (response) => {
+          const suggestions = response.data ?? [];
+          this.aiSuggestions.set(suggestions);
+          this.selectedSuggestionIds.set(new Set(suggestions.map((s) => s.volunteer_id)));
+          this.isSuggestionsModalOpen.set(true);
+        },
+        error: () => this.aiError.set('Failed to generate AI suggestions. Please try again.'),
+      });
+  }
+
+  acceptSuggestion(team: IcsDashboardTeam, candidate: AiCandidate): void {
+    const dashboard = this.icsData();
+    if (!dashboard) return;
+
+    this.icsService
+      .assignVolunteer(dashboard.ics_id, {
+        volunteer_id: candidate.volunteer_id,
+        team_id: team.id,
+        role: candidate.role,
+        is_leader: candidate.role.toLowerCase().includes('lead'),
+      })
+      .pipe(switchMap(() => this.icsService.getDashboard(dashboard.rsvp.id)))
+      .subscribe({
+        next: (response) => this.icsData.set(response.data),
+        error: () => this.error.set('Failed to assign suggested volunteer.'),
+      });
+  }
+
+  applySelected(): void {
+    const dashboard = this.icsData();
+    if (!dashboard || this.selectedSuggestionIds().size === 0) return;
+
+    const selected = this.aiSuggestions().filter((s) =>
+      this.selectedSuggestionIds().has(s.volunteer_id),
+    );
+
+    this.isApplyingAiSuggestions.set(true);
+
+    this.icsService
+      .applyAiSuggestions(dashboard.ics_id, selected)
+      .pipe(
+        switchMap(() => this.icsService.getDashboard(dashboard.rsvp.id)),
+        finalize(() => this.isApplyingAiSuggestions.set(false)),
+      )
+      .subscribe({
+        next: (response) => {
+          this.icsData.set(response.data);
+          this.dismissSuggestions();
+        },
+        error: () => this.aiError.set('Failed to apply suggestions. Please try again.'),
+      });
+  }
+
+  applyAll(): void {
+    this.selectedSuggestionIds.set(new Set(this.aiSuggestions().map((s) => s.volunteer_id)));
+    this.applySelected();
+  }
+
+  toggleSuggestion(volunteerId: number): void {
+    const current = new Set(this.selectedSuggestionIds());
+    current.has(volunteerId) ? current.delete(volunteerId) : current.add(volunteerId);
+    this.selectedSuggestionIds.set(current);
+  }
+
+  dismissSuggestions(): void {
+    this.isSuggestionsModalOpen.set(false);
+    this.aiSuggestions.set([]);
+    this.selectedSuggestionIds.set(new Set());
+    this.aiError.set(null);
+  }
+
+  // ===== MOVE VOLUNTEER =====
+
+  startMoveVolunteer(team: IcsDashboardTeam, volunteerId: number): void {
+    this.movingVolunteer.set({ volunteerId, fromTeamId: team.id });
+  }
+
+  cancelMove(): void {
+    this.movingVolunteer.set(null);
+  }
+
+  confirmMoveToTeam(targetTeam: IcsDashboardTeam): void {
+    const dashboard = this.icsData();
+    const moving = this.movingVolunteer();
+    if (!dashboard || !moving) return;
+
+    this.icsService
+      .moveVolunteer(dashboard.ics_id, {
+        volunteer_id: moving.volunteerId,
+        from_team_id: moving.fromTeamId,
+        to_team_id: targetTeam.id,
+      })
+      .pipe(switchMap(() => this.icsService.getDashboard(dashboard.rsvp.id)))
+      .subscribe({
+        next: (response) => {
+          this.icsData.set(response.data);
+          this.movingVolunteer.set(null);
+        },
+        error: () => this.error.set('Failed to move volunteer.'),
+      });
+  }
+
+  // ===== ADD VOLUNTEER (MANUAL SEARCH) =====
+
+  setVolunteerSearch(teamId: number, value: string): void {
+    this.volunteerSearchByTeam.update((current) => ({ ...current, [teamId]: value }));
+  }
+
+  searchVolunteersForTeam(team: IcsDashboardTeam): void {
+    const dashboard = this.icsData();
+    const query = this.volunteerSearchByTeam()[team.id]?.trim();
+    if (!dashboard || !query) return;
+
+    // Determine shift filter based on branch
+    const branch = dashboard.branches.find((b) => b.teams.some((t) => t.id === team.id));
+    let shiftFilter: string | undefined;
+    if (branch?.key === 'am_distribution') shiftFilter = 'am';
+    else if (branch?.key === 'pm_distribution') shiftFilter = 'pm';
+
+    this.icsService.searchRsvpVolunteers(dashboard.rsvp.id, shiftFilter).subscribe({
+      next: (response) => {
+        const filtered = (response.data ?? []).filter((v) => {
+          const fullName = `${v.first_name} ${v.last_name}`.toLowerCase();
+          return fullName.includes(query.toLowerCase());
+        });
+        this.searchResultsByTeam.update((current) => ({ ...current, [team.id]: filtered }));
+      },
+      error: () => this.error.set('Failed to search volunteers.'),
+    });
+  }
+
+  assignSearchedVolunteer(team: IcsDashboardTeam, volunteer: RsvpVolunteer): void {
+    const dashboard = this.icsData();
+    if (!dashboard) return;
+
+    this.icsService
+      .assignVolunteer(dashboard.ics_id, {
+        volunteer_id: volunteer.volunteer_id,
+        team_id: team.id,
+        role: 'Team Member',
+      })
+      .pipe(switchMap(() => this.icsService.getDashboard(dashboard.rsvp.id)))
+      .subscribe({
+        next: (response) => {
+          this.icsData.set(response.data);
+          this.searchResultsByTeam.update((c) => ({ ...c, [team.id]: [] }));
+          this.setVolunteerSearch(team.id, '');
+        },
+        error: () => this.error.set('Failed to assign volunteer.'),
+      });
+  }
+
+  // ===== REMOVE VOLUNTEER =====
+
+  removeVolunteer(team: IcsDashboardTeam, volunteerId: number): void {
+    const dashboard = this.icsData();
+    if (!dashboard) return;
+
+    this.icsService
+      .removeVolunteer(dashboard.ics_id, volunteerId)
+      .pipe(switchMap(() => this.icsService.getDashboard(dashboard.rsvp.id)))
+      .subscribe({
+        next: (response) => this.icsData.set(response.data),
+        error: () => this.error.set(`Failed to remove volunteer from ${team.name}.`),
+      });
+  }
+
+  // ===== PDF EXPORT =====
+
+  exportPdf(): void {
+    const dashboard = this.icsData();
+    if (!dashboard) return;
+
+    this.isExporting.set(true);
+
+    try {
+      this.generateIcsPdf(dashboard);
+    } catch (e) {
+      console.error('PDF export failed:', e);
+      this.error.set('Failed to export PDF.');
+    } finally {
+      this.isExporting.set(false);
     }
   }
 
-  /**
-   * Map RSVP data to component properties.
-   */
-  private mapRsvpToComponent(rsvp: Rsvp): void {
-    console.log('Mapping RSVP data:', rsvp);
+  private generateIcsPdf(dashboard: IcsDashboard): void {
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 40;
+    let y = 36;
 
-    // DATE from RSVP date
-    this.date = rsvp.date
-      ? new Date(rsvp.date).toLocaleDateString('en-US', {
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric',
-        })
-      : '';
+    // --- HEADER ---
+    pdf.setFontSize(15);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('MOBILE KITCHEN OPERATIONS', pageWidth / 2, y, { align: 'center' });
+    y += 20;
 
-    // VOLUNTEERS count from RSVP responses
-    this.volunteers = rsvp.totalResponses || 0;
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    const meta = dashboard.metadata;
+    const totalVols = dashboard.branches.reduce(
+      (t, b) => t + b.teams.reduce((bt, team) => bt + team.assigned_volunteers.length, 0), 0,
+    );
+    pdf.text(`OBJECTIVE: ${meta.objective ?? 'N/A'}    MENU: ${meta.menu || 'N/A'}`, margin, y);
+    pdf.text(`DATE: ${dashboard.rsvp.date}    VOLUNTEERS: ${totalVols}`, pageWidth - margin, y, { align: 'right' });
+    y += 16;
+    pdf.setDrawColor(30, 58, 95);
+    pdf.setLineWidth(1.5);
+    pdf.line(margin, y, pageWidth - margin, y);
+    y += 20;
 
-    // OBJECTIVE - use responses count as target/objective for now
-    // Can be customized later based on RSVP title or a separate field
-    this.objective = rsvp.totalResponses || 0;
+    // --- ORG CHART ---
+    const roles = new Map(dashboard.command_roles.map((r) => [r.key, r]));
+    const drawNode = (x: number, nodeY: number, role: string, name: string, w = 140): number => {
+      pdf.setDrawColor(30, 41, 59);
+      pdf.setLineWidth(0.75);
+      pdf.rect(x - w / 2, nodeY, w, 28);
+      pdf.setFontSize(6.5);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(37, 99, 235);
+      pdf.text(role.toUpperCase(), x, nodeY + 10, { align: 'center' });
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(30, 41, 59);
+      pdf.text(name || 'Unassigned', x, nodeY + 22, { align: 'center' });
+      return nodeY + 28;
+    };
 
-    // MENU - extract from title or description
-    // For now, use title as menu indicator
-    this.menu = rsvp.title || rsvp.description || '';
+    const cx = pageWidth / 2;
+    // Level 1
+    y = drawNode(cx, y, 'Responsible Official', roles.get('responsible_official')?.assigned_name ?? '');
+    y += 8;
+    // Level 2
+    y = drawNode(cx, y, 'Incident Commander', roles.get('incident_commander')?.assigned_name ?? '');
+    y += 8;
+    // Level 3 - Section Chiefs
+    const chiefKeys = ['planning', 'purchasing', 'mwc_coordinator', 'safety_emergency'];
+    const chiefWidth = 120;
+    const chiefGap = 8;
+    const totalChiefWidth = chiefKeys.length * chiefWidth + (chiefKeys.length - 1) * chiefGap;
+    let chiefX = cx - totalChiefWidth / 2 + chiefWidth / 2;
+    const chiefY = y;
+    for (const key of chiefKeys) {
+      const role = roles.get(key);
+      drawNode(chiefX, chiefY, role?.title ?? key, role?.assigned_name ?? '', chiefWidth);
+      chiefX += chiefWidth + chiefGap;
+    }
+    y = chiefY + 36;
 
-    console.log('Mapped values:', {
-      date: this.date,
-      volunteers: this.volunteers,
-      objective: this.objective,
-      menu: this.menu,
-      totalResponses: rsvp.totalResponses,
+    // --- OPERATIONAL BRANCHES (as tables) ---
+    for (const branch of dashboard.branches) {
+      y += 10;
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(30, 41, 59);
+      pdf.text(branch.title.toUpperCase(), margin, y);
+      y += 4;
+
+      // Director
+      const dirKey = branch.key === 'mobile_kitchen' ? 'mobile_kitchen_director'
+        : branch.key === 'am_distribution' ? 'am_distribution_director'
+        : 'pm_distribution_director';
+      const director = roles.get(dirKey);
+      if (director?.assigned_name) {
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'italic');
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(`Director: ${director.assigned_name}`, margin, y + 10);
+        y += 6;
+      }
+
+      const tableRows: RowInput[] = branch.teams.map((team) => {
+        const volNames = team.assigned_volunteers.map((v) => {
+          let name = v.name;
+          if (v.is_leader) name += '^';
+          if (v.is_driver) name += '~';
+          return name;
+        }).join(', ') || '—';
+        return [
+          team.name + (team.vehicle ? ` (${team.vehicle})` : ''),
+          volNames,
+        ];
+      });
+
+      autoTable(pdf, {
+        startY: y + 4,
+        margin: { left: margin, right: margin },
+        theme: 'grid',
+        head: [['Team', 'Assigned Volunteers']],
+        body: tableRows,
+        styles: {
+          font: 'helvetica',
+          fontSize: 8,
+          cellPadding: 4,
+          lineColor: [30, 41, 59],
+          lineWidth: 0.5,
+          textColor: [30, 41, 59],
+          valign: 'top',
+          overflow: 'linebreak',
+        },
+        headStyles: {
+          fillColor: [241, 245, 249],
+          fontStyle: 'bold',
+          halign: 'center',
+          textColor: [30, 41, 59],
+        },
+        columnStyles: {
+          0: { cellWidth: 120, fontStyle: 'bold' },
+          1: { cellWidth: pageWidth - margin * 2 - 120 },
+        },
+      });
+
+      y = (pdf as any).lastAutoTable.finalY + 6;
+    }
+
+    // --- FOOTER: SYMBOLS + MEAL BREAKDOWN + VEHICLES ---
+    y += 12;
+    pdf.setDrawColor(203, 213, 225);
+    pdf.setLineWidth(0.5);
+    pdf.line(margin, y, pageWidth - margin, y);
+    y += 14;
+
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('SYMBOLS', margin, y);
+    pdf.text('MEAL BREAKDOWN', margin + 150, y);
+    pdf.text('VEHICLE ASSIGNMENT', margin + 310, y);
+    y += 12;
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('^ team leader    ~ driver    * new volunteer', margin, y);
+    pdf.text(`Breakfast: ${meta.meal_breakfast}   Lunch: ${meta.meal_lunch}   Snacks: ${meta.meal_snacks}`, margin + 150, y);
+
+    const vehicleLines = dashboard.vehicles.map((v) => `${v.team_name} - ${v.vehicle}`).join('   ');
+    if (vehicleLines) {
+      pdf.text(vehicleLines, margin + 310, y);
+    }
+
+    // --- SAVE ---
+    const filename = `ICS_${dashboard.rsvp.title.replace(/\s+/g, '_')}_${dashboard.rsvp.date}.pdf`;
+    pdf.save(filename);
+  }
+
+  // ===== METADATA EDITING =====
+
+  startEditMetadata(): void {
+    const dashboard = this.icsData();
+    if (!dashboard) return;
+    this.metadataDraft.set({
+      objective: dashboard.metadata.objective ?? null,
+      menu: dashboard.metadata.menu ?? '',
+      meal_breakfast: dashboard.metadata.meal_breakfast ?? 0,
+      meal_lunch: dashboard.metadata.meal_lunch ?? 0,
+      meal_snacks: dashboard.metadata.meal_snacks ?? 0,
     });
+    this.isEditingMetadata.set(true);
+  }
+
+  cancelEditMetadata(): void {
+    this.isEditingMetadata.set(false);
+  }
+
+  saveMetadata(): void {
+    const dashboard = this.icsData();
+    if (!dashboard) return;
+
+    this.icsService.updateMetadata(dashboard.ics_id, this.metadataDraft()).subscribe({
+      next: () => {
+        this.isEditingMetadata.set(false);
+        this.loadDashboard(dashboard.rsvp.id);
+      },
+      error: () => this.error.set('Failed to save operation details.'),
+    });
+  }
+
+  // ===== UTILITIES =====
+
+  confidenceClass(confidence: number): string {
+    if (confidence >= 0.85) return 'confidence-high';
+    if (confidence >= 0.6) return 'confidence-medium';
+    return 'confidence-low';
+  }
+
+  private rolesByKeys(keys: string[]): IcsCommandRole[] {
+    return keys
+      .map((key) => this.roleByKey(key))
+      .filter((role): role is IcsCommandRole => !!role);
   }
 }

@@ -122,8 +122,8 @@ export class SmsManagementComponent {
     this.autoSmsEnabled.set(enabled);
     this.showFeedback(
       enabled
-        ? 'Automatic SMS reminders enabled for upcoming cutoffs.'
-        : 'Automatic SMS reminders disabled.',
+        ? 'Automatic Email reminders enabled for upcoming cutoffs.'
+        : 'Automatic Email reminders disabled.',
       enabled ? 'success' : 'info',
     );
   }
@@ -161,7 +161,7 @@ export class SmsManagementComponent {
     window.setTimeout(() => {
       this.smsSending.set(false);
       this.showFeedback(
-        `SMS broadcast queued for ${this.smsRecipientsCount()} recipients.`,
+        `Email broadcast queued for ${this.smsRecipientsCount()} recipients.`,
         'success',
       );
       this.smsMessage.set('');
@@ -181,15 +181,21 @@ export class SmsManagementComponent {
         },
         error: () => {
           this.smsConfigured.set(false);
-          this.smsConfigMessage.set('Unable to verify SMS configuration');
+          this.smsConfigMessage.set('Unable to verify Email configuration');
         },
       });
 
     this.adminDashboardService
       .getDashboardData()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
-        this.activeVolunteers.set(response.success ? response.data.stats.activeVolunteers : 0);
+      .subscribe({
+        next: (response) => {
+          this.activeVolunteers.set(response.success ? response.data.stats.activeVolunteers : 0);
+        },
+        error: (error) => {
+          console.error('Error loading active volunteers for SMS:', error);
+          this.activeVolunteers.set(0);
+        }
       });
 
     this.userService

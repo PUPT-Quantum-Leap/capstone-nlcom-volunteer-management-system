@@ -86,22 +86,6 @@
     </article>
   </div>
 
-  <!-- Search Bar -->
-  <div class="search-bar">
-    <div class="search-wrapper">
-      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.35-4.35" />
-      </svg>
-      <input
-        #volunteerSearch
-        type="text"
-        [value]="volunteerSearchQuery()"
-        (input)="setVolunteerSearchQuery(volunteerSearch.value)"
-        placeholder="Search volunteers by name, email, or department..."
-        aria-label="Search volunteers" />
-    </div>
-  </div>
 
   <!-- Volunteers Table -->
   <div class="report-table-container">
@@ -182,7 +166,7 @@
                 <button
                   type="button"
                   class="icon-btn icon-btn-success"
-                  (click)="restoreVolunteer(volunteer.id)"
+                  (click)="confirmRestoreVolunteer(volunteer.id)"
                   [disabled]="isSaving()"
                   [attr.aria-label]="'Restore ' + volunteer.name"
                   title="Restore">
@@ -230,7 +214,7 @@
 
     @if (volunteersTotalPages() > 1) {
       <nav class="pagination-controls" aria-label="Volunteer list pages">
-        <button type="button" class="pagination-btn" [disabled]="volunteersPage() === 1" (click)="previousVolunteersPage()">
+        <button type="button" class="pagination-btn" [disabled]="volunteersPage() === 1" (click)="previousVolunteersPage()" aria-label="Previous page">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="15 18 9 12 15 6"/>
           </svg>
@@ -247,7 +231,7 @@
             }
           }
         </div>
-        <button type="button" class="pagination-btn" [disabled]="volunteersPage() === volunteersTotalPages()" (click)="nextVolunteersPage()">
+        <button type="button" class="pagination-btn" [disabled]="volunteersPage() === volunteersTotalPages()" (click)="nextVolunteersPage()" aria-label="Next page">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
@@ -260,7 +244,7 @@
 
 <!-- Edit Volunteer Modal -->
 @if (showEditModal()) {
-  <div class="modal-backdrop" (click)="closeEditModal()">
+  <div class="modal-backdrop">
     <section class="modal-card modal-md" (click)="$event.stopPropagation()" role="dialog"
       aria-modal="true" aria-labelledby="volunteer-edit-title">
       <div class="modal-header header-warning">
@@ -281,7 +265,16 @@
       </div>
 
       <div class="modal-body">
-        <form class="edit-form" (submit)="$event.preventDefault(); saveVolunteer()">
+        @if (showEditSuccess()) {
+          <div class="success-banner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            Volunteer updated successfully
+          </div>
+        }
+        <div class="edit-form">
           <div class="form-row">
             <div class="form-group">
               <label for="edit-first-name">First Name</label>
@@ -291,7 +284,11 @@
                 [value]="editFormData().first_name"
                 (input)="updateEditForm('first_name', $any($event.target).value)"
                 placeholder="Enter first name"
-                required />
+                required
+                [class.input-error]="editFormErrors()['first_name']" />
+              @if (editFormErrors()['first_name']; as err) {
+                <span class="field-error">{{ err }}</span>
+              }
             </div>
 
             <div class="form-group">
@@ -302,7 +299,11 @@
                 [value]="editFormData().last_name"
                 (input)="updateEditForm('last_name', $any($event.target).value)"
                 placeholder="Enter last name"
-                required />
+                required
+                [class.input-error]="editFormErrors()['last_name']" />
+              @if (editFormErrors()['last_name']; as err) {
+                <span class="field-error">{{ err }}</span>
+              }
             </div>
           </div>
 
@@ -314,7 +315,11 @@
               [value]="editFormData().email"
               (input)="updateEditForm('email', $any($event.target).value)"
               placeholder="Enter email address"
-              required />
+              required
+              [class.input-error]="editFormErrors()['email']" />
+            @if (editFormErrors()['email']; as err) {
+              <span class="field-error">{{ err }}</span>
+            }
           </div>
 
           <div class="form-group">
@@ -324,7 +329,11 @@
               type="tel"
               [value]="editFormData().mobile_number"
               (input)="updateEditForm('mobile_number', $any($event.target).value)"
-              placeholder="Enter phone number" />
+              placeholder="Enter phone number"
+              [class.input-error]="editFormErrors()['mobile_number']" />
+            @if (editFormErrors()['mobile_number']; as err) {
+              <span class="field-error">{{ err }}</span>
+            }
           </div>
 
           <div class="form-group">
@@ -334,9 +343,13 @@
               type="text"
               [value]="editFormData().facebook_name"
               (input)="updateEditForm('facebook_name', $any($event.target).value)"
-              placeholder="Enter Facebook name" />
+              placeholder="Enter Facebook name"
+              [class.input-error]="editFormErrors()['facebook_name']" />
+            @if (editFormErrors()['facebook_name']; as err) {
+              <span class="field-error">{{ err }}</span>
+            }
           </div>
-        </form>
+        </div>
       </div>
 
       <div class="modal-footer">
@@ -349,9 +362,11 @@
   </div>
 }
 
+<!-- Archive Confirmation Modal -->
 @if (showDeleteModal()) {
-  <div class="modal-backdrop" (click)="closeDeleteModal()">
-    <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+  <div class="modal-backdrop">
+    <section class="modal-card modal-sm" (click)="$event.stopPropagation()" role="dialog"
+      aria-modal="true" aria-labelledby="archive-volunteer-title">
       <div class="modal-header header-danger">
         <div class="modal-title-wrapper">
           <div class="modal-icon">
@@ -361,7 +376,7 @@
               <path d="M19 6l-1 14H6L5 6" />
             </svg>
           </div>
-          <h3>Archive Volunteer</h3>
+          <h3 id="archive-volunteer-title">Archive Volunteer</h3>
         </div>
         <button type="button" class="modal-close-btn" (click)="closeDeleteModal()" aria-label="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -381,13 +396,50 @@
           @if (isSaving()) { <span class="btn-spinner"></span> Archiving... } @else { Archive Volunteer }
         </button>
       </div>
-    </div>
+    </section>
+  </div>
+}
+
+<!-- Restore Confirmation Modal -->
+@if (showRestoreModal()) {
+  <div class="modal-backdrop">
+    <section class="modal-card modal-sm" (click)="$event.stopPropagation()" role="dialog"
+      aria-modal="true" aria-labelledby="restore-volunteer-title">
+      <div class="modal-header header-success">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+          </div>
+          <h3 id="restore-volunteer-title">Restore Volunteer</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeRestoreModal()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m18 6-12 12" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p>This will restore the volunteer and their associated user account. They will regain access to the system.</p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="outline-btn" (click)="closeRestoreModal()" [disabled]="isSaving()">Cancel</button>
+        <button type="button" class="primary-btn" (click)="restoreVolunteer()" [disabled]="isSaving()">
+          @if (isSaving()) { <span class="btn-spinner"></span> Restoring... } @else { Restore Volunteer }
+        </button>
+      </div>
+    </section>
   </div>
 }
 
 <!-- View Volunteer Details Modal -->
 @if (showViewModal()) {
-  <div class="modal-backdrop" (click)="closeViewModal()">
+  <div class="modal-backdrop">
     <section class="modal-card modal-md" (click)="$event.stopPropagation()" role="dialog"
       aria-modal="true" aria-labelledby="volunteer-details-title">
       <div class="modal-header header-info">

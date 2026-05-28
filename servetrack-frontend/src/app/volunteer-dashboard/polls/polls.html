@@ -21,7 +21,7 @@
     </div>
 
     <!-- Content States -->
-    @if (isLoading()) {
+    @if (isLoading() && !hasData()) {
     <div class="polls-skeleton" aria-hidden="true">
       <!-- Tab Skeleton -->
       <div class="skeleton-tabs">
@@ -95,7 +95,7 @@
           <polyline points="12 6 12 12 16 14" />
         </svg>
         Past Polls
-        <span class="tab-badge">{{ pastPolls().length }}</span>
+        <span class="tab-badge">{{ recentPastPolls().length }}</span>
       </button>
     </div>
 
@@ -368,7 +368,7 @@
     } @else {
     <!-- Past Polls Grid -->
     <div class="past-polls-list" role="tabpanel">
-      @for (poll of pastPolls(); track poll.id) {
+      @for (poll of recentPastPolls(); track poll.id) {
       <article class="past-poll-card" (click)="selectPastPoll(poll)" role="button" tabindex="0"
         (keydown.enter)="selectPastPoll(poll)" (keydown.space)="selectPastPoll(poll)" [attr.aria-label]="'View details for ' + poll.title">
         
@@ -416,21 +416,32 @@
           </div>
         </div>
 
-        <div class="past-poll-winner">
-          <div class="winner-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
-            Top Choice
-          </div>
-          <div class="winner-value">{{ getMostVotedOption(poll)?.timeSlot || 'No votes yet' }}</div>
-        </div>
-
-        <div class="view-details-hint">
-          <span>Full Report</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-            stroke-linejoin="round" aria-hidden="true">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
+        <div class="attendance-status" [ngClass]="getAttendanceStatus(poll).cssClass">
+          @switch (getAttendanceStatus(poll).icon) {
+            @case ('attended') {
+              <!-- Checkmark circle icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            }
+            @case ('absent') {
+              <!-- X circle icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+            }
+            @case ('no-vote') {
+              <!-- Minus circle icon -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+            }
+          }
+          <span>{{ getAttendanceStatus(poll).label }}</span>
         </div>
       </article>
       } @empty {
@@ -443,7 +454,7 @@
           </svg>
         </div>
         <h3>No Past Polls</h3>
-        <p>There are no past polls to display at this time.</p>
+        <p>There are no past polls from the last 7 days to display.</p>
       </div>
       }
     </div>

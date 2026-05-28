@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\ArchiveOldAttendancePhotos;
 use App\Console\Commands\CloseExpiredRsvp;
 use App\Console\Commands\RunScheduledBackup;
 use App\Console\Commands\SendRsvpCutoffReminders;
@@ -41,7 +42,13 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $schedule->command(RunScheduledBackup::class)
             ->dailyAt(config('backup.schedule.time'))
-            ->timezone(config('backup.schedule.timezone'));
+            ->timezone(config('backup.schedule.timezone'))
+            ->withoutOverlapping()
+            ->description('Create scheduled automatic database backup');
+
+        $schedule->command(ArchiveOldAttendancePhotos::class)
+            ->daily()
+            ->description('Archive old attendance photos older than 30 days');
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(StripTags::class);

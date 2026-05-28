@@ -5,6 +5,7 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Api\IcsTeamController;
 use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\AttendancePhotoController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ChatbotController;
@@ -28,6 +29,26 @@ Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(funct
 
     // Invite validation (public)
     Route::post('/invites/validate', [InviteController::class, 'validate'])->name('invites.validate');
+
+    // Password reset redirect to frontend (public)
+    Route::get('/reset-password/{token}', function (string $token, Request $request) {
+        $email = $request->query('email');
+
+        return redirect(config('app.frontend_url', 'http://localhost:4200').'/reset-password?token='.$token.'&email='.urlencode($email));
+    })->name('password.reset');
+
+    // Forgot password — send reset link email (rate-limited: 3 req/min)
+    Route::post('/admin/forgot-password', [ForgotPasswordController::class, 'sendAdminResetLink'])
+        ->middleware('throttle:3,1')
+        ->name('password.admin.email');
+
+    Route::post('/volunteer/forgot-password', [ForgotPasswordController::class, 'sendVolunteerResetLink'])
+        ->middleware('throttle:3,1')
+        ->name('password.volunteer.email');
+
+    // Reset password — validate token and update password
+    Route::post('/reset-password', [ForgotPasswordController::class, 'reset'])
+        ->name('password.update');
 });
 
 // Volunteer registration - public signup with registration rate limit + email normalization
@@ -59,7 +80,14 @@ Route::get('/rsvp/{identifier}', [RsvpController::class, 'show'])->name('rsvp.sh
 // Auth-required routes (all authenticated users)
 Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('auth.logout');
-    Route::get('/user', fn (Request $request) => $request->user())->name('auth.user');
+    Route::get('/user', function (Request $request) {
+        $user = $request->user();
+        if ($user && $user->role === 'volunteer') {
+            $user->setRelation('volunteer_profile', $user->volunteer);
+        }
+
+        return $user;
+    })->name('auth.user');
 
     // Volunteer profile (volunteer role only — enforced in controller)
     Route::get('/volunteer/profile', [VolunteerController::class, 'profile'])->name('volunteer.profile');
@@ -105,6 +133,12 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::post('/admin/attendance-status', [AdminController::class, 'updateAttendanceStatus'])
         ->middleware('throttle:60,1')
         ->name('admin.attendance.status.update');
+    Route::get('/admin/attendance/export/pdf', [AdminController::class, 'exportAttendancePdf'])
+        ->middleware('throttle:analytics-exports')
+        ->name('admin.attendance.export.pdf');
+    Route::get('/admin/attendance/export/excel', [AdminController::class, 'exportAttendanceExcel'])
+        ->middleware('throttle:analytics-exports')
+        ->name('admin.attendance.export.excel');
 
     // Analytics & Reports — throttle: analytics-reports allows 30 req/min,
     // analytics-exports allows 5 req/min (PDF/Excel generation is expensive)
@@ -156,19 +190,22 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::post('/rsvp/{id}/restore', [RsvpController::class, 'restore'])->name('rsvp.restore');
     Route::delete('/rsvp/{id}/force-delete', [RsvpController::class, 'forceDelete'])->name('rsvp.force-delete');
 
-    // Backup management — full CRUD + operations (admin only)
-    Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
-    Route::post('/backups', [BackupController::class, 'store'])->name('backups.store');
-    Route::get('/backups/stats', [BackupController::class, 'stats'])->name('backups.stats');
-    Route::get('/backups/{backup}', [BackupController::class, 'show'])->name('backups.show');
-    Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
-    Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
-    Route::post('/backups/{backup}/restore', [BackupController::class, 'restore'])->name('backups.restore');
-    Route::post('/backups/cleanup', [BackupController::class, 'cleanup'])->name('backups.cleanup');
+    // Backup management — full CRUD + operations (admin only, rate-limited)
+    Route::middleware('throttle:30,1')->group(function (): void {
+        Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
+        Route::post('/backups', [BackupController::class, 'store'])->name('backups.store');
 
-    // Scheduled backup settings
-    Route::get('/backups/schedule', [BackupController::class, 'getSchedule'])->name('backups.schedule.get');
-    Route::put('/backups/schedule', [BackupController::class, 'updateSchedule'])->name('backups.schedule.update');
+        // Static routes must precede wildcard {backup} to avoid 404
+        Route::get('/backups/stats', [BackupController::class, 'stats'])->name('backups.stats');
+        Route::post('/backups/cleanup', [BackupController::class, 'cleanup'])->name('backups.cleanup');
+        Route::get('/backups/schedule', [BackupController::class, 'getSchedule'])->name('backups.schedule.get');
+        Route::put('/backups/schedule', [BackupController::class, 'updateSchedule'])->name('backups.schedule.update');
+
+        Route::get('/backups/{backup}', [BackupController::class, 'show'])->name('backups.show');
+        Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
+        Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
+        Route::post('/backups/{backup}/restore', [BackupController::class, 'restore'])->name('backups.restore');
+    });
     // Admin profile routes
     Route::get('/admin/profile', [AdminController::class, 'profile'])->name('admin.profile');
     Route::put('/admin/profile', [AdminController::class, 'updateProfile'])
@@ -186,13 +223,16 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
 
     // ICS management — full CRUD + AI suggestions (admin only)
     Route::get('/ics', [IcsController::class, 'index'])->name('ics.index');
+    Route::get('/ics/dashboard', [IcsController::class, 'dashboard'])->name('ics.dashboard');
     Route::get('/ics/{id}', [IcsController::class, 'show'])->name('ics.show');
     Route::post('/ics', [IcsController::class, 'store'])->name('ics.store');
     Route::put('/ics/{id}', [IcsController::class, 'update'])->name('ics.update');
     Route::delete('/ics/{id}', [IcsController::class, 'destroy'])->name('ics.destroy');
     Route::get('/ics/{rsvpId}/rsvp-volunteers', [IcsController::class, 'getRsvpVolunteers'])->name('ics.rsvp-volunteers');
     Route::get('/ics/{icsId}/ai-suggestions', [IcsController::class, 'getAiSuggestions'])->name('ics.ai-suggestions');
+    Route::patch('/ics/{icsId}/command-roles/{roleKey}', [IcsController::class, 'updateCommandRole'])->name('ics.command-roles.update');
     Route::post('/ics/{icsId}/apply-suggestions', [IcsController::class, 'applyAiSuggestions'])->name('ics.apply-suggestions');
     Route::post('/ics/{icsId}/assign-volunteer', [IcsController::class, 'assignVolunteer'])->name('ics.assign-volunteer');
     Route::post('/ics/{icsId}/remove-volunteer', [IcsController::class, 'removeVolunteer'])->name('ics.remove-volunteer');
+    Route::post('/ics/{icsId}/move-volunteer', [IcsController::class, 'moveVolunteer'])->name('ics.move-volunteer');
 });

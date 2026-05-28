@@ -36,6 +36,8 @@ export class BackupRecoveryComponent {
   backupHistoryPage = signal(1);
   backupHistoryPageSize = signal(5);
   backupActionLoading = signal(false);
+  backupActionId = signal<number | null>(null);
+  cleanupLoading = signal(false);
   scheduledBackupEnabled = signal(false);
   scheduledBackupFrequency = signal<'daily' | 'weekly' | 'monthly'>('weekly');
   scheduledBackupRunTime = signal<string>('02:00');
@@ -224,6 +226,7 @@ export class BackupRecoveryComponent {
   }
 
   downloadBackup(backup: BackupRecord): void {
+    this.backupActionId.set(backup.id);
     this.adminDashboardService
       .downloadBackup(backup.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -238,10 +241,12 @@ export class BackupRecoveryComponent {
           document.body.removeChild(a);
           window.URL.revokeObjectURL(url);
           this.showSnackbar.emit({ message: `Download started for ${backup.name}.`, type: 'info' });
+          this.backupActionId.set(null);
         },
         error: (error: Error) => {
           console.error('Error downloading backup:', error);
           this.showSnackbar.emit({ message: 'Failed to download backup', type: 'error' });
+          this.backupActionId.set(null);
         },
       });
   }
@@ -253,6 +258,7 @@ export class BackupRecoveryComponent {
         'This will replace all current data and cannot be undone.',
       () => {
         this.backupActionLoading.set(true);
+        this.backupActionId.set(backup.id);
 
         this.adminDashboardService
           .restoreBackup(backup.id)
@@ -271,11 +277,13 @@ export class BackupRecoveryComponent {
                 });
               }
               this.backupActionLoading.set(false);
+              this.backupActionId.set(null);
             },
             error: (error: Error) => {
               console.error('Error restoring backup:', error);
               this.showSnackbar.emit({ message: 'Failed to restore backup', type: 'error' });
               this.backupActionLoading.set(false);
+              this.backupActionId.set(null);
             },
           });
       }
@@ -287,6 +295,9 @@ export class BackupRecoveryComponent {
       'Delete Backup',
       'Are you sure you want to delete this backup? This action cannot be undone.',
       () => {
+        this.backupActionLoading.set(true);
+        this.backupActionId.set(backupId);
+
         this.adminDashboardService
           .deleteBackup(backupId)
           .pipe(takeUntilDestroyed(this.destroyRef))
@@ -301,10 +312,50 @@ export class BackupRecoveryComponent {
                   type: 'error',
                 });
               }
+              this.backupActionLoading.set(false);
+              this.backupActionId.set(null);
             },
             error: (error: Error) => {
               console.error('Error deleting backup:', error);
               this.showSnackbar.emit({ message: 'Failed to delete backup', type: 'error' });
+              this.backupActionLoading.set(false);
+              this.backupActionId.set(null);
+            },
+          });
+      }
+    );
+  }
+
+  cleanupBackups(): void {
+    this.openConfirmationDialog(
+      'Delete All Backups',
+      'This will permanently delete ALL backup files and records. This action cannot be undone. Are you sure?',
+      () => {
+        this.cleanupLoading.set(true);
+
+        this.adminDashboardService
+          .cleanupBackups(0)
+          .pipe(takeUntilDestroyed(this.destroyRef))
+          .subscribe({
+            next: (response) => {
+              if (response.success) {
+                this.loadBackups();
+                this.showSnackbar.emit({
+                  message: 'All backups deleted successfully.',
+                  type: 'success',
+                });
+              } else {
+                this.showSnackbar.emit({
+                  message: response.message || 'Failed to delete backups',
+                  type: 'error',
+                });
+              }
+              this.cleanupLoading.set(false);
+            },
+            error: (error: Error) => {
+              console.error('Error deleting backups:', error);
+              this.showSnackbar.emit({ message: 'Failed to delete backups', type: 'error' });
+              this.cleanupLoading.set(false);
             },
           });
       }

@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class VolunteerController extends Controller
@@ -72,6 +73,7 @@ class VolunteerController extends Controller
             'birthdate' => 'required|date|before:today',
             'completeAddress' => 'required|string|min:10|max:255',
             'lastMedicalExam' => 'required|date|before_or_equal:today',
+            'gender' => 'nullable|string|in:boy,girl,male,female',
 
             // Education & Experience
             'educationalAttainment' => 'required|string|max:100',
@@ -155,6 +157,7 @@ class VolunteerController extends Controller
                 'educational_attainment' => $request->educationalAttainment,
                 'last_medical_examination' => $request->lastMedicalExam,
                 'user_id' => $user->id,
+                'gender' => $request->gender,
             ]);
 
             // Sync all related data
@@ -245,10 +248,12 @@ class VolunteerController extends Controller
                 'facebook_name' => $volunteer->facebook_name,
                 'email' => $volunteer->email,
                 'mobile_number' => $volunteer->mobile_number,
-                'birthdate' => $volunteer->birthdate,
+                'birthdate' => $volunteer->birthdate?->format('Y-m-d'),
                 'address' => $volunteer->address,
                 'educational_attainment' => $volunteer->educational_attainment,
-                'last_medical_examination' => $volunteer->last_medical_examination,
+                'last_medical_examination' => $volunteer->last_medical_examination?->format('Y-m-d'),
+                'gender' => $volunteer->gender,
+                'photo_url' => $volunteer->profile_photo ? Storage::disk('public')->url($volunteer->profile_photo) : null,
                 'training_experience' => $trainingExperience,
                 'skills_hobbies' => $skillsHobbies,
                 'classes_training' => $classesTraining,
@@ -288,6 +293,7 @@ class VolunteerController extends Controller
                     'educational_attainment' => $request->educationalAttainment,
                     'last_medical_examination' => $request->lastMedicalExam,
                     'user_id' => $user->id,
+                    'gender' => $request->gender,
                 ]);
 
                 // Update user info
@@ -313,10 +319,12 @@ class VolunteerController extends Controller
                         'facebook_name' => $volunteer->facebook_name,
                         'email' => $volunteer->email,
                         'mobile_number' => $volunteer->mobile_number,
-                        'birthdate' => $volunteer->birthdate,
+                        'birthdate' => $volunteer->birthdate?->format('Y-m-d'),
                         'address' => $volunteer->address,
                         'educational_attainment' => $volunteer->educational_attainment,
-                        'last_medical_examination' => $volunteer->last_medical_examination,
+                        'last_medical_examination' => $volunteer->last_medical_examination?->format('Y-m-d'),
+                        'gender' => $volunteer->gender,
+                        'photo_url' => $volunteer->profile_photo ? Storage::disk('public')->url($volunteer->profile_photo) : null,
                         'training_experience' => '',
                         'skills_hobbies' => '',
                         'classes_training' => '',
@@ -358,6 +366,16 @@ class VolunteerController extends Controller
             $volunteer->address = $request->completeAddress;
             $volunteer->educational_attainment = $request->educationalAttainment;
             $volunteer->last_medical_examination = $request->lastMedicalExam;
+            $volunteer->gender = $request->gender;
+
+            // Clear custom photo if explicitly requested
+            if ($request->boolean('clearPhoto')) {
+                if ($volunteer->profile_photo) {
+                    Storage::disk('public')->delete($volunteer->profile_photo);
+                    $volunteer->profile_photo = null;
+                }
+            }
+
             $volunteer->save();
 
             // Also update the linked user's name and email
@@ -373,6 +391,7 @@ class VolunteerController extends Controller
 
             // Sync trainings - detach first to avoid duplicates
             $volunteer->trainings()->detach();
+            $volunteer->experiences()->detach();
             if ($request->trainingExperience) {
                 $this->processTrainingExperience($volunteer, $request->trainingExperience);
             }
@@ -401,7 +420,7 @@ class VolunteerController extends Controller
             $volunteer = $volunteer->fresh(['experiences', 'skills', 'trainings', 'positions', 'availabilities', 'lifegroups', 'emergencyContact']);
 
             // Get text fields from related tables
-            $trainingExperience = $volunteer->trainings->pluck('name')->implode(', ');
+            $trainingExperience = $volunteer->experiences->pluck('name')->implode(', ');
             $skillsHobbies = $volunteer->skills->pluck('name')->implode(', ');
             $classesTraining = $volunteer->trainings->pluck('name')->implode(', ');
 
@@ -415,10 +434,12 @@ class VolunteerController extends Controller
                     'facebook_name' => $volunteer->facebook_name,
                     'email' => $volunteer->email,
                     'mobile_number' => $volunteer->mobile_number,
-                    'birthdate' => $volunteer->birthdate,
+                    'birthdate' => $volunteer->birthdate?->format('Y-m-d'),
                     'address' => $volunteer->address,
                     'educational_attainment' => $volunteer->educational_attainment,
-                    'last_medical_examination' => $volunteer->last_medical_examination,
+                    'last_medical_examination' => $volunteer->last_medical_examination?->format('Y-m-d'),
+                    'gender' => $volunteer->gender,
+                    'photo_url' => $volunteer->profile_photo ? Storage::disk('public')->url($volunteer->profile_photo) : null,
                     'training_experience' => $trainingExperience,
                     'skills_hobbies' => $skillsHobbies,
                     'classes_training' => $classesTraining,
@@ -570,37 +591,45 @@ class VolunteerController extends Controller
             $query->where('description', 'like', '%'.$search.'%');
         }
 
-        $attendances = $query->get()->map(function ($attendance) {
-            $location = $attendance->location;
-            if (empty($location) && $attendance->rsvp) {
-                $location = $attendance->rsvp->event_location;
-            }
-            if (empty($location) && $attendance->rsvpResponse && $attendance->rsvpResponse->rsvp) {
-                $location = $attendance->rsvpResponse->rsvp->event_location;
-            }
-            $attendance->location = $location;
+        $attendances = $query->with(['rsvp', 'rsvpResponse.rsvp', 'rsvpResponse.timeSlot'])
+            ->paginate(50)
+            ->through(function ($attendance) {
+                $location = $attendance->location;
+                if (empty($location) && $attendance->rsvp) {
+                    $location = $attendance->rsvp->event_location;
+                }
+                if (empty($location) && $attendance->rsvpResponse && $attendance->rsvpResponse->rsvp) {
+                    $location = $attendance->rsvpResponse->rsvp->event_location;
+                }
+                $attendance->location = $location;
 
-            // Add time_slot from rsvp_response
-            $timeSlot = null;
-            if ($attendance->rsvpResponse && $attendance->rsvpResponse->timeSlot) {
-                $timeSlot = $attendance->rsvpResponse->timeSlot->text;
-            }
-            $attendance->time_slot = $timeSlot;
+                // Add time_slot from rsvp_response
+                $timeSlot = null;
+                if ($attendance->rsvpResponse && $attendance->rsvpResponse->timeSlot) {
+                    $timeSlot = $attendance->rsvpResponse->timeSlot->text;
+                }
+                $attendance->time_slot = $timeSlot;
 
-            Log::info('Volunteer attendance item', [
-                'attendance_id' => $attendance->attendance_id,
-                'hours_raw' => $attendance->getAttributes()['hours'] ?? null,
-                'hours_cast' => $attendance->hours,
-                'description' => $attendance->description,
-                'time_slot' => $attendance->time_slot,
-            ]);
+                Log::info('Volunteer attendance item', [
+                    'attendance_id' => $attendance->attendance_id,
+                    'hours_raw' => $attendance->getAttributes()['hours'] ?? null,
+                    'hours_cast' => $attendance->hours,
+                    'description' => $attendance->description,
+                    'time_slot' => $attendance->time_slot,
+                ]);
 
-            return $attendance;
-        });
+                return $attendance;
+            });
 
         $response = [
             'success' => true,
-            'data' => $attendances,
+            'data' => $attendances->items(),
+            'meta' => [
+                'current_page' => $attendances->currentPage(),
+                'last_page' => $attendances->lastPage(),
+                'per_page' => $attendances->perPage(),
+                'total' => $attendances->total(),
+            ],
         ];
 
         Log::debug('Volunteer attendance response', ['count' => count($attendances), 'sample' => $attendances->first()?->toArray()]);
@@ -626,26 +655,34 @@ class VolunteerController extends Controller
             return response()->json(['success' => false, 'message' => 'Volunteer profile not found.'], 404);
         }
 
-        $base = $volunteer->attendances()->where('status', 'approved');
+        // Aggregate stats in minimal queries
+        $base = $volunteer->attendances()->getQuery();
+        $allTime = (clone $base)->selectRaw('COALESCE(SUM(hours), 0) as hours, COUNT(*) as entries')->first();
+        $daily = (clone $base)->selectRaw('COALESCE(SUM(hours), 0) as hours, COUNT(*) as entries')
+            ->whereDate('date', today())->first();
+        $weekly = (clone $base)->selectRaw('COALESCE(SUM(hours), 0) as hours, COUNT(*) as entries')
+            ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])->first();
+        $monthly = (clone $base)->selectRaw('COALESCE(SUM(hours), 0) as hours, COUNT(*) as entries')
+            ->whereMonth('date', now()->month)->whereYear('date', now()->year)->first();
 
         $stats = [
-            'total_hours' => (float) round($base->sum('hours'), 2),
-            'total_entries' => $base->count(),
+            'total_hours' => (float) round($allTime->hours, 2),
+            'total_entries' => (int) $allTime->entries,
             'all_time' => [
-                'hours' => (float) (clone $base)->sum('hours'),
-                'entries' => (clone $base)->count(),
+                'hours' => (float) round($allTime->hours, 2),
+                'entries' => (int) $allTime->entries,
             ],
             'daily' => [
-                'hours' => (float) round((clone $base)->whereDate('date', today())->sum('hours'), 2),
-                'entries' => (clone $base)->whereDate('date', today())->count(),
+                'hours' => (float) round($daily->hours, 2),
+                'entries' => (int) $daily->entries,
             ],
             'weekly' => [
-                'hours' => (float) round((clone $base)->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])->sum('hours'), 2),
-                'entries' => (clone $base)->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+                'hours' => (float) round($weekly->hours, 2),
+                'entries' => (int) $weekly->entries,
             ],
             'monthly' => [
-                'hours' => (float) round((clone $base)->whereMonth('date', now()->month)->whereYear('date', now()->year)->sum('hours'), 2),
-                'entries' => (clone $base)->whereMonth('date', now()->month)->whereYear('date', now()->year)->count(),
+                'hours' => (float) round($monthly->hours, 2),
+                'entries' => (int) $monthly->entries,
             ],
         ];
 
@@ -680,6 +717,7 @@ class VolunteerController extends Controller
             'positions',
             'availabilities',
             'lifegroups',
+            'emergencyContact',
         ]);
 
         // Search by name, email, or mobile number
@@ -739,6 +777,7 @@ class VolunteerController extends Controller
             'positions',
             'availabilities',
             'lifegroups',
+            'emergencyContact',
         ])->find($id);
 
         if (! $volunteer) {
@@ -748,24 +787,25 @@ class VolunteerController extends Controller
             ], 404);
         }
 
-        // Calculate attendance stats
-        $attendances = $volunteer->attendances();
-        $totalAttendances = $attendances->count();
-        $approvedAttendances = $attendances->where('status', 'approved')->count();
-        $pendingAttendances = $attendances->where('status', 'pending')->count();
-        $rejectedAttendances = $attendances->where('status', 'rejected')->count();
-        $totalHours = $attendances->where('status', 'approved')->sum('hours');
+        // Calculate attendance stats in a single query
+        $stats = $volunteer->attendances()
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw("SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as approved")
+            ->selectRaw("SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending")
+            ->selectRaw("SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected")
+            ->selectRaw("SUM(CASE WHEN status = 'approved' THEN hours ELSE 0 END) as total_hours")
+            ->first();
 
         return response()->json([
             'success' => true,
             'data' => [
                 'volunteer' => new VolunteerProfileResource($volunteer),
                 'stats' => [
-                    'total_attendances' => $totalAttendances,
-                    'approved_attendances' => $approvedAttendances,
-                    'pending_attendances' => $pendingAttendances,
-                    'rejected_attendances' => $rejectedAttendances,
-                    'total_hours' => (float) round($totalHours, 2),
+                    'total_attendances' => (int) $stats->total,
+                    'approved_attendances' => (int) $stats->approved,
+                    'pending_attendances' => (int) $stats->pending,
+                    'rejected_attendances' => (int) $stats->rejected,
+                    'total_hours' => (float) round($stats->total_hours ?? 0, 2),
                 ],
             ],
         ]);
@@ -1174,10 +1214,17 @@ class VolunteerController extends Controller
             ], 404);
         }
 
+        $user = $volunteer->user;
+
         $validator = Validator::make($request->all(), [
             'first_name' => 'sometimes|string|max:50',
             'last_name' => 'sometimes|string|max:50',
-            'email' => 'sometimes|email|unique:volunteer,email,'.$id.',volunteer_id',
+            'email' => [
+                'sometimes',
+                'email',
+                Rule::unique('volunteer', 'email')->ignore($id, 'volunteer_id'),
+                Rule::unique('users', 'email')->ignore($user?->id),
+            ],
             'mobile_number' => 'sometimes|string|max:15',
             'facebook_name' => 'nullable|string|max:100',
             'address' => 'nullable|string|max:255',
@@ -1225,7 +1272,7 @@ class VolunteerController extends Controller
             // Log the change
             ProfileChangeLog::create([
                 'volunteer_id' => $volunteer->volunteer_id,
-                'changed_by' => Auth::id(),
+                'changed_by_user_id' => Auth::id(),
                 'field_name' => 'profile_update',
                 'old_value' => null,
                 'new_value' => json_encode($updateData),
@@ -1250,7 +1297,6 @@ class VolunteerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update volunteer.',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }

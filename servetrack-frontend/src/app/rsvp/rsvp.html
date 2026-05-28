@@ -1,337 +1,382 @@
-<div class="rsvp-top-bar">
-  <div class="brand-container">
-    <div class="logo-pill">
-      <span class="logo-text">ServeTrack</span>
-      <span class="logo-dot"></span>
+<section class="rsvp-section">
+  <!-- Top Bar -->
+  <div class="rsvp-top-bar">
+    <div class="brand-container">
+      <div class="logo-pill">
+        <span class="logo-text">ServeTrack</span>
+        <span class="logo-dot"></span>
+      </div>
+      <a routerLink="/" class="back-link">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        Back to Events
+      </a>
     </div>
-    <a routerLink="/" class="back-link">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
-      </svg>
-      Back to Events
-    </a>
+    <app-user-badge></app-user-badge>
   </div>
-  <app-user-badge></app-user-badge>
-</div>
 
-<div class="rsvp-container">
-  @if (isLoading() && !rsvp()) {
-    <div class="rsvp-card loading-state">
-      <div class="shimmer header-shimmer"></div>
-      <div class="shimmer text-shimmer"></div>
-      <div class="shimmer card-shimmer"></div>
-    </div>
-  } @else if (error()) {
-    <div class="rsvp-card error-state">
-      <div class="error-icon">!</div>
-      <p class="error-message">{{ error() }}</p>
-      <button class="btn-retry" (click)="loadRsvp()">Retry</button>
-    </div>
-  } @else if (rsvp(); as rsvp) {
-    <div class="rsvp-card fade-in">
-      <!-- RSVP Header -->
-      <div class="rsvp-header">
-        <h2 class="rsvp-title">{{ rsvp.title }}</h2>
-        <div class="event-meta">
-          <div class="meta-item">
-            <span class="meta-label">Date</span>
-            <span class="meta-value">{{ rsvp.date }}</span>
+  <!-- Main Container -->
+  <article class="main-container">
+    @if (isLoading() && !rsvp()) {
+      <div class="container-header">
+        <div class="header-title-row">
+          <div class="header-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+            </svg>
           </div>
-          @if (rsvp.eventLocation) {
-            <div class="meta-item">
-              <span class="meta-label">Location</span>
-              <span class="meta-value">{{ rsvp.eventLocation }}</span>
-            </div>
+          <div class="header-text">
+            <h2>Loading Event...</h2>
+            <p>Please wait</p>
+          </div>
+        </div>
+      </div>
+      <div class="rsvp-card-body">
+        <p>Loading...</p>
+      </div>
+    } @else if (error()) {
+      <div class="error-state">
+        <svg
+          class="error-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        <h3>Failed to Load RSVP</h3>
+        <p>{{ error() }}</p>
+        <button type="button" class="btn-cta-login" (click)="loadRsvp()" style="margin-top: 1rem">
+          Retry
+        </button>
+      </div>
+    } @else if (rsvp(); as rsvp) {
+      <div class="container-header">
+        <div class="header-title-row">
+          <div class="header-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
+          <div class="header-text">
+            <h2>{{ rsvp.title }}</h2>
+            <p>{{ rsvp.description || 'Event RSVP' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rsvp-card-body">
+        <div
+          class="poll-status-badge"
+          [class.active]="rsvp.status === 'active' && !rsvp.isCutoffPassed"
+          [class.closed]="rsvp.status !== 'active' || rsvp.isCutoffPassed"
+        >
+          @if (rsvp.status === 'active' && !rsvp.isCutoffPassed) {
+            <span class="live-dot" aria-hidden="true"></span> Open for RSVP
+          } @else {
+            <span class="closed-dot" aria-hidden="true"></span> Closed RSVP
           }
         </div>
-        <div class="rsvp-cutoff-badge">
-          <svg class="clock-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-          </svg>
-          <span class="cutoff-label">RSVP Cut-Off:</span>
-          <span class="cutoff-time">{{ rsvp.cutOffDay }} {{ rsvp.cutOffTime }}</span>
-        </div>
-      </div>
 
-      <!-- RSVP Description -->
-      @if (rsvp.description) {
-        <div class="rsvp-description">
-          <p>{{ rsvp.description }}</p>
-        </div>
-      }
-
-      <!-- Closed RSVP Alert -->
-      @if (isClosed()) {
-        <div class="rsvp-alert rsvp-alert--closed animate-in" role="alert" aria-live="polite">
-          <div class="alert-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+        <div class="poll-meta-inline">
+          <span class="poll-meta-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-          </div>
-          <div class="alert-content">
-            <strong>RSVP Closed</strong>
-            <p>{{ getClosureMessage() }}</p>
-            @if (getClosureReason() === 'cutoff') {
-              <p class="rsvp-alert__detail">
-                Responses were accepted until {{ rsvp.cutOffDay }} at {{ rsvp.cutOffTime }}.
-              </p>
-            }
-          </div>
+            {{ rsvp.date }}
+          </span>
+          @if (rsvp.eventLocation) {
+            <span class="meta-sep">·</span>
+            <span class="poll-meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              {{ rsvp.eventLocation }}
+            </span>
+          }
+          <span class="meta-sep">·</span>
+          <span class="poll-meta-item closing-inline urgent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            Cut-off: {{ rsvp.cutOffDay }} {{ rsvp.cutOffTime }}
+          </span>
         </div>
-      }
 
-      <!-- ARIA Live Region for Closure Message (Screen Reader Only) -->
-      <div id="rsvp-closed-notice" aria-live="polite" aria-atomic="true" class="sr-only">
+        <!-- RSVP Options (Shifts) -->
         @if (isClosed()) {
-          {{ getClosureMessage() }}
-        }
-      </div>
-
-      <!-- RSVP Shifts -->
-      <div class="rsvp-shifts">
-        @for (shift of rsvp.shifts; track shift.id; let i = $index) {
           <div
-            class="rsvp-shift"
-            [class.selected]="selectedShiftId() === shift.id"
-            [class.disabled]="isClosed() || isFull(shift) || hasSubmittedRsvp()"
-            [style.animation-delay]="(i * 100) + 'ms'"
-            [attr.aria-describedby]="isClosed() ? 'rsvp-closed-notice' : null"
-            [attr.aria-disabled]="isClosed() || isFull(shift) || hasSubmittedRsvp()"
-            (click)="!isClosed() && !isFull(shift) && !hasSubmittedRsvp() && selectShift(shift.id)"
+            class="admin-cta-card"
+            style="
+              background: var(--danger-50);
+              border-color: var(--danger-500);
+              margin-top: 0;
+              flex-direction: row;
+              text-align: left;
+            "
           >
-            <div class="shift-header">
-              <div class="shift-info">
-                <div class="custom-radio">
+            <div class="cta-content">
+              <h3 style="color: #991b1b">RSVP Closed</h3>
+              <p style="color: #b91c1c">{{ getClosureMessage() }}</p>
+            </div>
+          </div>
+        }
+
+        @if (!hasSubmittedRsvp() && !isClosed()) {
+          <p class="poll-prompt">Select your preferred time slot:</p>
+          <div class="poll-options">
+            @for (shift of rsvp.shifts; track shift.id) {
+              <label
+                class="poll-option"
+                [class.selected]="selectedShiftId() === shift.id"
+                [class.disabled]="isFull(shift)"
+              >
+                <div class="option-radio">
                   <input
                     type="radio"
-                    [id]="'shift-' + shift.id"
-                    [checked]="selectedShiftId() === shift.id"
-                    [disabled]="isClosed() || isFull(shift) || hasSubmittedRsvp()"
-                    class="sr-only"
-                    name="shiftGroup"
+                    [name]="'shift-' + rsvp.id"
+                    [value]="shift.id"
+                    (change)="!isFull(shift) && selectShift(shift.id)"
+                    [disabled]="isFull(shift)"
                   />
-                  <div class="radio-visual"></div>
+                  <span class="radio-indicator" aria-hidden="true"></span>
                 </div>
-                <label [for]="'shift-' + shift.id" class="shift-label">
-                  {{ shift.timeSlot }}
-                </label>
-                @if (isFull(shift)) {
-                  <span class="full-badge">FULL</span>
-                }
+                <span class="option-label">{{ shift.timeSlot }}</span>
+                <span class="option-meta">
+                  @if (isFull(shift)) {
+                    <span class="full-badge">Full</span>
+                  } @else {
+                    <span class="spots-left">{{ getRemainingSlots(shift) }} left</span>
+                  }
+                </span>
+                <div
+                  class="option-fill-bar"
+                  [style.width.%]="(shift.responses / shift.capacity) * 100"
+                ></div>
+              </label>
+            }
+          </div>
+
+          <div class="poll-actions">
+            <button
+              type="button"
+              class="vote-btn"
+              (click)="canVote() ? submitRsvp() : redirectToLogin()"
+              [disabled]="!hasSelectedShift() || isLoading() || isAdmin()"
+            >
+              @if (isLoading()) {
+                <span
+                  class="btn-spinner"
+                  style="margin-right: 0.5rem; display: inline-block"
+                ></span>
+                Submitting...
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                {{ isAdmin() ? 'Admins Cannot Vote' : 'Submit RSVP' }}
+              }
+            </button>
+          </div>
+        }
+
+        <!-- Results / Your Response -->
+        @if (hasSubmittedRsvp() && rsvpResponse(); as response) {
+          <div class="poll-results-compact">
+            <div class="results-header">
+              <div class="results-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
               </div>
-              <div class="response-count">
-                <span class="response-number">{{ shift.responses }}</span>
-                <span class="response-text">/ {{ shift.capacity }}</span>
+              <div class="results-info">
+                <h3>
+                  Voted: <strong>{{ getCurrentShiftLabel() }}</strong>
+                </h3>
+                <p style="margin: 0; font-size: 0.8125rem; color: var(--gray-500)">
+                  Submitted {{ response.createdAt | date: 'short' }}
+                </p>
+
+                @if (canEditResponse()) {
+                  <button type="button" class="edit-vote-btn" (click)="enterEditMode()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    Change ({{ remainingEdits() }} left)
+                  </button>
+                } @else if (!isClosed()) {
+                  <p style="margin: 0.25rem 0 0; font-size: 0.75rem; color: var(--danger-600)">
+                    No edits remaining (Max 3).
+                  </p>
+                }
               </div>
             </div>
 
-            <!-- Capacity Info -->
-            <div class="capacity-info">
-              <span class="capacity-label">
-                @if (isFull(shift)) {
-                  <span class="slots-full">No slots available</span>
-                } @else {
-                  <span class="remaining-slots"
-                    >{{ getRemainingSlots(shift) }} slots remaining</span
-                  >
-                }
-              </span>
-            </div>
-
-            <!-- Progress Bar -->
-            <div class="progress-bar-container">
+            <!-- Edit Mode -->
+            @if (isEditMode()) {
               <div
-                class="progress-bar-fill"
-                [class.full]="isFull(shift)"
-                [style.width.%]="(shift.responses / shift.capacity) * 100"
-              ></div>
-            </div>
-
-            <!-- Percentage -->
-            <div class="percentage-label">
-              {{ getResponsePercentage(shift.responses) | number: '1.0-1' }}% of total responses
-            </div>
-          </div>
-        }
-      </div>
-
-      <!-- Total Responses -->
-      <div class="rsvp-footer">
-        <div class="total-responses">
-          <span class="total-label">Total Responses:</span>
-          <span class="total-number">{{ totalResponses() }}</span>
-        </div>
-
-        @if (rsvpError()) {
-          <p class="error-message">{{ rsvpError() }}</p>
-        }
-
-        @if (!hasSubmittedRsvp()) {
-          <button
-            class="btn-submit"
-            [disabled]="isClosed() || !hasSelectedShift() || isLoading() || !canVote()"
-            [attr.aria-describedby]="isClosed() ? 'rsvp-closed-notice' : null"
-            (click)="canVote() ? submitRsvp() : redirectToLogin()"
-          >
-            @if (isLoading()) {
-              Submitting…
-            } @else if (isClosed()) {
-              RSVP Closed
-            } @else {
-              Submit RSVP
-            }
-          </button>
-        } @else {
-          <button class="btn-submit btn-success" disabled>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            RSVP Recorded
-          </button>
-        }
-      </div>
-
-      <!-- Guest CTA Card -->
-      @if (!canVote() && !hasSubmittedRsvp()) {
-        <div class="guest-cta-card animate-in">
-          <div class="cta-content">
-            <h3>Join this event</h3>
-            <p>Sign in to your ServeTrack account to reserve your spot and track your volunteer hours.</p>
-          </div>
-          <button class="btn-cta-login" (click)="redirectToLogin()">
-            Sign In to RSVP
-          </button>
-        </div>
-      }
-
-      <!-- Your Response Section -->
-      @if (hasSubmittedRsvp() && rsvpResponse(); as response) {
-        <div class="your-response-section">
-          <div class="response-header">
-            <h3 class="response-title">Your Response</h3>
-            <div class="response-meta">
-              <span class="submitted-label">Submitted:</span>
-              <span class="submitted-time">{{ response.createdAt | date: 'short' }}</span>
-            </div>
-          </div>
-
-          <!-- Current Time Slot -->
-          <div class="response-info">
-            <div class="info-row">
-              <span class="info-label">Time Slot:</span>
-              <span class="info-value">{{ getCurrentShiftLabel() }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Edit Count:</span>
-              <span class="info-value">{{ response.editCount }} / 3</span>
-            </div>
-            @if (response.lastEditedAt) {
-              <div class="info-row">
-                <span class="info-label">Last Edited:</span>
-                <span class="info-value">{{ response.lastEditedAt | date: 'short' }}</span>
-              </div>
-            }
-          </div>
-
-          <!-- Edit Mode Toggle -->
-          @if (!isEditMode()) {
-            <div class="edit-actions">
-              @if (canEditResponse()) {
-                <div class="remaining-edits-info">
-                  <span class="remaining-label">Edits remaining: {{ remainingEdits() }}</span>
-                </div>
-                <button class="btn-edit" (click)="enterEditMode()" [disabled]="isLoading()">
-                  Edit Response
-                </button>
-              } @else if (hasSubmittedRsvp() && !hasEditsRemaining()) {
-                <p class="no-edits-message">
-                  You have reached the maximum number of edits (3) for this RSVP.
-                </p>
-              } @else if (hasSubmittedRsvp() && isClosed()) {
-                <p class="no-edits-message">
-                  {{
-                    getClosureReason() === 'cutoff'
-                      ? 'This RSVP has closed and is no longer accepting responses.'
-                      : `This RSVP is ${rsvp.status}. You can no longer edit your response.`
-                  }}
-                </p>
-              }
-            </div>
-          } @else {
-            <!-- Edit Mode UI -->
-            <div class="edit-mode-section">
-              <div class="edit-mode-header">
-                <h4 class="edit-mode-title">Edit Your Response</h4>
-              </div>
-
-              @if (editError()) {
-                <p class="error-message">{{ editError() }}</p>
-              }
-
-              <!-- Edit Shift Selection -->
-              <div class="edit-shifts">
-                <p class="edit-shifts-label">Select a different time slot:</p>
-                @for (shift of rsvp.shifts; track shift.id) {
-                  <div
-                    class="edit-shift-option"
-                    [class.selected]="editShiftId() === shift.id"
-                    [class.disabled]="isFull(shift) || shift.id === response.timeSlotId"
-                    (click)="selectEditShift(shift.id)"
-                  >
-                    <input
-                      type="radio"
-                      [id]="'edit-shift-' + shift.id"
-                      [checked]="editShiftId() === shift.id"
-                      [disabled]="isFull(shift) || shift.id === response.timeSlotId"
-                      class="edit-shift-radio"
-                      (change)="selectEditShift(shift.id)"
-                      name="editShiftGroup"
-                    />
-                    <label [for]="'edit-shift-' + shift.id" class="edit-shift-label">
-                      {{ shift.timeSlot }}
-                      @if (shift.id === response.timeSlotId) {
-                        <span class="current-badge">(Current)</span>
-                      }
+                style="border-top: 1px dashed var(--gray-200); padding-top: 1rem; margin-top: 1rem"
+              >
+                <p class="poll-prompt">Select a different time slot:</p>
+                <div class="poll-options">
+                  @for (shift of rsvp.shifts; track shift.id) {
+                    <label
+                      class="poll-option"
+                      [class.selected]="editShiftId() === shift.id"
+                      [class.disabled]="isFull(shift) || shift.id === response.timeSlotId"
+                    >
+                      <div class="option-radio">
+                        <input
+                          type="radio"
+                          name="editShiftGroup"
+                          [value]="shift.id"
+                          (change)="selectEditShift(shift.id)"
+                          [disabled]="isFull(shift) || shift.id === response.timeSlotId"
+                        />
+                        <span class="radio-indicator" aria-hidden="true"></span>
+                      </div>
+                      <span class="option-label">
+                        {{ shift.timeSlot }}
+                        @if (shift.id === response.timeSlotId) {
+                          <span
+                            style="
+                              font-size: 0.75rem;
+                              color: var(--primary-600);
+                              margin-left: 0.25rem;
+                            "
+                            >(Current)</span
+                          >
+                        }
+                      </span>
+                      <span class="option-meta">
+                        @if (isFull(shift)) {
+                          <span class="full-badge">Full</span>
+                        } @else {
+                          <span class="spots-left">{{ getRemainingSlots(shift) }} left</span>
+                        }
+                      </span>
                     </label>
-                    <span class="edit-shift-capacity">
-                      {{ shift.responses }} / {{ shift.capacity }}
-                      @if (isFull(shift)) {
-                        <span class="full-badge">FULL</span>
-                      }
-                    </span>
+                  }
+                </div>
+                <div class="poll-actions">
+                  <button
+                    type="button"
+                    class="vote-btn"
+                    (click)="submitEditedResponse()"
+                    [disabled]="
+                      editShiftId() === null ||
+                      editShiftId() === response.timeSlotId ||
+                      isEditSubmitting()
+                    "
+                  >
+                    {{ isEditSubmitting() ? 'Saving...' : 'Save Changes' }}
+                  </button>
+                  <button
+                    type="button"
+                    class="cancel-btn"
+                    (click)="exitEditMode()"
+                    [disabled]="isEditSubmitting()"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <div class="results-list">
+                @for (shift of rsvp.shifts; track shift.id) {
+                  <div class="result-item" [class.user-choice]="shift.id === response.timeSlotId">
+                    <div class="result-info">
+                      <span class="result-label">
+                        {{ shift.timeSlot }}
+                        @if (shift.id === response.timeSlotId) {
+                          <span
+                            style="
+                              font-size: 0.75rem;
+                              color: var(--primary-600);
+                              margin-left: 0.5rem;
+                              font-weight: bold;
+                            "
+                            >Your Selection</span
+                          >
+                        }
+                      </span>
+                      <span class="result-percentage">{{ shift.responses }} responses</span>
+                    </div>
+                    <div class="result-bar-container">
+                      <div
+                        class="result-bar"
+                        [style.width.%]="(shift.responses / shift.capacity) * 100"
+                      ></div>
+                    </div>
                   </div>
                 }
               </div>
-
-              <!-- Edit Action Buttons -->
-              <div class="edit-actions">
-                <button
-                  class="btn-cancel"
-                  (click)="exitEditMode()"
-                  [disabled]="isEditSubmitting()"
-                >
-                  Cancel
-                </button>
-                <button
-                  class="btn-save"
-                  [disabled]="
-                    editShiftId() === null ||
-                    editShiftId() === response.timeSlotId ||
-                    isEditSubmitting()
-                  "
-                  (click)="submitEditedResponse()"
-                >
-                  @if (isEditSubmitting()) {
-                    Saving…
-                  } @else {
-                    Save Changes
-                  }
-                </button>
-              </div>
+            }
+          </div>
+        } @else if (isClosed()) {
+          <div class="poll-results-compact">
+            <h3 style="font-size: 1rem; margin: 0 0 1rem">Final Responses</h3>
+            <div class="results-list">
+              @for (shift of rsvp.shifts; track shift.id) {
+                <div class="result-item">
+                  <div class="result-info">
+                    <span class="result-label">{{ shift.timeSlot }}</span>
+                    <span class="result-percentage">{{ shift.responses }} responses</span>
+                  </div>
+                  <div class="result-bar-container">
+                    <div
+                      class="result-bar"
+                      [style.width.%]="(shift.responses / shift.capacity) * 100"
+                    ></div>
+                  </div>
+                </div>
+              }
             </div>
-          }
-        </div>
-      }
-    </div>
-  }
-</div>
+          </div>
+        }
+
+        <!-- Guest/Admin CTAs -->
+        @if (!isAuthenticated() && !hasSubmittedRsvp()) {
+          <div class="guest-cta-card">
+            <div class="cta-content">
+              <h3>Join this event</h3>
+              <p>Sign in to your ServeTrack account to reserve your spot.</p>
+            </div>
+            <button class="btn-cta-login" (click)="redirectToLogin()">Sign In to RSVP</button>
+          </div>
+        }
+        @if (isAdmin()) {
+          <div class="admin-cta-card">
+            <div class="cta-content">
+              <h3>Administrator View</h3>
+              <p>
+                You are viewing this RSVP as an administrator. Only volunteers can submit responses.
+              </p>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </article>
+
+</section>

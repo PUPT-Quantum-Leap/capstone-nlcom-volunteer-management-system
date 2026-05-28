@@ -36,17 +36,39 @@ describe('GET /api/rsvp', function (): void {
             ->assertJsonCount(3, 'data');
     });
 
-    it('returns only active rsvps for volunteers', function (): void {
+    it('returns active and recently closed rsvps for volunteers', function (): void {
         $volunteer = User::factory()->volunteer()->create();
-        Rsvp::factory()->active()->create();
+        Rsvp::factory()->active()->create(['title' => 'Active RSVP']);
         Rsvp::factory()->create(['status' => 'draft']);
-        Rsvp::factory()->closed()->create();
+        // Closed within past 7 days (cutoff_day = yesterday)
+        Rsvp::factory()->create([
+            'status' => 'closed',
+            'cutoff_day' => now()->subDay()->toDateString(),
+        ]);
+        // Closed more than 7 days ago (should be hidden from volunteers)
+        Rsvp::factory()->create([
+            'status' => 'closed',
+            'cutoff_day' => now()->subDays(10)->toDateString(),
+        ]);
 
         $this->actingAs($volunteer)
             ->getJson('/api/rsvp')
             ->assertSuccessful()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.status', 'active');
+            ->assertJsonCount(2, 'data'); // active + recently-closed
+    });
+
+    it('does not return draft or old closed rsvps to volunteers', function (): void {
+        $volunteer = User::factory()->volunteer()->create();
+        Rsvp::factory()->create(['status' => 'draft']);
+        Rsvp::factory()->create([
+            'status' => 'closed',
+            'cutoff_day' => now()->subDays(10)->toDateString(),
+        ]);
+
+        $this->actingAs($volunteer)
+            ->getJson('/api/rsvp')
+            ->assertSuccessful()
+            ->assertJsonCount(0, 'data');
     });
 
     it('requires authentication', function (): void {

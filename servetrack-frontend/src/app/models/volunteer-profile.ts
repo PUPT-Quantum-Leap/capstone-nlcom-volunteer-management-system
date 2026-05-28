@@ -20,6 +20,7 @@ export interface VolunteerProfile {
   volunteerPreference: string;
   otherPreference: string;
   photoUrl: string;
+  gender?: string;
   /** Assigned team/positions from the backend */
   positions?: Position[];
 }
@@ -34,6 +35,7 @@ export interface VolunteerProfileResponse {
   mobile_number: string;
   birthdate: string;
   last_medical_examination: string;
+  gender?: string;
   address: string;
   educational_attainment: string;
   /** Training experience from trainings table */

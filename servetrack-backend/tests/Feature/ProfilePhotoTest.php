@@ -43,6 +43,41 @@ describe('Profile Photo Upload', function (): void {
         Storage::disk('public')->assertMissing($oldPath);
     });
 
+    it('deletes old photo when profile is updated with gender/persona or clearPhoto true', function (): void {
+        $oldPhoto = UploadedFile::fake()->image('old.jpg');
+        $this->postJson('/api/volunteer/profile/photo', ['photo' => $oldPhoto])
+            ->assertSuccessful();
+
+        $oldPath = $this->volunteer->fresh()->profile_photo;
+        Storage::disk('public')->assertExists($oldPath);
+
+        // Put request to update profile with a gender (persona)
+        $this->putJson('/api/volunteer/profile', [
+            'firstName' => 'John',
+            'lastName' => 'Doe',
+            'facebookName' => 'johndoe',
+            'email' => $this->user->email,
+            'mobileNumber' => '09123456789',
+            'birthdate' => '1990-01-01',
+            'completeAddress' => '123 Test Street City Philippines',
+            'lastMedicalExam' => '2025-01-01',
+            'gender' => 'boy',
+            'educationalAttainment' => 'College Graduate',
+            'volunteerPreference' => 'relief-operations',
+            'availability' => 'Anytime / On Call',
+            'partOfLifegroup' => 'no',
+            'leadingLifegroup' => 'no',
+            'emergencyContactName' => 'Jane Doe',
+            'emergencyContactNumber' => '09987654321',
+            'emergencyContactRelationship' => 'Mother',
+            'clearPhoto' => true,
+        ])->assertSuccessful();
+
+        $this->volunteer->refresh();
+        expect($this->volunteer->profile_photo)->toBeNull();
+        Storage::disk('public')->assertMissing($oldPath);
+    });
+
     it('rejects non-image files', function (): void {
         $file = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
 

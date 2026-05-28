@@ -1,23 +1,60 @@
 <section class="profile-section">
-  <!-- Profile Header Card -->
+  @if (isLoading() && !savedProfileData()) {
+    <div class="profile-skeleton" aria-hidden="true">
+      <div class="skeleton-header-card">
+        <div class="skeleton-avatar">
+          <div class="skeleton-circle"></div>
+        </div>
+        <div class="skeleton-header-info">
+          <div class="skeleton-line large"></div>
+          <div class="skeleton-line small"></div>
+        </div>
+      </div>
+      <div class="skeleton-accordion">
+        <div class="skeleton-accordion-item">
+          <div class="skeleton-line large"></div>
+        </div>
+        <div class="skeleton-accordion-item">
+          <div class="skeleton-line large"></div>
+        </div>
+        <div class="skeleton-accordion-item">
+          <div class="skeleton-line large"></div>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <!-- Profile Header Card -->
   <article class="profile-header-card">
     <div class="profile-avatar-section">
-      <div class="avatar-wrapper">
-        <img [src]="profilePreviewUrl()" alt="Profile" class="profile-avatar" [class.svg]="profilePreviewUrl().endsWith('.svg')" />
+      <div class="avatar-wrapper"
+           [class.persona-boy]="profileForm.get('gender')?.value === 'boy'"
+           [class.persona-girl]="profileForm.get('gender')?.value === 'girl'"
+           [class.persona-default]="!profileForm.get('gender')?.value"
+           (click)="openAvatarSelectorModal()"
+           style="cursor: pointer;"
+           title="Change Avatar or Photo">
+        <img [src]="profilePreviewUrl()" 
+             alt="Profile" 
+             class="profile-avatar" 
+             [class.svg]="profilePreviewUrl().endsWith('.svg')"
+             [class.boy-fallback]="profilePreviewUrl().endsWith('.svg') && profileForm.get('gender')?.value === 'boy'"
+             [class.girl-fallback]="profilePreviewUrl().endsWith('.svg') && profileForm.get('gender')?.value === 'girl'"
+             [class.default-fallback]="profilePreviewUrl().endsWith('.svg') && !profileForm.get('gender')?.value" />
         @if (isEditMode()) {
-          <label class="upload-overlay" for="photo-upload">
+          <div class="upload-overlay">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
-            <span>Change Photo</span>
-          </label>
-          <input id="photo-upload" type="file" (change)="onPhotoSelected($event)" accept="image/*" style="display: none;" />
+            <span>Change</span>
+          </div>
         }
       </div>
       <div class="profile-meta">
         <h3>{{ profileForm.get('firstName')?.value || 'Your Name' }} {{ profileForm.get('lastName')?.value || '' }}</h3>
-        <p>Volunteer Member</p>
+        <div class="meta-row">
+          <p class="role-badge">Volunteer Member</p>
+        </div>
       </div>
     </div>
     <div class="profile-stats">
@@ -31,7 +68,8 @@
   <form [formGroup]="profileForm" class="profile-accordion">
     <!-- Personal Details Accordion -->
     <div class="accordion-item" [class.has-open-calendar]="isBirthdateCalendarOpen() || isMedicalExamCalendarOpen()">
-      <button type="button" class="accordion-trigger" (click)="toggleSection('personal')">
+      <button type="button" class="accordion-trigger" (click)="toggleSection('personal')"
+        [attr.aria-expanded]="expandedSection() === 'personal'" aria-controls="personal-section">
         <div class="accordion-header">
           <svg class="accordion-icon" [class.expanded]="expandedSection() === 'personal'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19V5"/>
@@ -104,7 +142,8 @@
                           @if (cell) {
                             <button type="button" class="day-btn" 
                               [class.selected]="isDaySelected('birthdate', cell)"
-                              (click)="selectDate('birthdate', cell)">
+                              (click)="selectDate('birthdate', cell)"
+                              [attr.aria-label]="getMonthYearLabel() + ' ' + cell">
                               {{ cell }}
                             </button>
                           } @else {
@@ -135,11 +174,11 @@
                   <div class="calendar-dropdown-panel single">
                     <div class="mini-calendar">
                       <div class="calendar-header">
-                        <button type="button" class="nav-btn" (click)="changeMonth(-1)">
+                        <button type="button" class="nav-btn" (click)="changeMonth(-1)" aria-label="Previous month">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
                         </button>
                         <span class="month-label">{{ getMonthYearLabel() }}</span>
-                        <button type="button" class="nav-btn" (click)="changeMonth(1)">
+                        <button type="button" class="nav-btn" (click)="changeMonth(1)" aria-label="Next month">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                       </div>
@@ -150,7 +189,8 @@
                           @if (cell) {
                             <button type="button" class="day-btn" 
                               [class.selected]="isDaySelected('medical', cell)"
-                              (click)="selectDate('medical', cell)">
+                              (click)="selectDate('medical', cell)"
+                              [attr.aria-label]="getMonthYearLabel() + ' ' + cell">
                               {{ cell }}
                             </button>
                           } @else {
@@ -166,7 +206,7 @@
                 <span class="error-text">{{ getControlError('lastMedicalExam') }}</span>
               }
             </div>
-            <div class="form-group">
+             <div class="form-group">
               <label>Facebook Name</label>
               <input type="text" [value]="profileForm.get('facebookName')?.value" formControlName="facebookName" placeholder="FB Profile Name" />
               @if (controlHasError('facebookName')) {
@@ -180,7 +220,8 @@
 
     <!-- Service & Skills Accordion -->
     <div class="accordion-item">
-      <button type="button" class="accordion-trigger" (click)="toggleSection('service')">
+      <button type="button" class="accordion-trigger" (click)="toggleSection('service')"
+        [attr.aria-expanded]="expandedSection() === 'service'" aria-controls="service-section">
         <div class="accordion-header">
           <svg class="accordion-icon" [class.expanded]="expandedSection() === 'service'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19V5"/>
@@ -193,7 +234,7 @@
       </button>
 
       @if (expandedSection() === 'service') {
-        <div class="accordion-content">
+        <div class="accordion-content" id="service-section">
           <div class="form-columns">
             <div class="form-group full">
               <label>Complete Address</label>
@@ -325,7 +366,8 @@
 
     <!-- Emergency Contact Accordion -->
     <div class="accordion-item">
-      <button type="button" class="accordion-trigger" (click)="toggleSection('emergency')">
+      <button type="button" class="accordion-trigger" (click)="toggleSection('emergency')"
+        [attr.aria-expanded]="expandedSection() === 'emergency'" aria-controls="emergency-section">
         <div class="accordion-header">
           <svg class="accordion-icon" [class.expanded]="expandedSection() === 'emergency'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19V5"/>
@@ -338,7 +380,7 @@
       </button>
 
       @if (expandedSection() === 'emergency') {
-        <div class="accordion-content">
+        <div class="accordion-content" id="emergency-section">
           <div class="form-columns">
             <div class="form-group">
               <label>Contact Name</label>
@@ -383,6 +425,7 @@
       <button type="button" class="primary-btn" (click)="toggleEditMode()">Edit Profile</button>
     }
   </div>
+  }
 </section>
 
 <!-- Save Confirmation Modal -->
@@ -407,15 +450,15 @@
 
 <!-- Error Modal -->
 @if (showProfileError()) {
-  <div class="modal-backdrop">
-    <div class="modal-card error">
+  <div class="modal-backdrop" role="alertdialog" aria-labelledby="error-title" aria-describedby="error-desc">
+    <div class="modal-card error" aria-live="assertive">
       <div class="modal-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
         </svg>
       </div>
-      <h3>Error</h3>
-      <p>{{ profileErrorMessage() }}</p>
+      <h3 id="error-title">Error</h3>
+      <p id="error-desc">{{ profileErrorMessage() }}</p>
       <div class="modal-actions">
         <button type="button" class="primary-btn" (click)="closeProfileError()">OK</button>
       </div>
@@ -425,7 +468,7 @@
 
 <!-- Success Modal -->
 @if (showProfileSuccess()) {
-  <div class="modal-backdrop">
+  <div class="modal-backdrop" role="status" aria-live="polite">
     <div class="modal-card success">
       <div class="modal-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -440,3 +483,76 @@
     </div>
   </div>
 }
+
+<!-- Avatar Selector Modal -->
+@if (showAvatarSelectorModal()) {
+  <div class="modal-backdrop" (click)="closeAvatarSelectorModal()">
+    <div class="modal-card avatar-selection-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header-section">
+        <h3>Choose Avatar / Persona</h3>
+        <p>Select a persona style or upload your own custom photo.</p>
+      </div>
+      
+      <div class="avatar-modal-options">
+        <!-- Boy Persona -->
+        <button type="button" class="avatar-option-card" 
+                [class.active]="profilePreviewUrl().endsWith('boy.svg')"
+                (click)="selectPersona('boy')">
+          <div class="avatar-option-img-wrapper boy">
+            <img ngSrc="/assets/boy.svg" alt="Boy Persona" width="64" height="64" />
+          </div>
+          <div class="avatar-option-info">
+            <span class="title">Boy Persona</span>
+            <span class="desc">Cool and dynamic style</span>
+          </div>
+          <div class="avatar-option-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        </button>
+
+        <!-- Girl Persona -->
+        <button type="button" class="avatar-option-card" 
+                [class.active]="profilePreviewUrl().endsWith('girl.svg')"
+                (click)="selectPersona('girl')">
+          <div class="avatar-option-img-wrapper girl">
+            <img ngSrc="/assets/girl.svg" alt="Girl Persona" width="64" height="64" />
+          </div>
+          <div class="avatar-option-info">
+            <span class="title">Girl Persona</span>
+            <span class="desc">Friendly and professional style</span>
+          </div>
+          <div class="avatar-option-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        </button>
+
+        <!-- Default Persona -->
+        <button type="button" class="avatar-option-card" 
+                [class.active]="profilePreviewUrl().endsWith('apple.svg')"
+                (click)="selectPersona(null)">
+          <div class="avatar-option-img-wrapper default">
+            <img ngSrc="/assets/apple.svg" alt="Default Persona" width="64" height="64" />
+          </div>
+          <div class="avatar-option-info">
+            <span class="title">Default Persona</span>
+            <span class="desc">Cute apple style</span>
+          </div>
+          <div class="avatar-option-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        </button>
+      </div>
+
+      <div class="modal-actions-full">
+        <button type="button" class="primary-btn full" (click)="closeAvatarSelectorModal()">Done</button>
+      </div>
+    </div>
+  </div>
+}
+

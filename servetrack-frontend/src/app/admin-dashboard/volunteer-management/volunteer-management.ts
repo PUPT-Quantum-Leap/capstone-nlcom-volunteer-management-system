@@ -7,6 +7,8 @@ import {
   signal,
   DestroyRef,
   output,
+  effect,
+  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -15,9 +17,10 @@ import {
   AdminDashboardService,
   ApiResponse,
   DashboardVolunteerRow,
-  VolunteerUser,
   VolunteersResponse,
 } from '../../services/admin-dashboard.service';
+import { VolunteerUser } from '../../models/user';
+import { GlobalSearchService } from '../../services/global-search.service';
 
 @Component({
   selector: 'app-volunteer-management',
@@ -29,6 +32,7 @@ import {
 export class VolunteerManagement implements OnInit {
   private adminDashboardService = inject(AdminDashboardService);
   private destroyRef = inject(DestroyRef);
+  private globalSearchService = inject(GlobalSearchService);
 
   // Dropdown Options
   statusOptions: SelectOption<string>[] = [
@@ -44,7 +48,7 @@ export class VolunteerManagement implements OnInit {
   volunteerRows = signal<DashboardVolunteerRow[]>([]);
   archivedVolunteerRows = signal<DashboardVolunteerRow[]>([]);
   showArchivedVolunteers = signal(false);
-  volunteerSearchQuery = signal('');
+  volunteerSearchQuery = this.globalSearchService.searchQuery;
   volunteersPage = signal(1);
   volunteersPerPage = signal(5);
   deletingVolunteerId = signal<number | null>(null);
@@ -54,6 +58,9 @@ export class VolunteerManagement implements OnInit {
   showEditModal = signal(false);
   showDeleteModal = signal(false);
   showViewModal = signal(false);
+  showEditSuccess = signal(false);
+  showRestoreModal = signal(false);
+  restoringVolunteerId = signal<number | null>(null);
   editFormData = signal<{
     first_name: string;
     last_name: string;
@@ -68,21 +75,23 @@ export class VolunteerManagement implements OnInit {
     facebook_name: '',
   });
 
+  readonly editFormErrors = signal<Record<string, string>>({});
+
   // Computed
-  activeVolunteersCount = computed(() => this.volunteerRows().length);
+  readonly activeVolunteersCount = computed(() => this.volunteerRows().length);
 
-  archivedVolunteersCount = computed(() => this.archivedVolunteerRows().length);
+  readonly archivedVolunteersCount = computed(() => this.archivedVolunteerRows().length);
 
-  totalVolunteersCount = computed(() =>
+  readonly totalVolunteersCount = computed(() =>
     this.volunteerRows().length + this.archivedVolunteerRows().length
   );
 
-  departmentCount = computed(() => {
+  readonly departmentCount = computed(() => {
     const departments = new Set(this.volunteerRows().map((v) => v.department));
     return departments.size;
   });
 
-  filteredVolunteers = computed(() => {
+  readonly filteredVolunteers = computed(() => {
     const search = this.volunteerSearchQuery().toLowerCase().trim();
     const volunteers = this.showArchivedVolunteers()
       ? this.archivedVolunteerRows()
@@ -101,11 +110,11 @@ export class VolunteerManagement implements OnInit {
     );
   });
 
-  volunteersTotalPages = computed(() =>
+  readonly volunteersTotalPages = computed(() =>
     Math.ceil(this.filteredVolunteers().length / this.volunteersPerPage()),
   );
 
-  paginatedVolunteers = computed(() => {
+  readonly paginatedVolunteers = computed(() => {
     const filtered = this.filteredVolunteers();
     const page = this.volunteersPage();
     const perPage = this.volunteersPerPage();
@@ -121,7 +130,14 @@ export class VolunteerManagement implements OnInit {
     this.loadArchivedVolunteers();
   }
 
-  constructor() {}
+  constructor() {
+    effect(() => {
+      this.volunteerSearchQuery();
+      untracked(() => {
+        this.volunteersPage.set(1);
+      });
+    });
+  }
 
   private loadVolunteers(): void {
     this.isLoading.set(true);
@@ -179,15 +195,12 @@ export class VolunteerManagement implements OnInit {
         },
         error: (error: Error) => {
           console.error('Error loading archived volunteers:', error);
+          this.showSnackbar.emit({ message: 'Failed to load archived volunteers', type: 'error' });
         },
       });
   }
 
-  // Search
-  setVolunteerSearchQuery(query: string): void {
-    this.volunteerSearchQuery.set(query);
-    this.volunteersPage.set(1);
-  }
+  // Search removed, handled by global search effect
 
   // Tab switching
   switchToActiveVolunteers(): void {
@@ -246,6 +259,8 @@ export class VolunteerManagement implements OnInit {
   // Actions
   openEditVolunteerModal(volunteer: DashboardVolunteerRow): void {
     this.editingVolunteer.set(volunteer);
+    this.showEditSuccess.set(false);
+    this.editFormErrors.set({});
     const nameParts = volunteer.name.split(' ', 2);
     this.editFormData.set({
       first_name: nameParts[0] || '',
@@ -260,6 +275,8 @@ export class VolunteerManagement implements OnInit {
   closeEditModal(): void {
     this.showEditModal.set(false);
     this.editingVolunteer.set(null);
+    this.showEditSuccess.set(false);
+    this.editFormErrors.set({});
     this.editFormData.set({
       first_name: '',
       last_name: '',
@@ -271,6 +288,14 @@ export class VolunteerManagement implements OnInit {
 
   updateEditForm(field: 'first_name' | 'last_name' | 'email' | 'mobile_number' | 'facebook_name', value: string): void {
     this.editFormData.update((current) => ({ ...current, [field]: value }));
+    this.editFormErrors.update((current) => {
+      if (current[field]) {
+        const next = { ...current };
+        delete next[field];
+        return next;
+      }
+      return current;
+    });
   }
 
   saveVolunteer(): void {
@@ -283,21 +308,26 @@ export class VolunteerManagement implements OnInit {
     this.adminDashboardService.updateVolunteer(volunteer.id, formData)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.loadVolunteers();
-            this.loadArchivedVolunteers();
-            this.showSnackbar.emit({ message: 'Volunteer updated successfully', type: 'success' });
-            this.isSaving.set(false);
-            this.closeEditModal();
-          } else {
-            this.showSnackbar.emit({ message: response.message || 'Failed to update volunteer', type: 'error' });
-            this.isSaving.set(false);
-          }
+        next: () => {
+          this.loadVolunteers();
+          this.loadArchivedVolunteers();
+          this.showEditSuccess.set(true);
+          this.isSaving.set(false);
         },
-        error: (error: Error) => {
+        error: (error: any) => {
           console.error('Error updating volunteer:', error);
-          this.showSnackbar.emit({ message: 'Failed to update volunteer', type: 'error' });
+          this.editFormErrors.set({});
+          if (error?.error?.errors) {
+            const errs: Record<string, string> = {};
+            for (const [field, messages] of Object.entries(error.error.errors)) {
+              errs[field] = (messages as string[]).join(' ');
+            }
+            this.editFormErrors.set(errs);
+            this.showSnackbar.emit({ message: 'Please fix the errors below', type: 'error' });
+          } else {
+            const msg = error?.error?.message || 'Failed to update volunteer';
+            this.showSnackbar.emit({ message: msg, type: 'error' });
+          }
           this.isSaving.set(false);
         },
       });
@@ -311,6 +341,16 @@ export class VolunteerManagement implements OnInit {
   closeDeleteModal(): void {
     this.showDeleteModal.set(false);
     this.deletingVolunteerId.set(null);
+  }
+
+  confirmRestoreVolunteer(id: number): void {
+    this.restoringVolunteerId.set(id);
+    this.showRestoreModal.set(true);
+  }
+
+  closeRestoreModal(): void {
+    this.showRestoreModal.set(false);
+    this.restoringVolunteerId.set(null);
   }
 
   openViewModal(volunteer: DashboardVolunteerRow): void {
@@ -328,45 +368,46 @@ export class VolunteerManagement implements OnInit {
     if (id === null) return;
 
     this.isSaving.set(true);
-    this.adminDashboardService.softDeleteVolunteer(id).subscribe({
-      next: (response: ApiResponse<void>) => {
-        if (response.success) {
+    this.adminDashboardService.softDeleteVolunteer(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
           this.loadVolunteers();
           this.loadArchivedVolunteers();
           this.showSnackbar.emit({ message: 'Volunteer archived successfully', type: 'success' });
-        } else {
-          this.showSnackbar.emit({ message: response.message || 'Failed to archive volunteer', type: 'error' });
-        }
-        this.isSaving.set(false);
-        this.closeDeleteModal();
-      },
-      error: (error: Error) => {
-        console.error('Error archiving volunteer:', error);
-        this.showSnackbar.emit({ message: 'Failed to archive volunteer', type: 'error' });
-        this.isSaving.set(false);
-        this.closeDeleteModal();
-      },
-    });
+          this.isSaving.set(false);
+          this.closeDeleteModal();
+        },
+        error: (error: Error) => {
+          console.error('Error archiving volunteer:', error);
+          this.showSnackbar.emit({ message: 'Failed to archive volunteer', type: 'error' });
+          this.isSaving.set(false);
+          this.closeDeleteModal();
+        },
+      });
   }
 
-  restoreVolunteer(id: number): void {
+  restoreVolunteer(): void {
+    const id = this.restoringVolunteerId();
+    if (id === null) return;
+
     this.isSaving.set(true);
-    this.adminDashboardService.restoreVolunteer(id).subscribe({
-      next: (response: ApiResponse<void>) => {
-        if (response.success) {
+    this.adminDashboardService.restoreVolunteer(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
           this.loadVolunteers();
           this.loadArchivedVolunteers();
           this.showSnackbar.emit({ message: 'Volunteer restored successfully', type: 'success' });
-        } else {
-          this.showSnackbar.emit({ message: response.message || 'Failed to restore volunteer', type: 'error' });
-        }
-        this.isSaving.set(false);
-      },
-      error: (error: Error) => {
-        console.error('Error restoring volunteer:', error);
-        this.showSnackbar.emit({ message: 'Failed to restore volunteer', type: 'error' });
-        this.isSaving.set(false);
-      },
-    });
+          this.isSaving.set(false);
+          this.closeRestoreModal();
+        },
+        error: (error: Error) => {
+          console.error('Error restoring volunteer:', error);
+          this.showSnackbar.emit({ message: 'Failed to restore volunteer', type: 'error' });
+          this.isSaving.set(false);
+          this.closeRestoreModal();
+        },
+      });
   }
 }

@@ -13,12 +13,12 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ChatbotService, CHATBOT_MAX_MESSAGE_LENGTH } from '../../services/chatbot.service';
-import { TTSService } from '../../services/tts.service';
-import { VoiceInputService } from '../../services/voice-input.service';
+import { SpeechService } from '../../services/speech.service';
 import { CommandPaletteService } from '../../services/command-palette.service';
 import { ChatMessage } from '../../models/chatbot.model';
 import { Command } from '../../models/command.model';
 import { Subscription } from 'rxjs';
+import { SpeechResult } from '../../models/speech.model';
 
 @Component({
   selector: 'app-chatbot-sidebar',
@@ -29,8 +29,7 @@ import { Subscription } from 'rxjs';
 })
 export class ChatbotSidebarComponent implements OnInit, OnDestroy {
   readonly chatbotService = inject(ChatbotService);
-  readonly ttsService = inject(TTSService);
-  readonly voiceInputService = inject(VoiceInputService);
+  readonly speechService = inject(SpeechService);
   readonly commandService = inject(CommandPaletteService);
   private readonly router = inject(Router);
 
@@ -62,13 +61,12 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
   readonly autoSpeak = signal(
     JSON.parse(localStorage.getItem('chatbot_auto_speak') ?? 'false'),
   );
-  readonly currentVoiceName = signal(localStorage.getItem('chatbot_voice_name') ?? '');
 
   // Computed
   readonly isInputValid = computed(() => this.userInput().trim().length > 0);
-  readonly isTTSSupported = computed(() => this.ttsService.isSupported());
-  readonly isSTTSupported = computed(() => this.voiceInputService.isSupported());
-  readonly isSpeaking = computed(() => this.ttsService.isSpeaking());
+  readonly isTTSSupported = this.speechService.isTTSSupported;
+  readonly isSTTSupported = this.speechService.isSTTSupported;
+  readonly isSpeaking = this.speechService.isSpeaking;
 
   readonly filteredCommands = computed(() => {
     const q = this.userInput();
@@ -86,7 +84,7 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
       : this.filteredCommands(),
   );
 
-  readonly groupedVoices = computed(() => this.ttsService.getGroupedVoices());
+  readonly groupedVoices = computed(() => this.speechService.getGroupedVoices());
 
   private subs: Subscription[] = [];
 
@@ -104,26 +102,34 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
       if (!this.autoSpeak() || msgs.length === 0) return;
       const last = msgs[msgs.length - 1];
       if (last.role === 'assistant') {
-        this.ttsService.speak(last.message);
+        this.speechService.speak(last.message);
       }
     });
   }
 
   ngOnInit(): void {
-    // Restore voice preference
-    const voiceName = this.currentVoiceName();
-    if (voiceName) this.ttsService.setVoice(voiceName);
+    // Load voices (constructor already tries, but some browsers load async)
+    this.speechService.reloadVoices();
+    setTimeout(() => this.voicesReady.set(this.speechService.availableVoices().length > 0), 500);
 
-    // Load voices async
-    this.ttsService.loadVoices();
-    setTimeout(() => this.voicesReady.set(this.ttsService.getVoices().length > 0), 500);
-
-    // Subscribe to live transcript
+    // Subscribe to speech results and errors
     this.subs.push(
-      this.voiceInputService.transcript$.subscribe((t) => this.liveTranscript.set(t)),
-      this.voiceInputService.error$.subscribe((e) => {
-        this.speechError.set(e);
+      this.speechService.transcript$.subscribe((result: SpeechResult) => {
+        this.liveTranscript.set(result.transcript);
+        if (result.isFinal) {
+          const existingText = this.userInput().trim();
+          const newText = result.transcript.trim();
+          const combined = existingText
+            ? `${existingText} ${newText}`
+            : newText;
+          this.userInput.set(combined);
+          this.liveTranscript.set('');
+        }
+      }),
+      this.speechService.error$.subscribe((e) => {
+        this.speechError.set(e.message);
         this.isRecording.set(false);
+        setTimeout(() => this.speechError.set(''), 5000);
       }),
     );
 
@@ -228,29 +234,25 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
     this.chatbotService.sendMessage(cmd.command).subscribe({ error: () => undefined });
   }
 
-  async toggleRecording(): Promise<void> {
+  toggleRecording(): void {
     this.speechError.set('');
     if (this.isRecording()) {
       this.isRecording.set(false);
-      const transcript = await this.voiceInputService.stop();
+      this.speechService.stopListening();
       this.liveTranscript.set('');
-      if (transcript) {
-        this.userInput.set(transcript);
-        this.sendMessage();
-      }
     } else {
-      this.voiceInputService.start();
-      if (!this.voiceInputService.error()) {
+      this.speechService.startListening();
+      if (!this.speechService.error()) {
         this.isRecording.set(true);
       }
     }
   }
 
   speakMessage(text: string): void {
-    if (this.ttsService.isSpeaking()) {
-      this.ttsService.stop();
+    if (this.speechService.isSpeaking()) {
+      this.speechService.stopSpeaking();
     } else {
-      this.ttsService.speak(text);
+      this.speechService.speak(text);
     }
   }
 
@@ -280,16 +282,15 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
   toggleAutoSpeak(): void {
     this.autoSpeak.update((v) => !v);
     localStorage.setItem('chatbot_auto_speak', JSON.stringify(this.autoSpeak()));
-    if (!this.autoSpeak()) this.ttsService.stop();
+    if (!this.autoSpeak()) this.speechService.stopSpeaking();
   }
 
   selectVoice(name: string): void {
-    this.currentVoiceName.set(name);
-    this.ttsService.setVoice(name);
+    this.speechService.setVoiceByName(name);
   }
 
   previewVoice(): void {
-    this.ttsService.previewVoice();
+    this.speechService.previewVoice();
   }
 
   sendSuggestion(text: string): void {

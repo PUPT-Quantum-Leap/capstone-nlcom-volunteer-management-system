@@ -44,6 +44,7 @@ class UpdateVolunteerProfileRequest extends FormRequest
             'birthdate' => ['required', 'date', 'before:today'],
             'completeAddress' => ['required', 'string', 'min:10', 'max:255'],
             'lastMedicalExam' => ['required', 'date', 'before_or_equal:today'],
+            'gender' => ['nullable', 'string', 'in:boy,girl,male,female'],
             'educationalAttainment' => ['required', 'string', 'max:100'],
             'trainingExperience' => ['nullable', 'string'],
             'skillsHobbies' => ['nullable', 'string'],

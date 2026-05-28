@@ -5,6 +5,8 @@ import {
   computed,
   inject,
   signal,
+  effect,
+  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormArray, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators, ValidatorFn } from '@angular/forms';
@@ -15,6 +17,7 @@ import { RsvpService } from '../../services/rsvp.service';
 import { AdminDashboardService, NonResponder } from '../../services/admin-dashboard.service';
 
 import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
+import { GlobalSearchService } from '../../services/global-search.service';
 
 export interface RespondedItem {
   id: number;
@@ -42,6 +45,7 @@ export class RsvpsComponent {
   private readonly rsvpService = inject(RsvpService);
   private readonly adminService = inject(AdminDashboardService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly globalSearchService = inject(GlobalSearchService);
   private readonly nonResponderSearch$ = new Subject<string>();
 
   // Dropdown Options
@@ -55,7 +59,7 @@ export class RsvpsComponent {
   readonly rsvps = signal<Rsvp[]>([]);
   readonly isLoading = signal(true);
   readonly rsvpFilterStatus = signal<'all' | 'active' | 'closed' | 'draft'>('all');
-  readonly rsvpSearchQuery = signal('');
+  readonly rsvpSearchQuery = this.globalSearchService.searchQuery;
   readonly currentPage = signal(1);
   readonly itemsPerPage = signal(10);
   readonly showRsvpModal = signal(false);
@@ -193,6 +197,13 @@ export class RsvpsComponent {
   constructor() {
     this.loadRsvps();
 
+    effect(() => {
+      this.rsvpSearchQuery();
+      untracked(() => {
+        this.currentPage.set(1);
+      });
+    });
+
     this.nonResponderSearch$
       .pipe(debounceTime(350), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe((q) => {
@@ -215,10 +226,7 @@ export class RsvpsComponent {
     this.currentPage.set(1);
   }
 
-  setRsvpSearchQuery(query: string): void {
-    this.rsvpSearchQuery.set(query);
-    this.currentPage.set(1);
-  }
+  // Search set query removed, handled by global search effect
 
   goToPage(page: number): void {
     this.currentPage.set(page);
@@ -519,16 +527,16 @@ export class RsvpsComponent {
           this.isNotifyingRsvpId.set(null);
           this.notifyType.set(null);
           this.showFeedback(
-            `SMS notifications sent: ${result.sent}/${result.total}`,
+            `Email notifications sent: ${result.sent}/${result.total}`,
             'success',
           );
         },
         error: (error: { error?: { message?: string }; message?: string }) => {
-          console.error('Error sending SMS notifications:', error);
+          console.error('Error sending Email notifications:', error);
           this.isNotifyingRsvpId.set(null);
           this.notifyType.set(null);
 
-          const errorMessage = error.error?.message || error.message || 'Failed to send SMS notifications.';
+          const errorMessage = error.error?.message || error.message || 'Failed to send Email notifications.';
           this.showFeedback(errorMessage, 'error');
         },
       });
@@ -634,14 +642,23 @@ export class RsvpsComponent {
         perPage: 25,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.nonRespondersLoading.set(false);
-        if (res.success) {
-          this.nonRespondersList.set(res.data);
-          this.nonRespondersTotalPages.set(res.meta.last_page);
-          this.nonRespondersTotal.set(res.meta.total);
-        } else {
-          this.nonRespondersError.set(res.message ?? 'Failed to load non-responders.');
+      .subscribe({
+        next: (res) => {
+          this.nonRespondersLoading.set(false);
+          if (res.success) {
+            this.nonRespondersList.set(res.data);
+            this.nonRespondersTotalPages.set(res.meta.last_page);
+            this.nonRespondersTotal.set(res.meta.total);
+          } else {
+            this.nonRespondersError.set(res.message ?? 'Failed to load non-responders.');
+            this.showFeedback(res.message ?? 'Failed to load non-responders.', 'error');
+          }
+        },
+        error: (error: Error) => {
+          console.error('Error loading non-responders:', error);
+          this.nonRespondersLoading.set(false);
+          this.nonRespondersError.set('Failed to load non-responders.');
+          this.showFeedback('Failed to load non-responders.', 'error');
         }
       });
   }
@@ -731,15 +748,24 @@ export class RsvpsComponent {
     this.responsesLoading.set(true);
     this.responsesError.set('');
     this.adminService
-      .getAttendanceFromRsvp(rsvpId)
+      .fetchAttendanceFromRsvp(rsvpId)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.responsesLoading.set(false);
-        if (res.success) {
-          this.respondedList.set(res.data ?? []);
-          this.resetExportColumns('responded');
-        } else {
-          this.responsesError.set(res.message ?? 'Failed to load responses.');
+      .subscribe({
+        next: (res) => {
+          this.responsesLoading.set(false);
+          if (res.success) {
+            this.respondedList.set(res.data ?? []);
+            this.resetExportColumns('responded');
+          } else {
+            this.responsesError.set(res.message ?? 'Failed to load responses.');
+            this.showFeedback(res.message ?? 'Failed to load responses.', 'error');
+          }
+        },
+        error: (error: Error) => {
+          console.error('Error loading responses:', error);
+          this.responsesLoading.set(false);
+          this.responsesError.set('Failed to load responses.');
+          this.showFeedback('Failed to load responses.', 'error');
         }
       });
   }

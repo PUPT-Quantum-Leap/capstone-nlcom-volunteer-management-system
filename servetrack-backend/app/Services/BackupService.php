@@ -26,7 +26,7 @@ class BackupService
      */
     public function createBackup(string $type = 'manual', ?string $description = null): Backup
     {
-        $backupName = $this->generateBackupName();
+        $backupName = $this->generateBackupName($type);
         $backup = Backup::create([
             'name' => $backupName,
             'file_path' => $this->backupPath.'/'.$backupName.'.sql',
@@ -511,50 +511,51 @@ class BackupService
      */
     private function restoreDatabase(string $sqlFile): void
     {
-        try {
-            $sqlContent = file_get_contents($sqlFile);
+        $sqlContent = file_get_contents($sqlFile);
 
-            $statements = [];
-            $lines = explode("\n", $sqlContent);
-            $currentStatement = '';
-            $inMetadata = false;
+        $statements = [];
+        $lines = explode("\n", $sqlContent);
+        $currentStatement = '';
+        $inMetadata = false;
 
-            foreach ($lines as $line) {
-                $trimmedLine = trim($line);
+        foreach ($lines as $line) {
+            $trimmedLine = trim($line);
 
-                // Skip metadata section
-                if (str_starts_with($trimmedLine, '-- Backup Metadata')) {
-                    $inMetadata = true;
+            // Skip metadata section
+            if (str_starts_with($trimmedLine, '-- Backup Metadata')) {
+                $inMetadata = true;
 
-                    continue;
-                }
-                if ($inMetadata && str_starts_with($trimmedLine, '-- End Metadata')) {
-                    $inMetadata = false;
+                continue;
+            }
+            if ($inMetadata && str_starts_with($trimmedLine, '-- End Metadata')) {
+                $inMetadata = false;
 
-                    continue;
-                }
-                if ($inMetadata) {
-                    continue;
-                }
-
-                // Skip other comments
-                if (str_starts_with($trimmedLine, '--') || empty($trimmedLine)) {
-                    continue;
-                }
-
-                $currentStatement .= $line."\n";
-
-                // Check if statement ends with semicolon
-                if (str_ends_with($trimmedLine, ';')) {
-                    $statements[] = trim($currentStatement);
-                    $currentStatement = '';
-                }
+                continue;
+            }
+            if ($inMetadata) {
+                continue;
             }
 
-            // Execute each statement
+            // Skip other comments
+            if (str_starts_with($trimmedLine, '--') || empty($trimmedLine)) {
+                continue;
+            }
+
+            $currentStatement .= $line."\n";
+
+            // Check if statement ends with semicolon
+            if (str_ends_with($trimmedLine, ';')) {
+                $statements[] = trim($currentStatement);
+                $currentStatement = '';
+            }
+        }
+
+        // Execute all statements inside a single transaction so a failure
+        // rolls back every change, preventing a partially-restored state.
+        DB::transaction(function () use ($statements): void {
             foreach ($statements as $statement) {
                 if (! empty($statement)) {
-                    // Skip transaction statements if already in transaction (common in testing)
+                    // Skip transaction statements
                     if (preg_match('/^(BEGIN|START TRANSACTION|COMMIT|ROLLBACK)/i', trim($statement))) {
                         continue;
                     }
@@ -575,10 +576,7 @@ class BackupService
                     DB::statement($statement);
                 }
             }
-
-        } catch (Exception $e) {
-            throw new Exception('Database restoration failed: '.$e->getMessage());
-        }
+        });
     }
 
     /**
@@ -586,8 +584,16 @@ class BackupService
      */
     public function deleteBackup(Backup $backup): void
     {
-        if ($backup->file_path && Storage::disk($this->backupDisk)->exists($backup->file_path)) {
-            Storage::disk($this->backupDisk)->delete($backup->file_path);
+        if ($backup->file_path) {
+            // Try the configured disk first, then fall back to direct path
+            if (Storage::disk($this->backupDisk)->exists($backup->file_path)) {
+                Storage::disk($this->backupDisk)->delete($backup->file_path);
+            } else {
+                $directPath = storage_path('app/private/'.$backup->file_path);
+                if (file_exists($directPath)) {
+                    unlink($directPath);
+                }
+            }
         }
 
         $backup->delete();
@@ -611,11 +617,11 @@ class BackupService
     }
 
     /**
-     * Generate unique backup name
+     * Generate unique backup name in the format: YYYY-MM-DD_HHMMSS_type_random
      */
-    private function generateBackupName(): string
+    private function generateBackupName(string $type): string
     {
-        return 'servetrack_backup_'.now()->format('Y_m_d_His').'_'.Str::random(6);
+        return now()->format('Y-m-d_His').'_'.$type.'_'.Str::random(4);
     }
 
     /**
@@ -636,22 +642,23 @@ class BackupService
     }
 
     /**
-     * Clean up old backups based on retention policy
+     * Clean up old backups based on retention policy.
+     * Pass 0 to delete ALL backups.
      */
     public function cleanupOldBackups(int $keepCount = 10): void
     {
-        $oldBackups = Backup::completed()
-            ->latest()
-            ->skip($keepCount)
-            ->take(1000) // Add limit to avoid memory issues
-            ->get();
+        $query = Backup::latest();
 
-        foreach ($oldBackups as $backup) {
-            if ($backup instanceof Backup) {
-                $this->deleteBackup($backup);
-            }
+        if ($keepCount > 0) {
+            $query->skip($keepCount);
         }
 
-        Log::info("Cleaned up {$oldBackups->count()} old backups");
+        $oldBackups = $query->take(1000)->get();
+
+        foreach ($oldBackups as $backup) {
+            $this->deleteBackup($backup);
+        }
+
+        Log::info("Cleaned up {$oldBackups->count()} old backups, keeping {$keepCount}");
     }
 }

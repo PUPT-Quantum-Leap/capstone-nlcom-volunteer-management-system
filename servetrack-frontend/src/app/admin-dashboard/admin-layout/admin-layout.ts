@@ -7,20 +7,20 @@ import {
   signal,
   DestroyRef,
 } from '@angular/core';
-import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterOutlet, Event as RouterEvent } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { AdminDashboardService } from '../../services/admin-dashboard.service';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { filter } from 'rxjs';
+import { filter, Subscription } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
 import { ChatbotService } from '../../services/chatbot.service';
 import { ChatbotSidebarComponent } from '../../components/chatbot-sidebar/chatbot-sidebar.component';
+import { GlobalSearchService } from '../../services/global-search.service';
 
 type AdminView =
   | 'dashboard'
   | 'analytics'
-  | 'users'
   | 'volunteers'
   | 'attendance'
   | 'performance'
@@ -44,6 +44,7 @@ export class AdminLayout implements OnInit {
   private adminService = inject(AdminDashboardService);
   readonly chatbotService = inject(ChatbotService);
   private destroyRef = inject(DestroyRef);
+  private globalSearchService = inject(GlobalSearchService);
  
   readonly defaultPhoto = '/assets/person.svg';
  
@@ -55,8 +56,12 @@ export class AdminLayout implements OnInit {
   showNotifications = signal(false);
   showLogoutModal = signal(false);
   isLoading = signal(false);
+  snackbarState = signal<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  snackbarLeaving = signal(false);
+  private snackbarSubscription: Subscription | null = null;
+  private snackbarTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  searchQuery = signal('');
+  searchQuery = this.globalSearchService.searchQuery;
   currentUrl = signal(this.router.url); 
   // Profile Edit Signals
   showProfileModal = signal(false);
@@ -80,7 +85,6 @@ export class AdminLayout implements OnInit {
     // Derive current view from router URL
     const url = this.currentUrl();
     if (url.includes('/analytics')) return 'analytics';
-    if (url.includes('/user-management')) return 'users';
     if (url.includes('/volunteers')) return 'volunteers';
     if (url.includes('/attendance')) return 'attendance';
     if (url.includes('/performance')) return 'performance';
@@ -99,8 +103,6 @@ export class AdminLayout implements OnInit {
         return 'Dashboard';
       case 'analytics':
         return 'Analytics & Reports';
-      case 'users':
-        return 'User Management';
       case 'volunteers':
         return 'Volunteer Management';
       case 'attendance':
@@ -110,7 +112,7 @@ export class AdminLayout implements OnInit {
       case 'operations':
         return 'Operations';
       case 'sms':
-        return 'SMS Notifications';
+        return 'Email Notifications';
       case 'rsvps':
         return 'RSVP Management';
       case 'ics':
@@ -132,6 +134,7 @@ export class AdminLayout implements OnInit {
       )
       .subscribe((event) => {
         this.currentUrl.set(event.urlAfterRedirects);
+        this.globalSearchService.clearSearchQuery();
       });
   }
 
@@ -158,7 +161,6 @@ export class AdminLayout implements OnInit {
     const routeMap: Record<AdminView, string> = {
       dashboard: 'dashboard',
       analytics: 'analytics',
-      users: 'user-management',
       volunteers: 'volunteers',
       attendance: 'attendance',
       performance: 'performance',
@@ -173,12 +175,12 @@ export class AdminLayout implements OnInit {
     if (route) {
       if (this.currentView() === view) {
         if (!isSearch) {
-          this.searchQuery.set('');
+          this.globalSearchService.clearSearchQuery();
         }
       } else {
         void this.router.navigate(['/admin-dashboard', route]);
         if (!isSearch) {
-          this.searchQuery.set('');
+          this.globalSearchService.clearSearchQuery();
         }
       }
       this.closeMobileSidebar();
@@ -313,7 +315,7 @@ export class AdminLayout implements OnInit {
   }
 
   setSearchQuery(query: string): void {
-    this.searchQuery.set(query);
+    this.globalSearchService.setSearchQuery(query);
   }
 
   runSearch(): void {
@@ -328,11 +330,6 @@ export class AdminLayout implements OnInit {
     // 1. Check for Module Navigation Shortcuts
     if (lowerQuery.includes('analytic') || lowerQuery.includes('report')) {
       this.navigateTo('analytics', true);
-      return;
-    }
-
-    if (lowerQuery.includes('user')) {
-      this.navigateTo('users', true);
       return;
     }
 
@@ -385,8 +382,7 @@ export class AdminLayout implements OnInit {
       return;
     }
 
-    // Default behavior if no module match
-    this.navigateTo('dashboard', true);
+    // Default behavior if no module match: do nothing to keep search active on the current page
   }
 
   private getStoredSidebarState(): boolean {
@@ -402,6 +398,39 @@ export class AdminLayout implements OnInit {
     if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.setItem('admin-sidebar-collapsed', collapsed.toString());
     }
+  }
+
+  onChildActivate(component: unknown): void {
+    this.snackbarSubscription?.unsubscribe();
+    const comp = component as { showSnackbar?: { subscribe: (fn: (msg: { message: string; type: 'success' | 'error' | 'info' }) => void) => import('rxjs').Subscription } };
+    if (comp?.showSnackbar) {
+      this.snackbarSubscription = comp.showSnackbar.subscribe((msg) => {
+        this.showSnackbar(msg);
+      });
+    }
+  }
+
+  private showSnackbar(msg: { message: string; type: 'success' | 'error' | 'info' }): void {
+    if (this.snackbarTimeout) {
+      clearTimeout(this.snackbarTimeout);
+    }
+    this.snackbarLeaving.set(false);
+    this.snackbarState.set(msg);
+    this.snackbarTimeout = setTimeout(() => {
+      this.dismissSnackbar();
+    }, 4000);
+  }
+
+  dismissSnackbar(): void {
+    if (this.snackbarTimeout) {
+      clearTimeout(this.snackbarTimeout);
+      this.snackbarTimeout = null;
+    }
+    this.snackbarLeaving.set(true);
+    setTimeout(() => {
+      this.snackbarState.set(null);
+      this.snackbarLeaving.set(false);
+    }, 300);
   }
 
   private updateIsMobile(): void {

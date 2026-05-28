@@ -7,6 +7,7 @@ import {
   computed,
   DestroyRef,
 } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RsvpService } from '../../services/rsvp.service';
 import { Rsvp, UserVote } from '../../models/rsvp';
@@ -36,7 +37,7 @@ interface Poll {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [],
+  imports: [NgClass],
   templateUrl: './polls.html',
   styleUrl: './polls.scss',
 })
@@ -49,7 +50,15 @@ export class PollsComponent implements OnInit {
   pastPolls = signal<Poll[]>([]);
   selectedPastPoll = signal<Poll | null>(null);
   isLoading = signal(true);
+  hasData = signal(false);
   pollError = signal<string | null>(null);
+
+  /**
+   * Past polls from the last 7 days.
+   * The backend already filters closed RSVPs to those with cutoff_day >= 7 days ago,
+   * so this simply mirrors all closed polls returned by the API.
+   */
+  recentPastPolls = computed(() => this.pastPolls());
 
   hasSubmittedVote = signal(false);
   selectedOptionId = signal<number | null>(null);
@@ -64,7 +73,16 @@ export class PollsComponent implements OnInit {
   remainingEdits = computed(() => this.activePoll()?.remainingEdits ?? 0);
 
   ngOnInit(): void {
+    this.hydrateFromCache();
     this.reload();
+  }
+
+  private hydrateFromCache(): void {
+    const cached = this.rsvpService.getCachedRsvps();
+    if (!cached?.data?.length) return;
+
+    this.hasData.set(true);
+    this.applyRsvpData(cached.data);
   }
 
   reload(): void {
@@ -80,29 +98,33 @@ export class PollsComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
-          const rsvps: Rsvp[] = response.data;
-          const activeRsvps = rsvps.filter((r: Rsvp) => r.status === 'active');
-          const pastRsvps = rsvps.filter((r: Rsvp) => r.status === 'closed');
-
-          const activePoll = activeRsvps.length > 0 ? this.mapRsvpToPoll(activeRsvps[0]) : null;
-          this.activePoll.set(activePoll);
-
-          if (activePoll?.userVote) {
-            const votes = new Map(this.userVotes());
-            votes.set(activePoll.id, activePoll.userVote);
-            this.userVotes.set(votes);
-            this.hasSubmittedVote.set(true);
-            this.selectedOptionId.set(activePoll.userVote.timeSlotId);
-          }
-
-          this.pastPolls.set(pastRsvps.map((r: Rsvp) => this.mapRsvpToPoll(r)));
+          this.applyRsvpData(response.data);
           this.isLoading.set(false);
+          this.hasData.set(true);
         },
         error: () => {
           this.pollError.set('Failed to load RSVP events. Please try again later.');
           this.isLoading.set(false);
         },
       });
+  }
+
+  private applyRsvpData(rsvps: Rsvp[]): void {
+    const activeRsvps = rsvps.filter((r: Rsvp) => r.status === 'active');
+    const pastRsvps = rsvps.filter((r: Rsvp) => r.status === 'closed');
+
+    const activePoll = activeRsvps.length > 0 ? this.mapRsvpToPoll(activeRsvps[0]) : null;
+    this.activePoll.set(activePoll);
+
+    if (activePoll?.userVote) {
+      const votes = new Map(this.userVotes());
+      votes.set(activePoll.id, activePoll.userVote);
+      this.userVotes.set(votes);
+      this.hasSubmittedVote.set(true);
+      this.selectedOptionId.set(activePoll.userVote.timeSlotId);
+    }
+
+    this.pastPolls.set(pastRsvps.map((r: Rsvp) => this.mapRsvpToPoll(r)));
   }
 
   private mapRsvpToPoll(rsvp: Rsvp): Poll {
@@ -254,6 +276,22 @@ export class PollsComponent implements OnInit {
     if (!poll || optionId === null) return '';
     const option = poll.options.find((o) => o.id === optionId);
     return option?.timeSlot ?? '';
+  }
+
+  getAttendanceStatus(poll: Poll): { label: string; cssClass: string; icon: 'attended' | 'absent' | 'no-vote' } {
+    const vote = poll.userVote;
+    if (!vote) {
+      return { label: "Didn't Vote", cssClass: 'status-no-vote', icon: 'no-vote' };
+    }
+    const status = vote.attendanceStatus;
+    if (status === 'checked_in' || status === 'checked_out') {
+      return { label: 'Attended', cssClass: 'status-attended', icon: 'attended' };
+    }
+    if (status === 'no_show') {
+      return { label: 'Absent', cssClass: 'status-absent', icon: 'absent' };
+    }
+    // 'registered' — voted but event hasn't occurred yet or status not updated
+    return { label: 'Voted', cssClass: 'status-voted', icon: 'attended' };
   }
 
   private parseLocalISO(dateStr: string): Date {

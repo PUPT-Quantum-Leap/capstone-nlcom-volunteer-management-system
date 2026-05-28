@@ -11,6 +11,7 @@ import { NgTemplateOutlet, NgOptimizedImage } from '@angular/common';
 import { Router, RouterOutlet, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { VolunteerService } from '../../services/volunteer.service';
+import { RsvpService } from '../../services/rsvp.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NotificationItem } from '../../models/notification-item';
 
@@ -30,13 +31,21 @@ export class VolunteerDashboardShell implements OnInit {
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
+  private rsvpService = inject(RsvpService);
   readonly chatbotService = inject(ChatbotService);
   private destroyRef = inject(DestroyRef);
 
-  readonly defaultPhoto = '/assets/person.svg';
+  readonly defaultPhoto = '/assets/apple.svg';
 
   // ── Navigation State ───────────────────────────────────────────────────
-  userName = signal(this.authService.currentUser()?.name || 'Volunteer');
+  userName = computed(() => {
+    const user = this.authService.currentUser();
+    if (user?.role === 'volunteer' && user?.volunteer_profile) {
+      const vol = user.volunteer_profile as any;
+      return `${vol.first_name || ''} ${vol.last_name || ''}`.trim() || user.name || 'Volunteer';
+    }
+    return user?.name || 'Volunteer';
+  });
   sidebarCollapsed = signal(this.getStoredSidebarState());
   mobileSidebarOpen = signal(false);
   isMobile = signal(false);
@@ -75,17 +84,50 @@ export class VolunteerDashboardShell implements OnInit {
     () => this.notifications().filter((n) => !n.read).length,
   );
 
-  profilePreviewUrl = signal(this.defaultPhoto);
+  profilePreviewUrl = computed(() => {
+    const user = this.authService.currentUser();
+    const photoUrl = user?.profile_photo_url;
+    if (photoUrl) {
+      return photoUrl;
+    }
+    if (user?.role === 'volunteer' && user?.volunteer_profile) {
+      const volProfile = user.volunteer_profile as any;
+      const volPhoto = volProfile.profile_photo_url || volProfile.photo_url;
+      if (volPhoto) {
+        return volPhoto;
+      }
+      const gender = volProfile.gender;
+      if (gender === 'girl' || gender === 'female') {
+        return '/assets/girl.svg';
+      } else if (gender === 'boy' || gender === 'male') {
+        return '/assets/boy.svg';
+      } else {
+        return '/assets/apple.svg';
+      }
+    }
+    return '/assets/apple.svg';
+  });
 
   ngOnInit(): void {
     this.updateIsMobile();
     this.startRealTimeClock();
     this.loadProfile();
-    
+    this.warmUpCaches();
+
     // Initial 4-second loading screen
     setTimeout(() => {
       this.pageLoading.set(false);
     }, 4000);
+  }
+
+  /**
+   * Pre-fetch data in the background so child modules can hydrate instantly
+   * from in-memory caches without waiting for HTTP roundtrips.
+   */
+  private warmUpCaches(): void {
+    this.volunteerService.getAttendanceStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+    this.volunteerService.getAttendance('monthly').pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+    this.rsvpService.getRsvps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 
   private startRealTimeClock(): void {
@@ -124,8 +166,15 @@ export class VolunteerDashboardShell implements OnInit {
   private loadProfile(): void {
     this.volunteerService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (response.success && response.data) {
-        const data = response.data;
-        this.userName.set(`${data.first_name} ${data.last_name}`.trim());
+        const current = this.authService.currentUser();
+        if (current) {
+          this.authService.currentUser.set({
+            ...current,
+            name: `${response.data.first_name} ${response.data.last_name}`,
+            email: response.data.email,
+            volunteer_profile: response.data as any
+          });
+        }
       }
     });
   }
@@ -199,10 +248,6 @@ export class VolunteerDashboardShell implements OnInit {
     }
     if (query.includes('schedule') || query.includes('attendance') || query.includes('task')) {
       this.navigateTo('attendance');
-      return;
-    }
-    if (query.includes('request') || query.includes('change')) {
-      this.navigateTo('requests');
       return;
     }
     if (query.includes('poll')) {

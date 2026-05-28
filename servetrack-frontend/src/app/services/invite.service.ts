@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Invite {
   id: number;
@@ -36,9 +37,8 @@ export interface InviteValidationResponse {
   providedIn: 'root',
 })
 export class InviteService {
-  private readonly apiUrl = 'http://localhost:8000/api';
-
-  constructor(private readonly http: HttpClient) {}
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = environment.apiUrl;
 
   createInvite(email: string | null, role: string): Observable<InviteResponse> {
     return this.http.post<InviteResponse>(`${this.apiUrl}/invites`, { email, role });
