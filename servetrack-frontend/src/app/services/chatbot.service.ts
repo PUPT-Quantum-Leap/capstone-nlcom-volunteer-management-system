@@ -1,4 +1,4 @@
-﻿import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, effect, untracked } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Observable, of, throwError, timer } from 'rxjs';
@@ -53,6 +53,10 @@ export class ChatbotService {
     return `user_${this.userId}_chatbot_session_id`;
   }
 
+  private get SHOW_KEY(): string {
+    return `user_${this.userId}_chatbot_show`;
+  }
+
   readonly showChatbot = signal(false);
   readonly messages = signal<ChatMessage[]>([]);
   readonly isLoading = signal(false);
@@ -63,6 +67,48 @@ export class ChatbotService {
   constructor() {
     // Defer session load until after injection so userId is available
     this.sessionId.set(this.loadSession());
+
+    // Effect to sync state when the current user changes (handles login, logout, and initial checkAuthStatus)
+    effect(() => {
+      // Register dependency on the current user
+      const user = this.authService.currentUser();
+      
+      untracked(() => {
+        // Load the open/closed state for this user
+        this.showChatbot.set(this.loadShowState());
+        // Load the history/session for this user
+        this.loadHistory();
+      });
+    });
+
+    // Effect to automatically save the showChatbot state when it changes
+    effect(() => {
+      const show = this.showChatbot();
+      untracked(() => {
+        this.saveShowState(show);
+      });
+    });
+
+    // Effect to automatically save the messages when the messages signal changes
+    effect(() => {
+      const msgs = this.messages();
+      untracked(() => {
+        if (msgs.length === 0) {
+          localStorage.removeItem(this.MESSAGES_KEY);
+        } else {
+          this.saveMessages(msgs);
+        }
+      });
+    });
+  }
+
+  private loadShowState(): boolean {
+    const stored = localStorage.getItem(this.SHOW_KEY);
+    return stored === 'true';
+  }
+
+  private saveShowState(show: boolean): void {
+    localStorage.setItem(this.SHOW_KEY, String(show));
   }
 
   private loadSession(): string {
@@ -193,7 +239,6 @@ export class ChatbotService {
               created_at: new Date().toISOString(),
             };
             this.messages.update((msgs) => [...msgs, assistantMessage]);
-            this.saveMessages(this.messages());
           }
           this.isLoading.set(false);
         }),

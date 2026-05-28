@@ -1,24 +1,35 @@
-﻿import { TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { signal, Component, inject } from '@angular/core';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ChatbotService, CHATBOT_MAX_MESSAGE_LENGTH } from './chatbot.service';
 import { AuthService } from './auth.service';
 import { environment } from '../../environments/environment';
 
+@Component({
+  template: '',
+})
+class DummyComponent {
+  service = inject(ChatbotService);
+}
+
 describe('ChatbotService', () => {
   let service: ChatbotService;
   let httpMock: HttpTestingController;
+  let currentUserSignal: any;
+  let fixture: any;
   const mockUserId = 123;
 
   beforeEach(() => {
     localStorage.clear();
 
+    currentUserSignal = signal({ id: String(mockUserId) });
     const authServiceMock = {
-      currentUser: () => ({ id: String(mockUserId) }),
+      currentUser: currentUserSignal,
     };
 
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
+      imports: [HttpClientTestingModule, DummyComponent],
       providers: [
         ChatbotService,
         { provide: AuthService, useValue: authServiceMock },
@@ -26,6 +37,8 @@ describe('ChatbotService', () => {
     });
     service = TestBed.inject(ChatbotService);
     httpMock = TestBed.inject(HttpTestingController);
+    fixture = TestBed.createComponent(DummyComponent);
+    fixture.detectChanges();
   });
 
   afterEach(() => {
@@ -247,6 +260,60 @@ describe('ChatbotService', () => {
       const stored = localStorage.getItem(`user_${mockUserId}_chatbot_session_id`);
       expect(stored).toBeTruthy();
       expect(service.sessionId()).toBe(stored);
+    });
+  });
+
+  describe('showChatbot and messages state persistence and user reactivity', () => {
+    it('persists showChatbot state to localStorage when it changes', () => {
+      service.showChatbot.set(true);
+      fixture.detectChanges();
+      expect(localStorage.getItem(`user_${mockUserId}_chatbot_show`)).toBe('true');
+
+      service.showChatbot.set(false);
+      fixture.detectChanges();
+      expect(localStorage.getItem(`user_${mockUserId}_chatbot_show`)).toBe('false');
+    });
+
+    it('syncs state when the currentUser changes', () => {
+      // Setup state for another user in localStorage
+      const otherUserId = '456';
+      localStorage.setItem(`user_${otherUserId}_chatbot_show`, 'true');
+      localStorage.setItem(`user_${otherUserId}_chatbot_session_id`, 'session-xyz');
+      localStorage.setItem(
+        `user_${otherUserId}_chatbot_messages`,
+        JSON.stringify([{ role: 'user', message: 'Hello other user' }])
+      );
+
+      // Change currentUser to 456
+      currentUserSignal.set({ id: otherUserId });
+      fixture.detectChanges();
+
+      // Check that the service has updated its states automatically
+      expect(service.showChatbot()).toBe(true);
+      expect(service.sessionId()).toBe('session-xyz');
+      expect(service.messages().length).toBe(1);
+      expect(service.messages()[0].message).toBe('Hello other user');
+    });
+
+    it('saves messages automatically when messages change', () => {
+      const mockMsg = { role: 'user' as const, message: 'Auto-save test' };
+      service.messages.set([mockMsg]);
+      fixture.detectChanges();
+
+      const stored = localStorage.getItem(`user_${mockUserId}_chatbot_messages`);
+      expect(stored).toBeTruthy();
+      expect(JSON.parse(stored!)[0].message).toBe('Auto-save test');
+    });
+
+    it('removes messages from localStorage when messages is empty', () => {
+      localStorage.setItem(
+        `user_${mockUserId}_chatbot_messages`,
+        JSON.stringify([{ role: 'user', message: 'test' }])
+      );
+      service.messages.set([]);
+      fixture.detectChanges();
+
+      expect(localStorage.getItem(`user_${mockUserId}_chatbot_messages`)).toBeNull();
     });
   });
 });
