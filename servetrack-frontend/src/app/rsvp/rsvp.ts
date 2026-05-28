@@ -45,9 +45,6 @@ export class RsvpComponent implements OnInit {
   isEditSubmitting = signal(false);
   editError = signal<string | null>(null);
 
-  showCodeModal = signal(false);
-  accessCode = signal('');
-
   isAuthenticated = computed(() => this.authService.isAuthenticated());
   isVolunteer = computed(() => {
     const user = this.authService.currentUser();
@@ -133,10 +130,6 @@ export class RsvpComponent implements OnInit {
           this.isLoading.set(false);
           // Try to load the volunteer's response
           this.loadMyResponse(response.data.id);
-
-          if (!this.isAuthenticated()) {
-            this.showCodeModal.set(true);
-          }
         },
         error: () => {
           this.error.set('RSVP not found or is no longer available.');
@@ -174,28 +167,6 @@ export class RsvpComponent implements OnInit {
         redirect: `/rsvp/${this.currentRsvpSlug}?logged_in=true`,
       },
     });
-  }
-
-  openCodeModal(): void {
-    this.showCodeModal.set(true);
-  }
-
-  closeCodeModal(): void {
-    this.showCodeModal.set(false);
-    this.accessCode.set('');
-  }
-
-  updateAccessCode(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const value = input.value.toUpperCase();
-    input.value = value;
-    this.accessCode.set(value);
-  }
-
-  submitCode(): void {
-    // For now, redirect to login page with the code conceptually (or just close modal & redirect)
-    this.closeCodeModal();
-    this.redirectToLogin();
   }
 
   getResponsePercentage(responses: number): number {

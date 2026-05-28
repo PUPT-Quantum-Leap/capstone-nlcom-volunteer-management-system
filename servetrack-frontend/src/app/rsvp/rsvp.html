@@ -180,7 +180,7 @@
             <button
               type="button"
               class="vote-btn"
-              (click)="canVote() ? submitRsvp() : openCodeModal()"
+              (click)="canVote() ? submitRsvp() : redirectToLogin()"
               [disabled]="!hasSelectedShift() || isLoading() || isAdmin()"
             >
               @if (isLoading()) {
@@ -362,7 +362,7 @@
               <h3>Join this event</h3>
               <p>Sign in to your ServeTrack account to reserve your spot.</p>
             </div>
-            <button class="btn-cta-login" (click)="openCodeModal()">Sign In to RSVP</button>
+            <button class="btn-cta-login" (click)="redirectToLogin()">Sign In to RSVP</button>
           </div>
         }
         @if (isAdmin()) {
@@ -379,53 +379,4 @@
     }
   </article>
 
-  @if (showCodeModal()) {
-    <div class="modal-backdrop" (click)="closeCodeModal()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <div class="modal-header">
-          <h3>Enter RSVP Code</h3>
-          <button class="btn-close" (click)="closeCodeModal()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <div class="modal-body">
-          <p>
-            Please enter your unique access code to securely connect to your account and submit your
-            RSVP.
-          </p>
-          <div class="input-group">
-            <label for="rsvpCode">Access Code</label>
-            <p
-              style="
-                font-size: 0.8125rem;
-                color: var(--gray-500);
-                margin-top: -0.25rem;
-                margin-bottom: 0.25rem;
-              "
-            >
-              Format: First 2 letters of surname + birth year (e.g. SM1990)
-            </p>
-            <input
-              type="text"
-              id="rsvpCode"
-              placeholder="e.g. SM1990"
-              [value]="accessCode()"
-              (input)="updateAccessCode($event)"
-              style="text-transform: uppercase"
-              maxlength="6"
-            />
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="cancel-btn" (click)="closeCodeModal()">Cancel</button>
-          <button class="vote-btn" (click)="submitCode()" [disabled]="!accessCode()">
-            Connect Account
-          </button>
-        </div>
-      </div>
-    </div>
-  }
 </section>
