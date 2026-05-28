@@ -69,7 +69,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
         const firstWithRsvp = data.find((op) => op.ics?.rsvp);
         if (firstWithRsvp?.ics?.rsvp) {
           this.operationTitle.set(firstWithRsvp.ics.rsvp.title);
-          this.operationDate.set(formatDate(firstWithRsvp.ics.rsvp.created_at));
+          this.operationDate.set(formatDate(firstWithRsvp.ics.rsvp.date));
         } else {
           const firstWithIcs = data.find((op) => op.ics?.date);
           if (firstWithIcs?.ics?.date) {
