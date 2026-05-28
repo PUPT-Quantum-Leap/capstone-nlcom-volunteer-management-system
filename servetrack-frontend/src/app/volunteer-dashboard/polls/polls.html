@@ -21,7 +21,7 @@
     </div>
 
     <!-- Content States -->
-    @if (isLoading()) {
+    @if (isLoading() && !hasData()) {
     <div class="polls-skeleton" aria-hidden="true">
       <!-- Tab Skeleton -->
       <div class="skeleton-tabs">
