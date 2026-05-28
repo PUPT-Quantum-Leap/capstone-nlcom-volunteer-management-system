@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Ics;
 use App\Models\IcsTeam;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class IcsTeamController extends Controller
 {
@@ -42,7 +44,7 @@ class IcsTeamController extends Controller
                 ->pluck('team_id');
 
             if ($matchingTeamIds->isNotEmpty()) {
-                $volunteers = \Illuminate\Support\Facades\DB::table('ics_volunteer')
+                $volunteers = DB::table('ics_volunteer')
                     ->join('volunteer', 'volunteer.volunteer_id', '=', 'ics_volunteer.volunteer_id')
                     ->where('ics_volunteer.ics_id', $icsTeam->ics_id)
                     ->whereIn('ics_volunteer.team_id', $matchingTeamIds)
@@ -58,6 +60,45 @@ class IcsTeamController extends Controller
                 ])->values());
             } else {
                 $icsTeam->setAttribute('assigned_volunteers', []);
+            }
+        });
+
+        // Auto-fill empty Location/Time/Pax from ICS + RSVP data (admin can still override via edit)
+        $teams->each(function ($icsTeam) {
+            $ics = $icsTeam->ics;
+            if (! $ics) {
+                return;
+            }
+
+            $rsvp = $ics->rsvp;
+
+            // Auto-fill Location: use RSVP event_location if team row has no location
+            if (empty($icsTeam->location) && $rsvp) {
+                $icsTeam->setAttribute('location', $rsvp->event_location ?? '');
+            }
+
+            // Auto-fill Time: determine from team name (AM or PM shift from RSVP time slots)
+            if (empty($icsTeam->time) && $rsvp) {
+                $teamName = strtolower($icsTeam->team ?? '');
+                $shifts = $rsvp->shifts()->orderBy('time_slot.time_slot_id', 'asc')->get();
+
+                if ($shifts->isNotEmpty()) {
+                    // Alpha/Bravo/Charlie = AM (first shift), Delta/Echo/Foxtrot = PM (last shift)
+                    $isAm = str_contains($teamName, 'alpha') || str_contains($teamName, 'bravo') || str_contains($teamName, 'charlie');
+                    $shift = $isAm ? $shifts->first() : $shifts->last();
+                    $icsTeam->setAttribute('time', $shift->text ?? '');
+                }
+            }
+
+            // Auto-fill Pax: ICS objective equally divided among all teams
+            if (($icsTeam->no_of_pax === 0 || $icsTeam->no_of_pax === null) && $ics->objective) {
+                $totalTeams = IcsTeam::where('ics_id', $ics->id)
+                    ->whereNotNull('departure_note')
+                    ->count();
+
+                if ($totalTeams > 0) {
+                    $icsTeam->setAttribute('no_of_pax', (int) round($ics->objective / $totalTeams));
+                }
             }
         });
 
