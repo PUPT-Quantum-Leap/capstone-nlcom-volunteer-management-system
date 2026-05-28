@@ -1,5 +1,5 @@
 <section class="overview-layout">
-  @if (isLoading()) {
+  @if (isLoading() && !hasDashboardData()) {
     <div class="overview-skeleton" aria-hidden="true">
       <div class="skeleton-stats-row">
         <div class="skeleton-stat-card"></div>

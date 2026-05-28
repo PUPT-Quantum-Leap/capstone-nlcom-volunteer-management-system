@@ -49,6 +49,7 @@ export class OverviewComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   isLoading = signal(true);
+  hasDashboardData = signal(false);
 
   // ── Real-time Clock ──────────────────────────────────────────────────────
   currentTime = signal(new Date());
@@ -93,7 +94,62 @@ export class OverviewComponent implements OnInit {
 
   ngOnInit(): void {
     this.startRealTimeClock();
+    this.hydrateFromCache();
     this.loadAllData();
+  }
+
+  private hydrateFromCache(): void {
+    const stats = this.volunteerService.getCachedAttendanceStats();
+    const profile = this.volunteerService.getCachedProfile();
+    const rsvps = this.rsvpService.getCachedRsvps();
+    const monthly = this.volunteerService.getCachedAttendance('monthly');
+
+    if (!stats && !profile && !rsvps && !monthly) return;
+
+    this.hasDashboardData.set(true);
+
+    if (stats?.success && stats.data) {
+      this.attendanceTotalHours.set(stats.data.monthly.hours);
+    }
+    if (profile) {
+      if (profile.positions?.length) {
+        this.taskAssigned.set(profile.positions.map((p) => p.name).join(', '));
+      }
+    }
+    if (rsvps && rsvps.data.length > 0) {
+      const activeAssignments = rsvps.data
+        .filter(r => r.userVote != null && r.status === 'active')
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      if (activeAssignments.length > 0) {
+        this.locationAssigned.set(activeAssignments[0].eventLocation || 'Main Office');
+      } else if (monthly?.success && monthly.data?.length) {
+        this.locationAssigned.set(monthly.data[0].location || 'Not Assigned');
+      } else {
+        this.locationAssigned.set('Not Assigned');
+      }
+      const active = rsvps.data.find(r => r.status === 'active');
+      if (active) {
+        this.activePoll.set({
+          id: active.id,
+          title: active.title,
+          description: active.description,
+          date: active.date,
+          cutOffDay: active.cutOffDay,
+          status: active.status,
+          options: active.shifts.map(s => ({
+            id: s.id,
+            timeSlot: s.timeSlot,
+            capacity: s.capacity,
+            votes: s.responses,
+          })),
+        });
+        this.hasSubmittedVote.set(!!active.userVote);
+      }
+    } else if (monthly?.success && monthly.data?.length) {
+      this.locationAssigned.set(monthly.data[0].location || 'Not Assigned');
+    } else {
+      this.locationAssigned.set('Not Assigned');
+    }
   }
 
   private loadAllData(): void {
@@ -163,6 +219,7 @@ export class OverviewComponent implements OnInit {
         }
 
         this.isLoading.set(false);
+        this.hasDashboardData.set(true);
       },
       error: () => {
         this.isLoading.set(false);

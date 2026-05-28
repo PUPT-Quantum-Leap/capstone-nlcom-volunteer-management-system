@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, switchMap } from 'rxjs';
+import { Observable, switchMap, tap } from 'rxjs';
 import { Rsvp, RsvpResponse, RsvpNotification } from '../models/rsvp';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
@@ -13,12 +13,20 @@ export class RsvpService {
   private apiUrl = environment.apiUrl + '/rsvp';
   private authService = inject(AuthService);
 
+  private rsvpCache = signal<{ data: Rsvp[] } | null>(null);
+
+  getCachedRsvps(): { data: Rsvp[] } | null {
+    return this.rsvpCache();
+  }
+
   private ensureCsrf(): Observable<void> {
     return this.authService.ensureCsrf$();
   }
 
   getRsvps(): Observable<{ data: Rsvp[] }> {
-    return this.http.get<{ data: Rsvp[] }>(this.apiUrl, { withCredentials: true });
+    return this.http.get<{ data: Rsvp[] }>(this.apiUrl, { withCredentials: true }).pipe(
+      tap((response) => this.rsvpCache.set(response)),
+    );
   }
 
   getRsvpById(id: number | string): Observable<{ data: Rsvp }> {
