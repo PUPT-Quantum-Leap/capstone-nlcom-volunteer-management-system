@@ -251,7 +251,7 @@ PROMPT;
             $parts[] = "  Training: $training";
             $parts[] = "  Positions: $positions";
             $parts[] = "  Experience: $experiences";
-            $parts[] = "  Education/Profession: ".($volunteer->educational_attainment ?? 'N/A');
+            $parts[] = '  Education/Profession: '.($volunteer->educational_attainment ?? 'N/A');
         }
 
         return implode("\n", $parts);
