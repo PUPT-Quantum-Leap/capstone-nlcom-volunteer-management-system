@@ -44,7 +44,8 @@
   <form [formGroup]="profileForm" class="profile-accordion">
     <!-- Personal Details Accordion -->
     <div class="accordion-item" [class.has-open-calendar]="isBirthdateCalendarOpen() || isMedicalExamCalendarOpen()">
-      <button type="button" class="accordion-trigger" (click)="toggleSection('personal')">
+      <button type="button" class="accordion-trigger" (click)="toggleSection('personal')"
+        [attr.aria-expanded]="expandedSection() === 'personal'" aria-controls="personal-section">
         <div class="accordion-header">
           <svg class="accordion-icon" [class.expanded]="expandedSection() === 'personal'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19V5"/>
@@ -117,7 +118,8 @@
                           @if (cell) {
                             <button type="button" class="day-btn" 
                               [class.selected]="isDaySelected('birthdate', cell)"
-                              (click)="selectDate('birthdate', cell)">
+                              (click)="selectDate('birthdate', cell)"
+                              [attr.aria-label]="getMonthYearLabel() + ' ' + cell">
                               {{ cell }}
                             </button>
                           } @else {
@@ -148,11 +150,11 @@
                   <div class="calendar-dropdown-panel single">
                     <div class="mini-calendar">
                       <div class="calendar-header">
-                        <button type="button" class="nav-btn" (click)="changeMonth(-1)">
+                        <button type="button" class="nav-btn" (click)="changeMonth(-1)" aria-label="Previous month">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
                         </button>
                         <span class="month-label">{{ getMonthYearLabel() }}</span>
-                        <button type="button" class="nav-btn" (click)="changeMonth(1)">
+                        <button type="button" class="nav-btn" (click)="changeMonth(1)" aria-label="Next month">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
                         </button>
                       </div>
@@ -163,7 +165,8 @@
                           @if (cell) {
                             <button type="button" class="day-btn" 
                               [class.selected]="isDaySelected('medical', cell)"
-                              (click)="selectDate('medical', cell)">
+                              (click)="selectDate('medical', cell)"
+                              [attr.aria-label]="getMonthYearLabel() + ' ' + cell">
                               {{ cell }}
                             </button>
                           } @else {
@@ -193,7 +196,8 @@
 
     <!-- Service & Skills Accordion -->
     <div class="accordion-item">
-      <button type="button" class="accordion-trigger" (click)="toggleSection('service')">
+      <button type="button" class="accordion-trigger" (click)="toggleSection('service')"
+        [attr.aria-expanded]="expandedSection() === 'service'" aria-controls="service-section">
         <div class="accordion-header">
           <svg class="accordion-icon" [class.expanded]="expandedSection() === 'service'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19V5"/>
@@ -206,7 +210,7 @@
       </button>
 
       @if (expandedSection() === 'service') {
-        <div class="accordion-content">
+        <div class="accordion-content" id="service-section">
           <div class="form-columns">
             <div class="form-group full">
               <label>Complete Address</label>
@@ -338,7 +342,8 @@
 
     <!-- Emergency Contact Accordion -->
     <div class="accordion-item">
-      <button type="button" class="accordion-trigger" (click)="toggleSection('emergency')">
+      <button type="button" class="accordion-trigger" (click)="toggleSection('emergency')"
+        [attr.aria-expanded]="expandedSection() === 'emergency'" aria-controls="emergency-section">
         <div class="accordion-header">
           <svg class="accordion-icon" [class.expanded]="expandedSection() === 'emergency'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 12H5M12 19V5"/>
@@ -351,7 +356,7 @@
       </button>
 
       @if (expandedSection() === 'emergency') {
-        <div class="accordion-content">
+        <div class="accordion-content" id="emergency-section">
           <div class="form-columns">
             <div class="form-group">
               <label>Contact Name</label>
@@ -420,15 +425,15 @@
 
 <!-- Error Modal -->
 @if (showProfileError()) {
-  <div class="modal-backdrop">
-    <div class="modal-card error">
+  <div class="modal-backdrop" role="alertdialog" aria-labelledby="error-title" aria-describedby="error-desc">
+    <div class="modal-card error" aria-live="assertive">
       <div class="modal-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
         </svg>
       </div>
-      <h3>Error</h3>
-      <p>{{ profileErrorMessage() }}</p>
+      <h3 id="error-title">Error</h3>
+      <p id="error-desc">{{ profileErrorMessage() }}</p>
       <div class="modal-actions">
         <button type="button" class="primary-btn" (click)="closeProfileError()">OK</button>
       </div>
@@ -438,7 +443,7 @@
 
 <!-- Success Modal -->
 @if (showProfileSuccess()) {
-  <div class="modal-backdrop">
+  <div class="modal-backdrop" role="status" aria-live="polite">
     <div class="modal-card success">
       <div class="modal-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -469,7 +474,7 @@
                 [class.active]="profilePreviewUrl().endsWith('boy.svg')"
                 (click)="selectPersona('boy')">
           <div class="avatar-option-img-wrapper boy">
-            <img src="/assets/boy.svg" alt="Boy Persona" />
+            <img ngSrc="/assets/boy.svg" alt="Boy Persona" width="64" height="64" />
           </div>
           <div class="avatar-option-info">
             <span class="title">Boy Persona</span>
@@ -487,7 +492,7 @@
                 [class.active]="profilePreviewUrl().endsWith('girl.svg')"
                 (click)="selectPersona('girl')">
           <div class="avatar-option-img-wrapper girl">
-            <img src="/assets/girl.svg" alt="Girl Persona" />
+            <img ngSrc="/assets/girl.svg" alt="Girl Persona" width="64" height="64" />
           </div>
           <div class="avatar-option-info">
             <span class="title">Girl Persona</span>
@@ -503,9 +508,9 @@
         <!-- Default Persona -->
         <button type="button" class="avatar-option-card" 
                 [class.active]="profilePreviewUrl().endsWith('apple.svg')"
-                (click)="selectPersona('')">
+                (click)="selectPersona(null)">
           <div class="avatar-option-img-wrapper default">
-            <img src="/assets/apple.svg" alt="Default Persona" />
+            <img ngSrc="/assets/apple.svg" alt="Default Persona" width="64" height="64" />
           </div>
           <div class="avatar-option-info">
             <span class="title">Default Persona</span>
