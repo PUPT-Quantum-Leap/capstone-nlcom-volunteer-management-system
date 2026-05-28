@@ -63,7 +63,7 @@
       <div class="settings-row">
         <label for="voice-select">Voice</label>
         <div class="voice-select-row">
-          <select id="voice-select" [ngModel]="currentVoiceName()"
+          <select id="voice-select" [ngModel]="speechService.currentVoiceName()"
             (ngModelChange)="selectVoice($event)" aria-label="Select voice">
             <option value="">Default</option>
             @for (group of groupedVoices(); track group.lang) {
