@@ -24,10 +24,15 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             PositionSeeder::class,
-            VolunteerSeeder::class,
             TeamSeeder::class,
             IcsSeeder::class,
             AttendanceSeeder::class,
         ]);
+
+        if (env('DEMO_SEED', false)) {
+            $this->call(DemoVolunteerSeeder::class);
+        } else {
+            $this->call(VolunteerSeeder::class);
+        }
     }
 }
