@@ -459,11 +459,11 @@ export class IncidentCommandSystemComponent implements OnInit {
         : 'pm_distribution_director';
       const director = roles.get(dirKey);
       if (director?.assigned_name) {
-        pdf.setFontSize(8);
-        pdf.setFont('helvetica', 'italic');
-        pdf.setTextColor(100, 116, 139);
-        pdf.text(`Director: ${director.assigned_name}`, margin, y + 10);
-        y += 6;
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'bolditalic');
+        pdf.setTextColor(30, 41, 59);
+        pdf.text(`Director: ${director.assigned_name}`, margin, y + 12);
+        y += 14;
       }
 
       const tableRows: RowInput[] = branch.teams.map((team) => {
@@ -526,11 +526,19 @@ export class IncidentCommandSystemComponent implements OnInit {
 
     pdf.setFont('helvetica', 'normal');
     pdf.text('^ team leader    ~ driver    * new volunteer', margin, y);
-    pdf.text(`Breakfast: ${meta.meal_breakfast}   Lunch: ${meta.meal_lunch}   Snacks: ${meta.meal_snacks}`, margin + 150, y);
 
-    const vehicleLines = dashboard.vehicles.map((v) => `${v.team_name} - ${v.vehicle}`).join('   ');
-    if (vehicleLines) {
-      pdf.text(vehicleLines, margin + 310, y);
+    // Meal breakdown
+    const mealX = margin + 160;
+    pdf.text(`Breakfast: ${meta.meal_breakfast}`, mealX, y);
+    pdf.text(`Lunch: ${meta.meal_lunch}`, mealX + 70, y);
+    pdf.text(`Snacks: ${meta.meal_snacks}`, mealX + 130, y);
+
+    // Vehicles — render as a column list
+    const vehX = margin + 340;
+    let vehY = y;
+    for (const v of dashboard.vehicles) {
+      pdf.text(`${v.team_name} - ${v.vehicle}`, vehX, vehY);
+      vehY += 10;
     }
 
     // --- SAVE ---
