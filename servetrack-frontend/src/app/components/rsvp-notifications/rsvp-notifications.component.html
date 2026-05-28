@@ -31,13 +31,25 @@
     <div class="notification-panel">
       <div class="panel-header">
         <h3>RSVP Notifications</h3>
-        <button
-          class="close-btn"
-          (click)="closePanel()"
-          aria-label="Close notifications"
-        >
-          ✕
-        </button>
+        <div class="panel-header-actions">
+          @if (notifications().length > 0) {
+            <button
+              class="rsvp-clear-all-btn"
+              type="button"
+              (click)="clearAll()"
+              title="Clear all notifications"
+            >
+              Clear All
+            </button>
+          }
+          <button
+            class="close-btn"
+            (click)="closePanel()"
+            aria-label="Close notifications"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       @if (isLoading()) {
@@ -93,6 +105,17 @@
                 >
                   →
                 </a>
+
+                <!-- Dismiss button -->
+                <button
+                  type="button"
+                  class="rsvp-dismiss-btn"
+                  (click)="$event.stopPropagation(); dismissOne(notification.id)"
+                  title="Dismiss"
+                  aria-label="Dismiss notification"
+                >
+                  ✕
+                </button>
               </div>
             }
           </div>
