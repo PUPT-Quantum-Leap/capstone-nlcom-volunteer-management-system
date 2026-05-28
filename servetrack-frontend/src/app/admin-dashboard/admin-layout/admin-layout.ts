@@ -46,7 +46,7 @@ export class AdminLayout implements OnInit {
   private destroyRef = inject(DestroyRef);
   private globalSearchService = inject(GlobalSearchService);
  
-  readonly defaultPhoto = '/assets/person.svg';
+  readonly defaultPhoto = '/assets/apple.svg';
  
   currentUser = computed(() => this.authService.currentUser());
  
