@@ -10,7 +10,6 @@ use App\Http\Requests\UpdateIcsCommandRoleRequest;
 use App\Http\Requests\UpdateIcsRequest;
 use App\Http\Resources\IcsDashboardResource;
 use App\Http\Resources\IcsResource;
-use App\Http\Resources\VolunteerResource;
 use App\Models\Ics;
 use App\Models\IcsCommandRole;
 use App\Models\IcsTeam;
@@ -261,7 +260,7 @@ class IcsController extends Controller
     /**
      * Get volunteers who RSVP'd for a specific event.
      */
-    public function getRsvpVolunteers(int $rsvpId, Request $request): AnonymousResourceCollection|JsonResponse
+    public function getRsvpVolunteers(int $rsvpId, Request $request): JsonResponse
     {
         $rsvp = Rsvp::query()->find($rsvpId);
 
@@ -276,20 +275,13 @@ class IcsController extends Controller
             ->with(['skills', 'positions', 'experiences']);
 
         // Filter by shift if requested (am/pm)
+        // Uses position-based detection: first slot ID = AM, last slot ID = PM
         $shift = $request->query('shift');
         $shift = is_string($shift) ? strtolower(trim($shift)) : null;
         if ($shift && in_array($shift, ['am', 'pm'], true)) {
-            // Get the RSVP's shift time_slot_ids via Eloquent relationship, ordered ascending
-            $slotIds = $rsvp->shifts()
-                ->orderBy('time_slot_id', 'asc')
-                ->get()
-                ->pluck('time_slot_id');
+            $slotIds = $rsvp->shifts()->pluck('rsvp_shift.time_slot_id')->sort()->values();
 
-            $targetSlotId = match ($shift) {
-                'am' => $slotIds->first(),
-                'pm' => $slotIds->last(),
-                default => null,
-            };
+            $targetSlotId = $shift === 'am' ? $slotIds->first() : $slotIds->last();
 
             if ($targetSlotId) {
                 $query->whereHas('rsvpResponses', function ($q) use ($rsvpId, $targetSlotId) {
@@ -300,7 +292,16 @@ class IcsController extends Controller
 
         $volunteers = $query->get();
 
-        return VolunteerResource::collection($volunteers);
+        return response()->json([
+            'data' => $volunteers->map(fn ($v) => [
+                'volunteer_id' => $v->volunteer_id,
+                'first_name' => $v->first_name,
+                'last_name' => $v->last_name,
+                'skills' => $v->skills->pluck('name')->toArray(),
+                'positions' => $v->positions->pluck('name')->toArray(),
+                'experiences' => $v->experiences->pluck('name')->toArray(),
+            ]),
+        ]);
     }
 
     /**
