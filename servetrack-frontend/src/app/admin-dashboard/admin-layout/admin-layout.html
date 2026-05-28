@@ -11,7 +11,7 @@
         <li class="menu-label" aria-hidden="true">Dashboard</li>
         <li>
           <button type="button" [class.active]="isActive('dashboard')" (click)="navigateTo('dashboard')"
-            [attr.aria-current]="currentView() === 'dashboard' ? 'page' : null" data-tooltip="Dashboard">
+            [attr.aria-current]="currentView() === 'dashboard' ? 'page' : null" data-tooltip="Dashboard" [title]="sidebarCollapsed() ? 'Dashboard' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="3" width="7" height="7" />
@@ -24,7 +24,7 @@
         </li>
         <li>
           <button type="button" [class.active]="isActive('analytics')" (click)="navigateTo('analytics')"
-            [attr.aria-current]="currentView() === 'analytics' ? 'page' : null" data-tooltip="Analytics">
+            [attr.aria-current]="currentView() === 'analytics' ? 'page' : null" data-tooltip="Analytics" [title]="sidebarCollapsed() ? 'Analytics' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z" />
@@ -36,7 +36,7 @@
         <li class="menu-label" aria-hidden="true">Management</li>
         <li>
           <button type="button" [class.active]="isActive('volunteers')" (click)="navigateTo('volunteers')"
-            [attr.aria-current]="currentView() === 'volunteers' ? 'page' : null" data-tooltip="Volunteers">
+            [attr.aria-current]="currentView() === 'volunteers' ? 'page' : null" data-tooltip="Volunteers" [title]="sidebarCollapsed() ? 'Volunteers' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M16 21v-2a4 4 0 0 1-4-4H6a4 4 0 0 1-4 4v2" />
@@ -49,7 +49,7 @@
         </li>
         <li>
           <button type="button" [class.active]="isActive('attendance')" (click)="navigateTo('attendance')"
-            [attr.aria-current]="currentView() === 'attendance' ? 'page' : null" data-tooltip="Attendance">
+            [attr.aria-current]="currentView() === 'attendance' ? 'page' : null" data-tooltip="Attendance" [title]="sidebarCollapsed() ? 'Attendance' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path
@@ -60,7 +60,7 @@
         </li>
         <li>
           <button type="button" [class.active]="isActive('performance')" (click)="navigateTo('performance')"
-            [attr.aria-current]="currentView() === 'performance' ? 'page' : null" data-tooltip="Performance">
+            [attr.aria-current]="currentView() === 'performance' ? 'page' : null" data-tooltip="Performance" [title]="sidebarCollapsed() ? 'Performance' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
@@ -70,7 +70,7 @@
         </li>
         <li>
           <button type="button" [class.active]="isActive('operations')" (click)="navigateTo('operations')"
-            [attr.aria-current]="currentView() === 'operations' ? 'page' : null" data-tooltip="Operations">
+            [attr.aria-current]="currentView() === 'operations' ? 'page' : null" data-tooltip="Operations" [title]="sidebarCollapsed() ? 'Operations' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -85,7 +85,7 @@
         <li class="menu-label" aria-hidden="true">Tools</li>
         <li>
           <button type="button" [class.active]="isActive('sms')" (click)="navigateTo('sms')"
-            [attr.aria-current]="currentView() === 'sms' ? 'page' : null" data-tooltip="Email">
+            [attr.aria-current]="currentView() === 'sms' ? 'page' : null" data-tooltip="Email" [title]="sidebarCollapsed() ? 'Email' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
               <polyline points="22,6 12,13 2,6"/>
@@ -95,7 +95,7 @@
         </li>
         <li>
           <button type="button" [class.active]="isActive('rsvps')" (click)="navigateTo('rsvps')"
-            [attr.aria-current]="currentView() === 'rsvps' ? 'page' : null" data-tooltip="RSVPs">
+            [attr.aria-current]="currentView() === 'rsvps' ? 'page' : null" data-tooltip="RSVPs" [title]="sidebarCollapsed() ? 'RSVPs' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -107,7 +107,7 @@
         </li>
         <li>
           <button type="button" [class.active]="isActive('ics')" (click)="navigateTo('ics')"
-            [attr.aria-current]="currentView() === 'ics' ? 'page' : null" data-tooltip="ICS">
+            [attr.aria-current]="currentView() === 'ics' ? 'page' : null" data-tooltip="ICS" [title]="sidebarCollapsed() ? 'ICS' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
@@ -119,7 +119,7 @@
         <li class="menu-label" aria-hidden="true">System</li>
         <li>
           <button type="button" [class.active]="isActive('backup')" (click)="navigateTo('backup')"
-            [attr.aria-current]="currentView() === 'backup' ? 'page' : null" data-tooltip="Backup">
+            [attr.aria-current]="currentView() === 'backup' ? 'page' : null" data-tooltip="Backup" [title]="sidebarCollapsed() ? 'Backup' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />

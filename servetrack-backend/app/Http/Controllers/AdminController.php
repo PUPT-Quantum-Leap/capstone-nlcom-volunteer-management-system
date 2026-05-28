@@ -343,7 +343,11 @@ class AdminController extends Controller
 
         $photoUrl = null;
         if ($admin->profile_photo) {
-            $photoUrl = Storage::disk('public')->url($admin->profile_photo);
+            if (str_starts_with($admin->profile_photo, '/assets/')) {
+                $photoUrl = $admin->profile_photo;
+            } else {
+                $photoUrl = Storage::disk('public')->url($admin->profile_photo);
+            }
         }
 
         return response()->json([
@@ -407,7 +411,14 @@ class AdminController extends Controller
                 // Handle Photo
                 if ($request->filled('profile_photo')) {
                     $photo = $request->profile_photo;
-                    if (str_starts_with($photo, 'data:image')) {
+
+                    // Accept asset path avatars (e.g. /assets/boy.svg, /assets/girl.svg, /assets/apple.svg)
+                    if (str_starts_with($photo, '/assets/')) {
+                        if ($admin->profile_photo && ! str_starts_with($admin->profile_photo, '/assets/')) {
+                            Storage::disk('public')->delete($admin->profile_photo);
+                        }
+                        $adminData['profile_photo'] = $photo;
+                    } elseif (str_starts_with($photo, 'data:image')) {
                         $photoData = substr($photo, strpos($photo, ',') + 1);
                         $photoData = base64_decode($photoData);
                         $mimeType = explode(':', substr($photo, 0, strpos($photo, ';')))[1];
@@ -448,7 +459,11 @@ class AdminController extends Controller
             $freshAdmin = $admin->fresh();
             $photoUrl = null;
             if ($freshAdmin->profile_photo) {
-                $photoUrl = Storage::disk('public')->url($freshAdmin->profile_photo);
+                if (str_starts_with($freshAdmin->profile_photo, '/assets/')) {
+                    $photoUrl = $freshAdmin->profile_photo;
+                } else {
+                    $photoUrl = Storage::disk('public')->url($freshAdmin->profile_photo);
+                }
             }
 
             return response()->json([

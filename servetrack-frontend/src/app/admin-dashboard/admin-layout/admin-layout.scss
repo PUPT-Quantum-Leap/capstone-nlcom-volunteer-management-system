@@ -163,6 +163,7 @@
 
 .sidebar.collapsed {
   width: var(--sidebar-collapsed-width);
+  overflow: visible;
 }
 
 .sidebar.collapsed .logo-text,
@@ -327,6 +328,10 @@
   &:hover::after {
     opacity: 1;
   }
+}
+
+.sidebar.collapsed .sidebar-nav {
+  overflow: visible;
 }
 
 .sidebar.collapsed .sidebar-footer {
