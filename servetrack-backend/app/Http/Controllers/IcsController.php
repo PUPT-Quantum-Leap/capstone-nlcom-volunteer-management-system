@@ -178,21 +178,7 @@ class IcsController extends Controller
                 'status' => $request->input('status', 'draft'),
             ]);
 
-            $teamIds = $request->input('team_ids');
-            if (empty($teamIds)) {
-                $teamIds = Team::query()->pluck('id')->all();
-            }
-
-            if (! empty($teamIds)) {
-                $teams = Team::query()->whereIn('id', $teamIds)->get();
-                foreach ($teams as $team) {
-                    IcsTeam::query()->create([
-                        'ics_id' => $ics->id,
-                        'team_id' => $team->id,
-                        'team' => $team->name,
-                    ]);
-                }
-            }
+            // Teams are seeded by ensureDashboardDefaults() when the dashboard is first accessed
 
             return $ics->load(['rsvp', 'teams']);
         });
@@ -224,21 +210,8 @@ class IcsController extends Controller
                 'meal_snacks' => $request->input('meal_snacks'),
             ], fn ($value) => $value !== null));
 
-            if ($request->has('team_ids')) {
-                $teamIds = $request->input('team_ids');
-                IcsTeam::query()->where('ics_id', $ics->id)->delete();
-
-                if (! empty($teamIds)) {
-                    $teams = Team::query()->whereIn('id', $teamIds)->get();
-                    foreach ($teams as $team) {
-                        IcsTeam::query()->create([
-                            'ics_id' => $ics->id,
-                            'team_id' => $team->id,
-                            'team' => $team->name,
-                        ]);
-                    }
-                }
-            }
+            // Team structure is managed by the ICS dashboard (ensureDashboardDefaults).
+            // Do not recreate IcsTeam rows here — it causes duplicates without branch_key.
         });
 
         return new IcsResource($ics->fresh('teams'));

@@ -13,7 +13,12 @@ class IcsTeamController extends Controller
      */
     public function index()
     {
-        return response()->json(IcsTeam::with('ics.rsvp')->get());
+        // Only return distribution teams (AM + PM) — exclude Mobile Kitchen teams
+        return response()->json(
+            IcsTeam::with('ics.rsvp')
+                ->whereIn('branch_key', ['am_distribution', 'pm_distribution'])
+                ->get()
+        );
     }
 
     public function getTeams()
