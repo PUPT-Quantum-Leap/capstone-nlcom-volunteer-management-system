@@ -208,11 +208,13 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
   private getGroupedOperations(): Array<{
     team: string;
     departureNote: string;
+    volunteers: string[];
     operations: FeedingOperationRow[];
   }> {
     const teams: Array<{
       team: string;
       departureNote: string;
+      volunteers: string[];
       operations: FeedingOperationRow[];
     }> = [];
 
@@ -227,6 +229,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
           teams.push({
             team: currentTeam!,
             departureNote,
+            volunteers: teamGroup[0]?.volunteers ?? [],
             operations: teamGroup,
           });
         }
@@ -242,6 +245,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
       teams.push({
         team: currentTeam!,
         departureNote,
+        volunteers: teamGroup[0]?.volunteers ?? [],
         operations: teamGroup,
       });
     }
@@ -274,6 +278,14 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
               valign: 'middle',
             },
           });
+          row.push({
+            content: team.volunteers.join(', ') || '—',
+            rowSpan: team.operations.length,
+            styles: {
+              fontSize: 7.5,
+              valign: 'top',
+            },
+          });
         }
 
         row.push(`${itemNumber}. ${op.location}`, op.time, op.participants.toString(), op.details);
@@ -293,7 +305,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
     autoTable(pdf, {
       startY: 68,
       theme: 'grid',
-      head: [['Team & Time Departure', 'Location', 'Time', 'No. of Pax', 'Details']],
+      head: [['Teams', 'Volunteers', 'Location', 'Time', 'No. of Pax', 'Details']],
       body: tableRows,
       styles: {
         font: 'helvetica',
@@ -339,7 +351,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
     const sheetRows: (string | number)[][] = [
       [this.operationTitle()],
       [this.operationDate()],
-      ['Team & Time Departure', 'Location', 'Time', 'No. of Pax', 'Details'],
+      ['Teams', 'Volunteers', 'Location', 'Time', 'No. of Pax', 'Details'],
     ];
 
     const merges: XLSX.Range[] = [

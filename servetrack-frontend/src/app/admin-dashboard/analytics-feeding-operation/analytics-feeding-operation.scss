@@ -150,12 +150,13 @@
       letter-spacing: 0.05em;
       white-space: nowrap;
 
-      &:nth-child(1) { width: 200px; }  // Team & Departure
-      &:nth-child(2) { width: 200px; }  // Location
-      &:nth-child(3) { width: 120px; }  // Time
-      &:nth-child(4) { width: 110px; }  // Pax
-      &:nth-child(5) { width: auto; }   // Details
-      &:nth-child(6) { width: 120px; }  // Actions
+      &:nth-child(1) { width: 200px; }  // Teams
+      &:nth-child(2) { width: 140px; }  // Volunteers
+      &:nth-child(3) { width: 180px; }  // Location
+      &:nth-child(4) { width: 110px; }  // Time
+      &:nth-child(5) { width: 90px; }   // Pax
+      &:nth-child(6) { width: auto; }   // Details
+      &:nth-child(7) { width: 100px; }  // Actions
     }
   }
 

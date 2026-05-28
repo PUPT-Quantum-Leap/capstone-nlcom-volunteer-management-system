@@ -4,18 +4,18 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\IcsTeam;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class IcsTeamController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        // Return distribution teams: new ICS structure (branch_key) + legacy feeding ops (departure_note)
-        $teams = IcsTeam::with('ics.rsvp')
+        // Return distribution teams with volunteers eager-loaded
+        $teams = IcsTeam::with(['ics.rsvp', 'ics.volunteers'])
             ->where(function ($query) {
                 $query->whereIn('branch_key', ['am_distribution', 'pm_distribution'])
                     ->orWhere(function ($q) {
@@ -25,23 +25,21 @@ class IcsTeamController extends Controller
             })
             ->get();
 
-        // Load volunteers assigned to each team via the ics_volunteer pivot
+        // Filter volunteers per team from eager-loaded relationship (no N+1)
         $teams->each(function ($icsTeam) {
-            if ($icsTeam->ics_id && $icsTeam->team_id) {
-                $volunteers = DB::table('ics_volunteer')
-                    ->join('volunteer', 'volunteer.volunteer_id', '=', 'ics_volunteer.volunteer_id')
-                    ->where('ics_volunteer.ics_id', $icsTeam->ics_id)
-                    ->where('ics_volunteer.team_id', $icsTeam->team_id)
-                    ->select('volunteer.volunteer_id', 'volunteer.first_name', 'volunteer.last_name', 'ics_volunteer.role', 'ics_volunteer.is_driver', 'ics_volunteer.is_leader')
-                    ->get();
+            if ($icsTeam->ics && $icsTeam->team_id) {
+                $teamVolunteers = $icsTeam->ics->volunteers
+                    ->filter(fn ($v) => (int) $v->pivot->team_id === (int) $icsTeam->team_id)
+                    ->map(fn ($v) => [
+                        'id' => $v->volunteer_id,
+                        'name' => trim($v->first_name.' '.$v->last_name),
+                        'role' => $v->pivot->role,
+                        'is_driver' => (bool) $v->pivot->is_driver,
+                        'is_leader' => (bool) $v->pivot->is_leader,
+                    ])
+                    ->values();
 
-                $icsTeam->setAttribute('assigned_volunteers', $volunteers->map(fn ($v) => [
-                    'id' => $v->volunteer_id,
-                    'name' => trim($v->first_name.' '.$v->last_name),
-                    'role' => $v->role,
-                    'is_driver' => (bool) $v->is_driver,
-                    'is_leader' => (bool) $v->is_leader,
-                ]));
+                $icsTeam->setAttribute('assigned_volunteers', $teamVolunteers);
             } else {
                 $icsTeam->setAttribute('assigned_volunteers', []);
             }

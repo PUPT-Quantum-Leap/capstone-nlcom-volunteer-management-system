@@ -79,7 +79,7 @@
               @if (operation.showTeamCell) {
                 <td class="volunteers-cell" [attr.rowspan]="operation.teamRowSpan">
                   @if (operation.volunteers.length > 0) {
-                    @for (vol of operation.volunteers; track vol) {
+                    @for (vol of operation.volunteers; track $index) {
                       <span class="vol-name">{{ vol }}</span>
                     }
                   } @else {
