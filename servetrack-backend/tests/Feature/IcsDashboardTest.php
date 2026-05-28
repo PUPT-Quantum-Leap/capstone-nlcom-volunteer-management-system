@@ -92,4 +92,3 @@ describe('GET /api/ics/dashboard — regression: no ghost IcsTeam rows on repeat
         expect($countAfterRoleUpdate)->toBe($countBeforeRoleUpdate);
     });
 });
-
