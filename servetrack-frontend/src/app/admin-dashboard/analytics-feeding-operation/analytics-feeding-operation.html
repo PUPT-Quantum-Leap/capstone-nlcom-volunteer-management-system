@@ -42,6 +42,7 @@
         <thead>
           <tr>
             <th>Teams</th>
+            <th>Volunteers</th>
             <th>Location</th>
             <th>Time</th>
             <th>No. of Pax</th>
@@ -52,7 +53,7 @@
         <tbody>
           @if (analyticsLoading()) {
             <tr>
-              <td colspan="6" class="loading-cell">
+              <td colspan="7" class="loading-cell">
                 <div class="loading-spinner"></div>
                 <span>Loading operations...</span>
               </td>
@@ -72,6 +73,17 @@
                   } @else {
                     <span class="team-name">{{ operation.team }}</span>
                     <span class="team-departure">{{ operation.departureNote }}</span>
+                }
+                </td>
+              }
+              @if (operation.showTeamCell) {
+                <td class="volunteers-cell" [attr.rowspan]="operation.teamRowSpan">
+                  @if (operation.volunteers.length > 0) {
+                    @for (vol of operation.volunteers; track vol) {
+                      <span class="vol-name">{{ vol }}</span>
+                    }
+                  } @else {
+                    <span class="no-volunteers">—</span>
                   }
                 </td>
               }

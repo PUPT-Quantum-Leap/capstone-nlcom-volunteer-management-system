@@ -10,6 +10,7 @@ import * as XLSX from 'xlsx';
 interface FeedingOperation {
   id: number;
   team: string;
+  volunteers: string[];
   location: string;
   time: string;
   participants: number;
@@ -153,6 +154,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
     return apiData.map((item) => ({
       id: item.id,
       team: item.team,
+      volunteers: (item.assigned_volunteers || []).map((v) => v.name),
       location: item.location || '',
       time: item.time || '',
       participants: item.no_of_pax || 0,
