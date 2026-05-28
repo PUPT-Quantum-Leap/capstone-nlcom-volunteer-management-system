@@ -337,6 +337,7 @@ export class AdminLayout implements OnInit {
         }
       }
     }
+    this.showNotifications.update(v => !v);
   }
 
   toggleChatbot(): void {
