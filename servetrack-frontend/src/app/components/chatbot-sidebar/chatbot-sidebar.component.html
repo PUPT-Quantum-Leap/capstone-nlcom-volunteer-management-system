@@ -118,6 +118,18 @@
         <div class="message-content">
           @if (msg.role === 'assistant') {
             <div class="markdown" [innerHTML]="chatbotService.parseMarkdown(msg.message)"></div>
+            @if (msg.visualization) {
+              <app-chat-chart [visualization]="msg.visualization"></app-chat-chart>
+            }
+            @if (msg.actions) {
+              <div class="message-action-buttons">
+                @for (action of msg.actions; track action.label) {
+                  <button type="button" class="btn-smart-action" (click)="executeAction(action)">
+                    {{ action.label }}
+                  </button>
+                }
+              </div>
+            }
             @if (msg.isRetrying) {
               <div class="retry-indicator" aria-live="polite">Retrying attempt {{ msg.retryAttempt }}/3…</div>
             }
@@ -166,8 +178,9 @@
       <div class="message assistant" aria-live="polite" aria-label="ServeTrack AI is typing">
         <img src="/assets/kamen-rider-gotchard.jpg" alt="" class="msg-avatar msg-avatar-typing" aria-hidden="true" width="28" height="28" />
         <div class="message-content typing">
-          <div class="typing-indicator">
-            <span></span><span></span><span></span>
+          <div class="typing-indicator-dynamic">
+            <span class="loading-text">{{ currentLoadingWord() }}</span>
+            <div class="dots"><span></span><span></span><span></span></div>
           </div>
         </div>
       </div>

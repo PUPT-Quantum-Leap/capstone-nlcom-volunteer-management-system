@@ -1,0 +1,9 @@
+<div class="chart-container">
+  @if (chartData && chartType) {
+    <canvas baseChart
+      [data]="chartData"
+      [options]="chartOptions"
+      [type]="chartType">
+    </canvas>
+  }
+</div>

@@ -18,8 +18,10 @@ $bot-msg-bg: #f3f4f6;
   right: -400px;
   width: 400px;
   height: 100vh;
-  background: $surface;
-  border-left: 1px solid $border;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-left: 1px solid rgba(229, 231, 235, 0.4);
   display: flex;
   flex-direction: column;
   transition: right 0.3s ease-in-out;
@@ -45,8 +47,8 @@ $bot-msg-bg: #f3f4f6;
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  background: $surface;
-  border-bottom: 1px solid $border;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
   flex-shrink: 0;
 }
 
@@ -62,11 +64,11 @@ $bot-msg-bg: #f3f4f6;
 }
 
 .header-text {
-  h3 { margin: 0; font-size: 15px; font-weight: 600; color: $text; }
+  h3 { margin: 0; font-size: 15px; font-weight: 600; color: #ffffff; }
   .status {
     font-size: 11px;
-    color: #10b981;
-    &.speaking { color: $primary; }
+    color: #a7f3d0;
+    &.speaking { color: #facc15; }
   }
 }
 
@@ -78,15 +80,15 @@ $bot-msg-bg: #f3f4f6;
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: $text-muted;
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background 0.15s, color 0.15s;
 
-  &:hover { background: $surface-alt; color: $text; }
-  &.active { background: $primary-light; color: $primary; }
+  &:hover { background: rgba(255, 255, 255, 0.2); color: #ffffff; }
+  &.active { background: rgba(255, 255, 255, 0.3); color: #ffffff; }
 }
 
 // ── Settings Panel ───────────────────────────────────────────────────────
@@ -163,7 +165,7 @@ select {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  background: $surface;
+  background: transparent;
 
   &::-webkit-scrollbar { width: 5px; }
   &::-webkit-scrollbar-track { background: transparent; }
@@ -238,7 +240,7 @@ select {
 
 .message-content {
   padding: 10px 14px;
-  border-radius: 12px;
+  border-radius: 16px;
   line-height: 1.5;
   font-size: 14px;
 
@@ -251,10 +253,11 @@ select {
   }
 
   .message.assistant & {
-    background: $bot-msg-bg;
+    background: rgba(255, 255, 255, 0.9);
     color: $text;
     border-bottom-left-radius: 2px;
-    border: 1px solid $border;
+    border: 1px solid rgba(229, 231, 235, 0.5);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   }
 
   &.typing { padding: 14px 18px; }
@@ -321,9 +324,34 @@ select {
 
 .msg-actions { display: flex; gap: 4px; margin-left: auto; }
 
+.message-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-smart-action {
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+  }
+}
+
 .copy-btn, .speak-btn {
   background: transparent;
-  border: 1px solid $border;
+  border: 1px solid rgba(0,0,0,0.05);
   color: $text-muted;
   width: 22px;
   height: 22px;
@@ -333,24 +361,35 @@ select {
   align-items: center;
   justify-content: center;
   transition: all 0.15s;
-  &:hover { color: $primary; border-color: rgba($primary, 0.4); background: $primary-light; }
+  &:hover { color: $primary; border-color: rgba($primary, 0.4); background: rgba($primary, 0.05); }
 }
 
 // Typing indicator
-.typing-indicator {
+.typing-indicator-dynamic {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   align-items: center;
 
-  span {
-    width: 8px;
-    height: 8px;
-    background: $primary;
-    border-radius: 50%;
-    animation: typingBounce 1.4s infinite ease-in-out both;
+  .loading-text {
+    font-size: 13px;
+    color: $primary;
+    font-weight: 500;
+    font-style: italic;
+  }
 
-    &:nth-child(2) { animation-delay: 0.16s; }
-    &:nth-child(3) { animation-delay: 0.32s; }
+  .dots {
+    display: flex;
+    gap: 3px;
+    span {
+      width: 5px;
+      height: 5px;
+      background: $primary;
+      border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out both;
+      &:nth-child(1) { animation-delay: 0s; }
+      &:nth-child(2) { animation-delay: 0.16s; }
+      &:nth-child(3) { animation-delay: 0.32s; }
+    }
   }
 }
 
@@ -418,8 +457,8 @@ select {
 // ── Input Area ────────────────────────────────────────────────────────────
 .sidebar-input {
   padding: 12px 14px;
-  background: $surface;
-  border-top: 1px solid $border;
+  background: rgba(255, 255, 255, 0.85);
+  border-top: 1px solid rgba(229, 231, 235, 0.5);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -450,19 +489,19 @@ select {
 
 // Floating card-style input (AppVengers-style)
 .input-row {
-  background: $surface;
-  border: 1px solid $border;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(229, 231, 235, 0.8);
   border-radius: 26px;
   padding: 10px 14px 8px 14px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
   transition: border-color 0.2s, box-shadow 0.2s;
 
   &:focus-within {
     border-color: $primary;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 3px rgba($primary, 0.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12), 0 0 0 3px rgba($primary, 0.1);
   }
 }
 

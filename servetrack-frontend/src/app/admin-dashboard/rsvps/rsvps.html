@@ -320,6 +320,14 @@
 
       <form [formGroup]="rsvpForm" (ngSubmit)="saveRsvp()" class="modal-form">
         <div class="modal-body">
+          @if (showAiPrefillBanner()) {
+            <div class="status-banner" style="margin-bottom: 16px; background-color: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              AI Pre-fill — please review the form carefully before submitting.
+            </div>
+          }
           <div class="form-section">
             <h4 class="section-title">Event Details</h4>
             <div class="form-grid modern-form-grid">

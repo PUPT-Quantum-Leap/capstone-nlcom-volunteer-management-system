@@ -15,15 +15,16 @@ import { Router } from '@angular/router';
 import { ChatbotService, CHATBOT_MAX_MESSAGE_LENGTH } from '../../services/chatbot.service';
 import { SpeechService } from '../../services/speech.service';
 import { CommandPaletteService } from '../../services/command-palette.service';
-import { ChatMessage } from '../../models/chatbot.model';
+import { ChatMessage, ChatbotAction } from '../../models/chatbot.model';
 import { Command } from '../../models/command.model';
 import { Subscription } from 'rxjs';
 import { SpeechResult } from '../../models/speech.model';
+import { ChatChartComponent } from './sub-components/chat-chart/chat-chart.component';
 
 @Component({
   selector: 'app-chatbot-sidebar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [FormsModule, ChatChartComponent],
   templateUrl: './chatbot-sidebar.component.html',
   styleUrl: './chatbot-sidebar.component.scss',
 })
@@ -61,6 +62,11 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
   readonly autoSpeak = signal(
     JSON.parse(localStorage.getItem('chatbot_auto_speak') ?? 'false'),
   );
+
+  // Dynamic Loading state
+  readonly loadingWords = ['Thinking...', 'Analyzing records...', 'Looking up RSVPs...'];
+  readonly currentLoadingWord = signal(this.loadingWords[0]);
+  private loadingInterval: any;
 
   // Computed
   readonly isInputValid = computed(() => this.userInput().trim().length > 0);
@@ -104,6 +110,23 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
       if (last.role === 'assistant') {
         this.speechService.speak(last.message);
       }
+    });
+
+    // Dynamic Loading Text Cycle
+    effect((onCleanup) => {
+      if (this.chatbotService.isLoading()) {
+        let i = 0;
+        this.currentLoadingWord.set(this.loadingWords[0]);
+        this.loadingInterval = setInterval(() => {
+          i = (i + 1) % this.loadingWords.length;
+          this.currentLoadingWord.set(this.loadingWords[i]);
+        }, 800);
+      } else {
+        if (this.loadingInterval) clearInterval(this.loadingInterval);
+      }
+      onCleanup(() => {
+        if (this.loadingInterval) clearInterval(this.loadingInterval);
+      });
     });
   }
 
@@ -232,6 +255,31 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
     this.userInput.set('');
     this.resetTextareaHeight();
     this.chatbotService.sendMessage(cmd.command).subscribe({ error: () => undefined });
+  }
+
+  executeAction(action: ChatbotAction): void {
+    if (action.action_type === 'navigate' || action.action_type === 'open_modal') {
+      const KNOWN_ROUTES = [
+        '/admin-dashboard/rsvps',
+        '/admin-dashboard/ics',
+        '/admin-dashboard/attendance',
+        '/admin-dashboard/volunteers',
+        '/volunteer-dashboard/polls'
+      ];
+      
+      const payload = action.payload;
+      const path = payload['path'];
+      
+      if (path && KNOWN_ROUTES.includes(path)) {
+        let queryParams = payload['queryParams'] || {};
+        if (action.action_type === 'open_modal' && payload['modalId']) {
+          queryParams = { ...queryParams, openModal: payload['modalId'] };
+        }
+        this.router.navigate([path], { queryParams });
+      } else {
+        console.warn('Blocked unknown or unlisted route redirect:', path);
+      }
+    }
   }
 
   toggleRecording(): void {

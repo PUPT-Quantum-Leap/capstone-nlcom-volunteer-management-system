@@ -12,6 +12,7 @@ import { CommonModule } from '@angular/common';
 import { AbstractControl, FormArray, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators, ValidatorFn } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 import { Rsvp, RsvpShift } from '../../models/rsvp';
 import { RsvpService } from '../../services/rsvp.service';
 import { AdminDashboardService, NonResponder } from '../../services/admin-dashboard.service';
@@ -46,6 +47,7 @@ export class RsvpsComponent {
   private readonly adminService = inject(AdminDashboardService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly globalSearchService = inject(GlobalSearchService);
+  private readonly route = inject(ActivatedRoute);
   private readonly nonResponderSearch$ = new Subject<string>();
 
   // Dropdown Options
@@ -74,6 +76,7 @@ export class RsvpsComponent {
   readonly notifyType = signal<'sms' | null>(null);
   readonly feedbackMessage = signal('');
   readonly feedbackType = signal<'success' | 'error' | 'info'>('info');
+  readonly showAiPrefillBanner = signal(false);
 
   // ── Responses modal ──────────────────────────────────────────────────────────
   readonly showResponsesModal = signal(false);
@@ -202,6 +205,13 @@ export class RsvpsComponent {
       untracked(() => {
         this.currentPage.set(1);
       });
+    });
+
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      if (params['openModal'] === 'create-rsvp') {
+        this.openCreateRsvpModal();
+        this.prefillRsvpFromQueryParams(params);
+      }
     });
 
     this.nonResponderSearch$
@@ -356,6 +366,45 @@ export class RsvpsComponent {
     this.unlockBodyScroll();
     this.editingRsvp.set(null);
     this.rsvpForm.reset({ status: 'active' });
+    this.showAiPrefillBanner.set(false);
+  }
+
+  prefillRsvpFromQueryParams(params: any): void {
+    const patchData: any = {};
+    if (params.title) patchData.title = params.title;
+    if (params.eventLocation) patchData.eventLocation = params.eventLocation;
+    if (params.description) patchData.description = params.description;
+    
+    // Validate dates
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (params.date && dateRegex.test(params.date)) patchData.date = params.date;
+    if (params.cutOffDay && dateRegex.test(params.cutOffDay)) patchData.cutOffDay = params.cutOffDay;
+    
+    if (params.cutOffTime) patchData.cutOffTime = params.cutOffTime;
+
+    this.rsvpForm.patchValue(patchData);
+
+    if (params.shifts) {
+      try {
+        const shifts = JSON.parse(params.shifts);
+        if (Array.isArray(shifts) && shifts.length > 0) {
+          this.rsvpShifts.clear();
+          shifts.forEach((shift: any) => {
+            this.rsvpShifts.push(
+              this.fb.group({
+                startTime: [shift.startTime || '', Validators.required],
+                endTime: [shift.endTime || '', Validators.required],
+                capacity: [shift.capacity || 10, [Validators.required, Validators.min(1)]]
+              }, { validators: this.rsvpShiftTimeRangeValidator() })
+            );
+          });
+        }
+      } catch (e) {
+        console.warn('Failed to parse shifts from query params', e);
+      }
+    }
+    
+    this.showAiPrefillBanner.set(true);
   }
 
   addRsvpShift(): void {

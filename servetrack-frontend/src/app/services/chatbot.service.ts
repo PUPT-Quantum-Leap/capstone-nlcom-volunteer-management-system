@@ -1,4 +1,4 @@
-﻿import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Observable, of, throwError, timer } from 'rxjs';
@@ -186,11 +186,34 @@ export class ChatbotService {
               this.sessionId.set(response.session_id);
               localStorage.setItem(this.SESSION_KEY, response.session_id);
             }
+
+            let finalMessage = response.message;
+            let visualization;
+            let actions;
+
+            if (response.metadata && response.metadata['visualization']) {
+              visualization = response.metadata['visualization'] as any;
+            } else {
+              const vizResult = this.extractVisualization(finalMessage);
+              finalMessage = vizResult.text;
+              visualization = vizResult.visualization;
+            }
+
+            if (response.metadata && Array.isArray(response.metadata['actions'])) {
+              actions = response.metadata['actions'] as any;
+            } else {
+              const actResult = this.extractActions(finalMessage);
+              finalMessage = actResult.text;
+              actions = actResult.actions;
+            }
+
             const assistantMessage: ChatMessage = {
               role: 'assistant',
-              message: response.message,
+              message: finalMessage,
               metadata: response.metadata,
               created_at: new Date().toISOString(),
+              visualization,
+              actions
             };
             this.messages.update((msgs) => [...msgs, assistantMessage]);
             this.saveMessages(this.messages());
@@ -245,5 +268,47 @@ export class ChatbotService {
         m.id === messageId ? { ...m, isRetrying: false, retryAttempt: undefined } : m,
       ),
     );
+  }
+
+  private extractVisualization(message: string): { text: string; visualization?: import('../models/chatbot.model').ChatVisualization } {
+    let cleanText = message;
+    let visualization;
+    const blockRegex = /```json\s*\n([\s\S]*?)\n```/g;
+    let match;
+    while ((match = blockRegex.exec(message)) !== null) {
+      try {
+        const parsed = JSON.parse(match[1]);
+        if (parsed && (parsed.type === 'visualization' || (parsed.type && ['bar', 'pie', 'line', 'doughnut', 'polarArea', 'radar', 'scatter', 'bubble'].includes(parsed.type)))) {
+          visualization = parsed;
+          cleanText = cleanText.replace(match[0], '');
+        }
+      } catch (e) {
+        // Ignore JSON parse errors
+      }
+    }
+    return { text: cleanText.trim(), visualization };
+  }
+
+  private extractActions(message: string): { text: string; actions?: import('../models/chatbot.model').ChatbotAction[] } {
+    let cleanText = message;
+    const actions: import('../models/chatbot.model').ChatbotAction[] = [];
+    const actionRegex = /\[ACTION:(navigate|api_call|dispatch_event|open_modal):(.*?)\]/g;
+    let match;
+    while ((match = actionRegex.exec(message)) !== null) {
+      const type = match[1];
+      try {
+        const payloadStr = match[2];
+        const payload = JSON.parse(payloadStr);
+        actions.push({
+          action_type: type as any,
+          label: payload.label || 'Action',
+          payload: payload
+        });
+        cleanText = cleanText.replace(match[0], '');
+      } catch (e) {
+        // skip invalid
+      }
+    }
+    return { text: cleanText.trim(), actions: actions.length > 0 ? actions : undefined };
   }
 }
