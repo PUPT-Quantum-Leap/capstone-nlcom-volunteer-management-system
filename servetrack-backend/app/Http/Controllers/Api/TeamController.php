@@ -13,7 +13,7 @@ class TeamController extends Controller
      */
     public function index()
     {
-        return response()->json(IcsTeam::distinct()->pluck('team'));
+        return response()->json(IcsTeam::whereNotNull('departure_note')->distinct()->pluck('team'));
     }
 
     /**
