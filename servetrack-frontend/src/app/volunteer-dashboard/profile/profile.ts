@@ -45,7 +45,7 @@ export class ProfileComponent implements OnInit {
   profilePreviewUrl = signal(this.defaultPhoto);
   profiles = signal<VolunteerProfile[]>([]);
   savedProfileData = signal<VolunteerProfileResponse | null>(null);
-  expandedSection = signal<'personal' | 'service' | 'emergency' | null>('personal');
+  expandedSection = signal<'personal' | 'service' | 'emergency' | null>(null);
   showOtherPreference = signal(false);
   isLoading = signal(false);
   isBirthdateCalendarOpen = signal(false);
