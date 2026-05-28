@@ -86,15 +86,10 @@ class IcsController extends Controller
                 ]
             );
 
-            // Only seed the full set of default teams on first creation.
-            // For existing ICS records we only ensure command roles exist — never
-            // re-insert IcsTeam rows, which would create phantom ghost entries
-            // alongside any real custom team data already in the table.
-            if ($ics->wasRecentlyCreated) {
-                $this->ensureDashboardDefaults($ics);
-            } else {
-                $this->ensureCommandRoleDefaults($ics);
-            }
+            // Always seed defaults — ensureDashboardDefaults uses updateOrCreate so it
+            // is idempotent and safe to call on existing records. This also recovers
+            // ICS records that were created before team seeding was added.
+            $this->ensureDashboardDefaults($ics);
 
             return $ics;
         });
@@ -325,23 +320,27 @@ class IcsController extends Controller
         $icsTeamIds = $ics->teams()->pluck('teams.id')->flip();
 
         DB::transaction(function () use ($suggestions, $ics, $volunteers, $teams, $icsTeamIds): void {
+            // Detach all existing assignments so each AI run replaces rather than accumulates
+            $ics->volunteers()->detach();
+
+            $pivotData = [];
             foreach ($suggestions as $suggestion) {
                 $volunteer = $volunteers->get((int) ($suggestion['volunteer_id'] ?? 0));
                 $team = $teams->get((int) ($suggestion['team_id'] ?? 0));
 
-                $isTeamInIcs = $team && $icsTeamIds->has($team->id);
-
-                if ($volunteer && $isTeamInIcs) {
-                    $ics->volunteers()->syncWithoutDetaching([
-                        $volunteer->volunteer_id => [
-                            'team_id' => $team->id,
-                            'role' => $suggestion['role'] ?? null,
-                            'is_driver' => false,
-                            'is_leader' => str_contains(strtolower($suggestion['role'] ?? ''), 'lead'),
-                            'assigned_at' => now(),
-                        ],
-                    ]);
+                if ($volunteer && $team && $icsTeamIds->has($team->id)) {
+                    $pivotData[$volunteer->volunteer_id] = [
+                        'team_id' => $team->id,
+                        'role' => $suggestion['role'] ?? null,
+                        'is_driver' => false,
+                        'is_leader' => str_contains(strtolower($suggestion['role'] ?? ''), 'lead'),
+                        'assigned_at' => now(),
+                    ];
                 }
+            }
+
+            if (! empty($pivotData)) {
+                $ics->volunteers()->sync($pivotData);
             }
 
             $ics->update(['ai_suggestions' => $suggestions]);
