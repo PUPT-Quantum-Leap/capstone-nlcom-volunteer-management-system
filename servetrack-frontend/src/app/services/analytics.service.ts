@@ -126,6 +126,7 @@ export interface IcsRsvpData {
   rsvp_id: number;
   title: string;
   date: string;
+  created_at: string;
 }
 
 export interface IcsData {
