@@ -22,8 +22,10 @@ class AssignVolunteerRequest extends FormRequest
     {
         return [
             'volunteer_id' => ['required', 'exists:volunteer,volunteer_id'],
-            'team_id' => ['nullable', 'exists:teams,id'],
+            'team_id' => ['required', 'exists:teams,id'],
             'role' => ['nullable', 'string', 'max:255'],
+            'is_driver' => ['nullable', 'boolean'],
+            'is_leader' => ['nullable', 'boolean'],
         ];
     }
 

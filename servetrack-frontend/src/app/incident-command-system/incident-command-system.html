@@ -1,10 +1,9 @@
 <section class="ics-container">
-  <!-- Modern Header Bar -->
   <header class="report-header">
     <div class="report-header-left">
-      <div class="report-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      <div class="report-badge" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5" />
         </svg>
       </div>
       <div class="report-title-group">
@@ -12,415 +11,262 @@
         <h2 class="report-title">Incident Command System</h2>
       </div>
     </div>
+
     <div class="report-header-right">
-      <button type="button" class="action-btn secondary" (click)="toggleEditMode()">
-        @if (isEditMode) {
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-          <span>Save Changes</span>
-        } @else {
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-          </svg>
-          <span>Edit ICS</span>
-        }
-      </button>
       <button
         type="button"
         class="action-btn"
-        [disabled]="!canGenerateAiSuggestions() || isLoadingAiSuggestions()"
-        [title]="generateButtonTooltip()"
+        [disabled]="!hasIcsData() || isLoadingAiSuggestions()"
         (click)="generateAiSuggestions()">
         @if (isLoadingAiSuggestions()) {
           <span class="btn-spinner" aria-hidden="true"></span>
           <span>Generating...</span>
         } @else {
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-          </svg>
           <span>Generate AI Suggestions</span>
         }
       </button>
     </div>
   </header>
 
-  <!-- Error State -->
-  @if (error) {
+  @if (error()) {
     <div class="error-message">
       <div class="error-content">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-        <span>{{ error }}</span>
+        <span>{{ error() }}</span>
       </div>
-      <button class="action-btn secondary btn-sm" (click)="loadRsvpList()">Retry</button>
+      <button class="action-btn secondary btn-sm" type="button" (click)="loadRsvpList()">Retry</button>
     </div>
   }
 
-  <!-- RSVP Selector -->
-  @if (rsvpList.length > 0) {
+  @if (rsvpOptions().length > 0) {
     <div class="rsvp-selector-container">
       <label class="filter-label">Target RSVP Event</label>
-      <app-custom-select 
-        [options]="rsvpOptions()" 
-        [value]="rsvpId?.toString() || ''"
+      <app-custom-select
+        [options]="rsvpOptions()"
+        [value]="selectedRsvpId()?.toString() || ''"
         (valueChange)="selectRsvp($event)"
         variant="volunteer">
       </app-custom-select>
     </div>
   }
 
-  <!-- Info Summary Cards -->
-  <div class="summary-grid">
-    <div class="summary-card">
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-      </div>
-      <div class="card-content">
-        <span class="label">Objective</span>
-        @if (!isEditMode) {
-          <span class="value">{{ objective }}</span>
-        } @else {
-          <input type="number" [(ngModel)]="newObjective" class="edit-input" placeholder="Value">
-        }
-      </div>
+  @if (isLoading()) {
+    <div class="ics-empty-state">
+      <span class="btn-spinner dark" aria-hidden="true"></span>
+      <h3>Loading ICS dashboard</h3>
     </div>
-
-    <div class="summary-card">
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-      </div>
-      <div class="card-content">
-        <span class="label">Menu</span>
-        @if (!isEditMode) {
-          <span class="value">{{ menu || 'Not Set' }}</span>
-        } @else {
-          <input type="text" [(ngModel)]="newMenu" class="edit-input" placeholder="Enter menu">
-        }
-      </div>
-    </div>
-
-    <div class="summary-card">
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-      </div>
-      <div class="card-content">
-        <span class="label">Date</span>
-        @if (!isEditMode) {
-          <span class="value">{{ date || 'Select Date' }}</span>
-        } @else {
-          <input type="text" [(ngModel)]="newDate" class="edit-input" placeholder="Enter date">
-        }
-      </div>
-    </div>
-
-    <div class="summary-card">
-      <div class="card-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-      </div>
-      <div class="card-content">
-        <span class="label">Volunteers</span>
-        <span class="value">{{ volunteers }}</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Command Hierarchy Section -->
-  <div class="hierarchy-section">
-    <div class="org-chart">
-
-      <!-- Level 1: Responsible Official -->
-      <div class="org-level org-level--center">
-        <div class="org-node org-node--root">
-          <div class="org-node__role">Responsible Official</div>
-          @if (!isEditMode) {
-            <div class="org-node__name">{{ responsibleOfficial.name || '---' }}</div>
-          } @else {
-            <input type="text" [(ngModel)]="responsibleOfficial.name" class="edit-input" placeholder="Name">
-          }
-        </div>
-      </div>
-
-      <div class="org-connector org-connector--v"></div>
-
-      <!-- Level 2: Incident Commander -->
-      <div class="org-level org-level--center">
-        <div class="org-node org-node--commander">
-          <div class="org-node__role">Incident Commander</div>
-          @if (!isEditMode) {
-            <div class="org-node__name">{{ incidentCommander.name || '---' }}</div>
-          } @else {
-            <input type="text" [(ngModel)]="incidentCommander.name" class="edit-input" placeholder="Name">
-          }
-        </div>
-      </div>
-
-      <div class="org-connector org-connector--v"></div>
-
-      <!-- Level 3: Section Chiefs (horizontal row) -->
-      <div class="org-level org-level--chiefs">
-        @for (chief of [planning, purchasing, mwcCoordinator, safetyEmergency]; track chief.role) {
-          <div class="org-node org-node--chief">
-            <div class="org-node__role">{{ chief.role }}</div>
-            @if (!isEditMode) {
-              <div class="org-node__name">{{ chief.name || '---' }}</div>
-            } @else {
-              <input type="text" [(ngModel)]="chief.name" class="edit-input" placeholder="Name">
-            }
-          </div>
-        }
-      </div>
-
-      <div class="org-connector org-connector--v"></div>
-
-      <!-- Level 4: Branch Directors -->
-      <div class="org-level org-level--branches">
-        @for (branch of [
-          { col: mobileKitchen, label: 'Mobile Kitchen' },
-          { col: amDistribution, label: 'AM Distribution' },
-          { col: pmDistribution, label: 'PM Distribution' }
-        ]; track branch.label) {
-          <div class="org-node org-node--branch">
-            <div class="org-node__role">{{ branch.label }}</div>
-            @if (!isEditMode) {
-              <div class="org-node__name">{{ branch.col.leader || '---' }}</div>
-            } @else {
-              <input type="text" [(ngModel)]="branch.col.leader" class="edit-input" placeholder="Leader name">
-            }
-          </div>
-        }
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Empty State -->
-  @if (!hasIcsData()) {
+  } @else if (!hasIcsData()) {
     <div class="ics-empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        <path d="M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5" />
       </svg>
-      <h3>No assignments yet</h3>
-      <p>Select an RSVP event with volunteers, then click <strong>Generate AI Suggestions</strong> to assign volunteers to teams.</p>
+      <h3>No ICS dashboard loaded</h3>
+      <p>Select an RSVP event to initialize the operational dashboard.</p>
     </div>
-  }
-
-  <!-- Operational Grid -->
-  @if (hasIcsData()) {
-    <div class="ops-section">
-
-      <!-- Helper: renders one column of team cards -->
-      @for (col of [
-        { key: 'mobileKitchen', data: mobileKitchen, newVol: mobileKitchenNewVolunteer },
-        { key: 'amDistribution', data: amDistribution, newVol: amDistributionNewVolunteer },
-        { key: 'pmDistribution', data: pmDistribution, newVol: pmDistributionNewVolunteer }
-      ]; track col.key) {
-        <div class="ops-column">
-          <div class="ops-header">
-            <h3>{{ col.data.title || col.key }}</h3>
-            <span class="team-count">{{ col.data.teams.length }} teams</span>
-          </div>
-
-          <div class="ops-content">
-            @for (team of col.data.teams; track teamIdx; let teamIdx = $index) {
-
-              <!-- Team Card -->
-              <div class="team-card">
-                <div class="team-card__header">
-                  @if (!isEditMode) {
-                    <span class="team-card__title">{{ team.name }}</span>
-                  } @else {
-                    <input type="text" [(ngModel)]="team.name" class="edit-input" placeholder="Team name">
-                  }
-                  @if (isEditMode) {
-                    <button class="icon-btn icon-btn--danger" (click)="removeTeam($any(col.key), teamIdx)" title="Remove team">×</button>
-                  }
-                </div>
-
-                <div class="team-card__body">
-                  @for (volunteer of team.volunteers; track volIdx; let volIdx = $index) {
-
-                    <!-- Volunteer row -->
-                    <div class="vol-row">
-                      <div class="vol-tag" [class.is-new]="volunteer.isNew" [class.is-driver]="volunteer.isDriver" [class.is-leader]="volunteer.isLeader">
-                        <span class="vol-tag__name">{{ getDisplayName(volunteer) }}</span>
-                        @if (getVolunteerSymbols(volunteer)) {
-                          <span class="vol-tag__symbols">{{ getVolunteerSymbols(volunteer) }}</span>
-                        }
-                        <div class="vol-tag__actions">
-                          <button class="sym-btn" [class.active]="volunteer.isNew"    (click)="toggleNewVolunteer($any(col.key), teamIdx, volIdx)" title="New volunteer">*</button>
-                          <button class="sym-btn" [class.active]="volunteer.isDriver" (click)="toggleDriver($any(col.key), teamIdx, volIdx)"       title="Driver">~</button>
-                          <button class="sym-btn" [class.active]="volunteer.isLeader" (click)="toggleLeader($any(col.key), teamIdx, volIdx)"       title="Leader">^</button>
-                          <button class="sym-btn sym-btn--danger"                     (click)="removeVolunteer($any(col.key), teamIdx, volIdx)"    title="Remove">×</button>
-                        </div>
-                      </div>
-
-                       <!-- AI Suggestion block (always visible) -->
-                       <div class="ai-block">
-                         <div class="ai-block__label">AI SUGGESTION</div>
-                         @if (team.aiSuggestions && team.aiSuggestions.length > 0) {
-                           <!-- Display AI suggestions from backend -->
-                           <ul class="ai-block__bullets">
-                             @for (line of formatAiSuggestionReasoning(team.aiSuggestions[0]).split('\n'); track line) {
-                               @if (line.trim()) {
-                                 <li>{{ line.replace('• ', '') }}</li>
-                               }
-                             }
-                           </ul>
-                           <div class="ai-block__try">
-                             <span>Try:</span>
-                             @for (suggestion of team.aiSuggestions.slice(0, 2); track suggestion.volunteer_id) {
-                               <button class="try-btn" (click)="assignFromSuggestion($any(col.key), teamIdx, suggestion)">
-                                 {{ suggestion.volunteer_name }}
-                               </button>
-                             }
-                           </div>
-                         } @else {
-                           <!-- Fallback when no AI suggestions -->
-                           <ul class="ai-block__bullets">
-                             <li>No AI suggestions available</li>
-                             <li>Manual assignment recommended</li>
-                           </ul>
-                         }
-                       </div>
-                    </div>
-
-                  }
-
-                  <!-- Add volunteer row -->
-                  <div class="add-vol-row">
-                    <input
-                      type="text"
-                      class="add-vol-input"
-                      placeholder="Add volunteer..."
-                      [ngModel]="col.key === 'mobileKitchen' ? mobileKitchenNewVolunteer : col.key === 'amDistribution' ? amDistributionNewVolunteer : pmDistributionNewVolunteer"
-                      (ngModelChange)="col.key === 'mobileKitchen' ? (mobileKitchenNewVolunteer = $event) : col.key === 'amDistribution' ? (amDistributionNewVolunteer = $event) : (pmDistributionNewVolunteer = $event)"
-                      (keyup.enter)="addVolunteer($any(col.key), teamIdx)" />
-                    <button class="add-vol-btn" (click)="addVolunteer($any(col.key), teamIdx)">+</button>
-                  </div>
-                </div>
-              </div>
-
-            }
-
-            @if (isEditMode) {
-              <button class="add-team-btn" (click)="addTeam($any(col.key))">+ Add Team</button>
-            }
-          </div>
+  } @else {
+    <div class="summary-grid">
+      <div class="summary-card">
+        <div class="card-content">
+          <span class="label">RSVP</span>
+          <span class="value">{{ icsData()!.rsvp.title }}</span>
         </div>
-      }
-
-    </div><!-- /ops-section -->
-  }
-
-  <!-- Footer Grid Section -->
-  <div class="footer-grid">
-    <div class="footer-card">
-      <h4>Operational Symbols</h4>
-      <div class="legend-list">
-        <div class="legend-item">
-          <span class="symbol">*</span>
-          <span>New Volunteer</span>
+      </div>
+      <div class="summary-card">
+        <div class="card-content">
+          <span class="label">Date</span>
+          <span class="value">{{ icsData()!.rsvp.date }}</span>
         </div>
-        <div class="legend-item">
-          <span class="symbol">~</span>
-          <span>Assigned Driver</span>
+      </div>
+      <div class="summary-card">
+        <div class="card-content">
+          <span class="label">Location</span>
+          <span class="value">{{ icsData()!.rsvp.location || 'Not set' }}</span>
         </div>
-        <div class="legend-item">
-          <span class="symbol">^</span>
-          <span>Team Leader</span>
+      </div>
+      <div class="summary-card">
+        <div class="card-content">
+          <span class="label">Assigned Volunteers</span>
+          <span class="value">{{ dashboardVolunteers() }}</span>
         </div>
       </div>
     </div>
 
-    <div class="footer-card">
-      <h4>Meal Statistics</h4>
-      @if (!isEditMode) {
-        <div class="meal-stats">
-          <div class="stat">
-            <div class="stat-label">Breakfast</div>
-            <div class="stat-value">{{ mealBreakdown.breakfast }}</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">Lunch</div>
-            <div class="stat-value">{{ mealBreakdown.lunch }}</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">Snacks</div>
-            <div class="stat-value">{{ mealBreakdown.snacks }}</div>
-          </div>
-        </div>
-      } @else {
-        <div class="edit-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-          <div class="input-group">
-            <label style="font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block;">Breakfast</label>
-            <input type="number" [(ngModel)]="mealBreakdown.breakfast" class="edit-input">
-          </div>
-          <div class="input-group">
-            <label style="font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block;">Lunch</label>
-            <input type="number" [(ngModel)]="mealBreakdown.lunch" class="edit-input">
-          </div>
-          <div class="input-group">
-            <label style="font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block;">Snacks</label>
-            <input type="number" [(ngModel)]="mealBreakdown.snacks" class="edit-input">
-          </div>
-        </div>
-      }
-    </div>
-
-    <div class="footer-card">
-      <h4>Vehicle Assignments</h4>
-      <table class="vehicle-table">
-        @for (v of vehicleAssignments; track i; let i = $index) {
-          <tr>
-            @if (!isEditMode) {
-              <td>{{ v.code }}</td>
-              <td>{{ v.vehicle }}</td>
-            } @else {
-              <td colspan="2">
-                <div style="display: flex; gap: 8px; align-items: center;">
-                  <input type="text" [(ngModel)]="v.code" class="edit-input" style="width: 80px;" placeholder="Code">
-                  <input type="text" [(ngModel)]="v.vehicle" class="edit-input" placeholder="Vehicle">
-                  <button class="btn-danger" style="padding: 2px 6px; border: none; border-radius: 4px;" (click)="removeVehicle(i)">×</button>
+    <section class="hierarchy-section" aria-labelledby="org-chart-title">
+      <h3 id="org-chart-title" class="section-title">Command Structure</h3>
+      <div class="org-chart">
+        @if (roleByKey('responsible_official'); as role) {
+          <div class="org-level org-level--center">
+            <article class="org-node org-node--root">
+              <div class="org-node__role">{{ role.title }}</div>
+              @if (editingRoleKey() === role.key) {
+                <div class="org-node__edit-row">
+                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" />
+                  <button class="sym-btn active" type="button" (click)="saveRole(role)">OK</button>
+                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">Cancel</button>
                 </div>
-              </td>
-            }
-          </tr>
+              } @else {
+                <div class="org-node__name">{{ role.assigned_name || 'Unassigned' }}</div>
+                <button class="org-node__edit" type="button" (click)="editRole(role)">Edit</button>
+              }
+            </article>
+          </div>
         }
-      </table>
-      @if (isEditMode) {
-        <button class="add-btn" style="margin-top: 12px;" (click)="addVehicle()">+ Assign Vehicle</button>
+
+        <div class="org-connector org-connector--v"></div>
+
+        @if (roleByKey('incident_commander'); as role) {
+          <div class="org-level org-level--center">
+            <article class="org-node org-node--commander">
+              <div class="org-node__role">{{ role.title }}</div>
+              @if (editingRoleKey() === role.key) {
+                <div class="org-node__edit-row">
+                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" />
+                  <button class="sym-btn active" type="button" (click)="saveRole(role)">OK</button>
+                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">Cancel</button>
+                </div>
+              } @else {
+                <div class="org-node__name">{{ role.assigned_name || 'Unassigned' }}</div>
+                <button class="org-node__edit" type="button" (click)="editRole(role)">Edit</button>
+              }
+            </article>
+          </div>
+        }
+
+        <div class="org-connector org-connector--v"></div>
+
+        <div class="org-level org-level--chiefs">
+          @for (role of sectionChiefRoles(); track role.key) {
+            <article class="org-node org-node--chief">
+              <div class="org-node__role">{{ role.title }}</div>
+              @if (editingRoleKey() === role.key) {
+                <div class="org-node__edit-row">
+                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" />
+                  <button class="sym-btn active" type="button" (click)="saveRole(role)">OK</button>
+                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">Cancel</button>
+                </div>
+              } @else {
+                <div class="org-node__name">{{ role.assigned_name || 'Unassigned' }}</div>
+                <button class="org-node__edit" type="button" (click)="editRole(role)">Edit</button>
+              }
+            </article>
+          }
+        </div>
+
+        <div class="org-connector org-connector--v"></div>
+
+        <div class="org-level org-level--branches">
+          @for (role of branchDirectorRoles(); track role.key) {
+            <article class="org-node org-node--branch">
+              <div class="org-node__role">{{ role.title }}</div>
+              @if (editingRoleKey() === role.key) {
+                <div class="org-node__edit-row">
+                  <input class="edit-input" type="text" [ngModel]="roleDraft()" (ngModelChange)="roleDraft.set($event)" />
+                  <button class="sym-btn active" type="button" (click)="saveRole(role)">OK</button>
+                  <button class="sym-btn" type="button" (click)="cancelRoleEdit()">Cancel</button>
+                </div>
+              } @else {
+                <div class="org-node__name">{{ role.assigned_name || 'Unassigned' }}</div>
+                <button class="org-node__edit" type="button" (click)="editRole(role)">Edit</button>
+              }
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section class="ops-section" aria-label="Operational teams">
+      @for (branch of icsData()!.branches; track branch.key) {
+        <section class="ops-column">
+          <header class="ops-header">
+            <h3>{{ branch.title }}</h3>
+            <span class="team-count">{{ branch.teams.length }} teams</span>
+          </header>
+
+          <div class="ops-content">
+            @for (team of branch.teams; track team.key) {
+              <article class="team-card">
+                <header class="team-card__header">
+                  <span class="team-card__title">{{ team.name }}</span>
+                  @if (team.vehicle) {
+                    <span class="team-card__vehicle">{{ team.vehicle }}</span>
+                  }
+                </header>
+
+                <div class="team-card__body">
+                  @if (team.assigned_volunteers.length === 0) {
+                    <p class="team-card__empty">No assigned volunteers yet.</p>
+                  }
+
+                  @for (volunteer of team.assigned_volunteers; track volunteer.id) {
+                    <div class="vol-row">
+                      <div
+                        class="vol-tag"
+                        [class.is-driver]="volunteer.is_driver"
+                        [class.is-leader]="volunteer.is_leader">
+                        <span class="vol-tag__name">{{ volunteer.name }}</span>
+                        @if (volunteer.is_driver) {
+                          <span class="vol-tag__symbols">Driver</span>
+                        }
+                        @if (volunteer.is_leader) {
+                          <span class="vol-tag__symbols">Lead</span>
+                        }
+                        <div class="vol-tag__actions">
+                          <button class="sym-btn" type="button" (click)="moveVolunteer(team, volunteer.id)">Move</button>
+                          <button class="sym-btn sym-btn--danger" type="button" (click)="removeVolunteer(team, volunteer.id)">Remove</button>
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  <aside class="ai-block">
+                    <div class="ai-block__label">AI Suggestion</div>
+                    <ul class="ai-block__bullets">
+                      @for (line of team.ai_suggestion.rationale; track line) {
+                        <li>{{ line }}</li>
+                      }
+                    </ul>
+                    <div class="ai-block__try">
+                      <span>Try:</span>
+                      @for (candidate of team.ai_suggestion.candidates.slice(0, 2); track candidate.volunteer_id) {
+                        <button class="try-btn" type="button" (click)="acceptSuggestion(team, candidate)">
+                          {{ candidate.name }}
+                        </button>
+                      }
+                    </div>
+                  </aside>
+
+                  <div class="add-vol-row">
+                    <input
+                      class="add-vol-input"
+                      type="search"
+                      placeholder="Add volunteer..."
+                      [ngModel]="volunteerSearchByTeam()[team.id] ?? ''"
+                      (ngModelChange)="setVolunteerSearch(team.id, $event)"
+                      (keyup.enter)="addVolunteer(team)" />
+                    <button class="add-vol-btn" type="button" (click)="addVolunteer(team)">+</button>
+                  </div>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
       }
-    </div>
-  </div>
+    </section>
 
-  <!-- Export Actions -->
-  <div class="export-actions">
-    <button class="action-btn secondary" (click)="exportToPdf()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-        <polyline points="14 2 14 8 20 8"></polyline>
-        <line x1="16" y1="13" x2="8" y2="13"></line>
-        <line x1="16" y1="17" x2="8" y2="17"></line>
-        <polyline points="10 9 9 9 8 9"></polyline>
-      </svg>
-      <span>Export PDF</span>
-    </button>
-    <button class="action-btn secondary" (click)="exportToExcel()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-        <line x1="3" y1="9" x2="21" y2="9"></line>
-        <line x1="9" y1="21" x2="9" y2="9"></line>
-      </svg>
-      <span>Export Excel</span>
-    </button>
-  </div>
+    @if (icsData()!.vehicles.length > 0) {
+      <section class="footer-card vehicle-assignment-panel">
+        <h4>Vehicle Assignments</h4>
+        <table class="vehicle-table">
+          @for (vehicle of icsData()!.vehicles; track vehicle.team_key) {
+            <tr>
+              <td>{{ vehicle.team_name }}</td>
+              <td>{{ vehicle.vehicle }}</td>
+            </tr>
+          }
+        </table>
+      </section>
+    }
+  }
 
-  <!-- AI Error Banner -->
   @if (aiError()) {
     <div class="ai-error-banner">
       <span>{{ aiError() }}</span>
@@ -428,26 +274,24 @@
     </div>
   }
 
-  <!-- AI Suggestions Modal -->
   @if (isSuggestionsModalOpen()) {
     <div class="modal-backdrop" (click)="dismissSuggestions()">
-      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title"
-           tabindex="0"
-           (keydown.escape)="dismissSuggestions()"
-           (click)="$event.stopPropagation()">
+      <div
+        class="modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ai-suggestions-title"
+        tabindex="0"
+        (keydown.escape)="dismissSuggestions()"
+        (click)="$event.stopPropagation()">
         <div class="modal-header">
-          <h3 id="modal-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="modal-icon" aria-hidden="true">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-            </svg>
-            AI-Generated Volunteer Assignments
-          </h3>
+          <h3 id="ai-suggestions-title">AI-Generated Volunteer Assignments</h3>
           <button type="button" class="modal-close" (click)="dismissSuggestions()" aria-label="Close">×</button>
         </div>
 
         @if (aiSuggestions().length === 0) {
           <div class="modal-empty">
-            <p>No suggestions were generated. The AI could not match volunteers to teams.</p>
+            <p>No suggestions were generated. Groq could not match volunteers to teams.</p>
           </div>
         } @else {
           <div class="modal-body">
@@ -494,9 +338,7 @@
           </div>
 
           <div class="modal-footer">
-            <button type="button" class="action-btn secondary" (click)="dismissSuggestions()">
-              Dismiss
-            </button>
+            <button type="button" class="action-btn secondary" (click)="dismissSuggestions()">Dismiss</button>
             <button
               type="button"
               class="action-btn secondary"
@@ -504,12 +346,8 @@
               (click)="applySelected()">
               @if (isApplyingAiSuggestions()) { Applying... } @else { Apply Selected ({{ selectedSuggestionIds().size }}) }
             </button>
-            <button
-              type="button"
-              class="action-btn"
-              [disabled]="isApplyingAiSuggestions()"
-              (click)="applyAll()">
-              @if (isApplyingAiSuggestions()) { Applying... } @else { Apply All (Auto) }
+            <button type="button" class="action-btn" [disabled]="isApplyingAiSuggestions()" (click)="applyAll()">
+              @if (isApplyingAiSuggestions()) { Applying... } @else { Apply All }
             </button>
           </div>
         }
@@ -517,4 +355,3 @@
     </div>
   }
 </section>
-

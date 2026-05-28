@@ -117,6 +117,13 @@ $radius: 12px;
     transform: translateY(0);
   }
 
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+    box-shadow: none;
+  }
+
   svg {
     width: 1.125rem;
     height: 1.125rem;
@@ -132,6 +139,34 @@ $radius: 12px;
       box-shadow: none;
     }
   }
+}
+
+.btn-sm {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
+.section-title {
+  margin: 0 0 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: $text-muted;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 // RSVP Selector
@@ -859,6 +894,11 @@ $radius: 12px;
   animation: spin 0.7s linear infinite;
 }
 
+.btn-spinner.dark {
+  border-color: rgba(37, 99, 235, 0.2);
+  border-top-color: $primary;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -1162,6 +1202,32 @@ $radius: 12px;
     color: $text-main;
   }
 
+  &__edit {
+    margin-top: 0.45rem;
+    border: 0;
+    background: transparent;
+    color: $primary;
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  &:hover &__edit,
+  &:focus-within &__edit {
+    opacity: 1;
+  }
+
+  &__edit-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.35rem;
+    align-items: center;
+    margin-top: 0.5rem;
+    min-width: 260px;
+  }
+
   &--root {
     border-color: #1e40af;
     background: #eff6ff;
@@ -1261,12 +1327,32 @@ $radius: 12px;
     color: $text-main;
   }
 
+  &__vehicle {
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: #ecfeff;
+    color: #0e7490;
+    font-size: 0.7rem;
+    font-weight: 800;
+  }
+
+  &__empty {
+    margin: 0;
+    padding: 0.5rem 0;
+    color: #94a3b8;
+    font-size: 0.8rem;
+  }
+
   &__body {
     padding: 0.75rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
   }
+}
+
+.vehicle-assignment-panel {
+  max-width: 520px;
 }
 
 // ── Volunteer Row ────────────────────────────────────────────────────────────

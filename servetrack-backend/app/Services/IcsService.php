@@ -150,7 +150,7 @@ class IcsService
                 'team_name' => $team->name,
                 'role' => $suggestion['role'] ?? 'Team Member',
                 'skills' => $volunteer->skills->pluck('name')->toArray(),
-                'confidence' => $suggestion['confidence'] ?? 0.5,
+                'confidence' => $this->normalizeConfidence($suggestion['confidence'] ?? 0.5),
                 'reasoning' => $suggestion['reasoning'] ?? null,
             ];
         }
@@ -338,18 +338,33 @@ class IcsService
             return 0.0;
         }
 
-        $baseScore = ($matchingSkills / $totalSkills) * 100;
+        $baseScore = $matchingSkills / $totalSkills;
 
         // Bonus for leadership
         if ($volunteer->positions->contains('name', 'Leader')) {
-            $baseScore += 10;
+            $baseScore += 0.1;
         }
 
         // Bonus for experience
         if ($volunteer->experiences->count() > 0) {
-            $baseScore += 5;
+            $baseScore += 0.05;
         }
 
-        return min(100.0, $baseScore);
+        return min(1.0, $baseScore);
+    }
+
+    private function normalizeConfidence(mixed $confidence): float
+    {
+        if (! is_numeric($confidence)) {
+            return 0.5;
+        }
+
+        $value = (float) $confidence;
+
+        if ($value > 1) {
+            $value /= 100;
+        }
+
+        return max(0.0, min(1.0, $value));
     }
 }
