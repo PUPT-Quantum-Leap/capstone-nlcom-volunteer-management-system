@@ -11,7 +11,7 @@
 
         <p>Hi {{ $user->name }},</p>
 
-        <p>We received a request to reset the password for your admin account. Click the button below to choose a new password.</p>
+        <p>We received a request to reset your password. Click the button below to choose a new password.</p>
 
         <div style="background-color: #fff; padding: 15px; border-radius: 4px; border-left: 4px solid #2563eb; margin: 20px 0;">
             <p style="margin: 5px 0;">This password reset link will expire in <strong>{{ $expireMinutes }} minutes</strong>.</p>

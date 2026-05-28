@@ -1,9 +1,9 @@
-Reset Your Admin Password
-=========================
+Reset Your Password
+===================
 
 Hi {{ $user->name }},
 
-We received a request to reset the password for your admin account.
+We received a request to reset your password.
 
 Click the link below to choose a new password (expires in {{ $expireMinutes }} minutes):
 
