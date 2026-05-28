@@ -11,6 +11,7 @@ import { NgTemplateOutlet, NgOptimizedImage } from '@angular/common';
 import { Router, RouterOutlet, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { VolunteerService } from '../../services/volunteer.service';
+import { RsvpService } from '../../services/rsvp.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NotificationItem } from '../../models/notification-item';
 
@@ -30,6 +31,7 @@ export class VolunteerDashboardShell implements OnInit {
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
+  private rsvpService = inject(RsvpService);
   readonly chatbotService = inject(ChatbotService);
   private destroyRef = inject(DestroyRef);
 
@@ -110,11 +112,22 @@ export class VolunteerDashboardShell implements OnInit {
     this.updateIsMobile();
     this.startRealTimeClock();
     this.loadProfile();
-    
+    this.warmUpCaches();
+
     // Initial 4-second loading screen
     setTimeout(() => {
       this.pageLoading.set(false);
     }, 4000);
+  }
+
+  /**
+   * Pre-fetch data in the background so child modules can hydrate instantly
+   * from in-memory caches without waiting for HTTP roundtrips.
+   */
+  private warmUpCaches(): void {
+    this.volunteerService.getAttendanceStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+    this.volunteerService.getAttendance('monthly').pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
+    this.rsvpService.getRsvps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
 
   private startRealTimeClock(): void {

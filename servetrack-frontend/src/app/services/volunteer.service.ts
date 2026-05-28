@@ -23,13 +23,19 @@ export class VolunteerService {
 
   /** In-memory cache of the last fetched profile. */
   private profileCache = signal<VolunteerProfileResponse | null>(null);
+  private attendanceStatsCache = signal<ApiResponse<AttendanceStats> | null>(null);
+  private attendanceCache = signal<Map<AttendancePeriod, ApiResponse<Attendance[]>>>(new Map());
 
-  /**
-   * Returns the cached profile synchronously if available.
-   * Useful for instantly hydrating components without waiting for an HTTP roundtrip.
-   */
   getCachedProfile(): VolunteerProfileResponse | null {
     return this.profileCache();
+  }
+
+  getCachedAttendanceStats(): ApiResponse<AttendanceStats> | null {
+    return this.attendanceStatsCache();
+  }
+
+  getCachedAttendance(period: AttendancePeriod): ApiResponse<Attendance[]> | null {
+    return this.attendanceCache().get(period) ?? null;
   }
 
   /** Fetch the authenticated volunteer's profile — updates the cache on success. */
@@ -121,7 +127,12 @@ export class VolunteerService {
       })
       .pipe(
         tap((response) => {
-          console.log('[VolunteerService] getAttendance raw response:', response);
+          if (period) {
+            this.attendanceCache.update((map) => {
+              map.set(period, response);
+              return new Map(map);
+            });
+          }
         }),
         catchError((error) => {
           console.error('[VolunteerService] getAttendance failed:', error);
@@ -137,11 +148,12 @@ export class VolunteerService {
         withCredentials: true,
       })
       .pipe(
+        tap((response) => this.attendanceStatsCache.set(response)),
         catchError((error) => {
           console.error('[VolunteerService] getAttendanceStats failed:', error);
-        throw error;
-      }),
-    );
+          throw error;
+        }),
+      );
   }
 
   /** Fetch volunteer polls from the backend. */
