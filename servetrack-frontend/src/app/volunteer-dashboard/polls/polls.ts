@@ -50,6 +50,7 @@ export class PollsComponent implements OnInit {
   pastPolls = signal<Poll[]>([]);
   selectedPastPoll = signal<Poll | null>(null);
   isLoading = signal(true);
+  hasData = signal(false);
   pollError = signal<string | null>(null);
 
   /**
@@ -72,7 +73,16 @@ export class PollsComponent implements OnInit {
   remainingEdits = computed(() => this.activePoll()?.remainingEdits ?? 0);
 
   ngOnInit(): void {
+    this.hydrateFromCache();
     this.reload();
+  }
+
+  private hydrateFromCache(): void {
+    const cached = this.rsvpService.getCachedRsvps();
+    if (!cached?.data?.length) return;
+
+    this.hasData.set(true);
+    this.applyRsvpData(cached.data);
   }
 
   reload(): void {
@@ -88,29 +98,33 @@ export class PollsComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
-          const rsvps: Rsvp[] = response.data;
-          const activeRsvps = rsvps.filter((r: Rsvp) => r.status === 'active');
-          const pastRsvps = rsvps.filter((r: Rsvp) => r.status === 'closed');
-
-          const activePoll = activeRsvps.length > 0 ? this.mapRsvpToPoll(activeRsvps[0]) : null;
-          this.activePoll.set(activePoll);
-
-          if (activePoll?.userVote) {
-            const votes = new Map(this.userVotes());
-            votes.set(activePoll.id, activePoll.userVote);
-            this.userVotes.set(votes);
-            this.hasSubmittedVote.set(true);
-            this.selectedOptionId.set(activePoll.userVote.timeSlotId);
-          }
-
-          this.pastPolls.set(pastRsvps.map((r: Rsvp) => this.mapRsvpToPoll(r)));
+          this.applyRsvpData(response.data);
           this.isLoading.set(false);
+          this.hasData.set(true);
         },
         error: () => {
           this.pollError.set('Failed to load RSVP events. Please try again later.');
           this.isLoading.set(false);
         },
       });
+  }
+
+  private applyRsvpData(rsvps: Rsvp[]): void {
+    const activeRsvps = rsvps.filter((r: Rsvp) => r.status === 'active');
+    const pastRsvps = rsvps.filter((r: Rsvp) => r.status === 'closed');
+
+    const activePoll = activeRsvps.length > 0 ? this.mapRsvpToPoll(activeRsvps[0]) : null;
+    this.activePoll.set(activePoll);
+
+    if (activePoll?.userVote) {
+      const votes = new Map(this.userVotes());
+      votes.set(activePoll.id, activePoll.userVote);
+      this.userVotes.set(votes);
+      this.hasSubmittedVote.set(true);
+      this.selectedOptionId.set(activePoll.userVote.timeSlotId);
+    }
+
+    this.pastPolls.set(pastRsvps.map((r: Rsvp) => this.mapRsvpToPoll(r)));
   }
 
   private mapRsvpToPoll(rsvp: Rsvp): Poll {
