@@ -8,13 +8,15 @@ import {
   DestroyRef,
 } from '@angular/core';
 
-import { VolunteerService } from '../../services/volunteer.service';
-import { AuthService } from '../../services/auth.service';
+import { VolunteerService, ApiResponse } from '../../services/volunteer.service';
 import { RsvpService } from '../../services/rsvp.service';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { Attendance, AttendanceStats } from '../../models/attendance';
 import { Rsvp } from '../../models/rsvp';
+import { VolunteerProfileResponse } from '../../models/volunteer-profile';
 
 interface PollOption {
   id: number;
@@ -43,7 +45,6 @@ export class OverviewComponent implements OnInit {
 
   private volunteerService = inject(VolunteerService);
   private rsvpService = inject(RsvpService);
-  private authService = inject(AuthService);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
 
@@ -97,112 +98,49 @@ export class OverviewComponent implements OnInit {
 
   private loadAllData(): void {
     this.isLoading.set(true);
-    
-    // Simulate a small delay for a smooth skeleton experience
-    setTimeout(() => {
-      this.loadAttendanceStats();
-      this.loadCurrentAssignment();
-      this.loadProfile();
-      this.loadSamplePoll();
-      
-      // We set loading to false after the primary data starts arriving
-      // In a real app, you'd use forkJoin, but for this UI-heavy task, 
-      // a short consistent skeleton duration feels "proper".
-      setTimeout(() => this.isLoading.set(false), 800);
-    }, 500);
-  }
 
-  private loadCurrentAssignment(): void {
-    this.rsvpService.getRsvps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (response) => {
-        if (response.data && response.data.length > 0) {
-          // Find the active RSVP that the user has voted for
-          // Sorting by date to get the closest upcoming/current one
-          const activeAssignments = response.data
-            .filter(r => r.userVote !== null && r.userVote !== undefined && r.status === 'active')
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-          if (activeAssignments.length > 0) {
-            const current = activeAssignments[0];
-            this.locationAssigned.set(current.eventLocation || 'Main Office');
-          } else {
-            this.loadFallbackLocation();
-          }
-        } else {
-          this.loadFallbackLocation();
+    forkJoin({
+      stats: this.volunteerService.getAttendanceStats().pipe(
+        catchError(() => of({ success: false, data: null as unknown as AttendanceStats })),
+      ),
+      profile: this.volunteerService.getProfile().pipe(
+        catchError(() => of({ success: false, data: null as unknown as VolunteerProfileResponse })),
+      ),
+      rsvps: this.rsvpService.getRsvps().pipe(
+        catchError(() => of({ data: [] as Rsvp[] })),
+      ),
+      monthly: this.volunteerService.getAttendance('monthly').pipe(
+        catchError(() => of({ success: false, data: [] as Attendance[] })),
+      ),
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (results) => {
+        // Attendance stats
+        if (results.stats.success && results.stats.data) {
+          this.attendanceTotalHours.set(results.stats.data.monthly.hours);
         }
-      },
-      error: (error) => {
-        console.error('[OverviewComponent] Failed to load current assignment:', error);
-        this.loadFallbackLocation();
-      }
-    });
-  }
 
-  private loadFallbackLocation(): void {
-    // Fallback to attendance log if no active RSVP
-    this.volunteerService.getAttendance('monthly').pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (response) => {
-        if (response.success && response.data && response.data.length > 0) {
-          const latest = response.data[0];
-          this.locationAssigned.set(latest.location || 'Not Assigned');
-        } else {
-          this.locationAssigned.set('Not Assigned');
-        }
-      }
-    });
-  }
-
-  private startRealTimeClock(): void {
-    this.currentTime.set(new Date());
-    this.timeUpdateInterval = setInterval(() => {
-      this.currentTime.set(new Date());
-    }, 1000);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.timeUpdateInterval) {
-        clearInterval(this.timeUpdateInterval);
-      }
-    });
-  }
-
-  private loadAttendanceStats(): void {
-    this.volunteerService.getAttendanceStats().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          const stats = response.data;
-          this.attendanceTotalHours.set(stats.monthly.hours);
-        }
-      },
-      error: (error) => {
-        console.error('[OverviewComponent] Failed to load attendance stats:', error);
-        this.attendanceTotalHours.set(0);
-      }
-    });
-  }
-
-  private loadProfile(): void {
-    this.volunteerService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          const data = response.data;
+        // Profile
+        if (results.profile.success && results.profile.data) {
+          const data = results.profile.data;
           if (data.positions?.length) {
             this.taskAssigned.set(data.positions.map((p) => p.name).join(', '));
           }
         }
-      },
-      error: (error) => {
-        console.error('[OverviewComponent] loadProfile failed:', error);
-        this.taskAssigned.set('—');
-      }
-    });
-  }
 
-  private loadSamplePoll(): void {
-    this.rsvpService.getRsvps().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (response) => {
-        if (response.data && response.data.length > 0) {
-          const active = response.data.find(r => r.status === 'active');
+        // RSVPs — used for both assignment location and poll
+        const rsvpData = results.rsvps.data;
+        if (rsvpData.length > 0) {
+          const activeAssignments = rsvpData
+            .filter(r => r.userVote !== null && r.userVote !== undefined && r.status === 'active')
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+          if (activeAssignments.length > 0) {
+            this.locationAssigned.set(activeAssignments[0].eventLocation || 'Main Office');
+          } else {
+            this.setLocationFromMonthly(results.monthly);
+          }
+
+          const active = rsvpData.find(r => r.status === 'active');
           if (active) {
             this.activePoll.set({
               id: active.id,
@@ -215,12 +153,40 @@ export class OverviewComponent implements OnInit {
                 id: s.id,
                 timeSlot: s.timeSlot,
                 capacity: s.capacity,
-                votes: s.responses
-              }))
+                votes: s.responses,
+              })),
             });
             this.hasSubmittedVote.set(!!active.userVote);
           }
+        } else {
+          this.setLocationFromMonthly(results.monthly);
         }
+
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.isLoading.set(false);
+      },
+    });
+  }
+
+  private setLocationFromMonthly(response: ApiResponse<Attendance[]>): void {
+    if (response.success && response.data && response.data.length > 0) {
+      this.locationAssigned.set(response.data[0].location || 'Not Assigned');
+    } else {
+      this.locationAssigned.set('Not Assigned');
+    }
+  }
+
+  private startRealTimeClock(): void {
+    this.currentTime.set(new Date());
+    this.timeUpdateInterval = setInterval(() => {
+      this.currentTime.set(new Date());
+    }, 1000);
+
+    this.destroyRef.onDestroy(() => {
+      if (this.timeUpdateInterval) {
+        clearInterval(this.timeUpdateInterval);
       }
     });
   }
