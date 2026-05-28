@@ -13,7 +13,7 @@ class IcsTeamController extends Controller
      */
     public function index()
     {
-        return response()->json(IcsTeam::whereNotNull('departure_note')->get());
+        return response()->json(IcsTeam::with('ics.rsvp')->get());
     }
 
     public function getTeams()
@@ -33,7 +33,14 @@ class IcsTeamController extends Controller
             'time' => 'nullable|string',
             'no_of_pax' => 'nullable|integer',
             'details' => 'nullable|string',
+            'ics_id' => 'sometimes|integer|exists:ics,id',
         ]);
+
+        if (! isset($validated['ics_id'])) {
+            $validated['ics_id'] = IcsTeam::query()
+                ->whereNotNull('ics_id')
+                ->value('ics_id');
+        }
 
         $icsTeam = IcsTeam::create($validated);
 

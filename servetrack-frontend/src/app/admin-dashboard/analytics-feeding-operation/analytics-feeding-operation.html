@@ -2,8 +2,8 @@
   <header class="report-header">
     <div>
       <span class="report-label">OPERATIONS</span>
-      <h2 class="report-title">NLCOM x Metro World Child Feeding Operation</h2>
-      <p class="report-date">November 22, 2025</p>
+      <h2 class="report-title">{{ operationTitle() }}</h2>
+      <p class="report-date">{{ operationDate() }}</p>
     </div>
     <div class="header-actions">
       <button
@@ -50,7 +50,15 @@
           </tr>
         </thead>
         <tbody>
-          @for (operation of operationsData(); track operation.id) {
+          @if (analyticsLoading()) {
+            <tr>
+              <td colspan="6" class="loading-cell">
+                <div class="loading-spinner"></div>
+                <span>Loading operations...</span>
+              </td>
+            </tr>
+          } @else {
+            @for (operation of operationsData(); track operation.id) {
             <tr>
               @if (operation.showTeamCell) {
                 <td class="team-cell" [attr.rowspan]="operation.teamRowSpan">
@@ -151,6 +159,7 @@
                 }
               </td>
             </tr>
+            }
           }
         </tbody>
       </table>

@@ -39,6 +39,8 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
   readonly teams = signal<string[]>([]);
   readonly locations = signal<string[]>([]);
   readonly saving = signal(false);
+  readonly operationTitle = signal('NLCOM x Metro World Child Feeding Operation');
+  readonly operationDate = signal('');
 
   ngOnInit(): void {
     this.loadTeams();
@@ -53,13 +55,32 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
   }
 
   private loadOperations(): void {
+    this.analyticsLoading.set(true);
     this.analyticsService.getFeedingOperations().subscribe({
       next: (data) => {
         const transformedData = this.transformApiData(data);
         this.operationsData.set(this.buildOperationsRows(transformedData));
         this.extractLocations();
+
+        const formatDate = (raw: string): string =>
+          new Date(raw).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+        const firstWithRsvp = data.find((op) => op.ics?.rsvp);
+        if (firstWithRsvp?.ics?.rsvp) {
+          this.operationTitle.set(firstWithRsvp.ics.rsvp.title);
+          this.operationDate.set(formatDate(firstWithRsvp.ics.rsvp.created_at));
+        } else {
+          const firstWithIcs = data.find((op) => op.ics?.date);
+          if (firstWithIcs?.ics?.date) {
+            this.operationDate.set(formatDate(firstWithIcs.ics.date));
+          }
+        }
       },
-      error: (err) => console.error('Failed to load operations:', err),
+      error: (err) => {
+        console.error('Failed to load operations:', err);
+        this.analyticsLoading.set(false);
+      },
+      complete: () => this.analyticsLoading.set(false),
     });
   }
 
@@ -262,10 +283,10 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
 
     pdf.setFontSize(14);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('NLCOM x Metro World Child Feeding Operation', 40, 38);
+    pdf.text(this.operationTitle(), 40, 38);
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('November 22, 2025', 40, 54);
+    pdf.text(this.operationDate(), 40, 54);
 
     autoTable(pdf, {
       startY: 68,
@@ -314,8 +335,8 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
     const timestamp = new Date().toISOString().split('T')[0];
     const filename = `feeding-operation-report-${timestamp}.xlsx`;
     const sheetRows: (string | number)[][] = [
-      ['NLCOM x Metro World Child Feeding Operation'],
-      ['November 22, 2025'],
+      [this.operationTitle()],
+      [this.operationDate()],
       ['Team & Time Departure', 'Location', 'Time', 'No. of Pax', 'Details'],
     ];
 

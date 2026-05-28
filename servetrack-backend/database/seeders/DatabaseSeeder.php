@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
             PositionSeeder::class,
             TeamSeeder::class,
             IcsSeeder::class,
-            AttendanceSeeder::class,
+            IcsTeamSeeder::class,
         ]);
 
         if (env('DEMO_SEED', false)) {
