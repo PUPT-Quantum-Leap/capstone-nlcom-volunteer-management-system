@@ -54,8 +54,8 @@ export class OverviewComponent implements OnInit {
   currentDateFormatted = computed(() => {
     const date = this.currentTime();
     return new Intl.DateTimeFormat('en-US', {
-      weekday: 'short',
-      month: 'short',
+      weekday: 'long',
+      month: 'long',
       day: 'numeric',
       year: 'numeric',
     }).format(date);
