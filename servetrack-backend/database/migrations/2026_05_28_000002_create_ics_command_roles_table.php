@@ -7,6 +7,10 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        if (Schema::hasTable('ics_command_roles')) {
+            return;
+        }
+
         Schema::create('ics_command_roles', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('ics_id')->constrained('ics')->cascadeOnDelete();
