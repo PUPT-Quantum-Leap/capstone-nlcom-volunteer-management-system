@@ -65,7 +65,7 @@
       <div class="logo-area" (click)="toggleSidebar()" (keydown.enter)="toggleSidebar()" role="button" tabindex="0"
         aria-label="Toggle sidebar">
         <div class="logo-icon">
-          <img ngSrc="/assets/logo.png" width="40" height="40" alt="ServeTrack Logo" />
+          <img ngSrc="/assets/logo.png" width="36" height="36" alt="ServeTrack Logo" />
         </div>
         <span class="logo-text">ServeTrack</span>
       </div>
@@ -89,10 +89,11 @@
     <div class="mobile-sidebar-header">
       <div class="logo-area">
         <div class="logo-icon">
-          <img ngSrc="/assets/logo.png" width="40" height="40" alt="ServeTrack Logo" />
+          <img ngSrc="/assets/logo.png" width="36" height="36" alt="ServeTrack Logo" />
         </div>
         <span class="logo-text">ServeTrack</span>
       </div>
+
     </div>
 
     <ng-container *ngTemplateOutlet="sidebarNav"></ng-container>
@@ -112,7 +113,7 @@
 
       <div class="top-bar-right">
         <div class="search-inline">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 0.5rem; color: var(--slate-400);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 0.5rem; color: var(--gray-400);">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input #dashboardSearch type="text" class="search-input" [value]="searchQuery()" (input)="setSearchQuery(dashboardSearch.value)" (keydown.enter)="runSearch()" placeholder="Search..."/>
@@ -125,7 +126,7 @@
             <span class="badge">{{ notificationCount() }}</span>
           }
         </button>
-        <button type="button" class="outline-btn chatbot-toggle-btn" [class.active]="chatbotService.showChatbot()"
+        <button type="button" class="servebot-toggle-btn" [class.active]="chatbotService.showChatbot()"
           (click)="toggleChatbot()" aria-label="Toggle ServeTrack AI Assistant" title="ServeTrack AI Assistant">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -137,7 +138,7 @@
           </svg>
           AI Assistant
         </button>
-        <button type="button" class="primary-btn" (click)="logout()" [disabled]="isLoading()">Sign Out</button>
+        <button type="button" class="logout-btn" (click)="logout()" [disabled]="isLoading()">Sign Out</button>
       </div>
     </header>
 
