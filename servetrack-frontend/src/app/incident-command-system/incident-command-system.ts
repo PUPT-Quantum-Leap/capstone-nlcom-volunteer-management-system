@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { finalize, switchMap } from 'rxjs';
+import { debounceTime, distinctUntilChanged, finalize, Subject, switchMap } from 'rxjs';
 import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
 import jsPDF from 'jspdf';
 import autoTable, { RowInput } from 'jspdf-autotable';
@@ -43,6 +43,7 @@ export class IncidentCommandSystemComponent implements OnInit {
   readonly selectedSuggestionIds = signal<Set<number>>(new Set());
   readonly volunteerSearchByTeam = signal<Record<number, string>>({});
   readonly searchResultsByTeam = signal<Record<number, RsvpVolunteer[]>>({});
+  readonly rsvpVolunteerPool = signal<RsvpVolunteer[]>([]);
   readonly editingRoleKey = signal<string | null>(null);
   readonly roleDraft = signal('');
   readonly isLoading = signal(false);
@@ -129,9 +130,19 @@ export class IncidentCommandSystemComponent implements OnInit {
       .getDashboard(rsvpId)
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
-        next: (response) => this.icsData.set(response.data),
+        next: (response) => {
+          this.icsData.set(response.data);
+          this.loadVolunteerPool(rsvpId);
+        },
         error: () => this.error.set('Failed to load ICS dashboard. Please try again.'),
       });
+  }
+
+  private loadVolunteerPool(rsvpId: number): void {
+    this.icsService.getRsvpVolunteers(rsvpId).subscribe({
+      next: (response) => this.rsvpVolunteerPool.set(response.data ?? []),
+      error: () => {}, // Non-critical — search will just be empty
+    });
   }
 
   // ===== COMMAND ROLE EDITING =====
@@ -289,24 +300,27 @@ export class IncidentCommandSystemComponent implements OnInit {
   searchVolunteersForTeam(team: IcsDashboardTeam): void {
     const dashboard = this.icsData();
     const query = this.volunteerSearchByTeam()[team.id]?.trim();
-    if (!dashboard || !query) return;
+    if (!dashboard || !query) {
+      this.searchResultsByTeam.update((c) => ({ ...c, [team.id]: [] }));
+      return;
+    }
 
-    // Determine shift filter based on branch
-    const branch = dashboard.branches.find((b) => b.teams.some((t) => t.id === team.id));
-    let shiftFilter: string | undefined;
-    if (branch?.key === 'am_distribution') shiftFilter = 'am';
-    else if (branch?.key === 'pm_distribution') shiftFilter = 'pm';
+    // Get IDs of already-assigned volunteers across ALL teams
+    const assignedIds = new Set(
+      dashboard.branches.flatMap((b) => b.teams.flatMap((t) => t.assigned_volunteers.map((v) => v.id))),
+    );
 
-    this.icsService.searchRsvpVolunteers(dashboard.rsvp.id, shiftFilter).subscribe({
-      next: (response) => {
-        const filtered = (response.data ?? []).filter((v) => {
-          const fullName = `${v.first_name} ${v.last_name}`.toLowerCase();
-          return fullName.includes(query.toLowerCase());
-        });
-        this.searchResultsByTeam.update((current) => ({ ...current, [team.id]: filtered }));
-      },
-      error: () => this.error.set('Failed to search volunteers.'),
-    });
+    // Filter from cached pool — exclude already assigned, match name
+    const lowerQuery = query.toLowerCase();
+    const filtered = this.rsvpVolunteerPool()
+      .filter((v) => !assignedIds.has(v.volunteer_id))
+      .filter((v) => {
+        const fullName = `${v.first_name} ${v.last_name}`.toLowerCase();
+        return fullName.includes(lowerQuery);
+      })
+      .slice(0, 5); // Max 5 suggestions
+
+    this.searchResultsByTeam.update((current) => ({ ...current, [team.id]: filtered }));
   }
 
   assignSearchedVolunteer(team: IcsDashboardTeam, volunteer: RsvpVolunteer): void {
@@ -381,8 +395,11 @@ export class IncidentCommandSystemComponent implements OnInit {
     const totalVols = dashboard.branches.reduce(
       (t, b) => t + b.teams.reduce((bt, team) => bt + team.assigned_volunteers.length, 0), 0,
     );
+    const formattedDate = new Date(dashboard.rsvp.date).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric',
+    });
     pdf.text(`OBJECTIVE: ${meta.objective ?? 'N/A'}    MENU: ${meta.menu || 'N/A'}`, margin, y);
-    pdf.text(`DATE: ${dashboard.rsvp.date}    VOLUNTEERS: ${totalVols}`, pageWidth - margin, y, { align: 'right' });
+    pdf.text(`DATE: ${formattedDate}    VOLUNTEERS: ${totalVols}`, pageWidth - margin, y, { align: 'right' });
     y += 16;
     pdf.setDrawColor(30, 58, 95);
     pdf.setLineWidth(1.5);
@@ -517,7 +534,8 @@ export class IncidentCommandSystemComponent implements OnInit {
     }
 
     // --- SAVE ---
-    const filename = `ICS_${dashboard.rsvp.title.replace(/\s+/g, '_')}_${dashboard.rsvp.date}.pdf`;
+    const dateStr = new Date(dashboard.rsvp.date).toISOString().split('T')[0];
+    const filename = `ICS_${dashboard.rsvp.title.replace(/\s+/g, '_')}_${dateStr}.pdf`;
     pdf.save(filename);
   }
 

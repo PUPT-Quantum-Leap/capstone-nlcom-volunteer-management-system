@@ -276,11 +276,14 @@ class IcsController extends Controller
             ->with(['skills', 'positions', 'experiences']);
 
         // Filter by shift if requested (am/pm)
-        // Uses position-based detection: first slot = AM, last slot = PM
         $shift = $request->query('shift');
         $shift = is_string($shift) ? strtolower(trim($shift)) : null;
         if ($shift && in_array($shift, ['am', 'pm'], true)) {
-            $slotIds = $rsvp->shifts()->pluck('time_slot.time_slot_id')->sort()->values();
+            // Get the RSVP's shift time_slot_ids ordered by ID (earliest created = AM, latest = PM)
+            $slotIds = DB::table('rsvp_shift')
+                ->where('rsvp_id', $rsvpId)
+                ->orderBy('time_slot_id', 'asc')
+                ->pluck('time_slot_id');
 
             $targetSlotId = match ($shift) {
                 'am' => $slotIds->first(),

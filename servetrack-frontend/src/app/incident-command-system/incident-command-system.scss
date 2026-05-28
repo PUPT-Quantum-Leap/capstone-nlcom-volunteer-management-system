@@ -255,19 +255,19 @@ $radius: 12px;
 
 .metadata-display {
   display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .meta-chip {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 0.625rem 1rem;
+  flex: 1;
+  padding: 0.75rem 1rem;
   background: #f8fafc;
   border: 1px solid $border-color;
   border-radius: 8px;
-  min-width: 100px;
+  text-align: center;
 
   .meta-label {
     font-size: 0.65rem;
@@ -742,6 +742,7 @@ $radius: 12px;
   margin-top: 0.75rem;
   padding-top: 0.75rem;
   border-top: 1px dashed #e2e8f0;
+  position: relative;
 }
 
 .add-volunteer-input {
@@ -766,9 +767,14 @@ $radius: 12px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   box-shadow: $shadow-md;
-  margin-top: 4px;
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 4px;
   max-height: 150px;
   overflow-y: auto;
+  z-index: 200;
 }
 
 .search-result-item {
