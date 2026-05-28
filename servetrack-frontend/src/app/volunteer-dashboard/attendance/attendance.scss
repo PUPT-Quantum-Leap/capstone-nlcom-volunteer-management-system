@@ -184,6 +184,7 @@
   box-shadow: var(--shadow-sm);
   overflow: visible; // Changed to visible to allow dropdowns
   position: relative;
+  animation: slide-up 0.5s ease-out;
 }
 
 // Container Header (Synced with Polls Basis)
@@ -731,6 +732,11 @@ table {
   to {
     transform: rotate(360deg);
   }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 // Empty State

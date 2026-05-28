@@ -93,6 +93,7 @@
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  animation: slide-up 0.5s ease-out;
 }
 
 // Profile Header Card
@@ -1563,5 +1564,10 @@
 @keyframes profile-shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
