@@ -279,10 +279,10 @@ class IcsController extends Controller
         $shift = $request->query('shift');
         $shift = is_string($shift) ? strtolower(trim($shift)) : null;
         if ($shift && in_array($shift, ['am', 'pm'], true)) {
-            // Get the RSVP's shift time_slot_ids ordered by ID (earliest created = AM, latest = PM)
-            $slotIds = DB::table('rsvp_shift')
-                ->where('rsvp_id', $rsvpId)
+            // Get the RSVP's shift time_slot_ids via Eloquent relationship, ordered ascending
+            $slotIds = $rsvp->shifts()
                 ->orderBy('time_slot_id', 'asc')
+                ->get()
                 ->pluck('time_slot_id');
 
             $targetSlotId = match ($shift) {
