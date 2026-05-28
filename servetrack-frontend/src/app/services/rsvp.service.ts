@@ -23,8 +23,12 @@ export class RsvpService {
     return this.authService.ensureCsrf$();
   }
 
-  getRsvps(): Observable<{ data: Rsvp[] }> {
-    return this.http.get<{ data: Rsvp[] }>(this.apiUrl, { withCredentials: true }).pipe(
+  getRsvps(perPage?: number): Observable<{ data: Rsvp[] }> {
+    let url = this.apiUrl;
+    if (perPage) {
+      url += `?per_page=${perPage}`;
+    }
+    return this.http.get<{ data: Rsvp[] }>(url, { withCredentials: true }).pipe(
       tap((response) => this.rsvpCache.set(response)),
     );
   }

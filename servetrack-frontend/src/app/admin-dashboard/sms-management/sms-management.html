@@ -40,12 +40,13 @@
       <div class="compose-form">
         <div class="form-row">
           <div class="form-group">
-            <label for="sms-audience">Audience</label>
-            <select #audienceSelect id="sms-audience" class="form-input" [value]="smsAudience()"
-              (change)="setSmsAudience($any(audienceSelect.value))">
-              <option value="all">All Volunteers</option>
-              <option value="voted">Voted</option>
-              <option value="not_voted">Not Voted</option>
+            <label for="rsvp-filter">Filter by RSVP Event</label>
+            <select #rsvpSelect id="rsvp-filter" class="form-input" [value]="selectedRsvpId() ?? ''"
+              (change)="selectRsvp(rsvpSelect.value ? +rsvpSelect.value : null)">
+              <option value="">No Event Selected (General Broadcast)</option>
+              @for (rsvp of rsvps(); track rsvp.id) {
+                <option [value]="rsvp.id">{{ rsvp.title }} ({{ rsvp.date }})</option>
+              }
             </select>
           </div>
 
@@ -56,6 +57,20 @@
               <option value="">Start from scratch</option>
               @for (template of smsTemplates; track template.name) {
                 <option [value]="template.message">{{ template.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="sms-audience">Audience</label>
+            <select #audienceSelect id="sms-audience" class="form-input" [value]="smsAudience()"
+              (change)="setSmsAudience($any(audienceSelect.value))">
+              <option value="all">All Volunteers</option>
+              @if (selectedRsvpId()) {
+                <option value="voted">Voted (Responded)</option>
+                <option value="not_voted">Not Voted (No Response)</option>
               }
             </select>
           </div>
@@ -86,5 +101,104 @@
         </div>
       </div>
     </article>
+
+    <!-- Recipient Preview List -->
+    <article class="sms-panel sms-panel-preview">
+      <header class="sms-panel-header">
+        <div class="panel-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </div>
+        <div>
+          <h3>Recipient Preview</h3>
+          <p>Live list of volunteers matching your filter ({{ smsRecipientsCount() }})</p>
+        </div>
+      </header>
+
+      <div class="preview-list-container">
+        @if (loadingRecipients()) {
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <span>Loading recipients...</span>
+          </div>
+        } @else {
+          @if (recipients().length === 0) {
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>No recipients found matching the filter criteria.</span>
+            </div>
+          } @else {
+            <div class="recipient-list">
+              @for (recipient of recipients(); track recipient.email) {
+                <div class="recipient-card">
+                  <div class="recipient-avatar">
+                    {{ recipient.name.charAt(0).toUpperCase() }}
+                  </div>
+                  <div class="recipient-info">
+                    <span class="recipient-name">{{ recipient.name }}</span>
+                    <span class="recipient-email">{{ recipient.email }}</span>
+                    <span class="recipient-meta">{{ recipient.department }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+    </article>
   </section>
 </section>
+
+<!-- Status Loading/Sent Modal -->
+@if (sendingModalStatus()) {
+  <div class="modal-backdrop" (click)="sendingModalStatus() !== 'sending' ? closeSendingModal() : null">
+    <div class="modal-card modal-sm status-modal-card" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+      <div class="status-modal-content">
+        @if (sendingModalStatus() === 'sending') {
+          <div class="status-icon-wrapper is-sending">
+            <div class="pulse-ring"></div>
+            <div class="sending-spinner"></div>
+          </div>
+          <h3 class="status-modal-title">Queueing Broadcast</h3>
+          <p class="status-modal-desc">Please wait while the server registers your email notifications and prepares to dispatch them...</p>
+        }
+
+        @if (sendingModalStatus() === 'success') {
+          <div class="status-icon-wrapper is-success">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="success-check">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <h3 class="status-modal-title text-success">Email Sent</h3>
+          <p class="status-modal-desc">The email broadcast has been sent successfully.</p>
+          <div class="status-modal-actions">
+            <button type="button" class="status-btn success-btn" (click)="closeSendingModal()">Close</button>
+          </div>
+        }
+
+        @if (sendingModalStatus() === 'error') {
+          <div class="status-icon-wrapper is-error">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="error-cross">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </div>
+          <h3 class="status-modal-title text-error">Sending Failed</h3>
+          <p class="status-modal-desc">{{ sendingModalError() }}</p>
+          <div class="status-modal-actions">
+            <button type="button" class="status-btn error-btn" (click)="closeSendingModal()">Dismiss</button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+

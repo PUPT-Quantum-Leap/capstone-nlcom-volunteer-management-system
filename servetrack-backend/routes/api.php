@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CoordinatorController;
+use App\Http\Controllers\EmailBroadcastController;
 use App\Http\Controllers\FacebookWebhookController;
 use App\Http\Controllers\IcsController;
 use App\Http\Controllers\InviteController;
@@ -214,6 +215,7 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
 
     // SMS configuration status check
     Route::get('/sms/config-status', [SmsController::class, 'configStatus'])->name('sms.config-status');
+    Route::post('/email/broadcast', [EmailBroadcastController::class, 'sendBroadcast'])->name('email.broadcast');
 
     // ICS Team management — feeding operation data (admin only)
     Route::get('/ics-team', [IcsTeamController::class, 'index']);
