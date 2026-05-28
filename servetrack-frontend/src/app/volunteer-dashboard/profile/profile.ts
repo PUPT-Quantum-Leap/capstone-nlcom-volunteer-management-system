@@ -7,6 +7,7 @@ import {
   signal,
   DestroyRef,
 } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { AbstractControl, FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -21,7 +22,7 @@ import { VolunteerProfile, VolunteerProfileResponse } from '../../models/volunte
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, FormsModule],
+  imports: [ReactiveFormsModule, FormsModule, NgOptimizedImage],
   templateUrl: './profile.html',
   styleUrl: './profile.scss',
   host: {
@@ -204,7 +205,7 @@ export class ProfileComponent implements OnInit {
       mobileNumber: ['', [Validators.required, Validators.pattern(/^(09|\+639)\d{9}$/)]],
       birthdate: ['', [Validators.required]],
       lastMedicalExam: ['', [Validators.required]],
-      gender: [''],
+      gender: [null as string | null],
       completeAddress: ['', [Validators.required, Validators.minLength(10)]],
       educationalAttainment: ['', [Validators.required]],
       trainingExperience: [''],
@@ -270,7 +271,7 @@ export class ProfileComponent implements OnInit {
     this.loadProfile();
 
     // Dynamic validation: lifegroupLeaderName required when partOfLifegroup is 'yes'
-    this.profileForm.get('partOfLifegroup')?.valueChanges.subscribe((value) => {
+    this.profileForm.get('partOfLifegroup')?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
       const leaderNameControl = this.profileForm.get('lifegroupLeaderName');
       if (value === 'yes') {
         leaderNameControl?.setValidators([Validators.required]);
@@ -337,13 +338,6 @@ export class ProfileComponent implements OnInit {
     const isLeader = data.lifegroups?.[0]?.pivot?.is_leader ? 'yes' : 'no';
     const lifegroupName = data.lifegroups?.[0]?.name ?? '';
 
-    console.log('[Profile] Applying profile data:', {
-      lifegroups: data.lifegroups,
-      isPartLifegroup,
-      isLeader,
-      lifegroupName,
-    });
-
     // Update lifegroupLeaderName validation based on loaded data
     const leaderNameControl = this.profileForm.get('lifegroupLeaderName');
     if (isPartLifegroup === 'yes') {
@@ -361,7 +355,7 @@ export class ProfileComponent implements OnInit {
       mobileNumber: data.mobile_number,
       birthdate: data.birthdate,
       lastMedicalExam: data.last_medical_examination,
-      gender: data.gender ?? '',
+      gender: data.gender ?? null,
       completeAddress: data.address,
       educationalAttainment: data.educational_attainment,
       trainingExperience: data.training_experience ?? '',
@@ -420,7 +414,7 @@ export class ProfileComponent implements OnInit {
           mobileNumber: savedData.mobile_number,
           birthdate: savedData.birthdate,
           lastMedicalExam: savedData.last_medical_examination,
-          gender: savedData.gender ?? '',
+          gender: savedData.gender ?? null,
           completeAddress: savedData.address,
           educationalAttainment: savedData.educational_attainment,
           trainingExperience: savedData.training_experience ?? '',
@@ -466,14 +460,12 @@ export class ProfileComponent implements OnInit {
     this.showAvatarSelectorModal.set(false);
     if (this.isDirectAvatarChange()) {
       this.isDirectAvatarChange.set(false);
-      if (this.profileForm.valid) {
-        this.performSaveProfile();
-      }
+      this.performSaveProfile();
     }
   }
 
-  selectPersona(gender: string): void {
-    this.profileForm.patchValue({ gender: gender });
+  selectPersona(gender: string | null): void {
+    this.profileForm.patchValue({ gender });
     this.profileForm.get('gender')?.markAsDirty();
     this.profileForm.get('gender')?.markAsTouched();
     if (gender === 'girl') {
@@ -539,7 +531,7 @@ export class ProfileComponent implements OnInit {
       mobileNumber: this.sanitizer.sanitizeInput(formValue.mobileNumber ?? '', 'text'),
       birthdate: formValue.birthdate ?? '',
       lastMedicalExam: formValue.lastMedicalExam ?? '',
-      gender: formValue.gender ?? '',
+      gender: formValue.gender ?? null,
       completeAddress: this.sanitizer.sanitizeInput(formValue.completeAddress ?? '', 'both'),
       educationalAttainment: this.sanitizer.sanitizeInput(formValue.educationalAttainment ?? '', 'both'),
       trainingExperience: this.sanitizer.sanitizeInput(formValue.trainingExperience ?? '', 'both'),
@@ -569,11 +561,12 @@ export class ProfileComponent implements OnInit {
           // Update authService.currentUser signal to keep header/sidebar in sync
           const current = this.authService.currentUser();
           if (current) {
+            const profileData = response.data;
             this.authService.currentUser.set({
               ...current,
-              name: `${response.data.first_name} ${response.data.last_name}`,
-              email: response.data.email,
-              volunteer_profile: response.data as any
+              name: `${profileData.first_name} ${profileData.last_name}`,
+              email: profileData.email,
+              volunteer_profile: { ...profileData },
             });
           }
 
@@ -629,7 +622,8 @@ export class ProfileComponent implements OnInit {
     if (
       controlName === 'confirmPassword' &&
       this.profileForm.hasError('passwordMismatch') &&
-      (this.profileForm.get('confirmPassword')?.dirty || this.profileForm.get('confirmPassword')?.touched)
+      (this.profileForm.get('confirmPassword')?.dirty || this.profileForm.get('confirmPassword')?.touched) &&
+      !!this.profileForm.get('password')?.value
     ) {
       return true;
     }
