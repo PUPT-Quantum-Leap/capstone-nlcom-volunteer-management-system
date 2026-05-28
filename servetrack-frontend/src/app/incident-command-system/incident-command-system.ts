@@ -517,27 +517,32 @@ export class IncidentCommandSystemComponent implements OnInit {
     pdf.line(margin, y, pageWidth - margin, y);
     y += 14;
 
+    // Layout: 3 columns
+    const col1X = margin;
+    const col2X = margin + 170;
+    const col3X = pageWidth - margin - 120;
+
     pdf.setFontSize(8);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('SYMBOLS', margin, y);
-    pdf.text('MEAL BREAKDOWN', margin + 150, y);
-    pdf.text('VEHICLE ASSIGNMENT', margin + 310, y);
+    pdf.text('SYMBOLS', col1X, y);
+    pdf.text('MEAL BREAKDOWN', col2X, y);
+    pdf.text('VEHICLE ASSIGNMENT', col3X, y);
     y += 12;
 
     pdf.setFont('helvetica', 'normal');
-    pdf.text('^ team leader    ~ driver    * new volunteer', margin, y);
+    pdf.text('^ team leader', col1X, y);
+    pdf.text('~ driver', col1X, y + 10);
+    pdf.text('* new volunteer', col1X, y + 20);
 
     // Meal breakdown
-    const mealX = margin + 160;
-    pdf.text(`Breakfast: ${meta.meal_breakfast}`, mealX, y);
-    pdf.text(`Lunch: ${meta.meal_lunch}`, mealX + 70, y);
-    pdf.text(`Snacks: ${meta.meal_snacks}`, mealX + 130, y);
+    pdf.text(`Breakfast: ${meta.meal_breakfast}`, col2X, y);
+    pdf.text(`Lunch: ${meta.meal_lunch}`, col2X, y + 10);
+    pdf.text(`Snacks: ${meta.meal_snacks}`, col2X, y + 20);
 
-    // Vehicles — render as a column list
-    const vehX = margin + 340;
+    // Vehicles — right-aligned column list
     let vehY = y;
     for (const v of dashboard.vehicles) {
-      pdf.text(`${v.team_name} - ${v.vehicle}`, vehX, vehY);
+      pdf.text(`${v.team_name} - ${v.vehicle}`, col3X, vehY);
       vehY += 10;
     }
 
@@ -585,6 +590,16 @@ export class IncidentCommandSystemComponent implements OnInit {
     if (confidence >= 0.85) return 'confidence-high';
     if (confidence >= 0.6) return 'confidence-medium';
     return 'confidence-low';
+  }
+
+  /**
+   * Highlight matching text in a name for search results.
+   */
+  highlightMatch(name: string, teamId: number): string {
+    const query = this.volunteerSearchByTeam()[teamId]?.trim();
+    if (!query) return name;
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return name.replace(regex, '<span class="highlight">$1</span>');
   }
 
   private rolesByKeys(keys: string[]): IcsCommandRole[] {
