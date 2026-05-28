@@ -278,10 +278,11 @@ class IcsController extends Controller
         // Filter by shift if requested (am/pm)
         // Uses position-based detection: first slot = AM, last slot = PM
         $shift = $request->query('shift');
-        if ($shift) {
+        $shift = is_string($shift) ? strtolower(trim($shift)) : null;
+        if ($shift && in_array($shift, ['am', 'pm'], true)) {
             $slotIds = $rsvp->shifts()->pluck('time_slot.time_slot_id')->sort()->values();
 
-            $targetSlotId = match (strtolower($shift)) {
+            $targetSlotId = match ($shift) {
                 'am' => $slotIds->first(),
                 'pm' => $slotIds->last(),
                 default => null,
