@@ -173,7 +173,7 @@ Analyze each volunteer's profile and determine the best team fit. Consider:
 4. Prior experience - relevant experience is a strong indicator
 5. Lifegroup membership - can be useful for team cohesion
 6. Time preference - CRITICAL: volunteers who chose AM shift MUST only be assigned to AM Distribution teams or Mobile Kitchen teams. Volunteers who chose PM shift MUST only be assigned to PM Distribution teams or Mobile Kitchen teams. Mobile Kitchen teams accept all shifts.
-7. Maximum capacity - each team should have a MAXIMUM of 3-5 volunteers assigned. Distribute evenly.
+7. Maximum capacity - each team should have a MAXIMUM of 3 volunteers assigned. Distribute evenly across all available teams.
 8. Profession - consider the volunteer's profession/occupation when available for better matching
 
 Return ONLY a JSON object with exactly this structure - no markdown, no code fences:
