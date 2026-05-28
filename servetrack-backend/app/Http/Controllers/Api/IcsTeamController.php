@@ -20,24 +20,32 @@ class IcsTeamController extends Controller
             ->whereNotNull('departure_note')
             ->get();
 
-        // Cross-reference volunteers from ICS-assigned teams by matching team name
-        // ICS teams (Alpha, Bravo, etc.) have volunteer assignments via ics_volunteer pivot
+        // Cross-reference volunteers from ICS-assigned teams by matching team name.
+        // TEAM CHARLIE → matches ICS "Charlie 1" + "Charlie 2" → combines volunteers.
         $teams->each(function ($icsTeam) {
-            // Match legacy team name (e.g. "Team Alpha") to ICS team name (e.g. "Alpha")
+            // Strip "Team " prefix: "Team Alpha" → "Alpha", "Team Charlie" → "Charlie"
             $teamName = preg_replace('/^team\s+/i', '', $icsTeam->team ?? '');
+            $teamName = trim($teamName);
 
-            // Find the corresponding ICS-generated team row that has branch_key + team_id
-            $icsStructureTeam = IcsTeam::query()
+            if (! $teamName || ! $icsTeam->ics_id) {
+                $icsTeam->setAttribute('assigned_volunteers', []);
+
+                return;
+            }
+
+            // Find ALL matching ICS structure teams (e.g., "Charlie" matches "Charlie 1" + "Charlie 2")
+            $matchingTeamIds = IcsTeam::query()
                 ->whereNotNull('branch_key')
                 ->where('team', 'LIKE', '%'.$teamName.'%')
                 ->where('ics_id', $icsTeam->ics_id)
-                ->first();
+                ->whereNotNull('team_id')
+                ->pluck('team_id');
 
-            if ($icsStructureTeam && $icsStructureTeam->ics_id && $icsStructureTeam->team_id) {
+            if ($matchingTeamIds->isNotEmpty()) {
                 $volunteers = \Illuminate\Support\Facades\DB::table('ics_volunteer')
                     ->join('volunteer', 'volunteer.volunteer_id', '=', 'ics_volunteer.volunteer_id')
-                    ->where('ics_volunteer.ics_id', $icsStructureTeam->ics_id)
-                    ->where('ics_volunteer.team_id', $icsStructureTeam->team_id)
+                    ->where('ics_volunteer.ics_id', $icsTeam->ics_id)
+                    ->whereIn('ics_volunteer.team_id', $matchingTeamIds)
                     ->select('volunteer.volunteer_id', 'volunteer.first_name', 'volunteer.last_name', 'ics_volunteer.role', 'ics_volunteer.is_driver', 'ics_volunteer.is_leader')
                     ->get();
 
