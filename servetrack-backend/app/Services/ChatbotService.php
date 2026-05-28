@@ -11,18 +11,15 @@ class ChatbotService
 {
     private string $primaryUrl;
 
-    private string $fallbackUrl;
-
     private string $jwtSecret;
 
     private int $timeout;
 
     public function __construct()
     {
-        $this->primaryUrl  = config('services.chatbot.webhook_url', '');
-        $this->fallbackUrl = config('services.chatbot.fallback_webhook_url', '');
-        $this->jwtSecret   = config('services.chatbot.webhook_jwt_secret', '');
-        $this->timeout     = (int) config('services.chatbot.timeout', 30);
+        $this->primaryUrl = config('services.chatbot.webhook_url', '');
+        $this->jwtSecret  = config('services.chatbot.webhook_jwt_secret', '');
+        $this->timeout    = (int) config('services.chatbot.timeout', 30);
     }
 
     /**
@@ -51,7 +48,7 @@ class ChatbotService
             'userContext' => empty($userContext) ? null : $userContext,
         ];
 
-        // 1. Try primary webhook (with 2 automatic retries on 5xx / timeout)
+        // Call webhook with 2 automatic retries on transient failures
         try {
             $response = $this->callWebhook($this->primaryUrl, $payload, retries: 2);
 
@@ -59,36 +56,18 @@ class ChatbotService
                 return $this->parseResponse($response, $sessionId);
             }
 
-            Log::warning('chatbot.primary_webhook.unsuccessful', [
+            Log::warning('chatbot.webhook.unsuccessful', [
                 'status'     => $response->status(),
                 'session_id' => $sessionId,
             ]);
         } catch (\Exception $e) {
-            Log::warning('chatbot.primary_webhook.exception', [
+            Log::error('chatbot.webhook.exception', [
                 'error'      => $e->getMessage(),
                 'session_id' => $sessionId,
             ]);
         }
 
-        // 2. Try fallback webhook if configured
-        if ($this->fallbackUrl) {
-            try {
-                Log::info('chatbot.fallback_webhook.attempt', ['session_id' => $sessionId]);
-
-                $response = $this->callWebhook($this->fallbackUrl, $payload, retries: 1);
-
-                if ($response->successful()) {
-                    return $this->parseResponse($response, $sessionId);
-                }
-            } catch (\Exception $e) {
-                Log::error('chatbot.fallback_webhook.exception', [
-                    'error'      => $e->getMessage(),
-                    'session_id' => $sessionId,
-                ]);
-            }
-        }
-
-        throw new \RuntimeException('All chatbot webhook endpoints failed.');
+        throw new \RuntimeException('Chatbot webhook request failed.');
     }
 
     /**
