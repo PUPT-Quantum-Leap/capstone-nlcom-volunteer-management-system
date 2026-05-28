@@ -769,10 +769,10 @@ $radius: 12px;
   border-radius: 6px;
   box-shadow: $shadow-md;
   position: absolute;
-  bottom: 100%;
+  top: 100%;
   left: 0;
   right: 0;
-  margin-bottom: 4px;
+  margin-top: 4px;
   max-height: 150px;
   overflow-y: auto;
   z-index: 200;
@@ -795,6 +795,14 @@ $radius: 12px;
 
   .sr-name { font-weight: 600; color: $text-main; }
   .sr-skills { font-size: 0.65rem; color: $text-muted; }
+}
+
+.highlight {
+  background: #fef08a;
+  color: $text-main;
+  font-weight: 700;
+  border-radius: 2px;
+  padding: 0 1px;
 }
 
 // Vehicle Section

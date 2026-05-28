@@ -392,7 +392,7 @@
                       <div class="search-results-dropdown" (click)="$event.stopPropagation()">
                         @for (vol of searchResultsByTeam()[team.id]!; track vol.volunteer_id) {
                           <button class="search-result-item" type="button" (click)="assignSearchedVolunteer(team, vol)">
-                            <span class="sr-name">{{ vol.first_name }} {{ vol.last_name }}</span>
+                          <span class="sr-name" [innerHTML]="highlightMatch(vol.first_name + ' ' + vol.last_name, team.id)"></span>
                             <span class="sr-skills">{{ vol.skills.slice(0, 2).join(', ') }}</span>
                           </button>
                         }
