@@ -217,7 +217,13 @@
 // SMS Layout
 .sms-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 // SMS Panel
@@ -404,6 +410,307 @@
   }
 }
 
+// Preview List Container
+.preview-list-container {
+  padding: 1.5rem;
+  max-height: 480px;
+  overflow-y: auto;
+  flex: 1;
+  background: #f8fafc;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  color: var(--gray-500);
+  gap: 0.75rem;
+
+  .spinner {
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--primary-600);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--gray-400);
+  gap: 0.75rem;
+
+  svg {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  span {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+}
+
+.recipient-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.recipient-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1px solid var(--gray-100);
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transform: translateX(4px);
+    border-color: var(--primary-200);
+  }
+}
+
+.recipient-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-50) 0%, #eff6ff 100%);
+  color: var(--primary-700);
+  font-weight: 700;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--primary-100);
+}
+
+.recipient-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.recipient-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recipient-email {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recipient-meta {
+  margin-top: 0.125rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary-600);
+}
+
+// Status Modal Specific Styling
+.status-modal-card {
+  max-width: 420px;
+  width: 100%;
+  padding: 2.25rem 2rem;
+  text-align: center;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: modalSlideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.status-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.status-icon-wrapper {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  position: relative;
+
+  &.is-sending {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+
+  &.is-success {
+    background: #f0fdf4;
+    color: #16a34a;
+    box-shadow: 0 0 0 8px rgba(22, 163, 74, 0.05);
+
+    svg {
+      width: 2.25rem;
+      height: 2.25rem;
+      animation: checkmarkGrow 0.4s ease-out forwards;
+    }
+  }
+
+  &.is-error {
+    background: #fef2f2;
+    color: #dc2626;
+    box-shadow: 0 0 0 8px rgba(220, 38, 38, 0.05);
+
+    svg {
+      width: 2.25rem;
+      height: 2.25rem;
+      animation: crossShake 0.4s ease-out forwards;
+    }
+  }
+}
+
+.sending-spinner {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 3px solid #dbeafe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  z-index: 2;
+}
+
+.pulse-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.1);
+  animation: pulseScale 1.5s ease-out infinite;
+  z-index: 1;
+}
+
+@keyframes pulseScale {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+@keyframes checkmarkGrow {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes crossShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.status-modal-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 0.75rem;
+
+  &.text-success {
+    color: #15803d;
+  }
+
+  &.text-error {
+    color: #b91c1c;
+  }
+}
+
+.status-modal-desc {
+  font-size: 0.9rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 1.75rem;
+  max-width: 320px;
+}
+
+.status-modal-actions {
+  width: 100%;
+}
+
+.status-btn {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+
+  &.success-btn {
+    background: #16a34a;
+    color: white;
+
+    &:hover {
+      background: #15803d;
+      box-shadow: 0 6px 12px -2px rgba(22, 163, 74, 0.2);
+    }
+  }
+
+  &.error-btn {
+    background: #dc2626;
+    color: white;
+
+    &:hover {
+      background: #b91c1c;
+      box-shadow: 0 6px 12px -2px rgba(220, 38, 38, 0.2);
+    }
+  }
+}
+
 // Responsive Design
 @media (max-width: 768px) {
   :host {
@@ -431,3 +738,4 @@
     grid-template-columns: 1fr;
   }
 }
+

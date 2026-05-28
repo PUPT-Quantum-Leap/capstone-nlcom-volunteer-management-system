@@ -537,5 +537,32 @@ export class AdminDashboardService {
       })
     );
   }
+
+  sendEmailBroadcast(
+    rsvpId: number | null,
+    audience: 'all' | 'voted' | 'not_voted',
+    message: string
+  ): Observable<ApiResponse<void>> {
+    const payload = {
+      rsvp_id: rsvpId,
+      audience,
+      message,
+    };
+    return this.http.post<ApiResponse<void>>(
+      `${environment.apiUrl}/email/broadcast`,
+      payload,
+      { withCredentials: true }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error sending email broadcast:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Failed to queue email broadcast',
+          data: null as any,
+        });
+      })
+    );
+  }
 }
+
 

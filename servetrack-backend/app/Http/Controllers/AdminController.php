@@ -482,11 +482,12 @@ class AdminController extends Controller
         $search = $request->query('search');
 
         $query = Rsvp::query()
-            ->whereIn('status', ['active', 'closed'])
             ->with(['responses.volunteer.positions', 'responses.timeSlot', 'location']);
 
         if ($rsvpId) {
             $query->where('rsvp_id', $rsvpId);
+        } else {
+            $query->whereIn('status', ['active', 'closed']);
         }
 
         if ($date) {

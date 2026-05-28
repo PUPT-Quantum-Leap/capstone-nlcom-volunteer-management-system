@@ -52,7 +52,8 @@ class RsvpController extends Controller
             });
         }
 
-        $rsvps = $query->latest()->paginate(15);
+        $perPage = $request->integer('per_page', 15);
+        $rsvps = $query->latest()->paginate($perPage);
 
         return RsvpResource::collection($rsvps);
     }

@@ -37,6 +37,14 @@ export class SmsManagementComponent {
   readonly feedbackMessage = signal('');
   readonly feedbackType = signal<'success' | 'error' | 'info'>('info');
 
+  readonly rsvps = signal<Rsvp[]>([]);
+  readonly selectedRsvpId = signal<number | null>(null);
+  readonly recipients = signal<any[]>([]);
+  readonly loadingRecipients = signal(false);
+
+  readonly sendingModalStatus = signal<'sending' | 'success' | 'error' | null>(null);
+  readonly sendingModalError = signal('');
+
   readonly smsTemplates: ReadonlyArray<{ name: string; message: string }> = [
     {
       name: 'Attendance Reminder',
@@ -53,25 +61,21 @@ export class SmsManagementComponent {
       message:
         'Thank you for serving with us. Your time and effort made a real impact in our latest outreach.',
     },
+    {
+      name: 'Event Rescheduling',
+      message:
+        'Hello team! Please be informed that the event [Event Title] has been rescheduled. We apologize for any inconvenience caused. Please review the updated details on the dashboard.',
+    },
+    {
+      name: 'Event Cancellation',
+      message:
+        'Hello team! We regret to inform you that the event [Event Title] has been cancelled. Thank you for your understanding, and we hope to see you at our next event.',
+    },
   ];
 
   readonly smsCharacterCount = computed(() => this.smsMessage().trim().length);
 
-  readonly smsRecipientsCount = computed(() => {
-    const audience = this.smsAudience();
-    const total = this.activeVolunteers();
-    const voted = this.latestRsvp()?.totalResponses ?? 0;
-
-    if (audience === 'voted') {
-      return voted;
-    }
-
-    if (audience === 'not_voted') {
-      return Math.max(0, total - voted);
-    }
-
-    return total;
-  });
+  readonly smsRecipientsCount = computed(() => this.recipients().length);
 
   readonly smsConfigured = signal<boolean | null>(null);
   readonly smsConfigMessage = signal('');
@@ -82,6 +86,15 @@ export class SmsManagementComponent {
 
   setSmsAudience(value: 'all' | 'voted' | 'not_voted'): void {
     this.smsAudience.set(value);
+    this.loadRecipientsPreview();
+  }
+
+  selectRsvp(id: number | null): void {
+    this.selectedRsvpId.set(id);
+    if (!id && this.smsAudience() !== 'all') {
+      this.smsAudience.set('all');
+    }
+    this.loadRecipientsPreview();
   }
 
   updateSmsMessage(value: string): void {
@@ -90,7 +103,16 @@ export class SmsManagementComponent {
 
   applySmsTemplate(templateMessage: string): void {
     this.selectedSmsTemplate.set(templateMessage);
-    this.smsMessage.set(templateMessage);
+    let formatted = templateMessage;
+    const rsvp = this.rsvps().find(r => r.id === this.selectedRsvpId());
+    if (rsvp) {
+      formatted = formatted.replace(/\[Event Title\]/g, rsvp.title);
+    }
+    this.smsMessage.set(formatted);
+  }
+
+  closeSendingModal(): void {
+    this.sendingModalStatus.set(null);
   }
 
   sendSmsBroadcast(): void {
@@ -106,21 +128,107 @@ export class SmsManagementComponent {
       return;
     }
 
-    this.smsSending.set(true);
+    this.sendingModalStatus.set('sending');
+    this.sendingModalError.set('');
 
-    window.setTimeout(() => {
-      this.smsSending.set(false);
-      this.showFeedback(
-        `Email broadcast queued for ${this.smsRecipientsCount()} recipients.`,
-        'success',
-      );
-      this.smsMessage.set('');
-      this.selectedSmsTemplate.set('');
-    }, 900);
+    this.adminDashboardService.sendEmailBroadcast(
+      this.selectedRsvpId(),
+      this.smsAudience(),
+      message
+    ).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.sendingModalStatus.set('success');
+          this.smsMessage.set('');
+          this.selectedSmsTemplate.set('');
+        } else {
+          this.sendingModalStatus.set('error');
+          this.sendingModalError.set(res.message || 'Failed to queue email broadcast.');
+        }
+      },
+      error: () => {
+        this.sendingModalStatus.set('error');
+        this.sendingModalError.set('An error occurred while sending the email broadcast.');
+      }
+    });
+  }
+
+  loadRecipientsPreview(): void {
+    const audience = this.smsAudience();
+    const rsvpId = this.selectedRsvpId();
+
+    if (audience !== 'all' && !rsvpId) {
+      this.recipients.set([]);
+      return;
+    }
+
+    this.loadingRecipients.set(true);
+
+    if (audience === 'voted' && rsvpId) {
+      this.adminDashboardService.fetchAttendanceFromRsvp(rsvpId).subscribe({
+        next: (res) => {
+          this.loadingRecipients.set(false);
+          if (res.success) {
+            this.recipients.set(res.data.map(item => ({
+              name: item.volunteer_name,
+              email: item.volunteer_email,
+              phone: item.phone || '',
+              department: item.volunteer_department
+            })));
+          } else {
+            this.recipients.set([]);
+          }
+        },
+        error: () => {
+          this.loadingRecipients.set(false);
+          this.recipients.set([]);
+        }
+      });
+    } else if (audience === 'not_voted' && rsvpId) {
+      this.adminDashboardService.getRsvpNonResponders(rsvpId, { perPage: 1000 }).subscribe({
+        next: (res) => {
+          this.loadingRecipients.set(false);
+          if (res.success) {
+            this.recipients.set(res.data.map(item => ({
+              name: item.volunteer_name,
+              email: item.volunteer_email,
+              phone: item.mobile_number || '',
+              department: item.volunteer_department
+            })));
+          } else {
+            this.recipients.set([]);
+          }
+        },
+        error: () => {
+          this.loadingRecipients.set(false);
+          this.recipients.set([]);
+        }
+      });
+    } else {
+      this.adminDashboardService.getVolunteers().subscribe({
+        next: (res) => {
+          this.loadingRecipients.set(false);
+          if (res.success) {
+            this.recipients.set(res.data.map(v => ({
+              name: `${v.first_name} ${v.last_name}`,
+              email: v.email,
+              phone: v.mobile_number || '',
+              department: v.positions?.[0] ?? 'Unassigned'
+            })));
+          } else {
+            this.recipients.set([]);
+          }
+        },
+        error: () => {
+          this.loadingRecipients.set(false);
+          this.recipients.set([]);
+        }
+      });
+    }
   }
 
   private loadSmsData(): void {
-    // Check SMS configuration status
+    // Check Email configuration status
     this.adminDashboardService
       .getSmsConfigStatus()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -161,18 +269,24 @@ export class SmsManagementComponent {
       });
 
     this.rsvpService
-      .getRsvps()
+      .getRsvps(100)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
           const rsvps = response.data ?? [];
+          this.rsvps.set(rsvps);
           const latest = rsvps
             .filter((r) => r.status === 'active' || r.status === 'closed')
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] ?? null;
           this.latestRsvp.set(latest);
+          if (latest) {
+            this.selectedRsvpId.set(latest.id);
+          }
+          this.loadRecipientsPreview();
         },
         error: () => {
           this.latestRsvp.set(null);
+          this.loadRecipientsPreview();
         },
       });
   }
