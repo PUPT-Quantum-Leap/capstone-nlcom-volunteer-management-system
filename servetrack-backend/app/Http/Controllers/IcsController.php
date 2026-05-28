@@ -6,10 +6,13 @@ use App\Http\Requests\ApplyAiSuggestionsRequest;
 use App\Http\Requests\AssignVolunteerRequest;
 use App\Http\Requests\RemoveVolunteerRequest;
 use App\Http\Requests\StoreIcsRequest;
+use App\Http\Requests\UpdateIcsCommandRoleRequest;
 use App\Http\Requests\UpdateIcsRequest;
+use App\Http\Resources\IcsDashboardResource;
 use App\Http\Resources\IcsResource;
 use App\Http\Resources\VolunteerResource;
 use App\Models\Ics;
+use App\Models\IcsCommandRole;
 use App\Models\IcsTeam;
 use App\Models\Rsvp;
 use App\Models\Team;
@@ -58,6 +61,75 @@ class IcsController extends Controller
         }
 
         return new IcsResource($ics);
+    }
+
+    public function dashboard(Request $request): IcsDashboardResource|JsonResponse
+    {
+        $validated = $request->validate([
+            'rsvp_id' => ['required', 'integer', 'exists:rsvp,rsvp_id'],
+        ]);
+
+        $rsvp = Rsvp::query()->find((int) $validated['rsvp_id']);
+
+        if (! $rsvp) {
+            return response()->json(['message' => 'RSVP not found.'], 404);
+        }
+
+        $ics = DB::transaction(function () use ($rsvp): Ics {
+            $ics = Ics::query()->firstOrCreate(
+                ['rsvp_id' => $rsvp->rsvp_id],
+                [
+                    'name' => $rsvp->title,
+                    'description' => $rsvp->description,
+                    'date' => $rsvp->date,
+                    'location' => $rsvp->event_location,
+                    'status' => 'draft',
+                ]
+            );
+
+            $this->ensureDashboardDefaults($ics);
+
+            return $ics;
+        });
+
+        return new IcsDashboardResource($this->loadDashboard($ics->id));
+    }
+
+    public function updateCommandRole(UpdateIcsCommandRoleRequest $request, int $icsId, string $roleKey): IcsDashboardResource|JsonResponse
+    {
+        $ics = Ics::query()->find($icsId);
+
+        if (! $ics) {
+            return response()->json(['message' => 'ICS not found.'], 404);
+        }
+
+        $this->ensureDashboardDefaults($ics);
+
+        $defaults = collect(IcsDashboardResource::COMMAND_ROLES)->keyBy('key');
+        $defaultRole = $defaults->get($roleKey);
+
+        if (! $defaultRole) {
+            return response()->json(['message' => 'Command role not found.'], 404);
+        }
+
+        $assignedName = $request->input('assigned_name');
+        $volunteerId = $request->input('volunteer_id');
+
+        if ($volunteerId) {
+            $volunteer = Volunteer::query()->find($volunteerId);
+            $assignedName = trim($volunteer->first_name.' '.$volunteer->last_name);
+        }
+
+        IcsCommandRole::query()->updateOrCreate(
+            ['ics_id' => $ics->id, 'role_key' => $roleKey],
+            [
+                'role_title' => $defaultRole['title'],
+                'volunteer_id' => $volunteerId,
+                'assigned_name' => $assignedName,
+            ]
+        );
+
+        return new IcsDashboardResource($this->loadDashboard($ics->id));
     }
 
     public function store(StoreIcsRequest $request): JsonResponse
@@ -237,7 +309,7 @@ class IcsController extends Controller
 
         $volunteers = Volunteer::query()->whereIn('volunteer_id', $volunteerIds)->get()->keyBy('volunteer_id');
         $teams = Team::query()->whereIn('id', $teamIds)->get()->keyBy('id');
-        $icsTeamIds = $ics->teams()->pluck('id')->flip();
+        $icsTeamIds = $ics->teams()->pluck('teams.id')->flip();
 
         DB::transaction(function () use ($suggestions, $ics, $volunteers, $teams, $icsTeamIds): void {
             foreach ($suggestions as $suggestion) {
@@ -251,6 +323,8 @@ class IcsController extends Controller
                         $volunteer->volunteer_id => [
                             'team_id' => $team->id,
                             'role' => $suggestion['role'] ?? null,
+                            'is_driver' => false,
+                            'is_leader' => str_contains(strtolower($suggestion['role'] ?? ''), 'lead'),
                             'assigned_at' => now(),
                         ],
                     ]);
@@ -291,6 +365,8 @@ class IcsController extends Controller
                 $volunteer->volunteer_id => [
                     'team_id' => $request->input('team_id'),
                     'role' => $request->input('role'),
+                    'is_driver' => $request->boolean('is_driver'),
+                    'is_leader' => $request->boolean('is_leader'),
                     'assigned_at' => now(),
                 ],
             ]);
@@ -313,5 +389,47 @@ class IcsController extends Controller
         $ics->volunteers()->detach($request->input('volunteer_id'));
 
         return response()->json(['message' => 'Volunteer removed successfully.']);
+    }
+
+    private function ensureDashboardDefaults(Ics $ics): void
+    {
+        foreach (IcsDashboardResource::COMMAND_ROLES as $role) {
+            IcsCommandRole::query()->firstOrCreate(
+                ['ics_id' => $ics->id, 'role_key' => $role['key']],
+                [
+                    'role_title' => $role['title'],
+                    'assigned_name' => $role['assigned_name'],
+                ]
+            );
+        }
+
+        foreach (IcsDashboardResource::OPERATIONAL_BRANCHES as $branch) {
+            foreach ($branch['teams'] as $teamDefinition) {
+                $team = Team::query()->firstOrCreate(['name' => $teamDefinition['name']]);
+
+                IcsTeam::query()->updateOrCreate(
+                    ['ics_id' => $ics->id, 'team_key' => $teamDefinition['key']],
+                    [
+                        'team_id' => $team->id,
+                        'team' => $team->name,
+                        'branch_key' => $branch['key'],
+                        'branch_title' => $branch['title'],
+                        'vehicle' => $teamDefinition['vehicle'],
+                    ]
+                );
+            }
+        }
+    }
+
+    private function loadDashboard(int $icsId): Ics
+    {
+        return Ics::query()
+            ->with([
+                'rsvp',
+                'commandRoles',
+                'icsTeams' => fn ($query) => $query->orderBy('id'),
+                'volunteers' => fn ($query) => $query->with('skills'),
+            ])
+            ->findOrFail($icsId);
     }
 }

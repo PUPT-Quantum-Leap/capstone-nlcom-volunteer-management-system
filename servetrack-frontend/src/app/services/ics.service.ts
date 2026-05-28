@@ -8,6 +8,7 @@ import {
   AiSuggestion,
   AssignVolunteerRequest,
   RsvpVolunteer,
+  IcsDashboard,
 } from '../models/ics';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
@@ -36,6 +37,35 @@ export class IcsService {
    */
   getIcsById(id: number): Observable<{ data: Ics }> {
     return this.http.get<{ data: Ics }>(`${this.apiUrl}/${id}`, { withCredentials: true });
+  }
+
+  /**
+   * Get the frontend-ready ICS dashboard for an RSVP event.
+   */
+  getDashboard(rsvpId: number): Observable<{ data: IcsDashboard }> {
+    return this.http.get<{ data: IcsDashboard }>(`${this.apiUrl}/dashboard`, {
+      params: { rsvp_id: rsvpId },
+      withCredentials: true,
+    });
+  }
+
+  /**
+   * Update a fixed command-role assignment.
+   */
+  updateCommandRole(
+    icsId: number,
+    roleKey: string,
+    body: { assigned_name?: string | null; volunteer_id?: number | null },
+  ): Observable<{ data: IcsDashboard }> {
+    return this.ensureCsrf().pipe(
+      switchMap(() =>
+        this.http.patch<{ data: IcsDashboard }>(
+          `${this.apiUrl}/${icsId}/command-roles/${roleKey}`,
+          body,
+          { withCredentials: true },
+        ),
+      ),
+    );
   }
 
   /**

@@ -223,12 +223,14 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
 
     // ICS management — full CRUD + AI suggestions (admin only)
     Route::get('/ics', [IcsController::class, 'index'])->name('ics.index');
+    Route::get('/ics/dashboard', [IcsController::class, 'dashboard'])->name('ics.dashboard');
     Route::get('/ics/{id}', [IcsController::class, 'show'])->name('ics.show');
     Route::post('/ics', [IcsController::class, 'store'])->name('ics.store');
     Route::put('/ics/{id}', [IcsController::class, 'update'])->name('ics.update');
     Route::delete('/ics/{id}', [IcsController::class, 'destroy'])->name('ics.destroy');
     Route::get('/ics/{rsvpId}/rsvp-volunteers', [IcsController::class, 'getRsvpVolunteers'])->name('ics.rsvp-volunteers');
     Route::get('/ics/{icsId}/ai-suggestions', [IcsController::class, 'getAiSuggestions'])->name('ics.ai-suggestions');
+    Route::patch('/ics/{icsId}/command-roles/{roleKey}', [IcsController::class, 'updateCommandRole'])->name('ics.command-roles.update');
     Route::post('/ics/{icsId}/apply-suggestions', [IcsController::class, 'applyAiSuggestions'])->name('ics.apply-suggestions');
     Route::post('/ics/{icsId}/assign-volunteer', [IcsController::class, 'assignVolunteer'])->name('ics.assign-volunteer');
     Route::post('/ics/{icsId}/remove-volunteer', [IcsController::class, 'removeVolunteer'])->name('ics.remove-volunteer');

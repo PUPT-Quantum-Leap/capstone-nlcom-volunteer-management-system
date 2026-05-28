@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ics extends Model
 {
@@ -44,7 +45,7 @@ class Ics extends Model
             'ics_volunteer',
             'ics_id',
             'volunteer_id'
-        )->withPivot('team_id', 'role', 'assigned_at');
+        )->withPivot('team_id', 'role', 'is_driver', 'is_leader', 'assigned_at');
     }
 
     public function teams(): BelongsToMany
@@ -55,5 +56,15 @@ class Ics extends Model
             'ics_id',
             'team_id'
         )->withPivot('created_at');
+    }
+
+    public function commandRoles(): HasMany
+    {
+        return $this->hasMany(IcsCommandRole::class, 'ics_id');
+    }
+
+    public function icsTeams(): HasMany
+    {
+        return $this->hasMany(IcsTeam::class, 'ics_id');
     }
 }

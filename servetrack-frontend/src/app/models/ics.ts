@@ -9,6 +9,69 @@ export interface AiSuggestion {
   reasoning?: string | null;
 }
 
+export interface AiCandidate {
+  volunteer_id: number;
+  name: string;
+  role: string;
+  confidence: number;
+  skills: string[];
+  reasoning?: string | null;
+}
+
+export interface IcsCommandRole {
+  key: string;
+  title: string;
+  assigned_name: string | null;
+  volunteer_id: number | null;
+}
+
+export interface IcsAssignedVolunteer {
+  id: number;
+  name: string;
+  role: string | null;
+  is_driver: boolean;
+  is_leader: boolean;
+  skills: string[];
+}
+
+export interface IcsDashboardTeam {
+  id: number;
+  key: string;
+  name: string;
+  branch_key: string;
+  vehicle: string | null;
+  assigned_volunteers: IcsAssignedVolunteer[];
+  ai_suggestion: {
+    rationale: string[];
+    candidates: AiCandidate[];
+  };
+}
+
+export interface IcsDashboardBranch {
+  key: string;
+  title: string;
+  teams: IcsDashboardTeam[];
+}
+
+export interface IcsVehicleAssignment {
+  team_key: string;
+  team_name: string;
+  vehicle: string;
+}
+
+export interface IcsDashboard {
+  ics_id: number;
+  rsvp: {
+    id: number;
+    title: string;
+    date: string;
+    location: string | null;
+  };
+  command_roles: IcsCommandRole[];
+  branches: IcsDashboardBranch[];
+  vehicles: IcsVehicleAssignment[];
+}
+
 export interface AiSuggestionsResponse {
   data: AiSuggestion[];
   meta: {
@@ -72,6 +135,8 @@ export interface AssignVolunteerRequest {
   volunteer_id: number;
   team_id: number;
   role?: string;
+  is_driver?: boolean;
+  is_leader?: boolean;
 }
 
 export interface RsvpVolunteer {
