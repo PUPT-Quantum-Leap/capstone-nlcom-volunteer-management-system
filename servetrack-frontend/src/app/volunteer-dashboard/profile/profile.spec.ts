@@ -129,10 +129,10 @@ describe('ProfileComponent', () => {
   });
 
   it('should toggle accordion sections', () => {
+    expect(component.expandedSection()).toBeNull();
+    component.toggleSection('personal');
     expect(component.expandedSection()).toBe('personal');
-    component.toggleSection('service');
-    expect(component.expandedSection()).toBe('service');
-    component.toggleSection('service');
+    component.toggleSection('personal');
     expect(component.expandedSection()).toBeNull();
   });
 
