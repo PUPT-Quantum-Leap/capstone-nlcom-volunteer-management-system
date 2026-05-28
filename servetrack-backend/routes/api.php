@@ -26,6 +26,7 @@ Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(funct
     Route::post('/admin/login', [LoginController::class, 'adminStore'])->name('auth.admin-login');
     Route::get('/auth/facebook', [LoginController::class, 'redirectToFacebook'])->name('auth.facebook');
     Route::get('/auth/facebook/callback', [LoginController::class, 'handleFacebookCallback'])->name('auth.facebook.callback');
+    Route::post('/rsvp/login-by-code', [LoginController::class, 'loginByRsvpCode'])->name('auth.login-by-code');
 
     // Invite validation (public)
     Route::post('/invites/validate', [InviteController::class, 'validate'])->name('invites.validate');

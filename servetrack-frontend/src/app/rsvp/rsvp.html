@@ -148,15 +148,15 @@
               <label
                 class="poll-option"
                 [class.selected]="selectedShiftId() === shift.id"
-                [class.disabled]="isFull(shift)"
+                [class.disabled]="isFull(shift) || !canVote()"
               >
                 <div class="option-radio">
                   <input
                     type="radio"
                     [name]="'shift-' + rsvp.id"
                     [value]="shift.id"
-                    (change)="!isFull(shift) && selectShift(shift.id)"
-                    [disabled]="isFull(shift)"
+                    (change)="!isFull(shift) && canVote() && selectShift(shift.id)"
+                    [disabled]="isFull(shift) || !canVote()"
                   />
                   <span class="radio-indicator" aria-hidden="true"></span>
                 </div>
@@ -181,7 +181,7 @@
               type="button"
               class="vote-btn"
               (click)="canVote() ? submitRsvp() : openCodeModal()"
-              [disabled]="!hasSelectedShift() || isLoading() || isAdmin()"
+              [disabled]="!canVote() || !hasSelectedShift() || isLoading() || isAdmin()"
             >
               @if (isLoading()) {
                 <span
@@ -380,11 +380,11 @@
   </article>
 
   @if (showCodeModal()) {
-    <div class="modal-backdrop" (click)="closeCodeModal()">
+    <div class="modal-backdrop" (click)="!isCodeSubmitting() && closeCodeModal()">
       <div class="modal-content" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h3>Enter RSVP Code</h3>
-          <button class="btn-close" (click)="closeCodeModal()">
+          <button class="btn-close" (click)="closeCodeModal()" [disabled]="isCodeSubmitting()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -416,13 +416,36 @@
               (input)="updateAccessCode($event)"
               style="text-transform: uppercase"
               maxlength="6"
+              [disabled]="isCodeSubmitting()"
             />
           </div>
+
+          @if (codeError()) {
+            <div
+              style="
+                margin-top: 1rem;
+                padding: 0.75rem 1rem;
+                background-color: var(--danger-50);
+                border: 1px solid var(--danger-100);
+                color: var(--danger-500);
+                border-radius: var(--radius-md);
+                font-size: 0.875rem;
+                font-weight: 500;
+              "
+            >
+              {{ codeError() }}
+            </div>
+          }
         </div>
         <div class="modal-footer">
-          <button class="cancel-btn" (click)="closeCodeModal()">Cancel</button>
-          <button class="vote-btn" (click)="submitCode()" [disabled]="!accessCode()">
-            Connect Account
+          <button class="cancel-btn" (click)="closeCodeModal()" [disabled]="isCodeSubmitting()">Cancel</button>
+          <button class="vote-btn" (click)="submitCode()" [disabled]="!accessCode() || isCodeSubmitting()">
+            @if (isCodeSubmitting()) {
+              <span class="btn-spinner" style="margin-right: 0.5rem; display: inline-block"></span>
+              Verifying...
+            } @else {
+              Connect Account
+            }
           </button>
         </div>
       </div>

@@ -47,6 +47,8 @@ export class RsvpComponent implements OnInit {
 
   showCodeModal = signal(false);
   accessCode = signal('');
+  isCodeSubmitting = signal(false);
+  codeError = signal<string | null>(null);
 
   isAuthenticated = computed(() => this.authService.isAuthenticated());
   isVolunteer = computed(() => {
@@ -183,6 +185,8 @@ export class RsvpComponent implements OnInit {
   closeCodeModal(): void {
     this.showCodeModal.set(false);
     this.accessCode.set('');
+    this.codeError.set(null);
+    this.isCodeSubmitting.set(false);
   }
 
   updateAccessCode(event: Event): void {
@@ -193,9 +197,32 @@ export class RsvpComponent implements OnInit {
   }
 
   submitCode(): void {
-    // For now, redirect to login page with the code conceptually (or just close modal & redirect)
-    this.closeCodeModal();
-    this.redirectToLogin();
+    const code = this.accessCode().trim();
+    if (!code) {
+      return;
+    }
+
+    this.isCodeSubmitting.set(true);
+    this.codeError.set(null);
+
+    this.authService
+      .loginByRsvpCode$(code)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.isCodeSubmitting.set(false);
+          if (response.success) {
+            this.closeCodeModal();
+            this.loadRsvp();
+          } else {
+            this.codeError.set(response.message || 'Verification failed. Invalid code.');
+          }
+        },
+        error: (err: { error?: { message?: string } }) => {
+          this.isCodeSubmitting.set(false);
+          this.codeError.set(err?.error?.message || 'Failed to verify code. Please try again.');
+        },
+      });
   }
 
   getResponsePercentage(responses: number): number {
@@ -213,7 +240,7 @@ export class RsvpComponent implements OnInit {
 
   selectShift(shiftId: number): void {
     const rsvp = this.rsvp();
-    if (!rsvp || this.hasSubmittedRsvp()) {
+    if (!rsvp || this.hasSubmittedRsvp() || !this.canVote()) {
       return;
     }
     const shift = rsvp.shifts.find((s) => s.id === shiftId);

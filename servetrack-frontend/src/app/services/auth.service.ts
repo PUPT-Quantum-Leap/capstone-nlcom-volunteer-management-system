@@ -134,6 +134,47 @@ export class AuthService {
   }
 
   /**
+   * Login using RSVP access code.
+   */
+  loginByRsvpCode$(code: string): Observable<AuthResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.ensureCsrf$().pipe(
+      switchMap(() =>
+        this.http.post<{ user?: AuthResponse['user']; message?: string }>(
+          `${environment.apiUrl}/rsvp/login-by-code`,
+          { code },
+          { withCredentials: true },
+        )
+      ),
+      map((response) => {
+        if (response.user) {
+          return { success: true, user: response.user } as AuthResponse;
+        }
+
+        return {
+          success: false,
+          message: response.message || 'Verification failed. Invalid code.',
+        } as AuthResponse;
+      }),
+      tap((response) => {
+        if (response.user) {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(response.user);
+          localStorage.setItem('has_session', 'true');
+        }
+      }),
+      catchError((err: HttpErrorResponse) => {
+        const message = err.error?.message || 'Verification failed. Invalid code.';
+        this.error.set(message);
+        return of({ success: false, message } as AuthResponse);
+      }),
+      tap(() => this.isLoading.set(false)),
+    );
+  }
+
+  /**
    * Get Facebook OAuth redirect URL.
    */
   getFacebookAuthUrl$(): Observable<{ redirect_url: string }> {

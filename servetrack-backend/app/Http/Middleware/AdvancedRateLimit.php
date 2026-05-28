@@ -87,9 +87,12 @@ class AdvancedRateLimit
     protected function resolveRequestSignature(Request $request): string
     {
         $email = $request->input('email', '');
+        $code = $request->input('code', '');
         $ip = $request->ip();
 
-        return 'rate_limit:'.($email ? hash('sha256', strtolower((string) $email)).':' : '').$ip;
+        $identifier = $email ?: $code;
+
+        return 'rate_limit:'.($identifier ? hash('sha256', strtolower((string) $identifier)).':' : '').$ip;
     }
 
     /**
