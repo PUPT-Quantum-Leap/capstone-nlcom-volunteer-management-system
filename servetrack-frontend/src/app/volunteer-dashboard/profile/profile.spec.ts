@@ -50,6 +50,7 @@ describe('ProfileComponent', () => {
     mockVolunteerService = {
       getProfile: vi.fn().mockReturnValue(of({ success: true, data: mockProfileData, message: '' })),
       updateProfile: vi.fn().mockReturnValue(of({ success: true, data: mockProfileData, message: '' })),
+      getCachedProfile: vi.fn().mockReturnValue(null),
     };
 
     mockSanitizer = {

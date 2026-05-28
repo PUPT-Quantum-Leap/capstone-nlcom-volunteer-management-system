@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, catchError, switchMap, tap } from 'rxjs';
+import { Observable, catchError, switchMap, tap, of } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Attendance, AttendanceStats, AttendancePeriod } from '../models/attendance';
 import { VolunteerPoll } from '../models/volunteer-poll';
@@ -21,13 +21,29 @@ export class VolunteerService {
   private authService = inject(AuthService);
   private readonly baseUrl = `${environment.apiUrl}/volunteer`;
 
-  /** Fetch the authenticated volunteer's profile. */
+  /** In-memory cache of the last fetched profile. */
+  private profileCache = signal<VolunteerProfileResponse | null>(null);
+
+  /**
+   * Returns the cached profile synchronously if available.
+   * Useful for instantly hydrating components without waiting for an HTTP roundtrip.
+   */
+  getCachedProfile(): VolunteerProfileResponse | null {
+    return this.profileCache();
+  }
+
+  /** Fetch the authenticated volunteer's profile — updates the cache on success. */
   getProfile(): Observable<ApiResponse<VolunteerProfileResponse>> {
     return this.http
       .get<ApiResponse<VolunteerProfileResponse>>(`${this.baseUrl}/profile`, {
         withCredentials: true,
       })
       .pipe(
+        tap((response) => {
+          if (response.success && response.data) {
+            this.profileCache.set(response.data);
+          }
+        }),
         catchError((error) => {
           console.error('[VolunteerService] getProfile failed:', error);
           throw error;
@@ -35,7 +51,7 @@ export class VolunteerService {
       );
   }
 
-  /** Update the authenticated volunteer's profile. */
+  /** Update the authenticated volunteer's profile — updates the cache on success. */
   updateProfile(
     payload: Record<string, unknown>,
   ): Observable<ApiResponse<VolunteerProfileResponse>> {
@@ -45,6 +61,11 @@ export class VolunteerService {
           withCredentials: true,
         })
       ),
+      tap((response) => {
+        if (response.success && response.data) {
+          this.profileCache.set(response.data);
+        }
+      }),
       catchError((error) => {
         console.error('[VolunteerService] updateProfile failed:', error);
         throw error;

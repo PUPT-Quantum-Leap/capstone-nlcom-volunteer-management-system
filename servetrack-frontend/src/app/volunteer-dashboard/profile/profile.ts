@@ -268,6 +268,10 @@ export class ProfileComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const cached = this.volunteerService.getCachedProfile();
+    if (cached) {
+      this.applyProfileResponse(cached);
+    }
     this.loadProfile();
 
     // Dynamic validation: lifegroupLeaderName required when partOfLifegroup is 'yes'
@@ -297,17 +301,20 @@ export class ProfileComponent implements OnInit {
   }
 
   private loadProfile(): void {
+    this.isLoading.set(true);
     this.volunteerService.getProfile().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response) => {
         if (response.success && response.data) {
           this.applyProfileResponse(response.data);
           this.profileForm.disable();
         }
+        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('[ProfileComponent] Failed to load profile:', error);
         this.showProfileError.set(true);
         this.profileErrorMessage.set('Failed to load profile. Please try again later.');
+        this.isLoading.set(false);
       }
     });
   }

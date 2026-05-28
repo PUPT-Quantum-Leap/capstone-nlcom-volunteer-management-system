@@ -1,5 +1,29 @@
 <section class="profile-section">
-  <!-- Profile Header Card -->
+  @if (isLoading() && !savedProfileData()) {
+    <div class="profile-skeleton" aria-hidden="true">
+      <div class="skeleton-header-card">
+        <div class="skeleton-avatar">
+          <div class="skeleton-circle"></div>
+        </div>
+        <div class="skeleton-header-info">
+          <div class="skeleton-line large"></div>
+          <div class="skeleton-line small"></div>
+        </div>
+      </div>
+      <div class="skeleton-accordion">
+        <div class="skeleton-accordion-item">
+          <div class="skeleton-line large"></div>
+        </div>
+        <div class="skeleton-accordion-item">
+          <div class="skeleton-line large"></div>
+        </div>
+        <div class="skeleton-accordion-item">
+          <div class="skeleton-line large"></div>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <!-- Profile Header Card -->
   <article class="profile-header-card">
     <div class="profile-avatar-section">
       <div class="avatar-wrapper"
@@ -401,6 +425,7 @@
       <button type="button" class="primary-btn" (click)="toggleEditMode()">Edit Profile</button>
     }
   </div>
+  }
 </section>
 
 <!-- Save Confirmation Modal -->
