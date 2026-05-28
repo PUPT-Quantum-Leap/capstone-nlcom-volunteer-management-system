@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\IcsTeam;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class IcsTeamController extends Controller
 {
@@ -13,12 +14,34 @@ class IcsTeamController extends Controller
      */
     public function index()
     {
-        // Only return distribution teams (AM + PM) — exclude Mobile Kitchen teams
-        return response()->json(
-            IcsTeam::with('ics.rsvp')
-                ->whereIn('branch_key', ['am_distribution', 'pm_distribution'])
-                ->get()
-        );
+        // Only return distribution teams (AM + PM) with assigned volunteers
+        $teams = IcsTeam::with('ics.rsvp')
+            ->whereIn('branch_key', ['am_distribution', 'pm_distribution'])
+            ->get();
+
+        // Load volunteers assigned to each team via the ics_volunteer pivot
+        $teams->each(function ($icsTeam) {
+            if ($icsTeam->ics_id && $icsTeam->team_id) {
+                $volunteers = DB::table('ics_volunteer')
+                    ->join('volunteer', 'volunteer.volunteer_id', '=', 'ics_volunteer.volunteer_id')
+                    ->where('ics_volunteer.ics_id', $icsTeam->ics_id)
+                    ->where('ics_volunteer.team_id', $icsTeam->team_id)
+                    ->select('volunteer.volunteer_id', 'volunteer.first_name', 'volunteer.last_name', 'ics_volunteer.role', 'ics_volunteer.is_driver', 'ics_volunteer.is_leader')
+                    ->get();
+
+                $icsTeam->setAttribute('assigned_volunteers', $volunteers->map(fn ($v) => [
+                    'id' => $v->volunteer_id,
+                    'name' => trim($v->first_name.' '.$v->last_name),
+                    'role' => $v->role,
+                    'is_driver' => (bool) $v->is_driver,
+                    'is_leader' => (bool) $v->is_leader,
+                ]));
+            } else {
+                $icsTeam->setAttribute('assigned_volunteers', []);
+            }
+        });
+
+        return response()->json($teams);
     }
 
     public function getTeams()

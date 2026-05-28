@@ -139,6 +139,15 @@ export interface IcsData {
 export interface IcsTeamFeedingOperation {
   id: number;
   team: string;
+  branch_key: string;
+  vehicle: string | null;
+  assigned_volunteers: {
+    id: number;
+    name: string;
+    role: string | null;
+    is_driver: boolean;
+    is_leader: boolean;
+  }[];
   departure_note: string;
   location: string;
   time: string;
