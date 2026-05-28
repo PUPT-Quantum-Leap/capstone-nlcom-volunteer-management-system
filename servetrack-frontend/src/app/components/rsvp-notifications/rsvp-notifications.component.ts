@@ -122,6 +122,26 @@ export class RsvpNotificationsComponent implements OnInit {
   }
 
   /**
+   * Dismiss (remove) a single notification from the view.
+   */
+  dismissOne(id: number): void {
+    this.notifications.update((notifs) => notifs.filter((n) => n.id !== id));
+  }
+
+  /**
+   * Clear all notifications from the view and close the panel.
+   */
+  clearAll(): void {
+    // Mark all as read on the backend first, then clear the local list
+    this.rsvpService
+      .markAllNotificationsAsRead()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
+    this.notifications.set([]);
+    this.showPanel.set(false);
+  }
+
+  /**
    * Get the notification type label for display.
    */
   getTypeLabel(type: string): string {

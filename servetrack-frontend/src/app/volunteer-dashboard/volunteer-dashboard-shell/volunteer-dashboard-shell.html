@@ -147,16 +147,33 @@
         <div class="panel-header">
           <h2>Notifications</h2>
           <div class="panel-actions">
-            <button type="button" class="outline-btn" (click)="markNotificationsRead()">Mark Read</button>
+            @if (notifications().length > 0) {
+              <button type="button" class="outline-btn" (click)="markNotificationsRead()">Mark Read</button>
+              <button type="button" class="clear-notifs-btn" (click)="clearAllNotifications()">Clear All</button>
+            }
             <button type="button" class="outline-btn" (click)="closeNotifications()">Close</button>
           </div>
         </div>
         <div class="notification-list">
           @for (item of notifications(); track item.id) {
             <article class="notification-item" [class.unread]="!item.read">
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.description }}</p>
-              <span class="notification-time">{{ item.time }}</span>
+              <div class="notif-content">
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.description }}</p>
+                <span class="notification-time">{{ item.time }}</span>
+              </div>
+              <button
+                type="button"
+                class="notif-dismiss-btn"
+                (click)="dismissNotification(item.id)"
+                title="Dismiss"
+                aria-label="Dismiss notification"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
             </article>
           } @empty {
             <div class="empty-state">

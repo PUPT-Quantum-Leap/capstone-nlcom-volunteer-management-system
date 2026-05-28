@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet, Event as RouterEvent } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { AdminDashboardService } from '../../services/admin-dashboard.service';
+import { AdminDashboardService, UpcomingEventItem } from '../../services/admin-dashboard.service';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { filter, Subscription } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -36,6 +36,9 @@ type AdminView =
   imports: [CommonModule, NgOptimizedImage, RouterOutlet, LoadingScreenComponent, ChatbotSidebarComponent],
   templateUrl: './admin-layout.html',
   styleUrl: './admin-layout.scss',
+  host: {
+    '(document:click)': 'onDocumentClick($event)',
+  },
 })
 export class AdminLayout implements OnInit {
   private router = inject(Router);
@@ -77,9 +80,11 @@ export class AdminLayout implements OnInit {
   });
   profileErrors = signal<Record<string, string[]>>({});
 
+  notificationsList = signal<any[]>([]);
+  upcomingEventsList = signal<UpcomingEventItem[]>([]);
+
   notificationCount = computed(() => {
-    // TODO: Replace with actual notification count from service
-    return 0;
+    return this.notificationsList().filter(n => !n.read).length;
   });
 
   currentView = computed<AdminView>(() => {
@@ -127,6 +132,7 @@ export class AdminLayout implements OnInit {
 
   ngOnInit(): void {
     this.updateIsMobile();
+    this.loadHeaderNotifications();
 
     this.router.events
       .pipe(
@@ -136,7 +142,83 @@ export class AdminLayout implements OnInit {
       .subscribe((event) => {
         this.currentUrl.set(event.urlAfterRedirects);
         this.globalSearchService.clearSearchQuery();
+        this.loadHeaderNotifications();
       });
+  }
+
+  loadHeaderNotifications(): void {
+    this.adminService.getDashboardData().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          let notifications = response.data.notifications || [];
+          let events = response.data.upcomingEventsList || [];
+
+          if (typeof window !== 'undefined' && window.localStorage) {
+            try {
+              // Check if user dismissed notifications — skip them if descriptions match
+              const clearedJson = localStorage.getItem('admin-cleared-notification-ids');
+              if (clearedJson) {
+                const clearedIds = JSON.parse(clearedJson) as Record<string, string>;
+                notifications = notifications.filter((n: any) => {
+                  // Only suppress if the content description hasn't changed
+                  return clearedIds[n.id] !== n.description;
+                });
+              }
+
+              // Filter out cleared upcoming events
+              const clearedEventsJson = localStorage.getItem('admin-cleared-event-ids');
+              if (clearedEventsJson) {
+                const clearedEventIds = JSON.parse(clearedEventsJson) as number[];
+                events = events.filter((e: any) => !clearedEventIds.includes(e.id));
+              }
+
+              // Mark already-viewed notifications as read
+              const storedJson = localStorage.getItem('admin-viewed-notifications');
+              if (storedJson) {
+                const stored = JSON.parse(storedJson) as Record<string, string>;
+                notifications = notifications.map((n: any) => {
+                  if (stored[n.id] === n.description) {
+                    return { ...n, read: true };
+                  }
+                  return n;
+                });
+              }
+            } catch (e) {
+              console.error('Failed to parse viewed notifications', e);
+            }
+          }
+
+          this.notificationsList.set(notifications);
+          this.upcomingEventsList.set(events);
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load header notifications:', err);
+      }
+    });
+  }
+
+  dismissNotification(id: number): void {
+    const current = this.notificationsList();
+    const dismissed = current.find(n => n.id === id);
+    this.notificationsList.update(list => list.filter(n => n.id !== id));
+
+    if (dismissed && typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const stored = JSON.parse(localStorage.getItem('admin-cleared-notification-ids') ?? '{}') as Record<string, string>;
+        stored[dismissed.id] = dismissed.description;
+        localStorage.setItem('admin-cleared-notification-ids', JSON.stringify(stored));
+      } catch (e) {
+        console.error('Failed to persist dismissed notification', e);
+      }
+    }
+  }
+
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.notification-wrapper')) {
+      this.showNotifications.set(false);
+    }
   }
 
   toggleSidebar(): void {
@@ -192,8 +274,63 @@ export class AdminLayout implements OnInit {
     return this.currentView() === view;
   }
 
+  clearAllNotifications(): void {
+    const currentNotifs = this.notificationsList();
+    const currentEvents = this.upcomingEventsList();
+
+    // Clear both sections
+    this.notificationsList.set([]);
+    this.upcomingEventsList.set([]);
+    this.showNotifications.set(false);
+
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        // Persist cleared notification IDs+descriptions
+        const clearedNotifs: Record<string, string> = JSON.parse(
+          localStorage.getItem('admin-cleared-notification-ids') ?? '{}'
+        ) as Record<string, string>;
+        currentNotifs.forEach(n => {
+          clearedNotifs[n.id] = n.description;
+        });
+        localStorage.setItem('admin-cleared-notification-ids', JSON.stringify(clearedNotifs));
+
+        // Persist cleared event IDs
+        const clearedEventIds: number[] = JSON.parse(
+          localStorage.getItem('admin-cleared-event-ids') ?? '[]'
+        ) as number[];
+        currentEvents.forEach(e => {
+          if (!clearedEventIds.includes(e.id)) {
+            clearedEventIds.push(e.id);
+          }
+        });
+        localStorage.setItem('admin-cleared-event-ids', JSON.stringify(clearedEventIds));
+      } catch (e) {
+        console.error('Failed to persist cleared notifications', e);
+      }
+    }
+  }
+
   toggleNotifications(): void {
-    this.showNotifications.update(v => !v);
+    const nextState = !this.showNotifications();
+    this.showNotifications.set(nextState);
+    
+    if (nextState) {
+      // Mark all current notifications as read when opening dropdown
+      this.notificationsList.update(list => list.map(n => ({ ...n, read: true })));
+      
+      // Persist the current descriptions to LocalStorage
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          const viewed: Record<string, string> = {};
+          this.notificationsList().forEach(n => {
+            viewed[n.id] = n.description;
+          });
+          localStorage.setItem('admin-viewed-notifications', JSON.stringify(viewed));
+        } catch (e) {
+          console.error('Failed to save viewed notifications', e);
+        }
+      }
+    }
   }
 
   toggleChatbot(): void {

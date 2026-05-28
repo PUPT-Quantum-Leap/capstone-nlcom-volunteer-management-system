@@ -269,6 +269,15 @@ export class VolunteerDashboardShell implements OnInit {
     this.notifications.update((items) => items.map((item) => ({ ...item, read: true })));
   }
 
+  dismissNotification(id: number): void {
+    this.notifications.update((items) => items.filter((item) => item.id !== id));
+  }
+
+  clearAllNotifications(): void {
+    this.notifications.set([]);
+    this.showNotifications.set(false);
+  }
+
   closeNotifications(): void {
     this.showNotifications.set(false);
   }

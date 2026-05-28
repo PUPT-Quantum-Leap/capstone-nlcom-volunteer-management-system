@@ -28,6 +28,14 @@ export interface VolunteersResponse {
   };
 }
 
+export interface UpcomingEventItem {
+  id: number;
+  title: string;
+  date: string | null;
+  responses_count: number;
+  status: string;
+}
+
 export interface AdminDashboardData {
   stats: {
     totalVolunteers: number;
@@ -38,6 +46,7 @@ export interface AdminDashboardData {
   notifications: NotificationItem[];
   volunteers: DashboardVolunteerRow[];
   performanceMetrics: PerformanceMetric[];
+  upcomingEventsList?: UpcomingEventItem[];
 }
 
 export interface ApiResponse<T> {

@@ -224,18 +224,167 @@
             (input)="setSearchQuery(dashboardSearch.value)" (keydown.enter)="runSearch()" placeholder="Search..."
             aria-label="Search modules" />
         </div>
-        <button type="button" class="outline-btn" (click)="toggleNotifications()"
-          [attr.aria-label]="'Notifications' + (notificationCount() > 0 ? ', ' + notificationCount() + ' unread' : '')"
-          aria-haspopup="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          @if (notificationCount() > 0) {
-          <span class="notification-badge">{{ notificationCount() }}</span>
+        <div class="notification-wrapper">
+          <button type="button" class="outline-btn" [class.active]="showNotifications()" (click)="toggleNotifications()"
+            [attr.aria-label]="'Notifications' + (notificationCount() > 0 ? ', ' + notificationCount() + ' unread' : '')"
+            aria-haspopup="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            @if (notificationCount() > 0) {
+            <span class="notification-badge">{{ notificationCount() }}</span>
+            }
+          </button>
+
+          @if (showNotifications()) {
+            <div class="notification-dropdown">
+
+              <!-- Dropdown global header with Clear All -->
+              @if (notificationsList().length > 0 || upcomingEventsList().length > 0) {
+                <div class="dropdown-global-header">
+                  <span class="dropdown-global-title">Notifications</span>
+                  <button
+                    type="button"
+                    class="clear-all-btn"
+                    (click)="clearAllNotifications()"
+                    title="Clear all notifications and upcoming schedule"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                    </svg>
+                    Clear All
+                  </button>
+                </div>
+              }
+
+              <!-- Admin Activity Section -->
+              <div class="dropdown-section">
+                <div class="section-header">
+                  <div class="header-left">
+                    <span class="section-title">Admin Activity</span>
+                    <span class="section-subtitle">Keep up with urgent updates and recent platform activity.</span>
+                  </div>
+                  @if (notificationCount() > 0) {
+                    <span class="section-badge">{{ notificationCount() }}</span>
+                  }
+                </div>
+
+                <div class="dropdown-list">
+                  @for (notif of notificationsList(); track notif.id) {
+                    <div class="notification-item">
+                      <div class="item-icon-wrapper" [class.new-volunteers]="notif.id === 1" [class.pending-attendance]="notif.id === 2">
+                        @if (notif.id === 1) {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <line x1="19" y1="8" x2="19" y2="14" />
+                            <line x1="22" y1="11" x2="16" y2="11" />
+                          </svg>
+                        } @else {
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
+                            <polyline points="9 11 12 14 22 4" />
+                          </svg>
+                        }
+                      </div>
+                      <div class="item-body">
+                        <div class="item-title">{{ notif.title }}</div>
+                        <div class="item-description">{{ notif.description }}</div>
+                        <div class="item-time">{{ notif.time }}</div>
+                      </div>
+                      <button
+                        type="button"
+                        class="notif-dismiss-btn"
+                        (click)="$event.stopPropagation(); dismissNotification(notif.id)"
+                        title="Dismiss notification"
+                        aria-label="Dismiss notification"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  } @empty {
+                    <div class="empty-state">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M16 12H8" />
+                      </svg>
+                      <span>No urgent updates today.</span>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Upcoming Schedule Section -->
+              <div class="dropdown-section divider-top">
+                <div class="section-header">
+                  <div class="header-left">
+                    <span class="section-title">Upcoming Schedule</span>
+                    <span class="section-subtitle">Nearest RSVP events and response progress.</span>
+                  </div>
+                  @if (upcomingEventsList().length > 0) {
+                    <span class="section-badge event-badge">{{ upcomingEventsList().length }}</span>
+                  }
+                </div>
+                
+                <div class="dropdown-list">
+                  @for (event of upcomingEventsList(); track event.id) {
+                    <div class="event-item">
+                      <div class="event-icon-wrapper">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                      </div>
+                      <div class="event-body">
+                        <div class="event-title-row">
+                          <span class="event-title">{{ event.title }}</span>
+                          <span class="event-status-tag" [class.status-active]="event.status === 'active'">
+                            {{ event.status | titlecase }}
+                          </span>
+                        </div>
+                        <div class="event-meta-row">
+                          <span class="event-date">{{ event.date }}</span>
+                          <span class="event-responses">{{ event.responses_count }} responses</span>
+                        </div>
+                      </div>
+                    </div>
+                  } @empty {
+                    <div class="empty-state">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                      <span>No upcoming RSVP events.</span>
+                    </div>
+                  }
+                </div>
+                
+                <div class="dropdown-footer">
+                  <button type="button" class="view-all-btn" (click)="navigateTo('rsvps'); showNotifications.set(false)">
+                    View all events
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="btn-arrow">
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                      <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
           }
-        </button>
+        </div>
         <button type="button" class="servebot-toggle-btn" [class.active]="chatbotService.showChatbot()"
           (click)="toggleChatbot()" aria-label="Toggle ServeTrack AI Assistant" title="ServeTrack AI Assistant">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
