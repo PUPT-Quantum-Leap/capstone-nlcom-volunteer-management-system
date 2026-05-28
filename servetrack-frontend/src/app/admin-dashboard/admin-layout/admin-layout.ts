@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet, Event as RouterEvent } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { AdminDashboardService } from '../../services/admin-dashboard.service';
+import { AdminDashboardService, UpcomingEventItem } from '../../services/admin-dashboard.service';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { filter, Subscription } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
