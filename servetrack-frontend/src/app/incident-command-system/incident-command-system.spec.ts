@@ -8,6 +8,7 @@ import { IcsService } from '../services/ics.service';
 
 const dashboard: IcsDashboard = {
   ics_id: 10,
+  metadata: { objective: null, menu: null, meal_breakfast: 0, meal_lunch: 0, meal_snacks: 0 },
   rsvp: {
     id: 1,
     title: 'Feeding Operation',
