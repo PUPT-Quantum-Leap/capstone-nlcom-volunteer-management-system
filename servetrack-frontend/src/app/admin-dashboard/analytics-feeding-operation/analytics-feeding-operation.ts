@@ -256,9 +256,13 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
   private exportOperationsToPdf(): void {
     const timestamp = new Date().toISOString().split('T')[0];
     const filename = `feeding-operation-report-${timestamp}.pdf`;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
     const teams = this.getGroupedOperations();
     const tableRows: RowInput[] = [];
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 40;
+    const usableWidth = pageWidth - margin * 2;
+    const fixedColumnsWidth = 100 + 100 + 90 + 60 + 45; // Teams + Volunteers + Location + Time + Pax
     let itemNumber = 1;
     let totalPax = 0;
 
@@ -304,6 +308,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
 
     autoTable(pdf, {
       startY: 68,
+      margin: { left: margin, right: margin },
       theme: 'grid',
       head: [['Teams', 'Volunteers', 'Location', 'Time', 'No. of Pax', 'Details']],
       body: tableRows,
@@ -323,14 +328,15 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
         halign: 'center',
       },
       columnStyles: {
-        0: { cellWidth: 140 },
-        1: { cellWidth: 115 },
-        2: { cellWidth: 90, halign: 'center' },
-        3: { cellWidth: 55, halign: 'center' },
-        4: { cellWidth: 140 },
+        0: { cellWidth: 100 },   // Teams
+        1: { cellWidth: 100 },   // Volunteers
+        2: { cellWidth: 90 },     // Location
+        3: { cellWidth: 60, halign: 'center' },   // Time
+        4: { cellWidth: 45, halign: 'center' },   // No. of Pax
+        5: { cellWidth: usableWidth - fixedColumnsWidth },  // Details (fills remaining)
       },
       didParseCell: (hookData: any) => {
-        if (hookData.section === 'body' && hookData.column.index === 3) {
+        if (hookData.section === 'body' && hookData.column.index === 4) {
           hookData.cell.styles.fontStyle = 'bold';
           hookData.cell.styles.halign = 'center';
         }
