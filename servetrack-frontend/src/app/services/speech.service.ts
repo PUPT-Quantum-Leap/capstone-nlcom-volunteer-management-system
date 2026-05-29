@@ -67,7 +67,7 @@ export class SpeechService implements OnDestroy {
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private voiceCache = new Map<string, SpeechSynthesisVoice>();
   private selectedVoice: SpeechSynthesisVoice | null = null;
-  private speechRate = parseFloat(localStorage.getItem(STORAGE_KEY_RATE) ?? '0.95');
+  private speechRate = SpeechService.parseStoredRate();
   private speechPitch = parseFloat(localStorage.getItem(STORAGE_KEY_PITCH) ?? '1.0');
   private speechVolume = 1.0;
 
@@ -346,6 +346,11 @@ export class SpeechService implements OnDestroy {
       return true;
     }
     return false;
+  }
+
+  private static parseStoredRate(): number {
+    const raw = parseFloat(localStorage.getItem(STORAGE_KEY_RATE) ?? '');
+    return Number.isFinite(raw) && raw >= 0.1 && raw <= 10 ? raw : 0.95;
   }
 
   setRate(rate: number): void {
