@@ -162,7 +162,7 @@ select {
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
   background: $surface;
 
   &::-webkit-scrollbar { width: 5px; }
@@ -212,9 +212,9 @@ select {
 // Messages
 .message {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   max-width: 88%;
-  animation: fadeIn 0.25s ease;
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 
   &.user { align-self: flex-end; flex-direction: row-reverse; }
   &.assistant { align-self: flex-start; }
@@ -226,13 +226,12 @@ select {
 }
 
 .msg-avatar {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
-  border: 2px solid $primary;
-  box-shadow: 0 2px 6px rgba($primary, 0.2);
+  border: 1.5px solid rgba($primary, 0.3);
   align-self: flex-end;
 }
 
@@ -253,7 +252,8 @@ select {
   .message.assistant & {
     background: $bot-msg-bg;
     color: $text;
-    border-bottom-left-radius: 2px;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
     border: 1px solid $border;
   }
 
@@ -269,8 +269,10 @@ select {
   :first-child { margin-top: 0; }
   :last-child  { margin-bottom: 0; }
   p  { margin: 0 0 8px; }
-  ul, ol { margin: 0 0 8px 1.25rem; padding: 0; }
-  li { margin: 2px 0; }
+  ul, ol { margin: 0 0 10px 1.4rem; padding: 0; }
+  ol { list-style-type: decimal; }
+  li { margin: 4px 0; line-height: 1.5; }
+  strong, b { font-weight: 700; color: $text; }
   h1, h2, h3, h4 { margin: 10px 0 5px; font-weight: 600; color: $text; }
   h1 { font-size: 1.1rem; }
   h2 { font-size: 1rem; }
@@ -314,10 +316,11 @@ select {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 4px;
+  margin-top: 6px;
+  padding-top: 4px;
 }
 
-.timestamp { font-size: 10px; color: $text-muted; }
+.timestamp { font-size: 10px; color: $text-muted; opacity: 0.7; }
 
 .msg-actions { display: flex; gap: 4px; margin-left: auto; }
 

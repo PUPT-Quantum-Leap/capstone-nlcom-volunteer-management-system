@@ -36,6 +36,10 @@ class ChatbotMessageRequest extends FormRequest
         return [
             'message' => ['required', 'string', 'min:1', 'max:2000', new NoMaliciousContent],
             'session_id' => ['nullable', 'string', 'uuid'],
+            'context' => ['nullable', 'array'],
+            'context.user_name' => ['nullable', 'string', 'max:100'],
+            'context.user_role' => ['nullable', 'string', 'max:50'],
+            'context.app_description' => ['nullable', 'string', 'max:500'],
         ];
     }
 
