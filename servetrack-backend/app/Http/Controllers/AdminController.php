@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Constants\TokenAbilities;
 use App\Http\Requests\RsvpNonRespondersRequest;
+use App\Http\Requests\VerifyPasswordRequest;
 use App\Models\Admin;
 use App\Models\Attendance;
 use App\Models\Rsvp;
@@ -507,13 +508,13 @@ class AdminController extends Controller
 
     /**
      * Verify the authenticated admin's current password.
+     *
+     * Validates the password via VerifyPasswordRequest, then checks it
+     * against the authenticated user's stored hash. Returns 403 on mismatch
+     * or if no user is authenticated.
      */
-    public function verifyPassword(Request $request): JsonResponse
+    public function verifyPassword(VerifyPasswordRequest $request): JsonResponse
     {
-        $request->validate([
-            'password' => ['required', 'string'],
-        ]);
-
         $user = $request->user();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
