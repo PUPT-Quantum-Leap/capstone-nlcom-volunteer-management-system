@@ -629,8 +629,9 @@
   }
 
   &.active {
-    background: #0f172a;
-    box-shadow: none;
+    background: #1e40af;
+    box-shadow: 0 4px 14px rgba(30, 64, 175, 0.35);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
   }
 
   svg {

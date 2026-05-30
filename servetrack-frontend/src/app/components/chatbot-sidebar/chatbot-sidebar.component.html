@@ -1,11 +1,11 @@
-<div class="sidebar-wrapper" [class.open]="chatbotService.showChatbot()" role="complementary" aria-label="AI Assistant">
+<div class="sidebar-wrapper" [class.open]="chatbotService.showChatbot()" role="complementary" aria-label="Gotcha! Assistant">
 
   <!-- ── Header ── -->
   <div class="sidebar-header">
     <div class="header-info">
-      <img src="/assets/kamen-rider-gotchard.jpg" alt="ServeTrack AI Avatar" class="bot-avatar" width="40" height="40" />
+      <img src="/assets/kamen-rider-gotchard.jpg" alt="Gotcha! Avatar" class="bot-avatar" width="40" height="40" />
       <div class="header-text">
-        <h3>ServeTrack AI</h3>
+        <h3>Gotcha!</h3>
         <span class="status" [class.speaking]="isSpeaking()">
           {{ isSpeaking() ? 'Speaking…' : isRecording() ? 'Listening…' : 'Online' }}
         </span>
@@ -100,7 +100,7 @@
     @if (!chatbotService.hasMessages()) {
       <div class="empty-state">
         <img src="/assets/kamen-rider-gotchard.jpg" alt="" class="empty-avatar" aria-hidden="true" width="72" height="72" />
-        <h4>Hello! I'm ServeTrack AI</h4>
+        <h4>Hello! I'm Gotcha!</h4>
         <p>Ask me anything about NLCOM volunteer programs, events, attendance, and more.</p>
         <div class="suggestion-chips">
           @for (s of suggestions; track s) {
@@ -170,7 +170,7 @@
     }
 
     @if (chatbotService.isLoading()) {
-      <div class="message assistant" aria-live="polite" aria-label="ServeTrack AI is typing">
+      <div class="message assistant" aria-live="polite" aria-label="Gotcha! is typing">
         <img src="/assets/kamen-rider-gotchard.jpg" alt="" class="msg-avatar msg-avatar-typing" aria-hidden="true" width="28" height="28" />
         <div class="message-content typing">
           <div class="typing-indicator">
