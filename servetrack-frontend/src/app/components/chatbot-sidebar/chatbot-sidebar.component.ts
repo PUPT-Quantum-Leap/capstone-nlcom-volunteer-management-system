@@ -331,16 +331,9 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
   selectCommand(cmd: Command): void {
     this.commandService.trackCommandUsage(cmd.id);
     this.showCommandPalette.set(false);
-
-    if (cmd.action.type === 'url' && cmd.action.url) {
-      void this.router.navigateByUrl(cmd.action.url);
-      return;
-    }
-
-    // For query/modal types: send as message
     this.userInput.set('');
     this.resetTextareaHeight();
-    this.chatbotService.sendMessage(cmd.command).subscribe({ error: () => undefined });
+    this.chatbotService.sendMessage(cmd.description).subscribe({ error: () => undefined });
   }
 
   toggleRecording(): void {
