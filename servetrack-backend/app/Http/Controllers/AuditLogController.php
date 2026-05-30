@@ -5,72 +5,21 @@ namespace App\Http\Controllers;
 use App\Enums\AuditAction;
 use App\Models\AuditLog;
 use App\Services\AuditLogger;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuditLogController extends Controller
 {
     /**
-     * GET /api/admin/audit-logs
+     * GET /_audit
      *
      * Paginated, filterable audit log listing.
      */
     public function index(Request $request): JsonResponse
     {
-        $query = AuditLog::query()->latest();
-
-        // Filter by action category (e.g. 'auth', 'volunteer', 'rsvp')
-        if ($category = $request->query('category')) {
-            $query->byCategory($category);
-        }
-
-        // Filter by specific action
-        if ($action = $request->query('action')) {
-            $query->where('action', $action);
-        }
-
-        // Filter by user
-        if ($userId = $request->query('user_id')) {
-            $query->forUser((int) $userId);
-        }
-
-        // Filter by severity
-        if ($severity = $request->query('severity')) {
-            $query->bySeverity($severity);
-        }
-
-        // Filter by source
-        if ($source = $request->query('source')) {
-            $query->where('source', $source);
-        }
-
-        // Filter by status
-        if ($status = $request->query('status')) {
-            $query->where('status', $status);
-        }
-
-        // Filter by resource type
-        if ($resourceType = $request->query('resource_type')) {
-            $query->where('resource_type', $resourceType);
-        }
-
-        // Date range
-        $query->dateRange(
-            $request->query('from'),
-            $request->query('to')
-        );
-
-        // Search in description or actor name
-        if ($search = $request->query('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('description', 'like', "%{$search}%")
-                    ->orWhere('actor_name', 'like', "%{$search}%")
-                    ->orWhere('resource_label', 'like', "%{$search}%");
-            });
-        }
-
         $perPage = min((int) ($request->query('per_page') ?? 15), 100);
-        $logs = $query->paginate($perPage);
+        $logs = $this->applyFilters(AuditLog::query()->latest(), $request)->paginate($perPage);
 
         return response()->json([
             'success' => true,
@@ -85,11 +34,11 @@ class AuditLogController extends Controller
     }
 
     /**
-     * GET /api/admin/audit-logs/stats
+     * GET /_audit/stats
      *
      * Summary statistics for the audit log dashboard.
      */
-    public function stats(Request $request): JsonResponse
+    public function stats(): JsonResponse
     {
         $today = now()->startOfDay();
 
@@ -102,16 +51,15 @@ class AuditLogController extends Controller
                     ->where('status', 'failure')->count(),
                 'critical_today' => AuditLog::where('created_at', '>=', $today)
                     ->where('severity', 'critical')->count(),
-                'categories' => AuditLog::selectRaw("
-                    SUBSTRING_INDEX(action, '.', 1) as category,
-                    COUNT(*) as count
-                ")->groupBy('category')->pluck('count', 'category'),
+                'categories' => AuditLog::selectRaw("SUBSTRING_INDEX(action, '.', 1) as category, COUNT(*) as count")
+                    ->groupBy('category')
+                    ->pluck('count', 'category'),
             ],
         ]);
     }
 
     /**
-     * GET /api/admin/audit-logs/actions
+     * GET /_audit/actions
      *
      * List all available action types for filter dropdowns.
      */
@@ -124,58 +72,41 @@ class AuditLogController extends Controller
             'severity' => $a->severity(),
         ]);
 
-        return response()->json([
-            'success' => true,
-            'data' => $actions->values(),
-        ]);
+        return response()->json(['success' => true, 'data' => $actions->values()]);
     }
 
     /**
-     * GET /api/admin/audit-logs/export
+     * GET /_audit/export
      *
-     * Export audit logs as CSV.
+     * Export audit logs as CSV (identical filters to index).
      */
     public function export(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
     {
-        // Audit the export itself
         AuditLogger::log(AuditAction::AUDIT_EXPORTED, [
             'description' => 'Audit log exported to CSV',
             'resource_type' => 'audit_log',
         ]);
 
-        $query = AuditLog::query()->latest();
-
-        // Apply same filters as index
-        if ($category = $request->query('category')) {
-            $query->byCategory($category);
-        }
-        if ($from = $request->query('from')) {
-            $query->where('created_at', '>=', $from);
-        }
-        if ($to = $request->query('to')) {
-            $query->where('created_at', '<=', $to);
-        }
-
+        $query = $this->applyFilters(AuditLog::query()->latest(), $request);
         $filename = 'audit-logs-'.now()->format('Y-m-d').'.csv';
 
-        return response()->streamDownload(function () use ($query) {
+        return response()->streamDownload(function () use ($query): void {
             $handle = fopen('php://output', 'w');
 
-            // Header row
             fputcsv($handle, [
                 'ID', 'Timestamp', 'Actor', 'Role', 'Action', 'Description',
                 'Status', 'Severity', 'Resource Type', 'Resource ID',
                 'Resource Label', 'Source', 'IP Address',
             ]);
 
-            $query->chunk(500, function ($logs) use ($handle) {
+            $query->chunkById(500, function ($logs) use ($handle): void {
                 foreach ($logs as $log) {
                     fputcsv($handle, [
                         $log->id,
                         $log->created_at?->toIso8601String(),
                         $log->actor_name,
                         $log->actor_role,
-                        $log->action?->value ?? $log->action,
+                        $log->action instanceof AuditAction ? $log->action->value : $log->action,
                         $log->description,
                         $log->status,
                         $log->severity,
@@ -189,8 +120,46 @@ class AuditLogController extends Controller
             });
 
             fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv',
-        ]);
+        }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    /**
+     * Apply all request filters to the given query builder.
+     *
+     * @param  Builder<AuditLog>  $query
+     * @return Builder<AuditLog>
+     */
+    private function applyFilters(Builder $query, Request $request): Builder
+    {
+        if ($v = $request->query('category')) {
+            $query->byCategory($v);
+        }
+        if ($v = $request->query('action')) {
+            $query->where('action', $v);
+        }
+        if ($v = $request->query('user_id')) {
+            $query->forUser((int) $v);
+        }
+        if ($v = $request->query('severity')) {
+            $query->bySeverity($v);
+        }
+        if ($v = $request->query('source')) {
+            $query->where('source', $v);
+        }
+        if ($v = $request->query('status')) {
+            $query->where('status', $v);
+        }
+        if ($v = $request->query('resource_type')) {
+            $query->where('resource_type', $v);
+        }
+        if ($v = $request->query('search')) {
+            $query->where(function (Builder $q) use ($v): void {
+                $q->where('description', 'like', "%{$v}%")
+                    ->orWhere('actor_name', 'like', "%{$v}%")
+                    ->orWhere('resource_label', 'like', "%{$v}%");
+            });
+        }
+
+        return $query->dateRange($request->query('from'), $request->query('to'));
     }
 }

@@ -38,13 +38,15 @@ class AuditLog extends Model
 
     protected static function booted(): void
     {
-        // Audit logs are append-only — cannot be updated
-        static::updating(function () {
+        static::creating(function (AuditLog $log): void {
+            $log->checksum = $log->computeChecksum();
+        });
+
+        static::updating(function (): never {
             throw new \RuntimeException('Audit logs are immutable and cannot be modified.');
         });
 
-        // Audit logs cannot be deleted (only via controlled purge command)
-        static::deleting(function () {
+        static::deleting(function (): never {
             throw new \RuntimeException('Audit logs cannot be deleted through the application.');
         });
     }
@@ -59,22 +61,29 @@ class AuditLog extends Model
     // ═══════════════ Checksum ═══════════════
 
     /**
-     * Generate a SHA-256 checksum of the log payload for tamper-evidence.
+     * Compute a SHA-256 checksum from this model's persisted payload fields.
+     * Called on creating so created_at is already set by Eloquent.
      */
-    public static function generateChecksum(array $data): string
+    public function computeChecksum(): string
     {
-        $payload = json_encode([
-            'user_id' => $data['user_id'] ?? null,
-            'action' => $data['action'] instanceof AuditAction ? $data['action']->value : $data['action'],
-            'resource_type' => $data['resource_type'] ?? null,
-            'resource_id' => $data['resource_id'] ?? null,
-            'old_values' => $data['old_values'] ?? null,
-            'new_values' => $data['new_values'] ?? null,
-            'status' => $data['status'] ?? 'success',
-            'created_at' => $data['created_at'] ?? now()->toIso8601String(),
-        ], JSON_THROW_ON_ERROR);
+        return hash('sha256', json_encode([
+            'user_id' => $this->user_id,
+            'action' => $this->action instanceof AuditAction ? $this->action->value : $this->action,
+            'resource_type' => $this->resource_type,
+            'resource_id' => $this->resource_id,
+            'old_values' => $this->old_values,
+            'new_values' => $this->new_values,
+            'status' => $this->status,
+        ], JSON_THROW_ON_ERROR));
+    }
 
-        return hash('sha256', $payload);
+    /**
+     * Returns true if the stored checksum no longer matches the row's payload.
+     * Any DB-level tampering will cause this to return true.
+     */
+    public function isTampered(): bool
+    {
+        return $this->checksum !== $this->computeChecksum();
     }
 
     // ═══════════════ Scopes ═══════════════
