@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, finalize, Subject, switchMap } from 'rxjs';
 import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
 import jsPDF from 'jspdf';
@@ -34,6 +35,7 @@ const BRANCH_DIRECTOR_KEYS = [
 export class IncidentCommandSystemComponent implements OnInit {
   private readonly rsvpService = inject(RsvpService);
   private readonly icsService = inject(IcsService);
+  private readonly router = inject(Router);
 
   // --- State Signals ---
   readonly rsvpOptions = signal<SelectOption<string>[]>([]);
@@ -85,6 +87,12 @@ export class IncidentCommandSystemComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadRsvpList();
+  }
+
+  // ===== NAVIGATION =====
+
+  navigateToOperations(): void {
+    void this.router.navigate(['/admin-dashboard', 'operations']);
   }
 
   // ===== RSVP & DASHBOARD =====
