@@ -173,9 +173,11 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
         }
       }),
       this.speechService.error$.subscribe((e) => {
-        this.speechError.set(e.message);
-        this.isRecording.set(false);
-        setTimeout(() => this.speechError.set(''), 5000);
+        if (this.isRecording()) {
+          this.speechError.set(e.message);
+          this.isRecording.set(false);
+          setTimeout(() => this.speechError.set(''), 5000);
+        }
       }),
     );
 
