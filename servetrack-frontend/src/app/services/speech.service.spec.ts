@@ -339,6 +339,7 @@ describe('SpeechService', () => {
 
     it('sets error signal on network error', () => {
       service.startListening();
+      mockRecognition.onstart?.();
       mockRecognition.onerror?.({ error: 'network' } as any);
       expect(service.error()).toContain('Network');
       expect(service.isListening()).toBe(false);
