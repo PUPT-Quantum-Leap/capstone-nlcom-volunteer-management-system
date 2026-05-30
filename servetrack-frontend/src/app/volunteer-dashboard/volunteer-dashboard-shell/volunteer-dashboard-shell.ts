@@ -78,6 +78,7 @@ export class VolunteerDashboardShell implements OnInit {
 
   showNotifications = signal(false);
   showLogoutModal = signal(false);
+  showUserMenu = signal(false);
   searchQuery = signal('');
   notifications = signal<NotificationItem[]>([]);
   notificationCount = computed(
