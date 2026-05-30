@@ -21,7 +21,7 @@ import { AttendanceManagement } from './admin-dashboard/attendance-management/at
 import { PerformanceComponent } from './admin-dashboard/performance/performance';
 import { SmsManagementComponent } from './admin-dashboard/sms-management/sms-management';
 import { RsvpsComponent } from './admin-dashboard/rsvps/rsvps';
-import { BackupRecoveryComponent } from './admin-dashboard/backup-recovery/backup-recovery';
+import { SysadSettingsComponent } from './admin-dashboard/sysad-settings/sysad-settings';
 import { NotFound } from './not-found/not-found';
 import { authGuard } from './guards/auth.guard';
 import { guestGuard } from './guards/guest.guard';
@@ -80,7 +80,7 @@ export const routes: Routes = [
           import('./incident-command-system/incident-command-system').then((m) => m.IncidentCommandSystemComponent),
         canActivate: [authGuard],
       },
-      { path: 'backup-recovery', component: BackupRecoveryComponent, canActivate: [backupAccessGuard] },
+      { path: 'sysad-settings', component: SysadSettingsComponent, canActivate: [backupAccessGuard] },
     ],
   },
   {
