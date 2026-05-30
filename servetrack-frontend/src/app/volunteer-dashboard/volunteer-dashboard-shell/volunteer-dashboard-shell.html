@@ -135,8 +135,8 @@
           Ask Gotcha!
         </button>
         <div class="user-menu-wrapper">
-          <button type="button" class="user-badge-header" (click)="showUserMenu.set(!showUserMenu())" [class.active]="showUserMenu()"
-            aria-haspopup="true" [attr.aria-expanded]="showUserMenu()">
+          <button type="button" id="user-menu-toggle" class="user-badge-header" (click)="toggleUserMenu()" [class.active]="showUserMenu()"
+            aria-haspopup="true" [attr.aria-expanded]="showUserMenu()" aria-label="Account menu">
           <img [src]="profilePreviewUrl()" alt="" width="28" height="28" class="user-badge-avatar"
             [class.svg]="profilePreviewUrl().endsWith('.svg')" />
           <div class="user-badge-info">
@@ -149,8 +149,11 @@
           </button>
 
           @if (showUserMenu()) {
-            <div class="user-menu-dropdown" role="menu">
-              <div class="user-menu-item user-menu-profile" (click)="navigateTo('profile'); showUserMenu.set(false)" role="menuitem" tabindex="0">
+            <div class="user-menu-dropdown" role="menu" aria-labelledby="user-menu-toggle">
+              <div class="user-menu-item user-menu-profile" role="menuitem" tabindex="0"
+                (click)="navigateTo('profile'); showUserMenu.set(false)"
+                (keydown.enter)="navigateTo('profile'); showUserMenu.set(false)"
+                (keydown.space)="navigateTo('profile'); showUserMenu.set(false)">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <div class="user-menu-item-text">
                   <span class="user-menu-item-name">{{ userName() }}</span>
@@ -158,7 +161,10 @@
                 </div>
               </div>
               <div class="user-menu-divider"></div>
-              <div class="user-menu-item user-menu-signout" (click)="logout(); showUserMenu.set(false)" role="menuitem" tabindex="0">
+              <div class="user-menu-item user-menu-signout" role="menuitem" tabindex="0"
+                (click)="logout(); showUserMenu.set(false)"
+                (keydown.enter)="logout(); showUserMenu.set(false)"
+                (keydown.space)="logout(); showUserMenu.set(false)">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 <span>Sign Out</span>
               </div>
