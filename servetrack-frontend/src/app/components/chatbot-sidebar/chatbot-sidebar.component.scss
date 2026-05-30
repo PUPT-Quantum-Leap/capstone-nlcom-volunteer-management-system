@@ -322,7 +322,9 @@ select {
   padding-top: 4px;
 }
 
-.timestamp { font-size: 10px; color: $text-muted; opacity: 0.7; }
+.timestamp { font-size: 10px; color: $text-muted; opacity: 0.7;
+  .message.user & { color: rgba(#fff, 0.75); }
+}
 
 .msg-actions { display: flex; gap: 4px; margin-left: auto; }
 
