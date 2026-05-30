@@ -25,6 +25,7 @@ import { BackupRecoveryComponent } from './admin-dashboard/backup-recovery/backu
 import { NotFound } from './not-found/not-found';
 import { authGuard } from './guards/auth.guard';
 import { guestGuard } from './guards/guest.guard';
+import { backupAccessGuard } from './guards/backup-access.guard';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -79,7 +80,7 @@ export const routes: Routes = [
           import('./incident-command-system/incident-command-system').then((m) => m.IncidentCommandSystemComponent),
         canActivate: [authGuard],
       },
-      { path: 'backup-recovery', component: BackupRecoveryComponent },
+      { path: 'backup-recovery', component: BackupRecoveryComponent, canActivate: [backupAccessGuard] },
     ],
   },
   {
