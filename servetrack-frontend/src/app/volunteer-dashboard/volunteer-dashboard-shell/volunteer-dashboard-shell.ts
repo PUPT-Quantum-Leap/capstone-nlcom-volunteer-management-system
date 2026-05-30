@@ -259,7 +259,15 @@ export class VolunteerDashboardShell implements OnInit {
   }
 
   toggleNotifications(): void {
-    this.showNotifications.update((value) => !value);
+    const nextState = !this.showNotifications();
+    this.showNotifications.set(nextState);
+    if (nextState) this.showUserMenu.set(false);
+  }
+
+  toggleUserMenu(): void {
+    const nextState = !this.showUserMenu();
+    this.showUserMenu.set(nextState);
+    if (nextState) this.showNotifications.set(false);
   }
 
   toggleChatbot(): void {
