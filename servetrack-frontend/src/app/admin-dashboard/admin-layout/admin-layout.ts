@@ -17,6 +17,9 @@ import { LoadingScreenComponent } from '../../components/loading-screen/loading-
 import { ChatbotService } from '../../services/chatbot.service';
 import { ChatbotSidebarComponent } from '../../components/chatbot-sidebar/chatbot-sidebar.component';
 import { GlobalSearchService } from '../../services/global-search.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { BackupAccessService } from '../../services/backup-access.service';
 
 type AdminView =
   | 'dashboard'
@@ -27,8 +30,7 @@ type AdminView =
   | 'operations'
   | 'sms'
   | 'rsvps'
-  | 'ics'
-  | 'backup';
+  | 'ics';
 
 @Component({
   selector: 'app-admin-layout',
@@ -48,6 +50,8 @@ export class AdminLayout implements OnInit {
   readonly chatbotService = inject(ChatbotService);
   private destroyRef = inject(DestroyRef);
   private globalSearchService = inject(GlobalSearchService);
+  private http = inject(HttpClient);
+  private backupAccessService = inject(BackupAccessService);
  
   readonly defaultPhoto = '/assets/apple.svg';
  
@@ -59,10 +63,14 @@ export class AdminLayout implements OnInit {
   showNotifications = signal(false);
   showLogoutModal = signal(false);
   isLoading = signal(false);
+  showBackupLoading = signal(false);
+  backupProgress = signal(0);
+  searchLoading = signal(false);
   snackbarState = signal<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   snackbarLeaving = signal(false);
   private snackbarSubscription: Subscription | null = null;
   private snackbarTimeout: ReturnType<typeof setTimeout> | null = null;
+  private backupLoadingTimeout: ReturnType<typeof setTimeout> | null = null;
 
   searchQuery = this.globalSearchService.searchQuery;
   currentUrl = signal(this.router.url); 
@@ -98,7 +106,6 @@ export class AdminLayout implements OnInit {
     if (url.includes('/sms')) return 'sms';
     if (url.includes('/rsvps')) return 'rsvps';
     if (url.includes('/ics')) return 'ics';
-    if (url.includes('/backup-recovery')) return 'backup';
     if (url.includes('/dashboard')) return 'dashboard';
     return 'dashboard';
   });
@@ -123,8 +130,6 @@ export class AdminLayout implements OnInit {
         return 'RSVP Management';
       case 'ics':
         return 'Incident Command System';
-      case 'backup':
-        return 'Backup & Recovery';
       default:
         return 'Admin Dashboard';
     }
@@ -251,7 +256,6 @@ export class AdminLayout implements OnInit {
       sms: 'sms',
       rsvps: 'rsvps',
       ics: 'ics',
-      backup: 'backup-recovery',
     };
 
     const route = routeMap[view];
@@ -541,10 +545,34 @@ export class AdminLayout implements OnInit {
       return;
     }
 
-    if (lowerQuery.includes('backup') || lowerQuery.includes('recovery')) {
-      this.navigateTo('backup', true);
-      return;
-    }
+    // Check if the search query is the admin's password — grants access to backup & recovery
+    this.searchLoading.set(true);
+    this.http.post<{ success: boolean }>(`${environment.apiUrl}/admin/verify-password`, { password: query }, {
+      withCredentials: true,
+    }).subscribe({
+      next: (response) => {
+        this.searchLoading.set(false);
+        if (response.success) {
+          this.globalSearchService.clearSearchQuery();
+          this.showBackupLoading.set(true);
+          this.backupProgress.set(0);
+          requestAnimationFrame(() => {
+            this.backupProgress.set(100);
+          });
+          this.backupLoadingTimeout = setTimeout(() => {
+            this.showBackupLoading.set(false);
+            this.backupProgress.set(0);
+            this.backupAccessService.grantAccess();
+            void this.router.navigate(['/admin-dashboard', 'backup-recovery']);
+            this.closeMobileSidebar();
+          }, 2000);
+        }
+      },
+      error: () => {
+        this.searchLoading.set(false);
+        // Silent failure — do not reveal the mechanism
+      },
+    });
 
     // Default behavior if no module match: do nothing to keep search active on the current page
   }
@@ -619,6 +647,9 @@ export class AdminLayout implements OnInit {
       window.removeEventListener('resize', handleResize);
       if (timeout) {
         clearTimeout(timeout);
+      }
+      if (this.backupLoadingTimeout) {
+        clearTimeout(this.backupLoadingTimeout);
       }
     });
   }
