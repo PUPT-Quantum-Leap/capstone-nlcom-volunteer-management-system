@@ -97,10 +97,10 @@
 
   <!-- ── Messages ── -->
   <div class="sidebar-messages" #messagesContainer>
-    @if (!chatbotService.hasMessages()) {
+    @if (!chatbotService.hasMessages() && showTypewriter()) {
       <div class="empty-state">
         <img src="/assets/kamen-rider-gotchard.jpg" alt="" class="empty-avatar" aria-hidden="true" width="72" height="72" />
-        <h4>Hello! I'm Gotcha!</h4>
+        <h4 class="typewriter-greeting">{{ typewriterText() }}<span class="cursor">|</span></h4>
         <p>Ask me anything about NLCOM volunteer programs, events, attendance, and more.</p>
         <div class="suggestion-chips">
           @for (s of suggestions; track s) {
@@ -118,6 +118,34 @@
         <div class="message-content">
           @if (msg.role === 'assistant') {
             <div class="markdown" [innerHTML]="chatbotService.parseMarkdown(msg.message)"></div>
+
+            <!-- Inline chart visualization -->
+            @if (msg.visualization) {
+              <app-chat-chart [visualization]="msg.visualization"></app-chat-chart>
+            }
+
+            <!-- Agentic action button -->
+            @if (msg.action) {
+              <div class="message-action">
+                <button type="button" class="action-btn" (click)="executeAction(msg.action!)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    @if (msg.action.type === 'navigate') {
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                    } @else {
+                      <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
+                    }
+                  </svg>
+                  <span>{{ msg.action.label }}</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" class="action-chevron" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
+            }
+
             @if (msg.isRetrying) {
               <div class="retry-indicator" aria-live="polite">Retrying attempt {{ msg.retryAttempt }}/3…</div>
             }
@@ -169,6 +197,7 @@
       </div>
     }
 
+    <!-- Typing indicator with fun loading word -->
     @if (chatbotService.isLoading()) {
       <div class="message assistant" aria-live="polite" aria-label="Gotcha! is typing">
         <img src="/assets/kamen-rider-gotchard.jpg" alt="" class="msg-avatar msg-avatar-typing" aria-hidden="true" width="28" height="28" />
@@ -176,6 +205,7 @@
           <div class="typing-indicator">
             <span></span><span></span><span></span>
           </div>
+          <span class="loading-word">{{ loadingWord() }}</span>
         </div>
       </div>
     }
@@ -198,6 +228,18 @@
       }
       @if (visibleCommands().length === 0) {
         <div class="command-empty">No commands found</div>
+      }
+    </div>
+  }
+
+  <!-- ── Quick Pills ── -->
+  @if (showCommandPalette() && quickPills().length > 0) {
+    <div class="quick-pills">
+      @for (pill of quickPills(); track pill.id) {
+        <button type="button" class="quick-pill" (click)="selectCommand(pill)">
+          <i [class]="'bi ' + pill.icon" aria-hidden="true"></i>
+          <span>{{ pill.text }}</span>
+        </button>
       }
     </div>
   }

@@ -15,15 +15,16 @@ import { Router } from '@angular/router';
 import { ChatbotService, CHATBOT_MAX_MESSAGE_LENGTH } from '../../services/chatbot.service';
 import { SpeechService } from '../../services/speech.service';
 import { CommandPaletteService } from '../../services/command-palette.service';
-import { ChatMessage } from '../../models/chatbot.model';
+import { ChatMessage, ChatbotAction } from '../../models/chatbot.model';
 import { Command } from '../../models/command.model';
 import { Subscription } from 'rxjs';
 import { SpeechResult } from '../../models/speech.model';
+import { ChatChartComponent } from './chat-chart/chat-chart.component';
 
 @Component({
   selector: 'app-chatbot-sidebar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule],
+  imports: [FormsModule, ChatChartComponent],
   templateUrl: './chatbot-sidebar.component.html',
   styleUrl: './chatbot-sidebar.component.scss',
 })
@@ -62,6 +63,21 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
     JSON.parse(localStorage.getItem('chatbot_auto_speak') ?? 'false'),
   );
 
+  // ─── Typewriter greeting ───────────────────────────────────────
+  readonly typewriterText = signal('');
+  readonly showTypewriter = signal(true);
+  private readonly greetingText = "Hello! I'm Gotcha!";
+  private typewriterTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  // ─── Fun loading words ─────────────────────────────────────────
+  readonly loadingWord = signal('Thinking...');
+  private readonly funWords = [
+    'Thinking...', 'Processing...', 'Analyzing...', 'Computing...',
+    'Brainstorming...', 'Consulting the oracle...', 'Connecting dots...',
+    'Loading wisdom...', 'Asking the stars...', 'Doing research...',
+  ];
+  private loadingIntervalId: ReturnType<typeof setInterval> | null = null;
+
   // Computed
   readonly isInputValid = computed(() => this.userInput().trim().length > 0);
   readonly isTTSSupported = this.speechService.isTTSSupported;
@@ -86,6 +102,11 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
 
   readonly groupedVoices = computed(() => this.speechService.getGroupedVoices());
 
+  // Quick pills (derived from command service)
+  readonly quickPills = computed(() =>
+    this.commandService.filterCommands('/').slice(0, 4),
+  );
+
   private subs: Subscription[] = [];
 
   constructor() {
@@ -105,12 +126,37 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
         this.speechService.speak(last.message);
       }
     });
+
+    // Fun loading words rotation
+    effect(() => {
+      if (this.chatbotService.isLoading()) {
+        this.rotateLoadingWord();
+        this.loadingIntervalId = setInterval(() => this.rotateLoadingWord(), 800);
+      } else {
+        if (this.loadingIntervalId) {
+          clearInterval(this.loadingIntervalId);
+          this.loadingIntervalId = null;
+        }
+        this.loadingWord.set('Thinking...');
+      }
+    });
+
+    // Hide typewriter when messages appear
+    effect(() => {
+      if (this.chatbotService.hasMessages()) {
+        this.showTypewriter.set(false);
+        this.stopTypewriterAnimation();
+      }
+    });
   }
 
   ngOnInit(): void {
     // Load voices (constructor already tries, but some browsers load async)
     this.speechService.reloadVoices();
     setTimeout(() => this.voicesReady.set(this.speechService.availableVoices().length > 0), 500);
+
+    // Start typewriter greeting
+    this.startTypewriterAnimation();
 
     // Subscribe to speech results and errors
     this.subs.push(
@@ -140,6 +186,50 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.subs.forEach((s) => s.unsubscribe());
     window.removeEventListener('keydown', this.onWindowKeydown);
+    this.stopTypewriterAnimation();
+    if (this.loadingIntervalId) {
+      clearInterval(this.loadingIntervalId);
+    }
+  }
+
+  // ─── Typewriter methods ────────────────────────────────────────
+  private startTypewriterAnimation(): void {
+    let charIndex = 0;
+    this.typewriterText.set('');
+
+    const typeNext = (): void => {
+      if (charIndex < this.greetingText.length) {
+        this.typewriterText.set(this.greetingText.slice(0, charIndex + 1));
+        charIndex++;
+        this.typewriterTimeoutId = setTimeout(typeNext, 60);
+      }
+    };
+
+    this.typewriterTimeoutId = setTimeout(typeNext, 400);
+  }
+
+  private stopTypewriterAnimation(): void {
+    if (this.typewriterTimeoutId) {
+      clearTimeout(this.typewriterTimeoutId);
+      this.typewriterTimeoutId = null;
+    }
+  }
+
+  // ─── Loading word rotation ─────────────────────────────────────
+  private rotateLoadingWord(): void {
+    const randomIndex = Math.floor(Math.random() * this.funWords.length);
+    this.loadingWord.set(this.funWords[randomIndex]);
+  }
+
+  // ─── Action button handler ─────────────────────────────────────
+  executeAction(action: ChatbotAction): void {
+    if (action.type === 'navigate' && action.url) {
+      void this.router.navigateByUrl(action.url);
+    } else if (action.type === 'action' && action.label) {
+      // Send the action label as a message prompt
+      this.userInput.set(action.label);
+      this.sendMessage();
+    }
   }
 
   private onWindowKeydown = (e: KeyboardEvent): void => {
@@ -203,6 +293,8 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
   clearChat(): void {
     if (confirm('Clear this conversation?')) {
       this.chatbotService.clearHistory().subscribe();
+      this.showTypewriter.set(true);
+      this.startTypewriterAnimation();
     }
   }
 
