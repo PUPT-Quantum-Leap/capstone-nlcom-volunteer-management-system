@@ -30,7 +30,8 @@ type AdminView =
   | 'operations'
   | 'sms'
   | 'rsvps'
-  | 'ics';
+  | 'ics'
+  | 'backup-recovery';
 
 @Component({
   selector: 'app-admin-layout',
@@ -106,6 +107,7 @@ export class AdminLayout implements OnInit {
     if (url.includes('/sms')) return 'sms';
     if (url.includes('/rsvps')) return 'rsvps';
     if (url.includes('/ics')) return 'ics';
+    if (url.includes('/backup-recovery')) return 'backup-recovery';
     if (url.includes('/dashboard')) return 'dashboard';
     return 'dashboard';
   });
@@ -130,6 +132,8 @@ export class AdminLayout implements OnInit {
         return 'RSVP Management';
       case 'ics':
         return 'Incident Command System';
+      case 'backup-recovery':
+        return 'SysAd Settings';
       default:
         return 'Admin Dashboard';
     }
@@ -256,6 +260,7 @@ export class AdminLayout implements OnInit {
       sms: 'sms',
       rsvps: 'rsvps',
       ics: 'ics',
+      'backup-recovery': 'backup-recovery',
     };
 
     const route = routeMap[view];
