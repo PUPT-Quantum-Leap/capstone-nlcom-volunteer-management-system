@@ -175,8 +175,12 @@ select {
 // Empty state
 .empty-state {
   text-align: center;
-  padding: 32px 16px;
-  margin: auto 0;
+  padding: 24px 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-avatar {
