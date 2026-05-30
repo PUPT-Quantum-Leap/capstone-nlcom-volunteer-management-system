@@ -197,13 +197,28 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
   // ─── Typewriter methods ────────────────────────────────────────
   private startTypewriterAnimation(): void {
     let charIndex = 0;
+    let deleting = false;
     this.typewriterText.set('');
 
     const typeNext = (): void => {
-      if (charIndex < this.greetingText.length) {
-        this.typewriterText.set(this.greetingText.slice(0, charIndex + 1));
-        charIndex++;
-        this.typewriterTimeoutId = setTimeout(typeNext, 60);
+      if (!deleting) {
+        if (charIndex < this.greetingText.length) {
+          this.typewriterText.set(this.greetingText.slice(0, charIndex + 1));
+          charIndex++;
+          this.typewriterTimeoutId = setTimeout(typeNext, 60);
+        } else {
+          deleting = true;
+          this.typewriterTimeoutId = setTimeout(typeNext, 1200);
+        }
+      } else {
+        if (charIndex > 0) {
+          charIndex--;
+          this.typewriterText.set(this.greetingText.slice(0, charIndex));
+          this.typewriterTimeoutId = setTimeout(typeNext, 30);
+        } else {
+          deleting = false;
+          this.typewriterTimeoutId = setTimeout(typeNext, 500);
+        }
       }
     };
 
