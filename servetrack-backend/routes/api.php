@@ -7,7 +7,6 @@ use App\Http\Controllers\Api\TeamController;
 use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\EmailBroadcastController;
@@ -125,6 +124,7 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
 // Admin-only routes — requires authentication AND admin role
 Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): void {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::post('/admin/verify-password', [AdminController::class, 'verifyPassword'])->name('admin.verify-password');
     Route::get('/admin/attendance-from-rsvp', [AdminController::class, 'attendanceFromRsvp'])
         ->middleware('throttle:120,1')
         ->name('admin.attendance.from-rsvp');
@@ -190,23 +190,6 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::get('/rsvp-trashed', [RsvpController::class, 'trashed'])->name('rsvp.trashed');
     Route::post('/rsvp/{id}/restore', [RsvpController::class, 'restore'])->name('rsvp.restore');
     Route::delete('/rsvp/{id}/force-delete', [RsvpController::class, 'forceDelete'])->name('rsvp.force-delete');
-
-    // Backup management — full CRUD + operations (admin only, rate-limited)
-    Route::middleware('throttle:30,1')->group(function (): void {
-        Route::get('/backups', [BackupController::class, 'index'])->name('backups.index');
-        Route::post('/backups', [BackupController::class, 'store'])->name('backups.store');
-
-        // Static routes must precede wildcard {backup} to avoid 404
-        Route::get('/backups/stats', [BackupController::class, 'stats'])->name('backups.stats');
-        Route::post('/backups/cleanup', [BackupController::class, 'cleanup'])->name('backups.cleanup');
-        Route::get('/backups/schedule', [BackupController::class, 'getSchedule'])->name('backups.schedule.get');
-        Route::put('/backups/schedule', [BackupController::class, 'updateSchedule'])->name('backups.schedule.update');
-
-        Route::get('/backups/{backup}', [BackupController::class, 'show'])->name('backups.show');
-        Route::delete('/backups/{backup}', [BackupController::class, 'destroy'])->name('backups.destroy');
-        Route::get('/backups/{backup}/download', [BackupController::class, 'download'])->name('backups.download');
-        Route::post('/backups/{backup}/restore', [BackupController::class, 'restore'])->name('backups.restore');
-    });
     // Admin profile routes
     Route::get('/admin/profile', [AdminController::class, 'profile'])->name('admin.profile');
     Route::put('/admin/profile', [AdminController::class, 'updateProfile'])

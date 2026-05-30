@@ -16,7 +16,7 @@ describe('backup listing', function () {
         Backup::factory()->count(5)->create();
 
         actingAs($this->admin)
-            ->getJson('/api/backups')
+            ->getJson('/api/_db')
             ->assertSuccessful()
             ->assertJsonStructure([
                 'success',
@@ -30,7 +30,7 @@ describe('backup listing', function () {
         Backup::factory()->count(2)->create();
 
         actingAs($this->admin)
-            ->getJson('/api/backups?type=automatic')
+            ->getJson('/api/_db?type=automatic')
             ->assertSuccessful()
             ->assertJsonCount(3, 'data');
     });
@@ -40,7 +40,7 @@ describe('backup listing', function () {
         Backup::factory()->count(1)->failed()->create();
 
         actingAs($this->admin)
-            ->getJson('/api/backups?status=failed')
+            ->getJson('/api/_db?status=failed')
             ->assertSuccessful()
             ->assertJsonCount(1, 'data');
     });
@@ -49,7 +49,7 @@ describe('backup listing', function () {
 describe('backup creation', function () {
     it('creates a manual backup', function () {
         actingAs($this->admin)
-            ->postJson('/api/backups')
+            ->postJson('/api/_db')
             ->assertCreated()
             ->assertJson([
                 'success' => true,
@@ -61,7 +61,7 @@ describe('backup creation', function () {
 
     it('accepts description on backup creation', function () {
         actingAs($this->admin)
-            ->postJson('/api/backups', [
+            ->postJson('/api/_db', [
                 'description' => 'Pre-update snapshot',
             ])
             ->assertCreated();
@@ -75,7 +75,7 @@ describe('backup detail', function () {
         $backup = Backup::factory()->create();
 
         actingAs($this->admin)
-            ->getJson("/api/backups/{$backup->id}")
+            ->getJson("/api/_db/{$backup->id}")
             ->assertSuccessful()
             ->assertJsonPath('data.id', $backup->id);
     });
@@ -87,7 +87,7 @@ describe('backup download', function () {
         Storage::disk('local')->put($backup->file_path, '-- test sql content');
 
         actingAs($this->admin)
-            ->getJson("/api/backups/{$backup->id}/download")
+            ->getJson("/api/_db/{$backup->id}/download")
             ->assertSuccessful()
             ->assertHeader('Content-Type', 'text/plain; charset=utf-8');
 
@@ -98,7 +98,7 @@ describe('backup download', function () {
         $backup = Backup::factory()->create();
 
         actingAs($this->admin)
-            ->getJson("/api/backups/{$backup->id}/download")
+            ->getJson("/api/_db/{$backup->id}/download")
             ->assertStatus(500);
     });
 });
@@ -109,7 +109,7 @@ describe('backup restore', function () {
         Storage::disk('local')->put($backup->file_path, 'SELECT 1;');
 
         actingAs($this->admin)
-            ->postJson("/api/backups/{$backup->id}/restore")
+            ->postJson("/api/_db/{$backup->id}/restore")
             ->assertSuccessful()
             ->assertJson(['success' => true]);
 
@@ -120,7 +120,7 @@ describe('backup restore', function () {
         $backup = Backup::factory()->pending()->create();
 
         actingAs($this->admin)
-            ->postJson("/api/backups/{$backup->id}/restore")
+            ->postJson("/api/_db/{$backup->id}/restore")
             ->assertJsonPath('success', false);
     });
 
@@ -128,7 +128,7 @@ describe('backup restore', function () {
         $backup = Backup::factory()->create();
 
         actingAs($this->admin)
-            ->postJson("/api/backups/{$backup->id}/restore")
+            ->postJson("/api/_db/{$backup->id}/restore")
             ->assertJsonPath('success', false);
     });
 });
@@ -138,7 +138,7 @@ describe('backup deletion', function () {
         $backup = Backup::factory()->create();
 
         actingAs($this->admin)
-            ->deleteJson("/api/backups/{$backup->id}")
+            ->deleteJson("/api/_db/{$backup->id}")
             ->assertSuccessful()
             ->assertJson([
                 'success' => true,
@@ -156,7 +156,7 @@ describe('backup stats', function () {
         Backup::factory()->count(1)->pending()->create();
 
         actingAs($this->admin)
-            ->getJson('/api/backups/stats')
+            ->getJson('/api/_db/stats')
             ->assertSuccessful()
             ->assertJsonStructure([
                 'success',
@@ -178,7 +178,7 @@ describe('backup cleanup', function () {
             ->each(fn (Backup $b, int $i) => $b->update(['created_at' => now()->subDays(5 - $i)]));
 
         actingAs($this->admin)
-            ->postJson('/api/backups/cleanup', ['keep_count' => 3])
+            ->postJson('/api/_db/cleanup', ['keep_count' => 3])
             ->assertSuccessful();
 
         expect(Backup::count())->toBe(3);
@@ -193,7 +193,7 @@ describe('scheduled backup settings', function () {
         ]);
 
         actingAs($this->admin)
-            ->getJson('/api/backups/schedule')
+            ->getJson('/api/_db/schedule')
             ->assertSuccessful()
             ->assertJsonPath('data.enabled', true)
             ->assertJsonPath('data.frequency', 'weekly');
@@ -203,7 +203,7 @@ describe('scheduled backup settings', function () {
         BackupScheduleSetting::factory()->create();
 
         actingAs($this->admin)
-            ->putJson('/api/backups/schedule', [
+            ->putJson('/api/_db/schedule', [
                 'enabled' => false,
                 'frequency' => 'monthly',
             ])
@@ -215,7 +215,7 @@ describe('scheduled backup settings', function () {
         BackupScheduleSetting::factory()->create();
 
         actingAs($this->admin)
-            ->putJson('/api/backups/schedule', [
+            ->putJson('/api/_db/schedule', [
                 'enabled' => true,
                 'frequency' => 'yearly',
             ])
@@ -226,7 +226,7 @@ describe('scheduled backup settings', function () {
         BackupScheduleSetting::factory()->create();
 
         actingAs($this->admin)
-            ->putJson('/api/backups/schedule', [
+            ->putJson('/api/_db/schedule', [
                 'enabled' => 'not-boolean',
                 'frequency' => 'daily',
             ])
@@ -239,14 +239,14 @@ describe('backup authorization', function () {
         $volunteer = User::factory()->volunteer()->create();
 
         actingAs($volunteer)
-            ->getJson('/api/backups')
+            ->getJson('/api/_db')
             ->assertForbidden();
     });
 
     it('returns 401 for unauthenticated access', function () {
         $this->app['auth']->guard('web')->logout();
 
-        $this->getJson('/api/backups')
+        $this->getJson('/api/_db')
             ->assertUnauthorized();
     });
 
@@ -254,7 +254,7 @@ describe('backup authorization', function () {
         $volunteer = User::factory()->volunteer()->create();
 
         actingAs($volunteer)
-            ->postJson('/api/backups')
+            ->postJson('/api/_db')
             ->assertForbidden();
     });
 
@@ -263,7 +263,7 @@ describe('backup authorization', function () {
         $volunteer = User::factory()->volunteer()->create();
 
         actingAs($volunteer)
-            ->postJson("/api/backups/{$backup->id}/restore")
+            ->postJson("/api/_db/{$backup->id}/restore")
             ->assertForbidden();
     });
 });

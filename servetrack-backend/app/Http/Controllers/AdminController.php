@@ -506,6 +506,30 @@ class AdminController extends Controller
     }
 
     /**
+     * Verify the authenticated admin's current password.
+     */
+    public function verifyPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        $user = $request->user();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid password.',
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password verified.',
+        ]);
+    }
+
+    /**
      * Helper to get filtered attendance data.
      */
     private function getFilteredAttendanceData(Request $request): array
