@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AuditAction;
 use App\Http\Requests\ApplyAiSuggestionsRequest;
 use App\Http\Requests\AssignVolunteerRequest;
 use App\Http\Requests\RemoveVolunteerRequest;
@@ -16,6 +17,7 @@ use App\Models\IcsTeam;
 use App\Models\Rsvp;
 use App\Models\Team;
 use App\Models\Volunteer;
+use App\Services\AuditLogger;
 use App\Services\IcsService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -384,6 +386,13 @@ class IcsController extends Controller
             ]);
         });
 
+        AuditLogger::success(AuditAction::ICS_VOLUNTEER_ASSIGNED, [
+            'resource_type' => 'ics',
+            'resource_id' => $ics->id,
+            'resource_label' => $ics->name,
+            'description' => trim($volunteer->first_name.' '.$volunteer->last_name).' assigned to ICS: '.$ics->name,
+        ]);
+
         return response()->json(['message' => 'Volunteer assigned successfully.']);
     }
 
@@ -399,6 +408,13 @@ class IcsController extends Controller
         }
 
         $ics->volunteers()->detach($request->input('volunteer_id'));
+
+        AuditLogger::success(AuditAction::ICS_VOLUNTEER_REMOVED, [
+            'resource_type' => 'ics',
+            'resource_id' => $ics->id,
+            'resource_label' => $ics->name,
+            'description' => 'Volunteer #'.$request->input('volunteer_id').' removed from ICS: '.$ics->name,
+        ]);
 
         return response()->json(['message' => 'Volunteer removed successfully.']);
     }
