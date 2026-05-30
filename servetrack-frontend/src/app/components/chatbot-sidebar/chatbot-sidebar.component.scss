@@ -11,7 +11,7 @@ $surface-alt: #f9fafb;
 $user-msg-bg: $primary;
 $bot-msg-bg: #f3f4f6;
 
-// ── Sidebar wrapper ──────────────────────────────────────────────────────
+// ── Sidebar wrapper ──────────────────────────────────────────────
 .sidebar-wrapper {
   position: fixed;
   top: 0;
@@ -39,7 +39,7 @@ $bot-msg-bg: #f3f4f6;
   @media (prefers-reduced-motion: reduce) { transition: none; }
 }
 
-// ── Header ───────────────────────────────────────────────────────────────
+// ── Header ───────────────────────────────────────────────────────
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -89,7 +89,7 @@ $bot-msg-bg: #f3f4f6;
   &.active { background: $primary-light; color: $primary; }
 }
 
-// ── Settings Panel ───────────────────────────────────────────────────────
+// ── Settings Panel ───────────────────────────────────────────────
 .settings-panel {
   padding: 12px 16px;
   background: $surface-alt;
@@ -157,7 +157,7 @@ select {
 
 .settings-hint { font-size: 11px; color: $text-muted; margin: 0; }
 
-// ── Messages ─────────────────────────────────────────────────────────────
+// ── Messages ─────────────────────────────────────────────────────
 .sidebar-messages {
   flex: 1;
   overflow-y: auto;
@@ -194,6 +194,24 @@ select {
   font-size: 13px;
   color: $text-muted;
   line-height: 1.5;
+}
+
+// ── Typewriter greeting ──────────────────────────────────────────
+.typewriter-greeting {
+  display: inline-block;
+
+  .cursor {
+    display: inline-block;
+    color: $primary;
+    font-weight: 300;
+    animation: blink 0.8s step-end infinite;
+    margin-left: 1px;
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 .suggestion-chips { display: flex; flex-direction: column; gap: 8px; }
@@ -259,7 +277,12 @@ select {
     border: 1px solid $border;
   }
 
-  &.typing { padding: 14px 18px; }
+  &.typing {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 }
 
 // Markdown
@@ -312,6 +335,42 @@ select {
   tbody tr:hover td { background: $primary-light; }
 }
 
+// ── Action buttons (agentic) ─────────────────────────────────────
+.message-action {
+  margin-top: 10px;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 8px;
+  color: $primary;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: $primary-light;
+    border-color: rgba($primary, 0.4);
+    transform: translateX(2px);
+  }
+
+  .action-chevron {
+    opacity: 0.5;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  &:hover .action-chevron {
+    opacity: 1;
+    transform: translateX(2px);
+  }
+}
+
 .retry-indicator { font-size: 11px; color: #f59e0b; margin-top: 4px; font-style: italic; }
 
 .message-meta {
@@ -350,7 +409,7 @@ select {
   &:hover { color: #b91c1c; border-color: #b91c1c; background: rgba(#dc2626, 0.14); }
 }
 
-// Typing indicator
+// ── Typing indicator ─────────────────────────────────────────────
 .typing-indicator {
   display: flex;
   gap: 4px;
@@ -368,6 +427,13 @@ select {
   }
 }
 
+.loading-word {
+  font-size: 12px;
+  color: $text-muted;
+  font-style: italic;
+  animation: fadeIn 0.3s ease;
+}
+
 @keyframes typingBounce {
   0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
   40% { transform: scale(1); opacity: 1; }
@@ -383,7 +449,7 @@ select {
   50% { box-shadow: 0 0 0 6px rgba($primary, 0); }
 }
 
-// ── Command Palette ───────────────────────────────────────────────────────
+// ── Command Palette ──────────────────────────────────────────────
 .command-palette {
   background: $surface;
   border-top: 1px solid $border;
@@ -429,7 +495,42 @@ select {
 
 .command-empty { padding: 12px 14px; font-size: 13px; color: $text-muted; text-align: center; }
 
-// ── Input Area ────────────────────────────────────────────────────────────
+// ── Quick Pills ──────────────────────────────────────────────────
+.quick-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px;
+  background: $surface-alt;
+  border-bottom: 1px solid $border;
+  flex-shrink: 0;
+  animation: slideDown 0.15s ease;
+}
+
+.quick-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 16px;
+  color: $text;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+
+  i { font-size: 12px; color: $primary; }
+
+  &:hover {
+    background: $primary-light;
+    border-color: $primary;
+    color: $primary;
+  }
+}
+
+// ── Input Area ───────────────────────────────────────────────────
 .sidebar-input {
   padding: 12px 14px;
   background: $surface;
@@ -560,7 +661,7 @@ textarea {
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
-// ── Mobile: hide main content when chat open ──────────────────────────────
+// ── Mobile: hide main content when chat open ─────────────────────
 @media (max-width: 768px) {
   // The main-wrapper chatbot-open rule handles desktop push.
   // On mobile the sidebar is full-screen so no push needed.
