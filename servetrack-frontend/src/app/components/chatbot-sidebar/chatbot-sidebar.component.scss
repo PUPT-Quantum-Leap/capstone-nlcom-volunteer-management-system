@@ -98,6 +98,7 @@ $bot-msg-bg: #f3f4f6;
   flex-direction: column;
   gap: 10px;
   flex-shrink: 0;
+  overflow: visible;
   animation: slideDown 0.2s ease;
 }
 
@@ -122,10 +123,11 @@ $bot-msg-bg: #f3f4f6;
   }
 }
 
-.voice-select-row { display: flex; gap: 8px; align-items: center; }
+.voice-select-row { display: flex; gap: 8px; align-items: center; min-width: 0; }
 
 select {
   flex: 1;
+  min-width: 0;
   padding: 7px 10px;
   background: $surface;
   border: 1px solid $border;
@@ -337,6 +339,13 @@ select {
   justify-content: center;
   transition: all 0.15s;
   &:hover { color: $primary; border-color: rgba($primary, 0.4); background: $primary-light; }
+}
+
+.speak-btn.speaking {
+  color: #dc2626;
+  border-color: #dc2626;
+  background: rgba(#dc2626, 0.08);
+  &:hover { color: #b91c1c; border-color: #b91c1c; background: rgba(#dc2626, 0.14); }
 }
 
 // Typing indicator
