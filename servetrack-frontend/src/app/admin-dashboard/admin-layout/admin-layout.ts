@@ -63,6 +63,7 @@ export class AdminLayout implements OnInit {
   isMobile = signal(false);
   showNotifications = signal(false);
   showLogoutModal = signal(false);
+  showUserMenu = signal(false);
   isLoading = signal(false);
   showBackupLoading = signal(false);
   backupProgress = signal(0);
@@ -322,6 +323,13 @@ export class AdminLayout implements OnInit {
   toggleNotifications(): void {
     const nextState = !this.showNotifications();
     this.showNotifications.set(nextState);
+    if (nextState) this.showUserMenu.set(false);
+  }
+
+  toggleUserMenu(): void {
+    const nextState = !this.showUserMenu();
+    this.showUserMenu.set(nextState);
+    if (nextState) this.showNotifications.set(false);
     
     if (nextState) {
       // Mark all current notifications as read when opening dropdown
