@@ -265,12 +265,146 @@
       </div>
     </div>
 
-    <div class="audit-placeholder">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" aria-hidden="true">
-        <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <h4>Coming Soon</h4>
-      <p>The audit logger will record all admin actions, login events, data modifications, and system changes for compliance and security tracking.</p>
+    <!-- Audit Stats Row -->
+    <div class="audit-stats-row">
+      <div class="audit-stat-card">
+        <span class="audit-stat-value">{{ auditStats().total_today }}</span>
+        <span class="audit-stat-label">Events Today</span>
+      </div>
+      <div class="audit-stat-card">
+        <span class="audit-stat-value">{{ auditStats().total_all }}</span>
+        <span class="audit-stat-label">All Time</span>
+      </div>
+      <div class="audit-stat-card audit-stat-warning">
+        <span class="audit-stat-value">{{ auditStats().failures_today }}</span>
+        <span class="audit-stat-label">Failures Today</span>
+      </div>
+      <div class="audit-stat-card audit-stat-danger">
+        <span class="audit-stat-value">{{ auditStats().critical_today }}</span>
+        <span class="audit-stat-label">Critical Today</span>
+      </div>
+    </div>
+
+    <!-- Audit Filters -->
+    <div class="audit-filter-bar">
+      <select class="form-input form-input-sm" [value]="auditFilterCategory()" (change)="onAuditFilterChange('category', $any($event.target).value)" aria-label="Filter by category">
+        <option value="">All Categories</option>
+        <option value="auth">Auth</option>
+        <option value="volunteer">Volunteer</option>
+        <option value="rsvp">RSVP</option>
+        <option value="attendance">Attendance</option>
+        <option value="ics">ICS</option>
+        <option value="backup">Backup</option>
+        <option value="system">System</option>
+        <option value="audit">Audit</option>
+      </select>
+      <select class="form-input form-input-sm" [value]="auditFilterSeverity()" (change)="onAuditFilterChange('severity', $any($event.target).value)" aria-label="Filter by severity">
+        <option value="">All Severities</option>
+        <option value="info">Info</option>
+        <option value="warning">Warning</option>
+        <option value="critical">Critical</option>
+      </select>
+      <input type="date" class="form-input form-input-sm" [value]="auditFilterFrom()" (change)="onAuditFilterChange('from', $any($event.target).value)" aria-label="From date" />
+      <input type="date" class="form-input form-input-sm" [value]="auditFilterTo()" (change)="onAuditFilterChange('to', $any($event.target).value)" aria-label="To date" />
+      <input type="search" class="form-input form-input-sm audit-search" placeholder="Search actors, resources..." [value]="auditFilterSearch()" (input)="onAuditSearchInput($any($event.target).value)" aria-label="Search audit logs" />
+      <button type="button" class="outline-btn outline-btn-sm" (click)="exportAuditCsv()" [disabled]="auditExporting()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+
+    <!-- Audit Logs Table -->
+    <div class="report-table-container">
+      <table class="report-table">
+        <thead>
+          <tr>
+            <th scope="col">TIMESTAMP</th>
+            <th scope="col">ACTOR</th>
+            <th scope="col">ACTION</th>
+            <th scope="col">RESOURCE</th>
+            <th scope="col">STATUS</th>
+            <th scope="col">SEVERITY</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (auditLoading()) {
+            <tr><td colspan="6" class="empty-table-cell"><div class="empty-table-state"><p>Loading audit logs...</p></div></td></tr>
+          } @else if (auditLogs().length > 0) {
+            @for (log of auditLogs(); track log.id) {
+              <tr class="audit-row" [title]="log.description || ''">
+                <td class="timestamp-cell">{{ log.created_at | date: 'MMM d, h:mm a' }}</td>
+                <td>
+                  <div class="actor-cell">
+                    <span class="actor-name">{{ log.actor_name || 'System' }}</span>
+                    <span class="actor-role">{{ log.actor_role || log.source }}</span>
+                  </div>
+                </td>
+                <td><span class="action-label">{{ log.description || log.action }}</span></td>
+                <td>
+                  @if (log.resource_label || log.resource_type) {
+                    <span class="resource-cell">{{ log.resource_label || log.resource_type }}{{ log.resource_id ? ' #' + log.resource_id : '' }}</span>
+                  } @else {
+                    <span class="text-muted">—</span>
+                  }
+                </td>
+                <td>
+                  <span class="status-badge" [class.status-success]="log.status === 'success'" [class.status-danger]="log.status === 'failure' || log.status === 'error'">
+                    {{ log.status | titlecase }}
+                  </span>
+                </td>
+                <td>
+                  <span class="severity-badge" [class.severity-info]="log.severity === 'info'" [class.severity-warning]="log.severity === 'warning'" [class.severity-critical]="log.severity === 'critical' || log.severity === 'error'">
+                    {{ log.severity | titlecase }}
+                  </span>
+                </td>
+              </tr>
+            }
+          } @else {
+            <tr><td colspan="6" class="empty-table-cell"><div class="empty-table-state"><p>No audit log entries found.</p></div></td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Audit Pagination -->
+    <div class="pagination-container">
+      <div class="pagination-info">
+        @if (auditLogs().length > 0) {
+          Showing <strong>{{ (auditPage() - 1) * auditPerPage + 1 }}</strong> to
+          <strong>{{ Math.min(auditPage() * auditPerPage, auditTotal()) }}</strong>
+          of <strong>{{ auditTotal() }}</strong> entries
+        } @else {
+          No entries found
+        }
+      </div>
+      @if (auditTotalPages() > 1) {
+        <nav class="pagination-controls" aria-label="Audit log pages">
+          <button type="button" class="pagination-btn" [disabled]="auditPage() === 1" (click)="changeAuditPage(auditPage() - 1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+          <div class="pagination-numbers">
+            @for (page of getAuditPageNumbers(); track page) {
+              @if (page === -1) {
+                <span class="pagination-ellipsis">...</span>
+              } @else {
+                <button type="button" class="pagination-number" [class.active]="auditPage() === page"
+                  (click)="changeAuditPage(page)" [attr.aria-current]="auditPage() === page ? 'page' : null">
+                  {{ page }}
+                </button>
+              }
+            }
+          </div>
+          <button type="button" class="pagination-btn" [disabled]="auditPage() === auditTotalPages()" (click)="changeAuditPage(auditPage() + 1)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </nav>
+      }
     </div>
   </section>
 </section>
