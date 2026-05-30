@@ -418,7 +418,10 @@
   }
 
   &.chatbot-open {
-    margin-right: 0;
+    .dashboard-content {
+      margin-right: 400px;
+      transition: margin-right var(--transition-slow);
+    }
   }
 }
 
