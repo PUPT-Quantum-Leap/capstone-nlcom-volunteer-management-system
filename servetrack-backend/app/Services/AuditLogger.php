@@ -50,9 +50,6 @@ class AuditLogger
                 'reason' => $options['reason'] ?? null,
             ];
 
-            // Generate tamper-evidence checksum
-            $data['checksum'] = AuditLog::generateChecksum($data);
-
             return AuditLog::create($data);
         } catch (\Throwable $e) {
             // Audit write failure must never break the user action
