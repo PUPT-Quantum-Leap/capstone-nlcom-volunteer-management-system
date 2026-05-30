@@ -86,6 +86,17 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
             $user->setRelation('volunteer_profile', $user->volunteer);
         }
 
+        if ($user && $user->role === 'admin') {
+            $admin = $user->admin;
+            if ($admin && $admin->profile_photo) {
+                if (str_starts_with($admin->profile_photo, '/assets/')) {
+                    $user->profile_photo_url = $admin->profile_photo;
+                } else {
+                    $user->profile_photo_url = Illuminate\Support\Facades\Storage::disk('public')->url($admin->profile_photo);
+                }
+            }
+        }
+
         return $user;
     })->name('auth.user');
 
