@@ -29,7 +29,7 @@ import { ChatbotSidebarComponent } from '../../components/chatbot-sidebar/chatbo
 export class VolunteerDashboardShell implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private authService = inject(AuthService);
+  readonly authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
   private rsvpService = inject(RsvpService);
   readonly chatbotService = inject(ChatbotService);
