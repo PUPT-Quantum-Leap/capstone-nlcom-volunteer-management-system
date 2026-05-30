@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\AuditAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\NewPasswordRequest;
 use App\Mail\ResetPasswordMail;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
@@ -55,6 +57,14 @@ class ForgotPasswordController extends Controller
         );
 
         if ($status === Password::PASSWORD_RESET) {
+            $user = User::where('email', $request->input('email'))->first();
+            AuditLogger::success(AuditAction::AUTH_PASSWORD_RESET, [
+                'resource_type' => 'user',
+                'resource_id' => $user?->id,
+                'resource_label' => $user?->name,
+                'actor_name' => $request->input('email'),
+            ]);
+
             return response()->json([
                 'message' => 'Your password has been reset successfully. You can now log in with your new password.',
             ]);

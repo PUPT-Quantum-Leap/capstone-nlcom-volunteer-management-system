@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AuditAction;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
@@ -9,6 +10,7 @@ use App\Models\Admin;
 use App\Models\Coordinator;
 use App\Models\User;
 use App\Models\Volunteer;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -104,6 +106,13 @@ class UserController extends Controller
 
             DB::commit();
 
+            AuditLogger::success(AuditAction::VOLUNTEER_CREATED, [
+                'resource_type' => 'user',
+                'resource_id' => $user->id,
+                'resource_label' => $user->name,
+                'description' => "User account created: {$user->email} (role: {$user->role})",
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'User created successfully',
@@ -198,6 +207,16 @@ class UserController extends Controller
 
             DB::commit();
 
+            $action = $roleChanged ? AuditAction::VOLUNTEER_ROLE_CHANGED : AuditAction::VOLUNTEER_UPDATED;
+            AuditLogger::success($action, [
+                'resource_type' => 'user',
+                'resource_id' => $user->id,
+                'resource_label' => $user->name,
+                'description' => $roleChanged
+                    ? "Role changed: {$oldRole} → {$newRole} for {$user->email}"
+                    : "User updated: {$user->email}",
+            ]);
+
             $message = $roleChanged
                 ? 'User updated successfully with role change'
                 : 'User updated successfully';
@@ -254,6 +273,13 @@ class UserController extends Controller
             $user->forceDelete();
 
             DB::commit();
+
+            AuditLogger::success(AuditAction::VOLUNTEER_DELETED, [
+                'resource_type' => 'user',
+                'resource_id' => $id,
+                'resource_label' => $user->name,
+                'description' => "User permanently deleted: {$user->email}",
+            ]);
 
             return response()->json([
                 'success' => true,

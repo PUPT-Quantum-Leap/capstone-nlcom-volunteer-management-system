@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Constants\TokenAbilities;
+use App\Enums\AuditAction;
 use App\Http\Requests\RsvpNonRespondersRequest;
 use App\Http\Requests\VerifyPasswordRequest;
 use App\Models\Admin;
@@ -11,6 +12,7 @@ use App\Models\Rsvp;
 use App\Models\RsvpResponse;
 use App\Models\User;
 use App\Models\Volunteer;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -963,6 +965,13 @@ class AdminController extends Controller
                 ]);
             }
         });
+
+        AuditLogger::success(AuditAction::ATTENDANCE_MANUAL_OVERRIDE, [
+            'resource_type' => 'rsvp_response',
+            'resource_id' => $rsvpResponse->rsvp_response_id,
+            'resource_label' => 'RSVP Response #'.$rsvpResponse->rsvp_response_id,
+            'description' => "Manual attendance override: volunteer #{$rsvpResponse->volunteer_id} marked {$validated['status']}",
+        ]);
 
         return response()->json([
             'success' => true,

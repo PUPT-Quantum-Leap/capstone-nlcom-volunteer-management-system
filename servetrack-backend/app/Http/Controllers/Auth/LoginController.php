@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Constants\TokenAbilities;
+use App\Enums\AuditAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
 use App\Models\Volunteer;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -25,6 +27,11 @@ class LoginController extends Controller
         try {
             $request->authenticate();
         } catch (ValidationException) {
+            AuditLogger::failure(AuditAction::AUTH_LOGIN_FAILED, 'Invalid credentials', [
+                'actor_name' => $request->input('email'),
+                'resource_type' => 'user',
+            ]);
+
             // Generic message prevents email enumeration
             return response()->json([
                 'message' => 'Invalid credentials',
@@ -76,6 +83,13 @@ class LoginController extends Controller
 
         $remember = $request->boolean('remember');
 
+        AuditLogger::success(AuditAction::AUTH_LOGIN, [
+            'resource_type' => 'user',
+            'resource_id' => $user->id,
+            'resource_label' => $user->name,
+            'description' => "User logged in: {$user->email}",
+        ]);
+
         return $this->buildAuthenticatedResponse($userData, $user, $this->abilitiesForRole($user->role), $remember);
     }
 
@@ -87,6 +101,11 @@ class LoginController extends Controller
         try {
             $request->authenticate();
         } catch (ValidationException) {
+            AuditLogger::failure(AuditAction::AUTH_LOGIN_FAILED, 'Invalid credentials', [
+                'actor_name' => $request->input('email'),
+                'resource_type' => 'user',
+            ]);
+
             return response()->json([
                 'message' => 'Invalid credentials',
             ], 422)->withHeaders([
@@ -123,6 +142,13 @@ class LoginController extends Controller
         $userData['admin_profile'] = $user->admin;
 
         $remember = $request->boolean('remember');
+
+        AuditLogger::success(AuditAction::AUTH_LOGIN, [
+            'resource_type' => 'user',
+            'resource_id' => $user->id,
+            'resource_label' => $user->name,
+            'description' => "Admin logged in: {$user->email}",
+        ]);
 
         return $this->buildAuthenticatedResponse($userData, $user, TokenAbilities::ADMIN, $remember);
     }
@@ -295,6 +321,14 @@ class LoginController extends Controller
      */
     public function destroy(Request $request): Response
     {
+        $user = $request->user();
+
+        AuditLogger::success(AuditAction::AUTH_LOGOUT, [
+            'resource_type' => 'user',
+            'resource_id' => $user?->id,
+            'resource_label' => $user?->name,
+        ]);
+
         $request->user()->tokens()->delete();
 
         Auth::guard('web')->logout();

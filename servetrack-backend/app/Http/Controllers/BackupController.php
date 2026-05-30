@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AuditAction;
 use App\Http\Requests\UpdateBackupScheduleRequest;
 use App\Models\Backup;
 use App\Models\BackupScheduleSetting;
+use App\Services\AuditLogger;
 use App\Services\BackupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -82,6 +84,13 @@ class BackupController extends Controller
 
             $backup = $this->backupService->createBackup($type, $description);
 
+            AuditLogger::success(AuditAction::BACKUP_CREATED, [
+                'resource_type' => 'backup',
+                'resource_id' => $backup->id,
+                'resource_label' => $backup->name,
+                'description' => "Backup created ({$type}): {$backup->name}",
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Backup created successfully',
@@ -133,6 +142,12 @@ class BackupController extends Controller
         try {
             $this->backupService->deleteBackup($backup);
 
+            AuditLogger::success(AuditAction::BACKUP_DELETED, [
+                'resource_type' => 'backup',
+                'resource_id' => $backup->id,
+                'resource_label' => $backup->name,
+            ]);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Backup deleted successfully',
@@ -158,6 +173,12 @@ class BackupController extends Controller
     {
         try {
             $fileContent = $this->backupService->getBackupFile($backup);
+
+            AuditLogger::success(AuditAction::BACKUP_DOWNLOADED, [
+                'resource_type' => 'backup',
+                'resource_id' => $backup->id,
+                'resource_label' => $backup->name,
+            ]);
 
             return response()->streamDownload(function () use ($fileContent) {
                 echo $fileContent;
@@ -191,6 +212,13 @@ class BackupController extends Controller
     {
         try {
             $this->backupService->restoreBackup($backup);
+
+            AuditLogger::success(AuditAction::BACKUP_RESTORED, [
+                'resource_type' => 'backup',
+                'resource_id' => $backup->id,
+                'resource_label' => $backup->name,
+                'description' => "Database restored from backup: {$backup->name}",
+            ]);
 
             return response()->json([
                 'success' => true,
