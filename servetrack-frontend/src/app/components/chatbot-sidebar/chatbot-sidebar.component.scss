@@ -14,10 +14,10 @@ $bot-msg-bg: #f3f4f6;
 // ── Sidebar wrapper ──────────────────────────────────────────────
 .sidebar-wrapper {
   position: fixed;
-  top: 0;
+  top: 72px;
   right: -400px;
   width: 400px;
-  height: 100vh;
+  height: calc(100vh - 72px);
   background: $surface;
   border-left: 1px solid $border;
   display: flex;
