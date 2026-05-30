@@ -437,9 +437,6 @@
     margin-left: var(--sidebar-collapsed-width);
   }
 
-  &.chatbot-open {
-    margin-right: 400px;
-  }
 }
 
 // Top Bar
@@ -601,53 +598,6 @@
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-  }
-}
-
-.servebot-toggle-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.625rem;
-  padding: 0.625rem 1.5rem;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: var(--radius-lg);
-  font-weight: 700;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-
-  &:hover {
-    background: #1d4ed8;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  &.active {
-    background: #1e40af;
-    box-shadow: 0 4px 14px rgba(30, 64, 175, 0.35);
-    border: 1.5px solid rgba(255, 255, 255, 0.2);
-  }
-
-  svg {
-    width: 20px;
-    height: 20px;
-    color: inherit;
-  }
-
-  .gotcha-btn-avatar {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1.5px solid rgba(255, 255, 255, 0.4);
   }
 }
 
@@ -1086,9 +1036,6 @@
       margin-left: 0;
     }
 
-    &.chatbot-open {
-      margin-right: 0;
-    }
   }
 
   .mobile-menu-btn {
