@@ -8,7 +8,7 @@ import { ChatbotService } from '../../services/chatbot.service';
     <button
       class="chatbot-btn"
       (click)="chatbotService.openChatbot()"
-      title="Chat with AI Assistant"
+      title="Ask Gotcha!"
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round">
@@ -18,7 +18,7 @@ import { ChatbotService } from '../../services/chatbot.service';
         <line x1="8" y1="16" x2="8" y2="16" />
         <line x1="16" y1="16" x2="16" y2="16" />
       </svg>
-      AI Assistant
+      Ask Gotcha!
     </button>
   `,
   styles: [`
