@@ -10,7 +10,7 @@
         <li class="menu-label" aria-hidden="true">Dashboard</li>
         <li>
           <button type="button" [class.active]="isActive('overview')"
-            (click)="navigateTo('overview'); closeMobileSidebar()" [title]="sidebarCollapsed() ? 'Dashboard' : ''">
+            (click)="navigateTo('overview'); closeMobileSidebar()" data-tooltip="Dashboard" [title]="sidebarCollapsed() ? 'Dashboard' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
@@ -22,7 +22,7 @@
         <li class="menu-label" aria-hidden="true">Personal</li>
         <li>
           <button type="button" [class.active]="isActive('profile')"
-            (click)="navigateTo('profile'); closeMobileSidebar()" [title]="sidebarCollapsed() ? 'My Profile' : ''">
+            (click)="navigateTo('profile'); closeMobileSidebar()" data-tooltip="My Profile" [title]="sidebarCollapsed() ? 'My Profile' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -32,7 +32,7 @@
         </li>
         <li>
           <button type="button" [class.active]="isActive('attendance')"
-            (click)="navigateTo('attendance'); closeMobileSidebar()" [title]="sidebarCollapsed() ? 'Attendance Log' : ''">
+            (click)="navigateTo('attendance'); closeMobileSidebar()" data-tooltip="Attendance Log" [title]="sidebarCollapsed() ? 'Attendance Log' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -46,7 +46,7 @@
         <li class="menu-label" aria-hidden="true">Community</li>
         <li>
           <button type="button" [class.active]="isActive('polls')"
-            (click)="navigateTo('polls'); closeMobileSidebar()" [title]="sidebarCollapsed() ? 'Community Polls' : ''">
+            (click)="navigateTo('polls'); closeMobileSidebar()" data-tooltip="Community Polls" [title]="sidebarCollapsed() ? 'Community Polls' : ''">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
