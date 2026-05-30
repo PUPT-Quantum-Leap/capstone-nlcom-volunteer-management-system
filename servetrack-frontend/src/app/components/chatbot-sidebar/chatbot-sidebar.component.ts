@@ -333,7 +333,7 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
     this.showCommandPalette.set(false);
     this.userInput.set('');
     this.resetTextareaHeight();
-    this.chatbotService.sendMessage(cmd.description).subscribe({ error: () => undefined });
+    this.chatbotService.sendMessage(cmd.command).subscribe({ error: () => undefined });
   }
 
   toggleRecording(): void {
