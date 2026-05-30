@@ -16,13 +16,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NotificationItem } from '../../models/notification-item';
 
 import { LoadingScreenComponent } from '../../components/loading-screen/loading-screen';
-import { ChatbotService } from '../../services/chatbot.service';
-import { ChatbotSidebarComponent } from '../../components/chatbot-sidebar/chatbot-sidebar.component';
 
 @Component({
   selector: 'app-volunteer-dashboard-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, NgTemplateOutlet, NgOptimizedImage, LoadingScreenComponent, ChatbotSidebarComponent],
+  imports: [RouterOutlet, NgTemplateOutlet, NgOptimizedImage, LoadingScreenComponent],
   templateUrl: './volunteer-dashboard-shell.html',
   styleUrl: './volunteer-dashboard-shell.scss',
 })
@@ -32,7 +30,6 @@ export class VolunteerDashboardShell implements OnInit {
   readonly authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
   private rsvpService = inject(RsvpService);
-  readonly chatbotService = inject(ChatbotService);
   private destroyRef = inject(DestroyRef);
 
   readonly defaultPhoto = '/assets/apple.svg';
@@ -268,10 +265,6 @@ export class VolunteerDashboardShell implements OnInit {
     const nextState = !this.showUserMenu();
     this.showUserMenu.set(nextState);
     if (nextState) this.showNotifications.set(false);
-  }
-
-  toggleChatbot(): void {
-    this.chatbotService.toggleChatbot();
   }
 
   markNotificationsRead(): void {

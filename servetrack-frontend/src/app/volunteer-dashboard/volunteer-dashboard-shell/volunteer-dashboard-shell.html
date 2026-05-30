@@ -111,7 +111,7 @@
 
   <div class="sidebar-overlay" [class.active]="mobileSidebarOpen()" (click)="closeMobileSidebar()"></div>
 
-  <div class="main-wrapper" [class.expanded]="sidebarCollapsed()" [class.chatbot-open]="chatbotService.showChatbot()">
+  <div class="main-wrapper" [class.expanded]="sidebarCollapsed()">
     <header class="top-bar">
       <div class="top-bar-left">
         <button type="button" class="mobile-menu-btn" (click)="toggleMobileSidebar()">
@@ -136,18 +136,7 @@
             <span class="badge">{{ notificationCount() }}</span>
           }
         </button>
-        <button type="button" class="servebot-toggle-btn" [class.active]="chatbotService.showChatbot()"
-          (click)="toggleChatbot()" aria-label="Toggle Gotcha! Assistant" title="Ask Gotcha!">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="9" width="18" height="12" rx="3"/>
-            <circle cx="9" cy="15" r="2"/>
-            <circle cx="15" cy="15" r="2"/>
-            <path d="M12 3v4"/>
-            <path d="M8 7h8"/>
-          </svg>
-          Ask Gotcha!
-        </button>
+
         <div class="user-menu-wrapper">
           <button type="button" id="user-menu-toggle" class="user-badge-header" (click)="toggleUserMenu()" [class.active]="showUserMenu()"
             aria-haspopup="true" [attr.aria-expanded]="showUserMenu()" aria-label="Account menu">
@@ -236,10 +225,6 @@
     </main>
   </div>
 </div>
-
-@if (chatbotService.showChatbot()) {
-  <app-chatbot-sidebar></app-chatbot-sidebar>
-}
 
 <!-- Modals -->
 @if (showLogoutModal()) {
