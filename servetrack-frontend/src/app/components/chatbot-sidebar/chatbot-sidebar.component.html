@@ -211,7 +211,7 @@
     }
   </div>
 
-  <!-- ── Command Palette Dropdown ── -->
+  <!-- ── Command Palette ── -->
   @if (showCommandDropdown()) {
     <div class="command-palette" role="listbox" aria-label="Commands">
       @for (cmd of visibleCommands(); track cmd.id; let i = $index) {
@@ -219,7 +219,31 @@
           [class.selected]="selectedCommandIndex() === i"
           (click)="selectCommand(cmd)"
           [attr.aria-selected]="selectedCommandIndex() === i">
-          <span class="cmd-icon"><i [class]="'bi ' + cmd.icon" aria-hidden="true"></i></span>
+          <span class="cmd-icon" [attr.data-icon]="cmd.icon" aria-hidden="true">
+            @switch (cmd.icon) {
+              @case ('calendar') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              }
+              @case ('clipboard') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+              }
+              @case ('clock') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              }
+              @case ('calendar-check') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+              }
+              @case ('help') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              }
+              @case ('lightbulb') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+              }
+              @default {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+              }
+            }
+          </span>
           <span class="cmd-info">
             <span class="cmd-command">{{ cmd.command }}</span>
             <span class="cmd-desc">{{ cmd.description }}</span>
@@ -232,17 +256,6 @@
     </div>
   }
 
-  <!-- ── Quick Pills ── -->
-  @if (showCommandPalette() && quickPills().length > 0) {
-    <div class="quick-pills">
-      @for (pill of quickPills(); track pill.id) {
-        <button type="button" class="quick-pill" (click)="selectCommand(pill)">
-          <i [class]="'bi ' + pill.icon" aria-hidden="true"></i>
-          <span>{{ pill.text }}</span>
-        </button>
-      }
-    </div>
-  }
 
   <!-- ── Input Area ── -->
   <div class="sidebar-input">

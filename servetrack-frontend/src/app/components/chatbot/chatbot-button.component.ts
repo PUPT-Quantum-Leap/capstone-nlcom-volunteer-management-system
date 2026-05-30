@@ -12,11 +12,8 @@ import { ChatbotService } from '../../services/chatbot.service';
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
         stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="11" width="18" height="10" rx="2" />
-        <circle cx="12" cy="5" r="2" />
-        <path d="M12 7v4" />
-        <line x1="8" y1="16" x2="8" y2="16" />
-        <line x1="16" y1="16" x2="16" y2="16" />
+        <path d="M9.5 2L11 7L16 8.5L11 10L9.5 15L8 10L3 8.5L8 7L9.5 2Z"/>
+        <path d="M18 12L19 15L22 16L19 17L18 20L17 17L14 16L17 15L18 12Z"/>
       </svg>
       Ask Gotcha!
     </button>

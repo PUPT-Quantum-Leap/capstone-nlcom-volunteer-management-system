@@ -197,13 +197,28 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
   // ─── Typewriter methods ────────────────────────────────────────
   private startTypewriterAnimation(): void {
     let charIndex = 0;
+    let deleting = false;
     this.typewriterText.set('');
 
     const typeNext = (): void => {
-      if (charIndex < this.greetingText.length) {
-        this.typewriterText.set(this.greetingText.slice(0, charIndex + 1));
-        charIndex++;
-        this.typewriterTimeoutId = setTimeout(typeNext, 60);
+      if (!deleting) {
+        if (charIndex < this.greetingText.length) {
+          this.typewriterText.set(this.greetingText.slice(0, charIndex + 1));
+          charIndex++;
+          this.typewriterTimeoutId = setTimeout(typeNext, 60);
+        } else {
+          deleting = true;
+          this.typewriterTimeoutId = setTimeout(typeNext, 1200);
+        }
+      } else {
+        if (charIndex > 0) {
+          charIndex--;
+          this.typewriterText.set(this.greetingText.slice(0, charIndex));
+          this.typewriterTimeoutId = setTimeout(typeNext, 30);
+        } else {
+          deleting = false;
+          this.typewriterTimeoutId = setTimeout(typeNext, 500);
+        }
       }
     };
 
@@ -316,13 +331,6 @@ export class ChatbotSidebarComponent implements OnInit, OnDestroy {
   selectCommand(cmd: Command): void {
     this.commandService.trackCommandUsage(cmd.id);
     this.showCommandPalette.set(false);
-
-    if (cmd.action.type === 'url' && cmd.action.url) {
-      void this.router.navigateByUrl(cmd.action.url);
-      return;
-    }
-
-    // For query/modal types: send as message
     this.userInput.set('');
     this.resetTextareaHeight();
     this.chatbotService.sendMessage(cmd.command).subscribe({ error: () => undefined });

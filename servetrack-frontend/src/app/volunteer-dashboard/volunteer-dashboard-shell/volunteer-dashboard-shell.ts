@@ -29,7 +29,7 @@ import { ChatbotSidebarComponent } from '../../components/chatbot-sidebar/chatbo
 export class VolunteerDashboardShell implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private authService = inject(AuthService);
+  readonly authService = inject(AuthService);
   private volunteerService = inject(VolunteerService);
   private rsvpService = inject(RsvpService);
   readonly chatbotService = inject(ChatbotService);
@@ -78,6 +78,7 @@ export class VolunteerDashboardShell implements OnInit {
 
   showNotifications = signal(false);
   showLogoutModal = signal(false);
+  showUserMenu = signal(false);
   searchQuery = signal('');
   notifications = signal<NotificationItem[]>([]);
   notificationCount = computed(
@@ -258,7 +259,15 @@ export class VolunteerDashboardShell implements OnInit {
   }
 
   toggleNotifications(): void {
-    this.showNotifications.update((value) => !value);
+    const nextState = !this.showNotifications();
+    this.showNotifications.set(nextState);
+    if (nextState) this.showUserMenu.set(false);
+  }
+
+  toggleUserMenu(): void {
+    const nextState = !this.showUserMenu();
+    this.showUserMenu.set(nextState);
+    if (nextState) this.showNotifications.set(false);
   }
 
   toggleChatbot(): void {

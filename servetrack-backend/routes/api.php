@@ -82,8 +82,24 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('auth.logout');
     Route::get('/user', function (Request $request) {
         $user = $request->user();
-        if ($user && $user->role === 'volunteer') {
+
+        if (! $user instanceof App\Models\User) {
+            return $user;
+        }
+
+        if ($user->role === 'volunteer') {
             $user->setRelation('volunteer_profile', $user->volunteer);
+        }
+
+        if ($user->role === 'admin') {
+            $admin = $user->admin;
+            if ($admin instanceof App\Models\Admin && ! empty($admin->profile_photo)) {
+                if (str_starts_with($admin->profile_photo, '/assets/')) {
+                    $user->profile_photo_url = $admin->profile_photo;
+                } else {
+                    $user->profile_photo_url = Illuminate\Support\Facades\Storage::disk('public')->url($admin->profile_photo);
+                }
+            }
         }
 
         return $user;
