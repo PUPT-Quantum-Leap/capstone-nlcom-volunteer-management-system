@@ -114,7 +114,7 @@ export class UserBadgeComponent {
 
     const roleMap: Record<string, string> = {
       volunteer: 'Volunteer',
-      admin: 'Administrator',
+      admin: 'Admin',
       coordinator: 'Coordinator',
     };
 
