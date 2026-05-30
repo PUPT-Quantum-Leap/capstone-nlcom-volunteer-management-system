@@ -124,7 +124,9 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
 // Admin-only routes — requires authentication AND admin role
 Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): void {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-    Route::post('/admin/verify-password', [AdminController::class, 'verifyPassword'])->name('admin.verify-password');
+    Route::post('/admin/verify-password', [AdminController::class, 'verifyPassword'])
+        ->middleware('throttle:password-change')
+        ->name('admin.verify-password');
     Route::get('/admin/attendance-from-rsvp', [AdminController::class, 'attendanceFromRsvp'])
         ->middleware('throttle:120,1')
         ->name('admin.attendance.from-rsvp');
