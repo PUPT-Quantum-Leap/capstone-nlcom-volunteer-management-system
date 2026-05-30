@@ -31,7 +31,7 @@ type AdminView =
   | 'sms'
   | 'rsvps'
   | 'ics'
-  | 'backup-recovery';
+  | 'sysad-settings';
 
 @Component({
   selector: 'app-admin-layout',
@@ -107,7 +107,7 @@ export class AdminLayout implements OnInit {
     if (url.includes('/sms')) return 'sms';
     if (url.includes('/rsvps')) return 'rsvps';
     if (url.includes('/ics')) return 'ics';
-    if (url.includes('/backup-recovery')) return 'backup-recovery';
+    if (url.includes('/sysad-settings')) return 'sysad-settings';
     if (url.includes('/dashboard')) return 'dashboard';
     return 'dashboard';
   });
@@ -132,7 +132,7 @@ export class AdminLayout implements OnInit {
         return 'RSVP Management';
       case 'ics':
         return 'Incident Command System';
-      case 'backup-recovery':
+      case 'sysad-settings':
         return 'SysAd Settings';
       default:
         return 'Admin Dashboard';
@@ -260,7 +260,7 @@ export class AdminLayout implements OnInit {
       sms: 'sms',
       rsvps: 'rsvps',
       ics: 'ics',
-      'backup-recovery': 'backup-recovery',
+      'sysad-settings': 'sysad-settings',
     };
 
     const route = routeMap[view];
@@ -568,7 +568,7 @@ export class AdminLayout implements OnInit {
             this.showBackupLoading.set(false);
             this.backupProgress.set(0);
             this.backupAccessService.grantAccess();
-            void this.router.navigate(['/admin-dashboard', 'backup-recovery']);
+            void this.router.navigate(['/admin-dashboard', 'sysad-settings']);
             this.closeMobileSidebar();
           }, 2000);
         }

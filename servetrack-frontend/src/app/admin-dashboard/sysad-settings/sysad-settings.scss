@@ -8,7 +8,7 @@
 }
 
 // Backup Recovery Container
-.backup-recovery-container {
+.sysad-settings-container {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -606,6 +606,71 @@
     outline: none;
     border-color: #3b82f6;
   }
+}
+
+// ── Audit Logger Section ─────────────────────────────────────────
+.audit-logger-section {
+  margin-top: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.section-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  svg {
+    width: 20px;
+    height: 20px;
+    color: #2563eb;
+  }
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.section-subtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+.audit-placeholder {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #94a3b8;
+  border: 2px dashed #e2e8f0;
+  border-radius: 10px;
+
+  svg { margin-bottom: 12px; color: #cbd5e1; }
+  h4 { margin: 0 0 6px; font-size: 1rem; color: #64748b; font-weight: 600; }
+  p { margin: 0; font-size: 0.85rem; max-width: 450px; margin-inline: auto; line-height: 1.5; }
 }
 
 

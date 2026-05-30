@@ -15,13 +15,13 @@ import {
 } from '../../services/backup-api.service';
 
 @Component({
-  selector: 'app-backup-recovery',
+  selector: 'app-sysad-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
-  templateUrl: './backup-recovery.html',
-  styleUrl: './backup-recovery.scss',
+  templateUrl: './sysad-settings.html',
+  styleUrl: './sysad-settings.scss',
 })
-export class BackupRecoveryComponent {
+export class SysadSettingsComponent {
   private backupApiService = inject(BackupApiService);
   private destroyRef = inject(DestroyRef);
 
