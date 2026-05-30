@@ -15,19 +15,31 @@ $bot-msg-bg: #f3f4f6;
 .sidebar-wrapper {
   position: fixed;
   top: 72px;
-  right: -400px;
+  right: 0;
   width: 400px;
   height: calc(100vh - 72px);
   background: $surface;
   border-left: 1px solid $border;
   display: flex;
   flex-direction: column;
-  transition: right 0.3s ease-in-out;
   z-index: 1001;
   box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
   font-family: 'Inter', sans-serif;
+  overflow: hidden;
 
-  &.open { right: 0; }
+  // Closed state — off-screen, invisible, shifted right
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.open {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
 
   @media (max-width: 768px) {
     top: 0;
