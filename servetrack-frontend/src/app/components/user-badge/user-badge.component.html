@@ -2,6 +2,22 @@
   @if (isAuthenticated()) {
     <span class="signed-in-label hidden md:inline">Signed in as</span>
 
+    @if (readonly()) {
+      <div class="user-badge-btn readonly">
+        <img
+          [src]="getProfilePhotoUrl()"
+          [alt]="getUserName()"
+          [class.admin-bg]="isAdminUser()"
+          [class.p-1]="isSvgImage()"
+          [class.object-cover]="!isSvgImage()"
+          class="flex-shrink-0"
+        />
+        <div class="user-info hidden md:flex">
+          <span class="user-name">{{ getUserName() }}</span>
+          <span class="user-role" [class]="getRoleColorClass()">{{ getUserRole() }}</span>
+        </div>
+      </div>
+    } @else {
     <button
       (click)="toggleDropdown()"
       (keydown)="handleDropdownKeydown($event)"
@@ -42,9 +58,10 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
       </svg>
     </button>
+    }
 
     <!-- Dropdown Menu -->
-    @if (isDropdownOpen()) {
+    @if (!readonly() && isDropdownOpen()) {
       <!-- Backdrop -->
       <div
         (click)="closeDropdown()"
