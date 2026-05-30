@@ -102,8 +102,6 @@ export class SpeechService implements OnDestroy {
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognitionAPI) {
       this.isSTTSupported.set(true);
-    } else {
-      console.warn('Speech Recognition API not supported in this browser');
     }
 
     // TTS
@@ -114,8 +112,6 @@ export class SpeechService implements OnDestroy {
       if (this.synthesis.onvoiceschanged !== undefined) {
         this.synthesis.onvoiceschanged = () => this.loadVoices();
       }
-    } else {
-      console.warn('Speech Synthesis API not supported in this browser');
     }
   }
 
@@ -147,6 +143,11 @@ export class SpeechService implements OnDestroy {
     };
 
     this.recognition.onerror = (event: ISpeechRecognitionErrorEvent) => {
+      // Suppress 'aborted' errors (fired when we call .abort() or .stop() ourselves)
+      if (event.error === 'aborted') return;
+      // Suppress 'network' errors when user isn't actively recording
+      if (event.error === 'network' && !this.isListening()) return;
+
       const errorType = this.mapSpeechError(event.error);
       this.emitError(errorType);
     };
@@ -167,6 +168,7 @@ export class SpeechService implements OnDestroy {
       return this.transcript$;
     }
 
+    // Create a fresh instance each time to avoid stale/broken state after errors
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     this.recognition = new SpeechRecognitionAPI();
     this.finalTranscript = '';
@@ -174,8 +176,8 @@ export class SpeechService implements OnDestroy {
 
     try {
       this.recognition.start();
-    } catch {
-      // Already started guard
+    } catch (e) {
+      console.warn('SpeechRecognition start failed:', e);
     }
 
     return this.transcript$;
