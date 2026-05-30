@@ -10,9 +10,9 @@ import {
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  AdminDashboardService,
+  BackupApiService,
   BackupRecord,
-} from '../../services/admin-dashboard.service';
+} from '../../services/backup-api.service';
 
 @Component({
   selector: 'app-backup-recovery',
@@ -22,7 +22,7 @@ import {
   styleUrl: './backup-recovery.scss',
 })
 export class BackupRecoveryComponent {
-  private adminDashboardService = inject(AdminDashboardService);
+  private backupApiService = inject(BackupApiService);
   private destroyRef = inject(DestroyRef);
 
   // Expose Math for template
@@ -135,7 +135,7 @@ export class BackupRecoveryComponent {
 
   // Backup actions
   loadBackups(): void {
-    this.adminDashboardService
+    this.backupApiService
       .getBackups(this.backupHistoryPage(), this.backupHistoryPageSize())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
@@ -152,7 +152,7 @@ export class BackupRecoveryComponent {
   }
 
   loadScheduledBackupSettings(): void {
-    this.adminDashboardService
+    this.backupApiService
       .getScheduledBackupSettings()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
@@ -168,7 +168,7 @@ export class BackupRecoveryComponent {
   createBackup(): void {
     this.backupActionLoading.set(true);
 
-    this.adminDashboardService
+    this.backupApiService
       .createBackup('manual')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -196,7 +196,7 @@ export class BackupRecoveryComponent {
   refreshBackups(): void {
     this.backupActionLoading.set(true);
 
-    this.adminDashboardService
+    this.backupApiService
       .getBackups(this.backupHistoryPage(), this.backupHistoryPageSize())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -227,7 +227,7 @@ export class BackupRecoveryComponent {
 
   downloadBackup(backup: BackupRecord): void {
     this.backupActionId.set(backup.id);
-    this.adminDashboardService
+    this.backupApiService
       .downloadBackup(backup.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -260,7 +260,7 @@ export class BackupRecoveryComponent {
         this.backupActionLoading.set(true);
         this.backupActionId.set(backup.id);
 
-        this.adminDashboardService
+        this.backupApiService
           .restoreBackup(backup.id)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
@@ -298,7 +298,7 @@ export class BackupRecoveryComponent {
         this.backupActionLoading.set(true);
         this.backupActionId.set(backupId);
 
-        this.adminDashboardService
+        this.backupApiService
           .deleteBackup(backupId)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
@@ -333,7 +333,7 @@ export class BackupRecoveryComponent {
       () => {
         this.cleanupLoading.set(true);
 
-        this.adminDashboardService
+        this.backupApiService
           .cleanupBackups(0)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
@@ -380,7 +380,7 @@ export class BackupRecoveryComponent {
     this.scheduledBackupFrequency.set(frequency);
     this.scheduleSettingsSaving.set(true);
 
-    this.adminDashboardService
+    this.backupApiService
       .updateScheduledBackupSettings(
         this.scheduledBackupEnabled(),
         frequency,
@@ -426,7 +426,7 @@ export class BackupRecoveryComponent {
 
     this.scheduleSettingsSaving.set(true);
 
-    this.adminDashboardService
+    this.backupApiService
       .updateScheduledBackupSettings(
         newEnabled,
         frequency,
