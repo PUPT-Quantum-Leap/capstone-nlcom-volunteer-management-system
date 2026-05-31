@@ -11,6 +11,7 @@ use App\Services\BackupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BackupController extends Controller
@@ -73,12 +74,12 @@ class BackupController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        try {
-            $request->validate([
-                'type' => 'sometimes|in:manual,automatic',
-                'description' => 'sometimes|string|max:255',
-            ]);
+        $request->validate([
+            'type' => 'sometimes|in:manual,automatic',
+            'description' => 'sometimes|nullable|string|max:255',
+        ]);
 
+        try {
             $type = $request->input('type', 'manual');
             $description = $request->input('description');
 
@@ -172,7 +173,8 @@ class BackupController extends Controller
     public function download(Backup $backup): StreamedResponse|JsonResponse
     {
         try {
-            $fileContent = $this->backupService->getBackupFile($backup);
+            $stream = $this->backupService->getBackupStream($backup);
+            $fileSize = Storage::disk($this->backupService->getDisk())->size($backup->file_path);
 
             AuditLogger::success(AuditAction::BACKUP_DOWNLOADED, [
                 'resource_type' => 'backup',
@@ -180,12 +182,17 @@ class BackupController extends Controller
                 'resource_label' => $backup->name,
             ]);
 
-            return response()->streamDownload(function () use ($fileContent) {
-                echo $fileContent;
-            }, $backup->name.'.sql', [
-                'Content-Type' => 'text/plain; charset=utf-8',
-                'Content-Disposition' => 'attachment; filename="'.$backup->name.'.sql"',
-                'Content-Length' => strlen($fileContent),
+            $extension = str_ends_with($backup->file_path, '.enc') ? '.sql.enc' : '.sql';
+            $contentType = str_ends_with($backup->file_path, '.enc')
+                ? 'application/octet-stream'
+                : 'text/plain; charset=utf-8';
+
+            return response()->streamDownload(function () use ($stream) {
+                fpassthru($stream);
+                fclose($stream);
+            }, $backup->name.$extension, [
+                'Content-Type' => $contentType,
+                'Content-Length' => $fileSize,
                 'Cache-Control' => 'no-cache, must-revalidate',
                 'Pragma' => 'no-cache',
                 'Expires' => '0',
@@ -279,11 +286,11 @@ class BackupController extends Controller
      */
     public function cleanup(Request $request): JsonResponse
     {
-        try {
-            $request->validate([
-                'keep_count' => 'sometimes|integer|min:0|max:1000',
-            ]);
+        $request->validate([
+            'keep_count' => 'sometimes|integer|min:0|max:1000',
+        ]);
 
+        try {
             $keepCount = $request->input('keep_count', 10);
             $this->backupService->cleanupOldBackups($keepCount);
 
@@ -383,10 +390,10 @@ class BackupController extends Controller
     {
         $units = ['B', 'KB', 'MB', 'GB'];
 
-        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+        for ($i = 0; $bytes >= 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
 
-        return round($bytes, 1).' '.$units[$i];
+        return number_format($bytes, 1).' '.$units[$i];
     }
 }
