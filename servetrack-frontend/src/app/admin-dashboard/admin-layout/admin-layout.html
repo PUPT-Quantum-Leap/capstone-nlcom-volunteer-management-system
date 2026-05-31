@@ -40,16 +40,6 @@
             <span class="nav-text">Dashboard</span>
           </button>
         </li>
-        <li>
-          <button type="button" [class.active]="isActive('analytics')" (click)="navigateTo('analytics')"
-            [attr.aria-current]="currentView() === 'analytics' ? 'page' : null" data-tooltip="Analytics" [title]="sidebarCollapsed() ? 'Analytics' : ''">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z" />
-            </svg>
-            <span class="nav-text">Analytics</span>
-          </button>
-        </li>
 
         <li class="menu-label" aria-hidden="true">Management</li>
         <li>
