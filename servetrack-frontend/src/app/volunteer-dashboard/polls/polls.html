@@ -169,7 +169,7 @@
           [class.disabled]="isOptionFull(option)">
           <div class="option-radio">
             <input type="radio" [name]="'poll-' + poll.id" [value]="option.id" (change)="selectOption(option.id)"
-              [disabled]="isOptionFull(option)" />
+              [checked]="selectedOptionId() === option.id" [disabled]="isOptionFull(option)" />
             <span class="radio-indicator" aria-hidden="true"></span>
           </div>
           <span class="option-label">{{ option.timeSlot }}</span>
