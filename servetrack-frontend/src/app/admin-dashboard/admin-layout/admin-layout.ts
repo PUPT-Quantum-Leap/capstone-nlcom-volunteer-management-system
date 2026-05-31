@@ -23,7 +23,6 @@ import { BackupAccessService } from '../../services/backup-access.service';
 
 type AdminView =
   | 'dashboard'
-  | 'analytics'
   | 'volunteers'
   | 'attendance'
   | 'performance'
@@ -100,7 +99,6 @@ export class AdminLayout implements OnInit {
   currentView = computed<AdminView>(() => {
     // Derive current view from router URL
     const url = this.currentUrl();
-    if (url.includes('/analytics')) return 'analytics';
     if (url.includes('/volunteers')) return 'volunteers';
     if (url.includes('/attendance')) return 'attendance';
     if (url.includes('/performance')) return 'performance';
@@ -117,8 +115,6 @@ export class AdminLayout implements OnInit {
     switch (this.currentView()) {
       case 'dashboard':
         return 'Dashboard';
-      case 'analytics':
-        return 'Analytics & Reports';
       case 'volunteers':
         return 'Volunteer Management';
       case 'attendance':
@@ -253,7 +249,6 @@ export class AdminLayout implements OnInit {
   navigateTo(view: AdminView, isSearch: boolean = false): void {
     const routeMap: Record<AdminView, string> = {
       dashboard: 'dashboard',
-      analytics: 'analytics',
       volunteers: 'volunteers',
       attendance: 'attendance',
       performance: 'performance',
@@ -510,7 +505,7 @@ export class AdminLayout implements OnInit {
 
     // 1. Check for Module Navigation Shortcuts
     if (lowerQuery.includes('analytic') || lowerQuery.includes('report')) {
-      this.navigateTo('analytics', true);
+      this.navigateTo('dashboard', true);
       return;
     }
 
