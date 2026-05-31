@@ -18,6 +18,7 @@ class StripTags extends TransformsRequest
         'newPassword',
         'newPassword_confirmation',
         'confirmPassword',
+        'description',
     ];
 
     /**
