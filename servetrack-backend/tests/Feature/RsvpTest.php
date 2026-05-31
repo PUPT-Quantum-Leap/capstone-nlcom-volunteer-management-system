@@ -642,11 +642,10 @@ describe('PUT /api/rsvp/{rsvpId}/response - Update RSVP Response', function (): 
                 ->assertSuccessful();
         }
 
-        // 4th edit should fail
+        // 4th edit should succeed (no edit limit)
         $this->actingAs($user)
             ->putJson("/api/rsvp/{$rsvp->rsvp_id}/response", ['time_slot_id' => $shifts[0]->time_slot_id])
-            ->assertUnprocessable()
-            ->assertJsonPath('message', 'You have used all 3 available edits for this RSVP.');
+            ->assertSuccessful();
     });
 
     it('rejects edit to same time slot', function (): void {

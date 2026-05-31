@@ -131,8 +131,7 @@ class RsvpResponse extends Model
             return false;
         }
 
-        // Must have edits remaining
-        return $this->edit_count < 3;
+        return true;
     }
 
     /**
