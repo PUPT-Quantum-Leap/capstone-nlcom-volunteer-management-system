@@ -2,7 +2,8 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './home/home.component';
 import { RsvpComponent } from './rsvp/rsvp';
 import { VolunteerAuthPage } from './auth/volunteer-auth-page/volunteer-auth-page';
-import { FacebookOAuthCallbackComponent } from './auth/facebook-oauth-callback/facebook-oauth-callback';
+import { GoogleCallbackComponent } from './auth/google-callback/google-callback';
+import { ProfileCompleteComponent } from './volunteer/complete-profile/complete-profile';
 import { AdminAuthPage } from './auth/admin-auth-page/admin-auth-page';
 import { ForgotPasswordPage } from './auth/forgot-password-page/forgot-password-page';
 import { ResetPasswordPage } from './auth/reset-password-page/reset-password-page';
@@ -32,7 +33,8 @@ export const routes: Routes = [
   { path: 'volunteer-auth', component: VolunteerAuthPage, canActivate: [guestGuard] },
   { path: 'login', redirectTo: 'volunteer-auth', pathMatch: 'full' },
   { path: 'signup-form', redirectTo: 'volunteer-auth?tab=signup', pathMatch: 'full' },
-  { path: 'auth/facebook/callback', component: FacebookOAuthCallbackComponent, canActivate: [guestGuard] },
+  { path: 'auth/google/callback', component: GoogleCallbackComponent, canActivate: [guestGuard] },
+  { path: 'volunteer/complete-profile', component: ProfileCompleteComponent, canActivate: [authGuard] },
   { path: 'admin-auth', component: AdminAuthPage, canActivate: [guestGuard] },
   { path: 'forgot-password', component: ForgotPasswordPage, canActivate: [guestGuard], data: { role: 'admin' } },
   { path: 'volunteer/forgot-password', component: ForgotPasswordPage, canActivate: [guestGuard], data: { role: 'volunteer' } },

@@ -25,7 +25,6 @@ class RsvpResponse extends Model
         'time_slot_id',
         'voted_at',
         'sms_sent',
-        'facebook_id',
         'facebook_name',
         'checked_in_at',
         'checked_out_at',

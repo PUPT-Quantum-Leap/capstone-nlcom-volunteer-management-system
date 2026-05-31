@@ -7,13 +7,12 @@ use App\Enums\AuditAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
-use App\Models\Volunteer;
 use App\Services\AuditLogger;
+use App\Services\OAuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 
@@ -154,41 +153,43 @@ class LoginController extends Controller
     }
 
     /**
-     * Redirect to Facebook OAuth for authentication.
+     * Redirect to Google OAuth for authentication.
      */
-    public function redirectToFacebook(Request $request): JsonResponse
+    public function redirectToGoogle(Request $request): JsonResponse
     {
-        $facebookAppId = config('services.facebook.app_id');
-        $redirectUri = config('services.facebook.redirect_uri');
+        $clientId = config('services.google.client_id');
+        $redirectUri = config('services.google.redirect_uri');
 
-        if (! $facebookAppId || ! $redirectUri) {
-            return response()->json([
-                'message' => 'Facebook login is not configured.',
-            ], 500);
+        if (! $clientId || ! $redirectUri) {
+            return response()->json(['message' => 'Google login is not configured.'], 500);
         }
 
-        $permissions = 'email,public_profile';
         $state = bin2hex(random_bytes(32));
         if ($request->hasSession()) {
-            $request->session()->put('facebook_oauth_state', $state);
+            $request->session()->put('google_oauth_state', $state);
         }
 
-        $oauthUrl = "https://www.facebook.com/v18.0/dialog/oauth?client_id={$facebookAppId}&redirect_uri={$redirectUri}&scope={$permissions}&response_type=code&state={$state}";
+        $params = http_build_query([
+            'client_id' => $clientId,
+            'redirect_uri' => $redirectUri,
+            'response_type' => 'code',
+            'scope' => 'email profile',
+            'state' => $state,
+        ]);
 
-        return response()->json(['redirect_url' => $oauthUrl]);
+        return response()->json(['redirect_url' => "https://accounts.google.com/o/oauth2/v2/auth?{$params}"]);
     }
 
     /**
-     * Handle Facebook OAuth callback.
+     * Handle Google OAuth callback.
      */
-    public function handleFacebookCallback(Request $request): JsonResponse
+    public function handleGoogleCallback(Request $request, OAuthService $oauthService): JsonResponse
     {
         $code = $request->query('code');
         $state = $request->query('state');
-        $redirectUri = config('services.facebook.redirect_uri');
 
         $storedState = $request->hasSession()
-            ? $request->session()->get('facebook_oauth_state')
+            ? $request->session()->get('google_oauth_state')
             : null;
 
         if (! is_string($state) || ! is_string($storedState) || ! hash_equals($storedState, $state)) {
@@ -196,21 +197,19 @@ class LoginController extends Controller
         }
 
         if ($request->hasSession()) {
-            $request->session()->forget('facebook_oauth_state');
+            $request->session()->forget('google_oauth_state');
         }
 
         if (! $code) {
             return response()->json(['message' => 'Authorization code not provided.'], 400);
         }
 
-        $facebookAppId = config('services.facebook.app_id');
-        $facebookAppSecret = config('services.facebook.app_secret');
-
         try {
-            $tokenResponse = Http::get('https://graph.facebook.com/v18.0/oauth/access_token', [
-                'client_id' => $facebookAppId,
-                'client_secret' => $facebookAppSecret,
-                'redirect_uri' => $redirectUri,
+            $tokenResponse = Http::post('https://oauth2.googleapis.com/token', [
+                'client_id' => config('services.google.client_id'),
+                'client_secret' => config('services.google.client_secret'),
+                'redirect_uri' => config('services.google.redirect_uri'),
+                'grant_type' => 'authorization_code',
                 'code' => $code,
             ]);
 
@@ -220,78 +219,40 @@ class LoginController extends Controller
 
             $accessToken = $tokenResponse->json('access_token');
 
-            $userResponse = Http::get('https://graph.facebook.com/v18.0/me', [
-                'fields' => 'id,name,email,first_name,last_name',
-                'access_token' => $accessToken,
-            ]);
+            $userResponse = Http::withToken($accessToken)
+                ->get('https://www.googleapis.com/oauth2/v2/userinfo');
 
             if ($userResponse->failed()) {
                 return response()->json(['message' => 'Failed to fetch user profile.'], 400);
             }
 
-            $fbUser = $userResponse->json();
+            $googleUser = $userResponse->json();
+            $email = $googleUser['email'] ?? null;
 
-            $volunteer = Volunteer::where('facebook_id', $fbUser['id'])->first();
-
-            if (! $volunteer) {
-                $user = User::where('email', $fbUser['email'] ?? null)
-                    ->where('role', 'volunteer')
-                    ->first();
-
-                if ($user) {
-                    $volunteer = Volunteer::where('user_id', $user->id)->first();
-                    if ($volunteer) {
-                        $volunteer->facebook_id = $fbUser['id'];
-                        $volunteer->facebook_name = $fbUser['name'] ?? $volunteer->facebook_name;
-                        $volunteer->save();
-                    }
-                }
-
-                if (! $volunteer && isset($fbUser['email'])) {
-                    $volunteer = DB::transaction(function () use ($fbUser): Volunteer {
-                        $user = User::create([
-                            'name' => ($fbUser['first_name'] ?? '').' '.($fbUser['last_name'] ?? ''),
-                            'email' => $fbUser['email'],
-                            'password' => bcrypt('fb_'.$fbUser['id'].'_'.time()),
-                            'role' => 'volunteer',
-                        ]);
-
-                        return Volunteer::create([
-                            'user_id' => $user->id,
-                            'first_name' => $fbUser['first_name'] ?? 'Facebook',
-                            'last_name' => $fbUser['last_name'] ?? 'User',
-                            'facebook_name' => $fbUser['name'] ?? 'Facebook User',
-                            'facebook_id' => $fbUser['id'],
-                            'email' => $fbUser['email'],
-                            'birthdate' => '1970-01-01',
-                            'address' => 'N/A',
-                            'mobile_number' => 'N/A',
-                            'educational_attainment' => 'N/A',
-                            'last_medical_examination' => now()->toDateString(),
-                        ]);
-                    });
-                }
-
-                if (! $volunteer) {
-                    return response()->json([
-                        'message' => 'No account found. Please register first.',
-                    ], 404);
-                }
+            if (! $email) {
+                return response()->json(['message' => 'Google account has no email address.'], 400);
             }
 
-            $user = $volunteer->user;
+            $name = trim(($googleUser['given_name'] ?? '').' '.($googleUser['family_name'] ?? ''))
+                ?: ($googleUser['name'] ?? 'Google User');
+
+            [$user, $needsProfileCompletion] = $oauthService->findOrCreateFromProvider(
+                'google',
+                (string) $googleUser['id'],
+                $email,
+                $name,
+            );
 
             $userData = $user->toArray();
             $userData['user_type'] = 'volunteer';
-            $userData['volunteer_profile'] = $volunteer;
+            $userData['volunteer_profile'] = $user->volunteer;
+            $userData['needs_profile_completion'] = $needsProfileCompletion;
 
             return $this->buildAuthenticatedResponse($userData, $user, TokenAbilities::VOLUNTEER);
         } catch (\Exception $e) {
             report($e);
 
-            return response()->json([
-                'message' => 'Facebook authentication failed.',
-            ], 500);
+            return response()->json(['message' => 'Google authentication failed.'], 500);
         }
     }
 
