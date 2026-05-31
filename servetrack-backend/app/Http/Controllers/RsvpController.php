@@ -625,8 +625,6 @@ class RsvpController extends Controller
             if ($rsvp->isCutoffPassed()) {
                 return response()->json(['message' => 'The cutoff time for this RSVP has passed.'], 422);
             }
-
-            return response()->json(['message' => 'You have used all 3 available edits for this RSVP.'], 422);
         }
 
         $newTimeSlotId = $request->integer('time_slot_id');
