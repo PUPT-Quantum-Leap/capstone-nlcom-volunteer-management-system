@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet, NgOptimizedImage } from '@angular/common';
 import { Router, RouterOutlet, ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { VolunteerService } from '../../services/volunteer.service';
 import { RsvpService } from '../../services/rsvp.service';
@@ -78,6 +79,12 @@ export class VolunteerDashboardShell implements OnInit {
   showUserMenu = signal(false);
   searchQuery = signal('');
   notifications = signal<NotificationItem[]>([]);
+
+  // ── Snackbar ────────────────────────────────────────────────────────────
+  snackbarState = signal<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  snackbarLeaving = signal(false);
+  private snackbarSubscription: Subscription | null = null;
+  private snackbarTimeout: ReturnType<typeof setTimeout> | null = null;
   notificationCount = computed(
     () => this.notifications().filter((n) => !n.read).length,
   );
@@ -253,6 +260,39 @@ export class VolunteerDashboardShell implements OnInit {
       return;
     }
     this.navigateTo('overview');
+  }
+
+  onChildActivate(component: unknown): void {
+    this.snackbarSubscription?.unsubscribe();
+    const comp = component as { showSnackbar?: { subscribe: (fn: (msg: { message: string; type: 'success' | 'error' | 'info' }) => void) => Subscription } };
+    if (comp?.showSnackbar) {
+      this.snackbarSubscription = comp.showSnackbar.subscribe((msg) => {
+        this.showSnackbar(msg);
+      });
+    }
+  }
+
+  private showSnackbar(msg: { message: string; type: 'success' | 'error' | 'info' }): void {
+    if (this.snackbarTimeout) {
+      clearTimeout(this.snackbarTimeout);
+    }
+    this.snackbarLeaving.set(false);
+    this.snackbarState.set(msg);
+    this.snackbarTimeout = setTimeout(() => {
+      this.dismissSnackbar();
+    }, 4000);
+  }
+
+  dismissSnackbar(): void {
+    if (this.snackbarTimeout) {
+      clearTimeout(this.snackbarTimeout);
+      this.snackbarTimeout = null;
+    }
+    this.snackbarLeaving.set(true);
+    setTimeout(() => {
+      this.snackbarState.set(null);
+      this.snackbarLeaving.set(false);
+    }, 300);
   }
 
   toggleNotifications(): void {

@@ -5,6 +5,7 @@ import {
   OnInit,
   signal,
   computed,
+  output,
   DestroyRef,
 } from '@angular/core';
 import { NgClass } from '@angular/common';
@@ -43,7 +44,9 @@ interface Poll {
 })
 export class PollsComponent implements OnInit {
   private rsvpService = inject(RsvpService);
-  private destroyRef = inject(DestroyRef);
+  private   destroyRef = inject(DestroyRef);
+
+  showSnackbar = output<{ message: string; type: 'success' | 'error' | 'info' }>();
 
   pollTab = signal<'active' | 'past'>('active');
   activePolls = signal<Poll[]>([]);
@@ -264,10 +267,18 @@ export class PollsComponent implements OnInit {
       next: () => {
         this.hasSubmittedVote.set(true);
         this.isVoting.set(false);
+        this.showSnackbar.emit({
+          message: isUpdate ? 'Vote updated successfully' : 'Vote submitted successfully',
+          type: 'success',
+        });
         this.loadRsvpEvents();
       },
       error: (err: { error?: { message?: string } }) => {
         this.voteError.set(err?.error?.message ?? 'Failed to submit vote. Please try again.');
+        this.showSnackbar.emit({
+          message: err?.error?.message ?? 'Failed to submit vote. Please try again.',
+          type: 'error',
+        });
         this.isVoting.set(false);
       },
     });

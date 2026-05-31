@@ -4,6 +4,7 @@
   --topbar-height: 72px;
 
   // Refined Modern Palette
+  --primary-700: #1d4ed8;
   --primary-600: #2563eb;
   --primary-500: #3b82f6;
   --primary-400: #60a5fa;
@@ -25,12 +26,14 @@
 
   // Semantic Colors
   --success: #10b981;
+  --success-600: #059669;
   --success-500: #10b981;
   --success-50: #ecfdf5;
   --warning: #f59e0b;
   --warning-500: #f59e0b;
   --warning-50: #fffbeb;
   --danger: #ef4444;
+  --danger-600: #dc2626;
   --danger-500: #ef4444;
   --danger-50: #fef2f2;
 
@@ -1415,4 +1418,72 @@ table {
   to {
     transform: rotate(360deg);
   }
+}
+
+// Snackbar Toast
+.snackbar {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xl);
+  animation: snackbarSlideIn 0.3s ease-out;
+  max-width: 400px;
+
+  &.snackbar-leaving {
+    animation: snackbarSlideOut 0.3s ease-in forwards;
+  }
+
+  &.snackbar-success {
+    background: var(--success-600);
+    color: #fff;
+  }
+
+  &.snackbar-error {
+    background: var(--danger-600);
+    color: #fff;
+  }
+
+  &.snackbar-info {
+    background: var(--primary-700);
+    color: #fff;
+  }
+
+  .snackbar-text {
+    flex: 1;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  .snackbar-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0.25rem;
+    opacity: 0.8;
+    width: 1.25rem;
+    height: 1.25rem;
+    transition: opacity var(--transition-fast);
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+@keyframes snackbarSlideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes snackbarSlideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
 }

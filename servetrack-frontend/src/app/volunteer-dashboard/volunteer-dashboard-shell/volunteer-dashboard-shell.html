@@ -221,10 +221,28 @@
     }
 
     <main class="dashboard-content">
-      <router-outlet></router-outlet>
+      <router-outlet (activate)="onChildActivate($event)"></router-outlet>
     </main>
   </div>
 </div>
+
+<!-- Snackbar -->
+@let snack = snackbarState();
+@if (snack) {
+  <div class="snackbar" [class.snackbar-leaving]="snackbarLeaving()"
+    [class.snackbar-success]="snack.type === 'success'"
+    [class.snackbar-error]="snack.type === 'error'"
+    [class.snackbar-info]="snack.type === 'info'" role="alert" aria-live="polite">
+    <span class="snackbar-text">{{ snack.message }}</span>
+    <button type="button" class="snackbar-close" (click)="dismissSnackbar()" aria-label="Dismiss">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    </button>
+  </div>
+}
 
 <!-- Modals -->
 @if (showLogoutModal()) {
