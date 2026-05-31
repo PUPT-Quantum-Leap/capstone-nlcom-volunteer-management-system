@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Backup;
 use Exception;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -77,31 +78,38 @@ class BackupService
         $sqlFile = $tempDir.'/database.sql';
         $backupFile = $tempDir.'/'.$backup->name.'.sql';
 
-        // Ensure temp directory exists
         if (! is_dir($tempDir)) {
             mkdir($tempDir, 0755, true);
         }
 
         try {
-            // Create database dump
             $this->createDatabaseDump($sqlFile);
 
-            // Add backup metadata to the SQL file
             $this->addBackupMetadata($sqlFile, $backup);
 
-            // Copy to backup file
             copy($sqlFile, $backupFile);
 
-            // Move to final storage location
-            $finalPath = $this->backupPath.'/'.$backup->name.'.sql';
-            Storage::disk($this->backupDisk)->put($finalPath, file_get_contents($backupFile));
+            $data = file_get_contents($backupFile);
+            $extension = '.sql';
+
+            if ($this->shouldEncrypt()) {
+                $data = Crypt::encryptString($data);
+                $extension = '.sql.enc';
+            }
+
+            $finalPath = $this->backupPath.'/'.$backup->name.$extension;
+            Storage::disk($this->backupDisk)->put($finalPath, $data);
 
             return $finalPath;
 
         } finally {
-            // Clean up temporary files
             $this->cleanupTempFiles($tempDir);
         }
+    }
+
+    private function shouldEncrypt(): bool
+    {
+        return config('backup.encryption.enabled', true);
     }
 
     /**
@@ -479,22 +487,20 @@ class BackupService
 
         try {
             $tempDir = storage_path('app/temp/'.Str::uuid());
-            $sqlFile = $tempDir.'/database.sql';
 
-            // Ensure temp directory exists
             if (! is_dir($tempDir)) {
                 mkdir($tempDir, 0755, true);
             }
 
-            // Get backup content
             $backupContent = Storage::disk($this->backupDisk)->get($backup->file_path);
-            file_put_contents($sqlFile, $backupContent);
 
-            if (! file_exists($sqlFile)) {
-                throw new Exception('Database dump not found in backup');
+            if (str_ends_with($backup->file_path, '.enc')) {
+                $backupContent = Crypt::decryptString($backupContent);
             }
 
-            // Restore database
+            $sqlFile = $tempDir.'/database.sql';
+            file_put_contents($sqlFile, $backupContent);
+
             $this->restoreDatabase($sqlFile);
 
             Log::info("Database restored successfully from backup: {$backup->name}");
@@ -598,6 +604,36 @@ class BackupService
 
         $backup->delete();
         Log::info("Backup deleted: {$backup->name}");
+    }
+
+    /**
+     * Get the configured backup disk name
+     */
+    public function getDisk(): string
+    {
+        return $this->backupDisk;
+    }
+
+    /**
+     * Open a readable stream for the backup file (zero-copy download)
+     */
+    public function getBackupStream(Backup $backup): mixed
+    {
+        if (! $backup->isCompleted()) {
+            throw new Exception('Backup not ready for download');
+        }
+
+        if (! Storage::disk($this->backupDisk)->exists($backup->file_path)) {
+            throw new Exception('Backup file not found');
+        }
+
+        $stream = Storage::disk($this->backupDisk)->readStream($backup->file_path);
+
+        if ($stream === false || $stream === null) {
+            throw new Exception('Failed to open backup file for streaming');
+        }
+
+        return $stream;
     }
 
     /**
