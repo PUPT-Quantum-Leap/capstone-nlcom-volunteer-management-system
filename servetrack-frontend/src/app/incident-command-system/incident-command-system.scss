@@ -795,6 +795,41 @@ $radius: 12px;
 
   .sr-name { font-weight: 600; color: $text-main; }
   .sr-skills { font-size: 0.65rem; color: $text-muted; }
+
+// ── Operations inline view ──────────────────────────────────────
+.operations-inline-view {
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.back-to-overview-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  background: transparent;
+  border: none;
+  color: $primary;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: rgba($primary, 0.06);
+    color: darken($primary, 8%);
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+}
 }
 
 

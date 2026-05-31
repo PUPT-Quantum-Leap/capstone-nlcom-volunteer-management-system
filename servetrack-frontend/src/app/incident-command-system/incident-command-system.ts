@@ -17,6 +17,7 @@ import {
 import { Rsvp } from '../models/rsvp';
 import { IcsService } from '../services/ics.service';
 import { RsvpService } from '../services/rsvp.service';
+import { AnalyticsFeedingOperationComponent } from '../admin-dashboard/analytics-feeding-operation/analytics-feeding-operation';
 
 const SECTION_CHIEF_KEYS = ['planning', 'purchasing', 'mwc_coordinator', 'safety_emergency'];
 const BRANCH_DIRECTOR_KEYS = [
@@ -30,7 +31,7 @@ const BRANCH_DIRECTOR_KEYS = [
   templateUrl: './incident-command-system.html',
   styleUrl: './incident-command-system.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, CustomSelect],
+  imports: [CommonModule, FormsModule, CustomSelect, AnalyticsFeedingOperationComponent],
 })
 export class IncidentCommandSystemComponent implements OnInit {
   private readonly rsvpService = inject(RsvpService);
@@ -55,6 +56,9 @@ export class IncidentCommandSystemComponent implements OnInit {
   readonly isExporting = signal(false);
   readonly error = signal<string | null>(null);
   readonly aiError = signal<string | null>(null);
+
+  // View state for master-detail swap
+  readonly activeView = signal<'dashboard' | 'operations'>('dashboard');
 
   // Move volunteer state
   readonly movingVolunteer = signal<{ volunteerId: number; fromTeamId: number } | null>(null);
@@ -92,7 +96,11 @@ export class IncidentCommandSystemComponent implements OnInit {
   // ===== NAVIGATION =====
 
   navigateToOperations(): void {
-    void this.router.navigate(['/admin-dashboard', 'operations']);
+    this.activeView.set('operations');
+  }
+
+  backToOverview(): void {
+    this.activeView.set('dashboard');
   }
 
   // ===== RSVP & DASHBOARD =====
