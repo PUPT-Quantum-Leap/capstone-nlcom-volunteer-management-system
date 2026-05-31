@@ -255,19 +255,22 @@ export class PollsComponent implements OnInit {
     this.isVoting.set(true);
     this.voteError.set(null);
 
-    this.rsvpService.vote(poll.id, optionId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.hasSubmittedVote.set(true);
-          this.isVoting.set(false);
-          this.loadRsvpEvents();
-        },
-        error: (err: { error?: { message?: string } }) => {
-          this.voteError.set(err?.error?.message ?? 'Failed to submit vote. Please try again.');
-          this.isVoting.set(false);
-        },
-      });
+    const isUpdate = this.hasSubmittedVote();
+    const apiCall = isUpdate
+      ? this.rsvpService.updateRsvpResponse(poll.id, optionId)
+      : this.rsvpService.vote(poll.id, optionId);
+
+    apiCall.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.hasSubmittedVote.set(true);
+        this.isVoting.set(false);
+        this.loadRsvpEvents();
+      },
+      error: (err: { error?: { message?: string } }) => {
+        this.voteError.set(err?.error?.message ?? 'Failed to submit vote. Please try again.');
+        this.isVoting.set(false);
+      },
+    });
   }
 
   getVotePercentage(option: PollOption, poll: Poll): number {
