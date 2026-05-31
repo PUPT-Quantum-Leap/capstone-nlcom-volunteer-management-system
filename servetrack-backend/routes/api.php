@@ -10,7 +10,6 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CoordinatorController;
 use App\Http\Controllers\EmailBroadcastController;
-use App\Http\Controllers\FacebookWebhookController;
 use App\Http\Controllers\IcsController;
 use App\Http\Controllers\InviteController;
 use App\Http\Controllers\RsvpController;
@@ -24,8 +23,8 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['api', 'guest', 'security.audit', 'rate.limit'])->group(function (): void {
     Route::post('/login', [LoginController::class, 'store'])->name('auth.login');
     Route::post('/admin/login', [LoginController::class, 'adminStore'])->name('auth.admin-login');
-    Route::get('/auth/facebook', [LoginController::class, 'redirectToFacebook'])->name('auth.facebook');
-    Route::get('/auth/facebook/callback', [LoginController::class, 'handleFacebookCallback'])->name('auth.facebook.callback');
+    Route::get('/auth/google', [LoginController::class, 'redirectToGoogle'])->name('auth.google');
+    Route::get('/auth/google/callback', [LoginController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 
     // Invite validation (public)
     Route::post('/invites/validate', [InviteController::class, 'validate'])->name('invites.validate');
@@ -66,9 +65,6 @@ Route::post('/coordinator/register', [CoordinatorController::class, 'register'])
     ->middleware(['api', 'guest', 'security.audit', 'rate.limit', 'normalize.email', 'throttle:registration'])
     ->name('coordinator.register');
 
-Route::get('/webhooks/facebook', [FacebookWebhookController::class, 'verify'])->name('webhooks.facebook.verify');
-Route::post('/webhooks/facebook', [FacebookWebhookController::class, 'handle'])->name('webhooks.facebook.handle');
-
 // Chatbot message — authenticated API with rate limiting + audit logging
 Route::post('/chatbot/message', [ChatbotController::class, 'message'])
     ->middleware(['api', 'auth:sanctum', 'security.audit', 'throttle:chatbot'])
@@ -107,6 +103,9 @@ Route::middleware(['api', 'auth:sanctum'])->group(function (): void {
 
     // Volunteer profile (volunteer role only — enforced in controller)
     Route::get('/volunteer/profile', [VolunteerController::class, 'profile'])->name('volunteer.profile');
+    Route::post('/volunteer/complete-profile', [VolunteerController::class, 'completeProfile'])
+        ->middleware('throttle:profile-update')
+        ->name('volunteer.complete-profile');
     Route::put('/volunteer/profile', [VolunteerController::class, 'updateProfile'])
         ->middleware('throttle:profile-update')
         ->name('volunteer.profile.update');

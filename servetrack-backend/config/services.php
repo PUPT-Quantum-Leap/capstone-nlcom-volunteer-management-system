@@ -44,13 +44,10 @@ return [
         'allowed_domains' => env('VOLUNTEER_ALLOWED_DOMAINS', 'gmail.com,googlemail.com'),
     ],
 
-    'facebook' => [
-        'app_id' => env('FACEBOOK_APP_ID'),
-        'app_secret' => env('FACEBOOK_APP_SECRET'),
-        'page_id' => env('FACEBOOK_PAGE_ID'),
-        'page_access_token' => env('FACEBOOK_PAGE_ACCESS_TOKEN'),
-        'redirect_uri' => env('FACEBOOK_REDIRECT_URI'),
-        'webhook_verify_token' => env('FACEBOOK_WEBHOOK_VERIFY_TOKEN'),
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect_uri' => env('GOOGLE_REDIRECT_URI'),
     ],
 
     'twilio' => [

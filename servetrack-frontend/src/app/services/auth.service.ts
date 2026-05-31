@@ -70,6 +70,7 @@ export interface AuthResponse {
     role?: 'volunteer' | 'admin' | 'coordinator';
     profile_photo_url?: string;
     user_type?: 'volunteer' | 'admin' | 'coordinator';
+    needs_profile_completion?: boolean;
     volunteer_profile?: {
       volunteer_id: number;
       first_name: string;
@@ -134,36 +135,33 @@ export class AuthService {
   }
 
   /**
-   * Get Facebook OAuth redirect URL.
+   * Get Google OAuth redirect URL.
    */
-  getFacebookAuthUrl$(): Observable<{ redirect_url: string }> {
+  getGoogleAuthUrl$(): Observable<{ redirect_url: string }> {
     this.error.set(null);
 
     return this.http
-      .get<{ redirect_url: string }>(`${environment.apiUrl}/auth/facebook`, { withCredentials: true })
+      .get<{ redirect_url: string }>(`${environment.apiUrl}/auth/google`, { withCredentials: true })
       .pipe(
         catchError((err: HttpErrorResponse) => {
           const message =
             typeof err.error?.message === 'string'
               ? err.error.message
-              : 'Failed to initialize Facebook login.';
+              : 'Failed to initialize Google login.';
           this.error.set(message);
           return throwError(() => err);
         }),
       );
   }
 
-  exchangeFacebookCode$(code: string, state: string): Observable<AuthResponse> {
+  exchangeGoogleCode$(code: string, state: string): Observable<AuthResponse> {
     this.isLoading.set(true);
     this.error.set(null);
 
     return this.http
       .get<{ user?: AuthResponse['user']; message?: string }>(
-        `${environment.apiUrl}/auth/facebook/callback`,
-        {
-          params: { code, state },
-          withCredentials: true,
-        },
+        `${environment.apiUrl}/auth/google/callback`,
+        { params: { code, state }, withCredentials: true },
       )
       .pipe(
         map((response) => {
@@ -171,10 +169,7 @@ export class AuthService {
             return { success: true, user: response.user } as AuthResponse;
           }
 
-          return {
-            success: false,
-            message: response.message || 'Facebook authentication failed.',
-          } as AuthResponse;
+          return { success: false, message: response.message || 'Google authentication failed.' } as AuthResponse;
         }),
         tap((response) => {
           if (response.user) {
@@ -185,9 +180,40 @@ export class AuthService {
         }),
         catchError((err: HttpErrorResponse) => {
           const message =
-            typeof err.error?.message === 'string'
-              ? err.error.message
-              : 'Facebook authentication failed.';
+            typeof err.error?.message === 'string' ? err.error.message : 'Google authentication failed.';
+          this.error.set(message);
+          return of({ success: false, message } as AuthResponse);
+        }),
+        tap(() => this.isLoading.set(false)),
+      );
+  }
+
+  completeProfile$(data: Record<string, unknown>): Observable<AuthResponse> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.http
+      .post<{ success: boolean; user?: AuthResponse['user']; message?: string }>(
+        `${environment.apiUrl}/volunteer/complete-profile`,
+        data,
+        { withCredentials: true },
+      )
+      .pipe(
+        map((response) => {
+          if (response.user) {
+            return { success: true, user: response.user } as AuthResponse;
+          }
+
+          return { success: false, message: response.message || 'Profile completion failed.' } as AuthResponse;
+        }),
+        tap((response) => {
+          if (response.user) {
+            this.currentUser.set(response.user);
+          }
+        }),
+        catchError((err: HttpErrorResponse) => {
+          const message =
+            typeof err.error?.message === 'string' ? err.error.message : 'Profile completion failed.';
           this.error.set(message);
           return of({ success: false, message } as AuthResponse);
         }),
