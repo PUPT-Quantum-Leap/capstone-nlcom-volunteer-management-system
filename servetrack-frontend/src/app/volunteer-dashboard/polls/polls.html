@@ -95,7 +95,7 @@
           <polyline points="12 6 12 12 16 14" />
         </svg>
         Past Polls
-        <span class="tab-badge">{{ recentPastPolls().length }}</span>
+        <span class="tab-badge">{{ pastPollsTotal() }}</span>
       </button>
     </div>
 
@@ -296,7 +296,7 @@
           <line x1="19" y1="12" x2="5" y2="12" />
           <polyline points="12 19 5 12 12 5" />
         </svg>
-        Back to Past Polls
+        <span class="back-btn-text">Back to Past Polls</span>
       </button>
 
       <div class="poll-header">
@@ -368,7 +368,7 @@
     } @else {
     <!-- Past Polls Grid -->
     <div class="past-polls-list" role="tabpanel">
-      @for (poll of recentPastPolls(); track poll.id) {
+      @for (poll of paginatedPastPolls(); track poll.id) {
       <article class="past-poll-card" (click)="selectPastPoll(poll)" role="button" tabindex="0"
         (keydown.enter)="selectPastPoll(poll)" (keydown.space)="selectPastPoll(poll)" [attr.aria-label]="'View details for ' + poll.title">
         
@@ -455,6 +455,40 @@
         </div>
         <h3>No Past Polls</h3>
         <p>There are no past polls from the last 7 days to display.</p>
+      </div>
+      }
+
+      @if (totalPages() > 1) {
+      <div class="pagination">
+        <div class="pagination-info">
+          Showing {{ pastPollsStart() }}–{{ pastPollsEnd() }} of {{ pastPollsTotal() }}
+        </div>
+        <div class="pagination-controls">
+          <button type="button" class="page-btn prev" (click)="prevPage()" [disabled]="currentPage() === 1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+
+          @for (page of visiblePages(); track $index) {
+          @if (page === 'ellipsis') {
+          <span class="page-ellipsis">...</span>
+          } @else {
+          <button type="button" class="page-btn number" [class.active]="page === currentPage()"
+            (click)="goToPage(page)">
+            {{ page }}
+          </button>
+          }
+          }
+
+          <button type="button" class="page-btn next" (click)="nextPage()" [disabled]="currentPage() === totalPages()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </div>
       </div>
       }
     </div>

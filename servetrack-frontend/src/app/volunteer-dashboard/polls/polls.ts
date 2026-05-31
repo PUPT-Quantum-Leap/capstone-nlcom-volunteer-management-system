@@ -53,12 +53,41 @@ export class PollsComponent implements OnInit {
   hasData = signal(false);
   pollError = signal<string | null>(null);
 
-  /**
-   * Past polls from the last 7 days.
-   * The backend already filters closed RSVPs to those with cutoff_day >= 7 days ago,
-   * so this simply mirrors all closed polls returned by the API.
-   */
-  recentPastPolls = computed(() => this.pastPolls());
+  // Pagination
+  currentPage = signal(1);
+  pageSize = 6;
+
+  totalPages = computed(() => Math.max(1, Math.ceil(this.pastPolls().length / this.pageSize)));
+
+  paginatedPastPolls = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize;
+    return this.pastPolls().slice(start, start + this.pageSize);
+  });
+
+  visiblePages = computed(() => {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: (number | 'ellipsis')[] = [];
+
+    if (total <= 5) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+      return pages;
+    }
+
+    pages.push(1);
+    if (current > 3) pages.push('ellipsis');
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (current < total - 2) pages.push('ellipsis');
+    pages.push(total);
+
+    return pages;
+  });
+
+  pastPollsStart = computed(() => (this.currentPage() - 1) * this.pageSize + 1);
+  pastPollsEnd = computed(() => Math.min(this.currentPage() * this.pageSize, this.pastPolls().length));
+  pastPollsTotal = computed(() => this.pastPolls().length);
 
   hasSubmittedVote = signal(false);
   selectedOptionId = signal<number | null>(null);
@@ -153,6 +182,21 @@ export class PollsComponent implements OnInit {
   setPollTab(tab: 'active' | 'past'): void {
     this.pollTab.set(tab);
     this.selectedPastPoll.set(null);
+    this.currentPage.set(1);
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages()) return;
+    this.currentPage.set(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  nextPage(): void {
+    this.goToPage(this.currentPage() + 1);
+  }
+
+  prevPage(): void {
+    this.goToPage(this.currentPage() - 1);
   }
 
   selectPastPoll(poll: Poll): void {
