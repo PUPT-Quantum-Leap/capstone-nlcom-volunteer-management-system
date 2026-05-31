@@ -46,7 +46,8 @@ export class PollsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   pollTab = signal<'active' | 'past'>('active');
-  activePoll = signal<Poll | null>(null);
+  activePolls = signal<Poll[]>([]);
+  selectedActivePoll = signal<Poll | null>(null);
   pastPolls = signal<Poll[]>([]);
   selectedPastPoll = signal<Poll | null>(null);
   isLoading = signal(true);
@@ -95,11 +96,8 @@ export class PollsComponent implements OnInit {
 
   isVoting = signal(false);
   voteError = signal<string | null>(null);
-  isEditMode = signal(false);
 
-  userVote = computed(() => this.activePoll()?.userVote ?? null);
-  canEdit = computed(() => this.activePoll()?.canEditVote ?? false);
-  remainingEdits = computed(() => this.activePoll()?.remainingEdits ?? 0);
+  userVote = computed(() => this.selectedActivePoll()?.userVote ?? null);
 
   ngOnInit(): void {
     this.hydrateFromCache();
@@ -142,15 +140,26 @@ export class PollsComponent implements OnInit {
     const activeRsvps = rsvps.filter((r: Rsvp) => r.status === 'active');
     const pastRsvps = rsvps.filter((r: Rsvp) => r.status === 'closed');
 
-    const activePoll = activeRsvps.length > 0 ? this.mapRsvpToPoll(activeRsvps[0]) : null;
-    this.activePoll.set(activePoll);
+    const sortedActive = activeRsvps
+      .map((r: Rsvp) => this.mapRsvpToPoll(r))
+      .sort((a, b) => {
+        const aDay = a.cutOffDay ?? a.date ?? '';
+        const bDay = b.cutOffDay ?? b.date ?? '';
+        return new Date(aDay).getTime() - new Date(bDay).getTime();
+      });
 
-    if (activePoll?.userVote) {
-      const votes = new Map(this.userVotes());
-      votes.set(activePoll.id, activePoll.userVote);
-      this.userVotes.set(votes);
-      this.hasSubmittedVote.set(true);
-      this.selectedOptionId.set(activePoll.userVote.timeSlotId);
+    this.activePolls.set(sortedActive);
+
+    const isDetailOpen = this.selectedActivePoll() !== null;
+    if (!isDetailOpen && sortedActive.length > 0) {
+      const first = sortedActive[0];
+      if (first.userVote) {
+        const votes = new Map(this.userVotes());
+        votes.set(first.id, first.userVote);
+        this.userVotes.set(votes);
+        this.hasSubmittedVote.set(true);
+        this.selectedOptionId.set(first.userVote.timeSlotId);
+      }
     }
 
     this.pastPolls.set(
@@ -202,6 +211,25 @@ export class PollsComponent implements OnInit {
     this.goToPage(this.currentPage() - 1);
   }
 
+  selectActivePoll(poll: Poll): void {
+    this.selectedActivePoll.set(poll);
+    this.hasSubmittedVote.set(false);
+    this.selectedOptionId.set(null);
+    this.voteError.set(null);
+
+    if (poll.userVote) {
+      this.hasSubmittedVote.set(true);
+      this.selectedOptionId.set(poll.userVote.timeSlotId);
+    }
+  }
+
+  closeActivePollDetail(): void {
+    this.selectedActivePoll.set(null);
+    this.hasSubmittedVote.set(false);
+    this.selectedOptionId.set(null);
+    this.voteError.set(null);
+  }
+
   selectPastPoll(poll: Poll): void {
     this.selectedPastPoll.set(poll);
   }
@@ -215,65 +243,31 @@ export class PollsComponent implements OnInit {
   }
 
   selectOption(optionId: number): void {
-    if (this.hasSubmittedVote() && !this.isEditMode()) return;
     this.selectedOptionId.set(optionId);
     this.voteError.set(null);
   }
 
   submitPollVote(): void {
-    const poll = this.activePoll();
+    const poll = this.selectedActivePoll();
     const optionId = this.selectedOptionId();
     if (!poll || optionId === null) return;
 
     this.isVoting.set(true);
     this.voteError.set(null);
 
-    const isEditing = this.hasSubmittedVote() && this.isEditMode();
-    const apiCall = isEditing
-      ? this.rsvpService.updateRsvpResponse(poll.id, optionId)
-      : this.rsvpService.vote(poll.id, optionId);
-
-    apiCall.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: (response: { message: string; remaining_edits?: number }) => {
-        this.hasSubmittedVote.set(true);
-        this.isVoting.set(false);
-        this.isEditMode.set(false);
-
-        if (isEditing && response.remaining_edits !== undefined) {
-          const remainingEdits = response.remaining_edits as number;
-          this.activePoll.update((p) => {
-            if (!p) return p;
-            return {
-              ...p,
-              remainingEdits,
-              canEditVote: remainingEdits > 0,
-              userVote: p.userVote ? { ...p.userVote, remainingEdits } : undefined,
-            };
-          });
-        }
-
-        this.loadRsvpEvents();
-      },
-      error: (err: { error?: { message?: string } }) => {
-        this.voteError.set(err?.error?.message ?? 'Failed to submit vote. Please try again.');
-        this.isVoting.set(false);
-      },
-    });
-  }
-
-  enterEditMode(): void {
-    if (!this.canEdit()) return;
-    this.isEditMode.set(true);
-    this.selectedOptionId.set(null);
-    this.voteError.set(null);
-  }
-
-  cancelEditMode(): void {
-    this.isEditMode.set(false);
-    const userVote = this.userVote();
-    if (userVote) {
-      this.selectedOptionId.set(userVote.timeSlotId);
-    }
+    this.rsvpService.vote(poll.id, optionId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => {
+          this.hasSubmittedVote.set(true);
+          this.isVoting.set(false);
+          this.loadRsvpEvents();
+        },
+        error: (err: { error?: { message?: string } }) => {
+          this.voteError.set(err?.error?.message ?? 'Failed to submit vote. Please try again.');
+          this.isVoting.set(false);
+        },
+      });
   }
 
   getVotePercentage(option: PollOption, poll: Poll): number {
@@ -318,7 +312,7 @@ export class PollsComponent implements OnInit {
   }
 
   getSelectedOptionTimeSlot(): string {
-    const poll = this.activePoll();
+    const poll = this.selectedActivePoll();
     const optionId = this.selectedOptionId();
     if (!poll || optionId === null) return '';
     const option = poll.options.find((o) => o.id === optionId);
