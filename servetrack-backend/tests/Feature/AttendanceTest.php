@@ -93,6 +93,32 @@ describe('Admin Attendance Management', function (): void {
         expect($attendance)->not->toBeNull();
         expect($attendance->status)->toBe('rejected');
     });
+
+    it('marks all attendees of an RSVP event as present', function (): void {
+        // Create another volunteer who responded
+        $anotherVolunteer = Volunteer::factory()->create();
+        $anotherResponse = RsvpResponse::factory()->create([
+            'rsvp_id' => $this->rsvp->rsvp_id,
+            'volunteer_id' => $anotherVolunteer->volunteer_id,
+            'time_slot_id' => $this->shift->time_slot_id,
+        ]);
+
+        $this->postJson('/api/admin/attendance/mark-all-present', [
+            'rsvp_id' => $this->rsvp->rsvp_id,
+        ])
+            ->assertSuccessful()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Successfully marked 2 attendees as present.');
+
+        $this->rsvpResponse->refresh();
+        $anotherResponse->refresh();
+
+        expect($this->rsvpResponse->attendance_status)->toBe('checked_in');
+        expect($anotherResponse->attendance_status)->toBe('checked_in');
+
+        expect(Attendance::where('rsvp_response_id', $this->rsvpResponse->rsvp_response_id)->exists())->toBeTrue();
+        expect(Attendance::where('rsvp_response_id', $anotherResponse->rsvp_response_id)->exists())->toBeTrue();
+    });
 });
 
 describe('RSVP Non-Responders', function (): void {

@@ -261,6 +261,24 @@ export class AdminDashboardService {
     );
   }
 
+  markAllPresent(rsvpId: number): Observable<ApiResponse<any>> {
+    return this.http.post<ApiResponse<any>>(
+      `${environment.apiUrl}/admin/attendance/mark-all-present`,
+      { rsvp_id: rsvpId },
+      { withCredentials: true }
+    ).pipe(
+      catchError((error) => {
+        console.error('Error marking all present:', error);
+        return of({
+          success: false,
+          message: error.error?.message || 'Failed to mark all present',
+          data: null,
+        });
+      })
+    );
+  }
+
+
   uploadAttendancePhoto(file: File): Observable<ApiResponse<{ photo: any; url: string }>> {
     const formData = new FormData();
     formData.append('photo', file);

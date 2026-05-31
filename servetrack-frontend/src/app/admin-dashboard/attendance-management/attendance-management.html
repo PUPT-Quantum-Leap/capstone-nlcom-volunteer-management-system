@@ -2,16 +2,32 @@
   <!-- Blue Header Bar -->
   <header class="report-header">
     <div class="report-header-left">
-      <div class="report-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
-          <path d="M12 6v6l4 2"/>
-        </svg>
-      </div>
-      <div class="report-title-group">
-        <span class="report-label">ATTENDANCE MANAGEMENT</span>
-        <h2 class="report-title">Track Attendance & Participation</h2>
-      </div>
+      @if (selectedRsvp(); as rsvp) {
+        <button type="button" class="header-back-btn" (click)="clearSelectedRsvp()" aria-label="Back to Events">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+        <div class="report-title-group">
+          <span class="report-label">ATTENDANCE CONFIRMATION</span>
+          <h2 class="report-title">{{ rsvp.title }}</h2>
+          <span class="report-meta-text" style="font-size: 0.8125rem; color: rgba(255, 255, 255, 0.85); font-weight: 500;">
+            {{ rsvp.date | date:'longDate' }} &bull; {{ rsvp.eventLocation || 'No location' }}
+          </span>
+        </div>
+      } @else {
+        <div class="report-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+        </div>
+        <div class="report-title-group">
+          <span class="report-label">ATTENDANCE MANAGEMENT</span>
+          <h2 class="report-title">Track Attendance & Participation</h2>
+        </div>
+      }
     </div>
     <div class="report-header-right">
       <span class="filter-label">VIEW</span>
@@ -21,24 +37,26 @@
         (valueChange)="setAttendanceView($event)"
         variant="admin">
       </app-custom-select>
-      <button type="button" class="action-btn" (click)="exportAttendanceToPDF()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M13 3V9H19" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9 13H15" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9 17H15" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Export PDF
-      </button>
-      <button type="button" class="action-btn" (click)="exportAttendanceToExcel()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M13 3V9H19" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M9 17L11 15L9 13" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M12 15H15" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Export Excel
-      </button>
+      @if (attendanceView() === 'events' && selectedRsvp()) {
+        <button type="button" class="action-btn" (click)="exportAttendanceToPDF()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M13 3V9H19" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 13H15" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 17H15" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Export PDF
+        </button>
+        <button type="button" class="action-btn" (click)="exportAttendanceToExcel()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M7 21H17C18.1046 21 19 20.1046 19 19V9.41421C19 9.149 18.8946 8.89464 18.7071 8.70711L13.2929 3.29289C13.1054 3.10536 12.851 3 12.5858 3H7C5.89543 3 5 3.89543 5 5V19C5 20.1046 5.89543 21 7 21Z" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M13 3V9H19" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 17L11 15L9 13" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 15H15" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Export Excel
+        </button>
+      }
       <button type="button" class="action-btn" (click)="openPhotoUploadModal()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/>
@@ -50,7 +68,7 @@
   </header>
 
   <!-- Stats Cards -->
-  @if (attendanceView() !== 'photos') {
+  @if (attendanceView() === 'events' && selectedRsvp()) {
   <div class="attendance-stats-grid">
     <article class="stat-card stat-card-blue">
       <div class="stat-icon">
@@ -61,7 +79,7 @@
       </div>
       <div class="stat-content">
         <div class="stat-value">{{ presentCount() }}</div>
-        <div class="stat-label">{{ attendanceView() === 'calendar' ? 'Present Today' : 'Present' }}</div>
+        <div class="stat-label">Present</div>
       </div>
     </article>
 
@@ -75,20 +93,7 @@
       </div>
       <div class="stat-content">
         <div class="stat-value">{{ absentCount() }}</div>
-        <div class="stat-label">{{ attendanceView() === 'calendar' ? 'Absent Today' : 'Absent' }}</div>
-      </div>
-    </article>
-
-    <article class="stat-card stat-card-green">
-      <div class="stat-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-          <polyline points="22 4 12 14.01 9 11.01"/>
-        </svg>
-      </div>
-      <div class="stat-content">
-        <div class="stat-value">{{ totalAttendanceCount() }}</div>
-        <div class="stat-label">Total Records</div>
+        <div class="stat-label">Absent</div>
       </div>
     </article>
 
@@ -107,218 +112,59 @@
         <div class="stat-label">Departments</div>
       </div>
     </article>
-  </div>
-  }
 
-  <!-- Search Bar / Date Filter -->
-  @if (attendanceView() === 'calendar') {
-  <div class="search-bar" style="margin-bottom: 1rem; display: flex; justify-content: flex-start; align-items: center; gap: 1.5rem; padding: 0.75rem 1.25rem;">
-    <!-- Filter by Event dropdown -->
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
-      <span style="font-size: 0.875rem; color: #475569; font-weight: 600;">Filter by Event:</span>
-      <app-custom-select 
-        [options]="eventsOptions()" 
-        [value]="selectedEventFilter()"
-        (valueChange)="selectedEventFilter.set($event)"
-        variant="volunteer">
-      </app-custom-select>
-    </div>
-
-    <!-- Attendance Date Display with change date button -->
-    <div class="selected-date-display" style="display: flex; align-items: center; gap: 0.5rem;">
-      <span class="date-text" style="font-size: 0.9375rem; color: var(--gray-700);">Attendance for: <strong style="color: var(--gray-900);">{{ attendanceDateFilter() | date:'longDate' }}</strong></span>
-      <button type="button" class="icon-btn icon-btn-info" (click)="showCalendarModal.set(true)" title="Change Date" aria-label="Change Date" style="border: none; background: transparent; cursor: pointer; color: var(--primary-600); display: inline-flex; align-items: center; padding: 4px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
+    <article class="stat-card stat-card-rate">
+      <div class="stat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
         </svg>
-      </button>
-    </div>
+      </div>
+      <div class="stat-content">
+        <div class="stat-value">{{ attendanceRate() }}%</div>
+        <div class="stat-label">Attendance Rate</div>
+        <div class="rate-progress-track">
+          <div class="rate-progress-bar" [style.width.%]="attendanceRate()"></div>
+        </div>
+      </div>
+    </article>
   </div>
   }
 
-  <!-- Daily Attendance Tables -->
-  @if (attendanceView() === 'calendar') {
-  <div class="calendar-tables-layout" style="display: flex; flex-direction: column; gap: 2rem;">
-    <!-- Present Volunteers Section -->
-    <div class="table-section">
-      <div class="section-header" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-        <span class="status-indicator indicator-present" style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--success-500); display: inline-block;"></span>
-        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--gray-900); margin: 0;">Present Volunteers ({{ presentVolunteers().length }})</h3>
-      </div>
-      <div class="report-table-container">
-        <table class="report-table">
-          <thead>
-            <tr>
-              <th scope="col">VOLUNTEER</th>
-              <th scope="col">DEPARTMENT</th>
-              <th scope="col">CHECK-IN</th>
-              <th scope="col">CHECK-OUT</th>
-              <th scope="col">DURATION</th>
-              <th scope="col">STATUS</th>
-              <th scope="col" class="actions-header">ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (record of presentVolunteers(); track record.id) {
-            <tr>
-              <td>
-                <div class="volunteer-info-cell">
-                  <div class="volunteer-avatar">{{ record.volunteerName.charAt(0).toUpperCase() }}</div>
-                  <div class="volunteer-details">
-                    <span class="volunteer-name">{{ record.volunteerName }}</span>
-                    <span class="volunteer-meta">{{ record.email }}</span>
-                  </div>
-                </div>
-              </td>
-              <td>{{ record.department }}</td>
-              <td>{{ record.checkInTime || '—' }}</td>
-              <td>{{ record.checkOutTime || '—' }}</td>
-              <td>{{ record.duration || '—' }}</td>
-              <td>
-                @if (isEditable(record)) {
-                  <app-custom-select 
-                    [options]="statusOptions" 
-                    [value]="record.status"
-                    [status]="record.status"
-                    (valueChange)="updateAttendanceStatus(record.id, $event)"
-                    variant="volunteer"
-                    class="grid-select">
-                  </app-custom-select>
-                } @else {
-                  <span class="status-badge" [class.status-present]="record.status === 'present'" [class.status-absent]="record.status === 'absent'">
-                    {{ record.status === 'present' ? 'Present' : 'Absent' }}
-                  </span>
-                }
-              </td>
-              <td class="actions-cell">
-                <div class="action-buttons">
-                  <button type="button" class="icon-btn icon-btn-info"
-                    (click)="viewAttendanceDetails(record)" [attr.aria-label]="'View details for ' + record.volunteerName"
-                    title="View Details">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-            } @empty {
-            <tr>
-              <td colspan="7">
-                <div class="empty-state">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 8V12M12 16H12.01" stroke-linecap="round" />
-                  </svg>
-                  <p>No present volunteers found for this date.</p>
-                </div>
-              </td>
-            </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Absent Volunteers Section -->
-    <div class="table-section">
-      <div class="section-header" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-        <span class="status-indicator indicator-absent" style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--danger-500); display: inline-block;"></span>
-        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--gray-900); margin: 0;">Absent Volunteers ({{ absentVolunteers().length }})</h3>
-      </div>
-      <div class="report-table-container">
-        <table class="report-table">
-          <thead>
-            <tr>
-              <th scope="col">VOLUNTEER</th>
-              <th scope="col">DEPARTMENT</th>
-              <th scope="col">CHECK-IN</th>
-              <th scope="col">CHECK-OUT</th>
-              <th scope="col">DURATION</th>
-              <th scope="col">STATUS</th>
-              <th scope="col" class="actions-header">ACTIONS</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (record of absentVolunteers(); track record.id) {
-            <tr>
-              <td>
-                <div class="volunteer-info-cell">
-                  <div class="volunteer-avatar">{{ record.volunteerName.charAt(0).toUpperCase() }}</div>
-                  <div class="volunteer-details">
-                    <span class="volunteer-name">{{ record.volunteerName }}</span>
-                    <span class="volunteer-meta">{{ record.email }}</span>
-                  </div>
-                </div>
-              </td>
-              <td>{{ record.department }}</td>
-              <td>{{ record.checkInTime || '—' }}</td>
-              <td>{{ record.checkOutTime || '—' }}</td>
-              <td>{{ record.duration || '—' }}</td>
-              <td>
-                @if (isEditable(record)) {
-                  <app-custom-select 
-                    [options]="statusOptions" 
-                    [value]="record.status"
-                    [status]="record.status"
-                    (valueChange)="updateAttendanceStatus(record.id, $event)"
-                    variant="volunteer"
-                    class="grid-select">
-                  </app-custom-select>
-                } @else {
-                  <span class="status-badge" [class.status-present]="record.status === 'present'" [class.status-absent]="record.status === 'absent'">
-                    {{ record.status === 'present' ? 'Present' : 'Absent' }}
-                  </span>
-                }
-              </td>
-              <td class="actions-cell">
-                <div class="action-buttons">
-                  <button type="button" class="icon-btn icon-btn-info"
-                    (click)="viewAttendanceDetails(record)" [attr.aria-label]="'View details for ' + record.volunteerName"
-                    title="View Details">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                      <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-            } @empty {
-            <tr>
-              <td colspan="7">
-                <div class="empty-state">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 8V12M12 16H12.01" stroke-linecap="round" />
-                  </svg>
-                  <p>No absent volunteers found for this date.</p>
-                </div>
-              </td>
-            </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-  }
-
-  <!-- History View -->
-  @if (attendanceView() === 'history') {
-  <div class="search-bar" style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem;">
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
-      <span style="font-size: 0.875rem; color: #475569; font-weight: 600;">Filter by Event:</span>
-      <app-custom-select 
-        [options]="eventsOptions()" 
-        [value]="selectedEventFilter()"
-        (valueChange)="selectedEventFilter.set($event)"
-        variant="volunteer">
-      </app-custom-select>
+  <!-- RSVP Events List Table View -->
+  @if (attendanceView() === 'events' && !selectedRsvp()) {
+  <div class="table-filters-bar" style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: flex-start; gap: 0.75rem; background: white; padding: 0.875rem 1.25rem; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <label for="rsvpDateFilter" style="font-size: 0.875rem; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 0.375rem;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px; color: var(--primary-600);">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      Filter by Date:
+    </label>
+    <div style="position: relative; display: inline-flex; align-items: center; gap: 0.5rem;">
+      <input 
+        id="rsvpDateFilter" 
+        type="date" 
+        [value]="rsvpDateFilter()" 
+        (change)="setRsvpDateFilter($any($event.target).value)"
+        class="filter-date-input"
+        style="padding: 0.5rem 0.875rem; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.875rem; color: #1e293b; outline: none; background: #f8fafc; font-weight: 500; font-family: inherit; transition: all var(--transition-base, 0.2s ease); cursor: pointer;" />
+      @if (rsvpDateFilter()) {
+        <button 
+          type="button" 
+          (click)="clearRsvpDateFilter()" 
+          class="clear-filter-btn"
+          style="background: #fee2e2; border: none; color: #ef4444; cursor: pointer; font-size: 0.8125rem; font-weight: 600; padding: 0.5rem 0.875rem; border-radius: 8px; display: inline-flex; align-items: center; gap: 0.375rem; transition: all var(--transition-base, 0.2s ease);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 12px; height: 12px;">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Clear Date
+        </button>
+      }
     </div>
   </div>
 
@@ -326,46 +172,45 @@
     <table class="report-table">
       <thead>
         <tr>
+          <th scope="col">EVENT TITLE</th>
           <th scope="col">DATE</th>
-          <th scope="col">EVENT</th>
-          <th scope="col">VOLUNTEER</th>
-          <th scope="col">DEPARTMENT</th>
+          <th scope="col">LOCATION</th>
+          <th scope="col">ATTENDEES (RESPONSES)</th>
           <th scope="col">STATUS</th>
-          <th scope="col">DURATION</th>
+          <th scope="col" class="actions-header">ACTIONS</th>
         </tr>
       </thead>
       <tbody>
-        @for (record of paginatedAttendance(); track record.id) {
-        <tr>
-          <td>{{ record.rsvp_date | date:'mediumDate' }}</td>
-          <td>{{ record.rsvp_title }}</td>
+        @for (event of paginatedRsvpsList(); track event.id) {
+        <tr (click)="selectRsvp(event)" style="cursor: pointer;">
           <td>
-            <div class="volunteer-info-cell">
-              <div class="volunteer-avatar">{{ record.volunteerName.charAt(0).toUpperCase() }}</div>
-              <div class="volunteer-details">
-                <span class="volunteer-name">{{ record.volunteerName }}</span>
-                <span class="volunteer-meta">{{ record.email }}</span>
-              </div>
+            <strong style="color: var(--gray-900); font-size: 0.9375rem;">{{ event.title }}</strong>
+          </td>
+          <td>{{ event.date | date:'mediumDate' }}</td>
+          <td>{{ event.eventLocation || '—' }}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="status-badge status-present" style="font-weight: 700; font-size: 0.8125rem;">
+                {{ event.totalResponses || 0 }}
+              </span>
             </div>
           </td>
-          <td>{{ record.department }}</td>
           <td>
-            @if (isEditable(record)) {
-              <app-custom-select 
-                [options]="statusOptions" 
-                [value]="record.status"
-                [status]="record.status"
-                (valueChange)="updateAttendanceStatus(record.id, $event)"
-                variant="volunteer"
-                class="grid-select">
-              </app-custom-select>
-            } @else {
-              <span class="status-badge" [class.status-present]="record.status === 'present'" [class.status-absent]="record.status === 'absent'">
-                {{ record.status === 'present' ? 'Present' : 'Absent' }}
-              </span>
-            }
+            <span class="event-status-badge" [class]="'status-' + event.status">
+              {{ event.status }}
+            </span>
           </td>
-          <td>{{ record.duration || '—' }}</td>
+          <td class="actions-cell" (click)="$event.stopPropagation()">
+            <div class="action-buttons">
+              <button type="button" class="action-btn" (click)="selectRsvp(event)" style="padding: 0.375rem 0.75rem; font-size: 0.75rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 12px; height: 12px;">
+                  <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                View Attendees
+              </button>
+            </div>
+          </td>
         </tr>
         } @empty {
         <tr>
@@ -375,7 +220,7 @@
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8V12M12 16H12.01" stroke-linecap="round" />
               </svg>
-              <p>No attendance history found.</p>
+              <p>No RSVP events found.</p>
             </div>
           </td>
         </tr>
@@ -384,38 +229,38 @@
     </table>
   </div>
 
-  <!-- Pagination for History -->
-  <div class="pagination-container">
+  <!-- Pagination for RSVP Events -->
+  <div class="pagination-container" style="margin-top: 1rem;">
     <div class="pagination-info">
-      @if (filteredAttendance().length > 0) {
-        Showing <strong>{{ (attendancePage() - 1) * attendancePerPage() + 1 }}</strong> to
-        <strong>{{ Math.min(attendancePage() * attendancePerPage(), filteredAttendance().length) }}</strong>
-        of <strong>{{ filteredAttendance().length }}</strong> record(s)
+      @if (filteredRsvps().length > 0) {
+        Showing <strong>{{ (rsvpPage() - 1) * rsvpPerPage() + 1 }}</strong> to
+        <strong>{{ Math.min(rsvpPage() * rsvpPerPage(), filteredRsvps().length) }}</strong>
+        of <strong>{{ filteredRsvps().length }}</strong> RSVP event(s)
       } @else {
-        No records found
+        No RSVP events found
       }
     </div>
 
-    @if (attendanceTotalPages() > 1) {
-      <nav class="pagination-controls" aria-label="History list pages">
-        <button type="button" class="pagination-btn" [disabled]="attendancePage() === 1" (click)="previousAttendancePage()">
+    @if (rsvpTotalPages() > 1) {
+      <nav class="pagination-controls" aria-label="RSVP event list pages">
+        <button type="button" class="pagination-btn" [disabled]="rsvpPage() === 1" (click)="previousRsvpPage()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="15 18 9 12 15 6"/>
           </svg>
         </button>
         <div class="pagination-numbers">
-          @for (page of getAttendancePageNumbers(); track page) {
+          @for (page of getRsvpPageNumbers(); track page) {
             @if (page === -1) {
               <span class="pagination-ellipsis">...</span>
             } @else {
-              <button type="button" class="pagination-number" [class.active]="attendancePage() === page"
-                (click)="goToAttendancePage(page)" [attr.aria-current]="attendancePage() === page ? 'page' : null">
+              <button type="button" class="pagination-number" [class.active]="rsvpPage() === page"
+                (click)="goToRsvpPage(page)" [attr.aria-current]="rsvpPage() === page ? 'page' : null">
                 {{ page }}
               </button>
             }
           }
         </div>
-        <button type="button" class="pagination-btn" [disabled]="attendancePage() === attendanceTotalPages()" (click)="nextAttendancePage()">
+        <button type="button" class="pagination-btn" [disabled]="rsvpPage() === rsvpTotalPages()" (click)="nextRsvpPage()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="9 18 15 12 9 6"/>
           </svg>
@@ -424,6 +269,175 @@
     }
   </div>
   }
+
+  <!-- Selected RSVP Details Unified View handled below -->
+
+
+
+  <!-- Unified RSVP Event Detail View -->
+  @if (attendanceView() === 'events' && selectedRsvp(); as rsvp) {
+    <div class="event-detail-container">
+      <!-- Cohesive Content Card -->
+      <div class="attendees-card-container">
+        <!-- Tab & Search Navigation Header -->
+        <div class="tabs-header-nav">
+          <div class="segmented-control">
+            <button type="button" 
+                    class="tab-btn" 
+                    [class.active]="attendeeFilter() === 'all'" 
+                    (click)="attendeeFilter.set('all')">
+              All Responders ({{ totalAttendanceCount() }})
+            </button>
+            <button type="button" 
+                    class="tab-btn" 
+                    [class.active]="attendeeFilter() === 'present'" 
+                    (click)="attendeeFilter.set('present')">
+              Present ({{ presentCount() }})
+            </button>
+            <button type="button" 
+                    class="tab-btn" 
+                    [class.active]="attendeeFilter() === 'absent'" 
+                    (click)="attendeeFilter.set('absent')">
+              Absent ({{ absentCount() }})
+            </button>
+          </div>
+
+          <div class="tabs-header-right">
+            <button type="button" class="mark-all-present-btn" (click)="markAllPresent()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Mark All Present
+            </button>
+
+            <div class="showing-count-text">
+              Showing <strong>{{ filteredAttendeesList().length }}</strong> volunteer(s)
+            </div>
+          </div>
+        </div>
+
+        <!-- Attendees Table -->
+        <div class="table-wrapper">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th scope="col">VOLUNTEER</th>
+                <th scope="col">DEPARTMENT</th>
+                <th scope="col">CHECK-IN</th>
+                <th scope="col">CHECK-OUT</th>
+                <th scope="col">SHIFT / TIME SLOT</th>
+                <th scope="col">ATTENDANCE STATUS</th>
+                <th scope="col" class="actions-header">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (record of filteredAttendeesList(); track record.id) {
+              <tr>
+                <td>
+                  <div class="volunteer-info-cell">
+                    <div class="volunteer-avatar" [class.avatar-present]="record.status === 'present'" [class.avatar-absent]="record.status === 'absent'">
+                      {{ record.volunteerName.charAt(0).toUpperCase() }}
+                    </div>
+                    <div class="volunteer-details">
+                      <span class="volunteer-name">{{ record.volunteerName }}</span>
+                      <span class="volunteer-meta">{{ record.email }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  {{ record.department }}
+                </td>
+                <td>
+                  @if (record.checkInTime) {
+                    <span class="time-stamp">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="time-icon" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                      </svg>
+                      {{ record.checkInTime }}
+                    </span>
+                  } @else {
+                    <span class="time-stamp empty">—</span>
+                  }
+                </td>
+                <td>
+                  @if (record.checkOutTime) {
+                    <span class="time-stamp">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="time-icon" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                      </svg>
+                      {{ record.checkOutTime }}
+                    </span>
+                  } @else {
+                    <span class="time-stamp empty">—</span>
+                  }
+                </td>
+                <td>
+                  @if (record.duration) {
+                    <span class="shift-pill">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shift-icon" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                      {{ record.duration }}
+                    </span>
+                  } @else {
+                    <span class="shift-pill empty">—</span>
+                  }
+                </td>
+                <td>
+                  @if (isEditable(record)) {
+                    <app-custom-select 
+                      [options]="statusOptions" 
+                      [value]="record.status"
+                      [status]="record.status"
+                      (valueChange)="updateAttendanceStatus(record.id, $event)"
+                      variant="volunteer"
+                      class="grid-select">
+                    </app-custom-select>
+                  } @else {
+                    <span class="status-badge" [class.status-present]="record.status === 'present'" [class.status-absent]="record.status === 'absent'">
+                      {{ record.status === 'present' ? 'Present' : 'Absent' }}
+                    </span>
+                  }
+                </td>
+                <td class="actions-cell">
+                  <div class="action-buttons">
+                    <button type="button" class="icon-btn icon-btn-info"
+                      (click)="viewAttendanceDetails(record)" [attr.aria-label]="'View details for ' + record.volunteerName"
+                      title="View Details">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M1 12S5 4 12 4S23 12 23 12S19 20 12 20S1 12 1 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              } @empty {
+              <tr>
+                <td colspan="7">
+                  <div class="empty-state" style="padding: 4rem 2rem;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 8v4M12 16h.01" />
+                    </svg>
+                    <p>No attendees found matching this filter.</p>
+                  </div>
+                </td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+
+
 
 
 
@@ -720,81 +734,4 @@
   </div>
 }
 
-<!-- Calendar Picker Modal -->
-@if (showCalendarModal()) {
-  <div class="modal-backdrop" (click)="closeCalendarModal()">
-    <section class="modal-card calendar-picker-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true"
-      aria-labelledby="calendar-modal-title">
-      <header class="modal-header header-primary">
-        <div class="modal-title-wrapper">
-          <div class="modal-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-          </div>
-          <h3 id="calendar-modal-title">Select Date</h3>
-        </div>
-        <button type="button" class="modal-close-btn" (click)="closeCalendarModal()" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <path d="M18 6L6 18M6 6L18 18" />
-          </svg>
-        </button>
-      </header>
 
-      <div class="modal-body calendar-modal-body">
-        <div class="calendar-container" style="box-shadow: none; padding: 0;">
-          <div class="calendar-header-controls">
-            <button type="button" class="calendar-nav-btn" (click)="prevMonth()" aria-label="Previous month">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="15 18 9 12 15 6"/>
-              </svg>
-            </button>
-            <h3 class="calendar-current-month">{{ calendarDate() | date:'MMMM yyyy' }}</h3>
-            <button type="button" class="calendar-nav-btn" (click)="nextMonth()" aria-label="Next month">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
-            </button>
-          </div>
-
-          <div class="calendar-grid-header">
-            @for (day of weekDays; track day) {
-              <div class="calendar-week-day">{{ day }}</div>
-            }
-          </div>
-
-          <div class="calendar-grid-body">
-            @for (cell of getCalendarCells(); track $index) {
-              @if (cell === null) {
-                <div class="calendar-cell empty"></div>
-              } @else {
-                @let dayStats = getAttendanceForDate(cell);
-                <div class="calendar-cell day" 
-                     [class.has-records]="dayStats.total > 0"
-                     [class.selected-day]="dayStats.dateStr === attendanceDateFilter()"
-                     (click)="selectCalendarDay(dayStats.dateStr)">
-                  <span class="day-number">{{ cell }}</span>
-                  <div class="day-stats-dots">
-                    @if (dayStats.present > 0) {
-                      <span class="dot dot-present" [title]="dayStats.present + ' Present'"></span>
-                    }
-                    @if (dayStats.absent > 0) {
-                      <span class="dot dot-absent" [title]="dayStats.absent + ' Absent'"></span>
-                    }
-                  </div>
-                </div>
-              }
-            }
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="outline-btn" (click)="closeCalendarModal()">Close</button>
-      </div>
-    </section>
-  </div>
-}

@@ -753,7 +753,7 @@ class AdminController extends Controller
                 }
             };
 
-            $statusText = $record['attendance_status'] === 'checked_in' ? 'Present' : 'Absent';
+            $statusText = $record['attendance_status'] === 'no_show' ? 'Absent' : 'Present';
 
             $sheet->setCellValue('A'.$row, $this->spreadsheetText($record['volunteer_name']));
             $sheet->setCellValue('B'.$row, $record['volunteer_email']);
@@ -982,6 +982,110 @@ class AdminController extends Controller
                 'attendance_status' => $attendanceStatus,
                 'hours' => $hours,
             ],
+        ]);
+    }
+
+    /**
+     * Mark all attendees as present for a given RSVP event.
+     */
+    public function markAllPresent(Request $request): JsonResponse
+    {
+        $role = $request->user()?->role;
+        if ($role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden. Admin access only.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'rsvp_id' => ['required', 'exists:rsvp,rsvp_id'],
+        ]);
+
+        $rsvpId = (int) $validated['rsvp_id'];
+        $rsvp = Rsvp::query()->find($rsvpId);
+        if (! $rsvp) {
+            return response()->json([
+                'success' => false,
+                'message' => 'RSVP not found.',
+            ], 404);
+        }
+
+        if ($rsvp->date) {
+            $eventDate = \Carbon\Carbon::parse($rsvp->date)->startOfDay();
+            $today = \Carbon\Carbon::today();
+            if ($eventDate->diffInDays($today, false) > 7) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Attendance for events older than 1 week cannot be modified.',
+                ], 422);
+            }
+        }
+
+        $rsvpResponses = RsvpResponse::query()
+            ->with(['timeSlot'])
+            ->where('rsvp_id', $rsvpId)
+            ->get();
+
+        $updatedCount = 0;
+
+        DB::transaction(function () use ($rsvpResponses, $rsvp, &$updatedCount): void {
+            $defaultHours = (int) config('app.attendance_default_hours', 4);
+
+            foreach ($rsvpResponses as $rsvpResponse) {
+                // Update RSVP response
+                $rsvpResponse->attendance_status = 'checked_in';
+                if (! $rsvpResponse->checked_in_at) {
+                    $rsvpResponse->checked_in_at = now();
+                }
+                if (! $rsvpResponse->checked_out_at) {
+                    $rsvpResponse->checked_out_at = $rsvpResponse->checked_in_at->copy()->addHours($defaultHours);
+                }
+
+                RsvpResponse::withoutEvents(fn () => $rsvpResponse->save());
+
+                // Calculate hours
+                $hours = 0;
+                $timeSlotText = $rsvpResponse->timeSlot?->text ?? null;
+                if ($timeSlotText) {
+                    $hours = $this->calculateHoursFromTimeSlot($timeSlotText);
+                }
+                if ($hours == 0 && $rsvpResponse->checked_in_at && $rsvpResponse->checked_out_at) {
+                    $diffMinutes = $rsvpResponse->checked_in_at->diffInMinutes($rsvpResponse->checked_out_at);
+                    $hours = round($diffMinutes / 60, 2);
+                }
+
+                // Update or create Attendance record
+                Attendance::query()->updateOrCreate(
+                    [
+                        'rsvp_response_id' => $rsvpResponse->rsvp_response_id,
+                    ],
+                    [
+                        'volunteer_id' => $rsvpResponse->volunteer_id,
+                        'rsvp_id' => $rsvp->rsvp_id,
+                        'date' => $rsvp->date,
+                        'hours' => $hours,
+                        'description' => $rsvp->title,
+                        'location' => $rsvp->event_location,
+                        'location_id' => $rsvp->location_id,
+                        'status' => 'approved',
+                    ]
+                );
+
+                $updatedCount++;
+            }
+        });
+
+        AuditLogger::success(AuditAction::ATTENDANCE_MANUAL_OVERRIDE, [
+            'resource_type' => 'rsvp',
+            'resource_id' => $rsvpId,
+            'resource_label' => $rsvp->title,
+            'description' => "Manual attendance override: all attendees marked present for RSVP #{$rsvpId}",
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Successfully marked {$updatedCount} attendees as present.",
         ]);
     }
 
