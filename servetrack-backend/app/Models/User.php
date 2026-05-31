@@ -27,6 +27,8 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'provider',
+        'provider_id',
         'locked_until',
         'failed_attempts',
         'last_failed_at',

@@ -1,0 +1,38 @@
+.callback-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.callback-loading {
+  text-align: center;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #e0e0e0;
+    border-top-color: #4285f4;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+}
+
+.callback-error {
+  text-align: center;
+
+  p {
+    color: #d32f2f;
+    margin-bottom: 1rem;
+  }
+
+  a {
+    color: #4285f4;
+    text-decoration: underline;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

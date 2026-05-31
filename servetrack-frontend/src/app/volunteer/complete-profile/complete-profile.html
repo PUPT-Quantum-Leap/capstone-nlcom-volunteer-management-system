@@ -1,0 +1,176 @@
+<div class="complete-profile-page">
+  <div class="complete-profile-card">
+    <h1>Complete Your Profile</h1>
+    <p class="subtitle">Welcome, {{ displayName() }}! Please fill in the remaining details to finish setting up your volunteer account.</p>
+
+    <div class="prefilled-info">
+      <div class="info-row">
+        <span class="label">Name</span>
+        <span class="value">{{ displayName() }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Email</span>
+        <span class="value">{{ displayEmail() }}</span>
+      </div>
+    </div>
+
+    @if (submitError()) {
+      <div class="form-error-banner">{{ submitError() }}</div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <!-- Personal Info -->
+      <section class="form-section">
+        <h2>Personal Information</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name <span class="required">*</span></label>
+            <input id="firstName" type="text" formControlName="firstName" [class.error]="hasError('firstName')" />
+            @if (hasError('firstName')) { <span class="error-text">First name is invalid.</span> }
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name <span class="required">*</span></label>
+            <input id="lastName" type="text" formControlName="lastName" [class.error]="hasError('lastName')" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="mobileNumber">Mobile Number <span class="required">*</span></label>
+            <input id="mobileNumber" type="tel" formControlName="mobileNumber" placeholder="09XXXXXXXXX" [class.error]="hasError('mobileNumber')" />
+          </div>
+          <div class="form-group">
+            <label for="birthdate">Birthdate <span class="required">*</span></label>
+            <input id="birthdate" type="date" formControlName="birthdate" [class.error]="hasError('birthdate')" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="completeAddress">Complete Address <span class="required">*</span></label>
+          <input id="completeAddress" type="text" formControlName="completeAddress" [class.error]="hasError('completeAddress')" />
+        </div>
+
+        <div class="form-group">
+          <label for="lastMedicalExam">Last Medical Exam Date <span class="required">*</span></label>
+          <input id="lastMedicalExam" type="date" formControlName="lastMedicalExam" [class.error]="hasError('lastMedicalExam')" />
+        </div>
+      </section>
+
+      <!-- Education & Experience -->
+      <section class="form-section">
+        <h2>Education &amp; Experience</h2>
+
+        <div class="form-group">
+          <label for="educationalAttainment">Educational Attainment <span class="required">*</span></label>
+          <input id="educationalAttainment" type="text" formControlName="educationalAttainment" [class.error]="hasError('educationalAttainment')" />
+        </div>
+
+        <div class="form-group">
+          <label for="trainingExperience">Relevant Training &amp; Experience</label>
+          <textarea id="trainingExperience" formControlName="trainingExperience" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="skillsHobbies">Skills &amp; Hobbies</label>
+          <textarea id="skillsHobbies" formControlName="skillsHobbies" rows="3"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="classesTraining">Classes &amp; Training</label>
+          <textarea id="classesTraining" formControlName="classesTraining" rows="3"></textarea>
+        </div>
+      </section>
+
+      <!-- Preferences -->
+      <section class="form-section">
+        <h2>Volunteer Preferences</h2>
+
+        <div class="form-group">
+          <label for="volunteerPreference">Where do you want to volunteer? <span class="required">*</span></label>
+          <select id="volunteerPreference" formControlName="volunteerPreference" [class.error]="hasError('volunteerPreference')">
+            <option value="">Select preference</option>
+            <option value="Mobile Kitchen Operations">Mobile Kitchen Operations</option>
+            <option value="Relief Operations">Relief Operations</option>
+            <option value="Digital Marketing & Promotions">Digital Marketing &amp; Promotions</option>
+            <option value="Medical / Health Services">Medical / Health Services</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        @if (showOtherPreference()) {
+          <div class="form-group">
+            <label for="otherPreference">Please specify</label>
+            <input id="otherPreference" type="text" formControlName="otherPreference" />
+          </div>
+        }
+
+        <div class="form-group">
+          <label for="availability">Availability <span class="required">*</span></label>
+          <select id="availability" formControlName="availability" [class.error]="hasError('availability')">
+            <option value="">Select availability</option>
+            <option value="Weekdays Only">Weekdays Only</option>
+            <option value="Weekends Only">Weekends Only</option>
+            <option value="Anytime / On Call">Anytime / On Call</option>
+            <option value="others">Others</option>
+          </select>
+        </div>
+
+        @if (showOtherAvailability()) {
+          <div class="form-group">
+            <label for="otherAvailability">Please specify</label>
+            <input id="otherAvailability" type="text" formControlName="otherAvailability" />
+          </div>
+        }
+
+        <div class="form-group">
+          <label>Are you part of a Lifegroup? <span class="required">*</span></label>
+          <div class="radio-group">
+            <label><input type="radio" formControlName="partOfLifegroup" value="yes" /> Yes</label>
+            <label><input type="radio" formControlName="partOfLifegroup" value="no" /> No</label>
+          </div>
+        </div>
+
+        @if (showLifegroupLeader()) {
+          <div class="form-group">
+            <label for="lifegroupLeaderName">Lifegroup Leader Name <span class="required">*</span></label>
+            <input id="lifegroupLeaderName" type="text" formControlName="lifegroupLeaderName" [class.error]="hasError('lifegroupLeaderName')" />
+          </div>
+        }
+
+        <div class="form-group">
+          <label>Are you leading a Lifegroup? <span class="required">*</span></label>
+          <div class="radio-group">
+            <label><input type="radio" formControlName="leadingLifegroup" value="yes" /> Yes</label>
+            <label><input type="radio" formControlName="leadingLifegroup" value="no" /> No</label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Emergency Contact -->
+      <section class="form-section">
+        <h2>Emergency Contact</h2>
+
+        <div class="form-group">
+          <label for="emergencyContactName">Name <span class="required">*</span></label>
+          <input id="emergencyContactName" type="text" formControlName="emergencyContactName" [class.error]="hasError('emergencyContactName')" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="emergencyContactNumber">Contact Number <span class="required">*</span></label>
+            <input id="emergencyContactNumber" type="tel" formControlName="emergencyContactNumber" [class.error]="hasError('emergencyContactNumber')" />
+          </div>
+          <div class="form-group">
+            <label for="emergencyContactRelationship">Relationship <span class="required">*</span></label>
+            <input id="emergencyContactRelationship" type="text" formControlName="emergencyContactRelationship" [class.error]="hasError('emergencyContactRelationship')" />
+          </div>
+        </div>
+      </section>
+
+      <button type="submit" class="btn-submit" [disabled]="isSubmitting()">
+        {{ isSubmitting() ? 'Saving...' : 'Complete Profile' }}
+      </button>
+    </form>
+  </div>
+</div>

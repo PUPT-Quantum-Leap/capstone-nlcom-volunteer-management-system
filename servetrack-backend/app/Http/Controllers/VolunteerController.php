@@ -211,6 +211,101 @@ class VolunteerController extends Controller
     }
 
     /**
+     * Complete the volunteer profile for SSO users who signed up via Google.
+     */
+    public function completeProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'volunteer') {
+            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
+        }
+
+        if ($user->volunteer !== null) {
+            return response()->json(['success' => false, 'message' => 'Profile already completed.'], 409);
+        }
+
+        // Clean phone numbers before validation
+        if ($request->has('mobileNumber')) {
+            $request->merge(['mobileNumber' => preg_replace('/[\s\-()]/', '', $request->mobileNumber)]);
+        }
+        if ($request->has('emergencyContactNumber')) {
+            $request->merge(['emergencyContactNumber' => preg_replace('/[\s\-()]/', '', $request->emergencyContactNumber)]);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'firstName' => 'required|string|min:2|max:50',
+            'lastName' => 'required|string|min:2|max:50',
+            'mobileNumber' => 'required|string|min:10|max:15',
+            'birthdate' => 'required|date|before:today',
+            'completeAddress' => 'required|string|min:10|max:255',
+            'lastMedicalExam' => 'required|date|before_or_equal:today',
+            'gender' => 'nullable|string|in:boy,girl,male,female',
+            'educationalAttainment' => 'required|string|max:100',
+            'trainingExperience' => 'nullable|string',
+            'skillsHobbies' => 'nullable|string',
+            'classesTraining' => 'nullable|string',
+            'volunteerPreference' => 'required|string',
+            'otherPreference' => 'nullable|string',
+            'availability' => 'required|string',
+            'otherAvailability' => 'nullable|string',
+            'partOfLifegroup' => 'required|string|in:yes,no',
+            'lifegroupLeaderName' => 'nullable|required_if:partOfLifegroup,yes|string|max:100',
+            'leadingLifegroup' => 'required|string|in:yes,no',
+            'emergencyContactName' => 'required|string|max:100',
+            'emergencyContactNumber' => 'required|string|min:10|max:15',
+            'emergencyContactRelationship' => 'required|string|max:50',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => 'Validation failed', 'errors' => $validator->errors()], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $nameParts = explode(' ', $user->name, 2);
+            $firstName = $request->firstName;
+            $lastName = $request->lastName;
+
+            $volunteer = Volunteer::create([
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+                'facebook_name' => $user->name, // default to Google display name
+                'email' => $user->email,
+                'mobile_number' => $request->mobileNumber,
+                'birthdate' => $request->birthdate,
+                'address' => $request->completeAddress,
+                'educational_attainment' => $request->educationalAttainment,
+                'last_medical_examination' => $request->lastMedicalExam,
+                'user_id' => $user->id,
+                'gender' => $request->gender,
+            ]);
+
+            $user->name = $firstName.' '.$lastName;
+            $user->save();
+
+            $this->syncVolunteerData($volunteer, $request);
+
+            DB::commit();
+
+            $volunteer = $volunteer->fresh(['experiences', 'skills', 'trainings', 'positions', 'availabilities', 'lifegroups', 'emergencyContact']);
+
+            $userData = $user->fresh()->toArray();
+            $userData['user_type'] = 'volunteer';
+            $userData['volunteer_profile'] = $volunteer;
+            $userData['needs_profile_completion'] = false;
+
+            return response()->json(['success' => true, 'user' => $userData], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Profile completion failed', ['error' => $e->getMessage()]);
+
+            return response()->json(['success' => false, 'message' => 'Profile completion failed. Please try again.'], 500);
+        }
+    }
+
+    /**
      * Get the authenticated volunteer's profile.
      */
     public function profile(Request $request): JsonResponse
