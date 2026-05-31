@@ -205,7 +205,7 @@ class LoginController extends Controller
         }
 
         try {
-            $tokenResponse = Http::post('https://oauth2.googleapis.com/token', [
+            $tokenResponse = Http::timeout(10)->asForm()->post('https://oauth2.googleapis.com/token', [
                 'client_id' => config('services.google.client_id'),
                 'client_secret' => config('services.google.client_secret'),
                 'redirect_uri' => config('services.google.redirect_uri'),
@@ -219,7 +219,7 @@ class LoginController extends Controller
 
             $accessToken = $tokenResponse->json('access_token');
 
-            $userResponse = Http::withToken($accessToken)
+            $userResponse = Http::timeout(10)->withToken($accessToken)
                 ->get('https://www.googleapis.com/oauth2/v2/userinfo');
 
             if ($userResponse->failed()) {
@@ -242,6 +242,12 @@ class LoginController extends Controller
                 $email,
                 $name,
             );
+
+            if ($user === null) {
+                return response()->json([
+                    'message' => 'This email is already linked to a different sign-in method.',
+                ], 409);
+            }
 
             $userData = $user->toArray();
             $userData['user_type'] = 'volunteer';

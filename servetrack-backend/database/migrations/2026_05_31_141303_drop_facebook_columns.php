@@ -26,12 +26,18 @@ return new class extends Migration {
     public function down(): void
     {
         Schema::table('volunteer', function (Blueprint $table) {
-            $table->integer('facebook_id')->nullable();
-            $table->string('messenger_psid')->nullable();
+            if (! Schema::hasColumn('volunteer', 'facebook_id')) {
+                $table->integer('facebook_id')->nullable();
+            }
+            if (! Schema::hasColumn('volunteer', 'messenger_psid')) {
+                $table->string('messenger_psid')->nullable();
+            }
         });
 
         Schema::table('rsvp_response', function (Blueprint $table) {
-            $table->string('facebook_id', 100)->nullable();
+            if (! Schema::hasColumn('rsvp_response', 'facebook_id')) {
+                $table->string('facebook_id', 100)->nullable();
+            }
         });
     }
 };

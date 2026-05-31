@@ -73,11 +73,12 @@ export class ProfileCompleteComponent implements OnInit {
 
     this.form.get('partOfLifegroup')?.valueChanges.subscribe((v) => {
       const ctrl = this.form.get('lifegroupLeaderName');
+      const baseValidators = [Validators.maxLength(100), lifegroupLeaderValidator()];
       this.showLifegroupLeader.set(v === 'yes');
       if (v === 'yes') {
-        ctrl?.setValidators([Validators.required, Validators.maxLength(100)]);
+        ctrl?.setValidators([...baseValidators, Validators.required]);
       } else {
-        ctrl?.clearValidators();
+        ctrl?.setValidators(baseValidators);
         ctrl?.setValue('');
       }
       ctrl?.updateValueAndValidity();
@@ -85,7 +86,11 @@ export class ProfileCompleteComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.form.invalid || this.isSubmitting()) { return; }
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    if (this.isSubmitting()) { return; }
 
     this.isSubmitting.set(true);
     this.submitError.set(null);
