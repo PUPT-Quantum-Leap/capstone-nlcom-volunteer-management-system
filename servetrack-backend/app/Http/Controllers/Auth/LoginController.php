@@ -344,11 +344,11 @@ class LoginController extends Controller
             $token,
             $expirationMinutes,
             '/',
-            null,
-            true,
-            true,
-            false,
-            'strict'
+            config('session.domain'),
+            true,  // secure
+            true,  // httpOnly
+            false, // raw
+            'none' // SameSite=None required for cross-subdomain requests
         );
 
         return response()->json([
