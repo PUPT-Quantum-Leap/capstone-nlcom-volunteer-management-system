@@ -123,7 +123,7 @@ export class PollsComponent implements OnInit {
     this.pollError.set(null);
 
     this.rsvpService
-      .getRsvps()
+      .getRsvps(100)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
@@ -153,7 +153,11 @@ export class PollsComponent implements OnInit {
       this.selectedOptionId.set(activePoll.userVote.timeSlotId);
     }
 
-    this.pastPolls.set(pastRsvps.map((r: Rsvp) => this.mapRsvpToPoll(r)));
+    this.pastPolls.set(
+      pastRsvps
+        .map((r: Rsvp) => this.mapRsvpToPoll(r))
+        .sort((a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()),
+    );
   }
 
   private mapRsvpToPoll(rsvp: Rsvp): Poll {
@@ -188,7 +192,6 @@ export class PollsComponent implements OnInit {
   goToPage(page: number): void {
     if (page < 1 || page > this.totalPages()) return;
     this.currentPage.set(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   nextPage(): void {

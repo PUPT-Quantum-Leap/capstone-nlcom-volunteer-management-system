@@ -458,8 +458,7 @@
       </div>
       }
 
-      @if (totalPages() > 1) {
-      <div class="pagination">
+      <div class="pagination" [class.pagination-hidden]="totalPages() <= 1">
         <div class="pagination-info">
           Showing {{ pastPollsStart() }}–{{ pastPollsEnd() }} of {{ pastPollsTotal() }}
         </div>
@@ -490,7 +489,6 @@
           </button>
         </div>
       </div>
-      }
     </div>
     }
     }
