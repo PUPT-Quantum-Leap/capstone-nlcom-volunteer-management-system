@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, finalize, Subject, switchMap } from 'rxjs';
 import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
 import jsPDF from 'jspdf';
@@ -16,6 +17,7 @@ import {
 import { Rsvp } from '../models/rsvp';
 import { IcsService } from '../services/ics.service';
 import { RsvpService } from '../services/rsvp.service';
+import { AnalyticsFeedingOperationComponent } from '../admin-dashboard/analytics-feeding-operation/analytics-feeding-operation';
 
 const SECTION_CHIEF_KEYS = ['planning', 'purchasing', 'mwc_coordinator', 'safety_emergency'];
 const BRANCH_DIRECTOR_KEYS = [
@@ -29,11 +31,12 @@ const BRANCH_DIRECTOR_KEYS = [
   templateUrl: './incident-command-system.html',
   styleUrl: './incident-command-system.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, CustomSelect],
+  imports: [CommonModule, FormsModule, CustomSelect, AnalyticsFeedingOperationComponent],
 })
 export class IncidentCommandSystemComponent implements OnInit {
   private readonly rsvpService = inject(RsvpService);
   private readonly icsService = inject(IcsService);
+  private readonly router = inject(Router);
 
   // --- State Signals ---
   readonly rsvpOptions = signal<SelectOption<string>[]>([]);
@@ -53,6 +56,9 @@ export class IncidentCommandSystemComponent implements OnInit {
   readonly isExporting = signal(false);
   readonly error = signal<string | null>(null);
   readonly aiError = signal<string | null>(null);
+
+  // View state for master-detail swap
+  readonly activeView = signal<'dashboard' | 'operations'>('dashboard');
 
   // Move volunteer state
   readonly movingVolunteer = signal<{ volunteerId: number; fromTeamId: number } | null>(null);
@@ -85,6 +91,16 @@ export class IncidentCommandSystemComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadRsvpList();
+  }
+
+  // ===== NAVIGATION =====
+
+  navigateToOperations(): void {
+    this.activeView.set('operations');
+  }
+
+  backToOverview(): void {
+    this.activeView.set('dashboard');
   }
 
   // ===== RSVP & DASHBOARD =====
@@ -459,11 +475,11 @@ export class IncidentCommandSystemComponent implements OnInit {
         : 'pm_distribution_director';
       const director = roles.get(dirKey);
       if (director?.assigned_name) {
-        pdf.setFontSize(8);
-        pdf.setFont('helvetica', 'italic');
-        pdf.setTextColor(100, 116, 139);
-        pdf.text(`Director: ${director.assigned_name}`, margin, y + 10);
-        y += 6;
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'bolditalic');
+        pdf.setTextColor(30, 41, 59);
+        pdf.text(`Director: ${director.assigned_name}`, margin, y + 12);
+        y += 14;
       }
 
       const tableRows: RowInput[] = branch.teams.map((team) => {
@@ -517,20 +533,33 @@ export class IncidentCommandSystemComponent implements OnInit {
     pdf.line(margin, y, pageWidth - margin, y);
     y += 14;
 
+    // Layout: 3 columns
+    const col1X = margin;
+    const col2X = margin + 170;
+    const col3X = pageWidth - margin - 120;
+
     pdf.setFontSize(8);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('SYMBOLS', margin, y);
-    pdf.text('MEAL BREAKDOWN', margin + 150, y);
-    pdf.text('VEHICLE ASSIGNMENT', margin + 310, y);
+    pdf.text('SYMBOLS', col1X, y);
+    pdf.text('MEAL BREAKDOWN', col2X, y);
+    pdf.text('VEHICLE ASSIGNMENT', col3X, y);
     y += 12;
 
     pdf.setFont('helvetica', 'normal');
-    pdf.text('^ team leader    ~ driver    * new volunteer', margin, y);
-    pdf.text(`Breakfast: ${meta.meal_breakfast}   Lunch: ${meta.meal_lunch}   Snacks: ${meta.meal_snacks}`, margin + 150, y);
+    pdf.text('^ team leader', col1X, y);
+    pdf.text('~ driver', col1X, y + 10);
+    pdf.text('* new volunteer', col1X, y + 20);
 
-    const vehicleLines = dashboard.vehicles.map((v) => `${v.team_name} - ${v.vehicle}`).join('   ');
-    if (vehicleLines) {
-      pdf.text(vehicleLines, margin + 310, y);
+    // Meal breakdown
+    pdf.text(`Breakfast: ${meta.meal_breakfast}`, col2X, y);
+    pdf.text(`Lunch: ${meta.meal_lunch}`, col2X, y + 10);
+    pdf.text(`Snacks: ${meta.meal_snacks}`, col2X, y + 20);
+
+    // Vehicles — right-aligned column list
+    let vehY = y;
+    for (const v of dashboard.vehicles) {
+      pdf.text(`${v.team_name} - ${v.vehicle}`, col3X, vehY);
+      vehY += 10;
     }
 
     // --- SAVE ---
@@ -577,6 +606,16 @@ export class IncidentCommandSystemComponent implements OnInit {
     if (confidence >= 0.85) return 'confidence-high';
     if (confidence >= 0.6) return 'confidence-medium';
     return 'confidence-low';
+  }
+
+  /**
+   * Highlight matching text in a name for search results.
+   */
+  highlightMatch(name: string, teamId: number): string {
+    const query = this.volunteerSearchByTeam()[teamId]?.trim();
+    if (!query) return name;
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return name.replace(regex, '<span class="highlight">$1</span>');
   }
 
   private rolesByKeys(keys: string[]): IcsCommandRole[] {

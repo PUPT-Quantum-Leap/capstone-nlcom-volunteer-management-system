@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AuditAction;
 use App\Http\Requests\ApplyAiSuggestionsRequest;
 use App\Http\Requests\AssignVolunteerRequest;
 use App\Http\Requests\RemoveVolunteerRequest;
@@ -10,13 +11,13 @@ use App\Http\Requests\UpdateIcsCommandRoleRequest;
 use App\Http\Requests\UpdateIcsRequest;
 use App\Http\Resources\IcsDashboardResource;
 use App\Http\Resources\IcsResource;
-use App\Http\Resources\VolunteerResource;
 use App\Models\Ics;
 use App\Models\IcsCommandRole;
 use App\Models\IcsTeam;
 use App\Models\Rsvp;
 use App\Models\Team;
 use App\Models\Volunteer;
+use App\Services\AuditLogger;
 use App\Services\IcsService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -87,15 +88,10 @@ class IcsController extends Controller
                 ]
             );
 
-            // Only seed the full set of default teams on first creation.
-            // For existing ICS records we only ensure command roles exist — never
-            // re-insert IcsTeam rows, which would create phantom ghost entries
-            // alongside any real custom team data already in the table.
-            if ($ics->wasRecentlyCreated) {
-                $this->ensureDashboardDefaults($ics);
-            } else {
-                $this->ensureCommandRoleDefaults($ics);
-            }
+            // Always seed defaults — ensureDashboardDefaults uses updateOrCreate so it
+            // is idempotent and safe to call on existing records. This also recovers
+            // ICS records that were created before team seeding was added.
+            $this->ensureDashboardDefaults($ics);
 
             return $ics;
         });
@@ -179,21 +175,7 @@ class IcsController extends Controller
                 'status' => $request->input('status', 'draft'),
             ]);
 
-            $teamIds = $request->input('team_ids');
-            if (empty($teamIds)) {
-                $teamIds = Team::query()->pluck('id')->all();
-            }
-
-            if (! empty($teamIds)) {
-                $teams = Team::query()->whereIn('id', $teamIds)->get();
-                foreach ($teams as $team) {
-                    IcsTeam::query()->create([
-                        'ics_id' => $ics->id,
-                        'team_id' => $team->id,
-                        'team' => $team->name,
-                    ]);
-                }
-            }
+            // Teams are seeded by ensureDashboardDefaults() when the dashboard is first accessed
 
             return $ics->load(['rsvp', 'teams']);
         });
@@ -225,21 +207,8 @@ class IcsController extends Controller
                 'meal_snacks' => $request->input('meal_snacks'),
             ], fn ($value) => $value !== null));
 
-            if ($request->has('team_ids')) {
-                $teamIds = $request->input('team_ids');
-                IcsTeam::query()->where('ics_id', $ics->id)->delete();
-
-                if (! empty($teamIds)) {
-                    $teams = Team::query()->whereIn('id', $teamIds)->get();
-                    foreach ($teams as $team) {
-                        IcsTeam::query()->create([
-                            'ics_id' => $ics->id,
-                            'team_id' => $team->id,
-                            'team' => $team->name,
-                        ]);
-                    }
-                }
-            }
+            // Team structure is managed by the ICS dashboard (ensureDashboardDefaults).
+            // Do not recreate IcsTeam rows here — it causes duplicates without branch_key.
         });
 
         return new IcsResource($ics->fresh('teams'));
@@ -261,7 +230,7 @@ class IcsController extends Controller
     /**
      * Get volunteers who RSVP'd for a specific event.
      */
-    public function getRsvpVolunteers(int $rsvpId, Request $request): AnonymousResourceCollection|JsonResponse
+    public function getRsvpVolunteers(int $rsvpId, Request $request): JsonResponse
     {
         $rsvp = Rsvp::query()->find($rsvpId);
 
@@ -273,23 +242,16 @@ class IcsController extends Controller
             ->whereHas('rsvpResponses', function ($query) use ($rsvpId) {
                 $query->where('rsvp_id', $rsvpId);
             })
-            ->with(['skills', 'positions', 'experiences']);
+            ->with(['skills', 'positions', 'experiences', 'trainings']);
 
         // Filter by shift if requested (am/pm)
+        // Uses position-based detection: first slot ID = AM, last slot ID = PM
         $shift = $request->query('shift');
         $shift = is_string($shift) ? strtolower(trim($shift)) : null;
         if ($shift && in_array($shift, ['am', 'pm'], true)) {
-            // Get the RSVP's shift time_slot_ids via Eloquent relationship, ordered ascending
-            $slotIds = $rsvp->shifts()
-                ->orderBy('time_slot_id', 'asc')
-                ->get()
-                ->pluck('time_slot_id');
+            $slotIds = $rsvp->shifts()->pluck('rsvp_shift.time_slot_id')->sort()->values();
 
-            $targetSlotId = match ($shift) {
-                'am' => $slotIds->first(),
-                'pm' => $slotIds->last(),
-                default => null,
-            };
+            $targetSlotId = $shift === 'am' ? $slotIds->first() : $slotIds->last();
 
             if ($targetSlotId) {
                 $query->whereHas('rsvpResponses', function ($q) use ($rsvpId, $targetSlotId) {
@@ -300,7 +262,17 @@ class IcsController extends Controller
 
         $volunteers = $query->get();
 
-        return VolunteerResource::collection($volunteers);
+        return response()->json([
+            'data' => $volunteers->map(fn ($v) => [
+                'volunteer_id' => $v->volunteer_id,
+                'first_name' => $v->first_name,
+                'last_name' => $v->last_name,
+                'skills' => $v->skills->pluck('name')->toArray(),
+                'positions' => $v->positions->pluck('name')->toArray(),
+                'experiences' => $v->experiences->pluck('name')->toArray(),
+                'trainings' => $v->trainings->pluck('name')->toArray(),
+            ]),
+        ]);
     }
 
     /**
@@ -350,23 +322,27 @@ class IcsController extends Controller
         $icsTeamIds = $ics->teams()->pluck('teams.id')->flip();
 
         DB::transaction(function () use ($suggestions, $ics, $volunteers, $teams, $icsTeamIds): void {
+            // Detach all existing assignments so each AI run replaces rather than accumulates
+            $ics->volunteers()->detach();
+
+            $pivotData = [];
             foreach ($suggestions as $suggestion) {
                 $volunteer = $volunteers->get((int) ($suggestion['volunteer_id'] ?? 0));
                 $team = $teams->get((int) ($suggestion['team_id'] ?? 0));
 
-                $isTeamInIcs = $team && $icsTeamIds->has($team->id);
-
-                if ($volunteer && $isTeamInIcs) {
-                    $ics->volunteers()->syncWithoutDetaching([
-                        $volunteer->volunteer_id => [
-                            'team_id' => $team->id,
-                            'role' => $suggestion['role'] ?? null,
-                            'is_driver' => false,
-                            'is_leader' => str_contains(strtolower($suggestion['role'] ?? ''), 'lead'),
-                            'assigned_at' => now(),
-                        ],
-                    ]);
+                if ($volunteer && $team && $icsTeamIds->has($team->id)) {
+                    $pivotData[$volunteer->volunteer_id] = [
+                        'team_id' => $team->id,
+                        'role' => $suggestion['role'] ?? null,
+                        'is_driver' => false,
+                        'is_leader' => str_contains(strtolower($suggestion['role'] ?? ''), 'lead'),
+                        'assigned_at' => now(),
+                    ];
                 }
+            }
+
+            if (! empty($pivotData)) {
+                $ics->volunteers()->sync($pivotData);
             }
 
             $ics->update(['ai_suggestions' => $suggestions]);
@@ -410,6 +386,13 @@ class IcsController extends Controller
             ]);
         });
 
+        AuditLogger::success(AuditAction::ICS_VOLUNTEER_ASSIGNED, [
+            'resource_type' => 'ics',
+            'resource_id' => $ics->id,
+            'resource_label' => $ics->name,
+            'description' => trim($volunteer->first_name.' '.$volunteer->last_name).' assigned to ICS: '.$ics->name,
+        ]);
+
         return response()->json(['message' => 'Volunteer assigned successfully.']);
     }
 
@@ -425,6 +408,13 @@ class IcsController extends Controller
         }
 
         $ics->volunteers()->detach($request->input('volunteer_id'));
+
+        AuditLogger::success(AuditAction::ICS_VOLUNTEER_REMOVED, [
+            'resource_type' => 'ics',
+            'resource_id' => $ics->id,
+            'resource_label' => $ics->name,
+            'description' => 'Volunteer #'.$request->input('volunteer_id').' removed from ICS: '.$ics->name,
+        ]);
 
         return response()->json(['message' => 'Volunteer removed successfully.']);
     }

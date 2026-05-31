@@ -47,7 +47,8 @@ class IcsService
         $volunteers = Volunteer::query()
             ->whereHas('rsvpResponses', function ($query) use ($rsvp) {
                 $query->where('rsvp_id', $rsvp->rsvp_id)
-                    ->where('attendance_status', '!=', 'no_show');
+                    ->where(fn ($q) => $q->whereNull('attendance_status')
+                        ->orWhere('attendance_status', '!=', 'no_show'));
             })
             ->with(['skills', 'trainings', 'positions', 'experiences', 'rsvpResponses' => fn ($q) => $q->where('rsvp_id', $rsvp->rsvp_id)->with('timeSlot')])
             ->get();

@@ -67,7 +67,7 @@ export class SpeechService implements OnDestroy {
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private voiceCache = new Map<string, SpeechSynthesisVoice>();
   private selectedVoice: SpeechSynthesisVoice | null = null;
-  private speechRate = parseFloat(localStorage.getItem(STORAGE_KEY_RATE) ?? '1.0');
+  private speechRate = SpeechService.parseStoredRate();
   private speechPitch = parseFloat(localStorage.getItem(STORAGE_KEY_PITCH) ?? '1.0');
   private speechVolume = 1.0;
 
@@ -102,8 +102,6 @@ export class SpeechService implements OnDestroy {
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognitionAPI) {
       this.isSTTSupported.set(true);
-    } else {
-      console.warn('Speech Recognition API not supported in this browser');
     }
 
     // TTS
@@ -114,8 +112,6 @@ export class SpeechService implements OnDestroy {
       if (this.synthesis.onvoiceschanged !== undefined) {
         this.synthesis.onvoiceschanged = () => this.loadVoices();
       }
-    } else {
-      console.warn('Speech Synthesis API not supported in this browser');
     }
   }
 
@@ -147,6 +143,11 @@ export class SpeechService implements OnDestroy {
     };
 
     this.recognition.onerror = (event: ISpeechRecognitionErrorEvent) => {
+      // Suppress 'aborted' errors (fired when we call .abort() or .stop() ourselves)
+      if (event.error === 'aborted') return;
+      // Suppress 'network' errors when user isn't actively recording
+      if (event.error === 'network' && !this.isListening()) return;
+
       const errorType = this.mapSpeechError(event.error);
       this.emitError(errorType);
     };
@@ -167,6 +168,7 @@ export class SpeechService implements OnDestroy {
       return this.transcript$;
     }
 
+    // Create a fresh instance each time to avoid stale/broken state after errors
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     this.recognition = new SpeechRecognitionAPI();
     this.finalTranscript = '';
@@ -174,8 +176,8 @@ export class SpeechService implements OnDestroy {
 
     try {
       this.recognition.start();
-    } catch {
-      // Already started guard
+    } catch (e) {
+      console.warn('SpeechRecognition start failed:', e);
     }
 
     return this.transcript$;
@@ -348,6 +350,11 @@ export class SpeechService implements OnDestroy {
     return false;
   }
 
+  private static parseStoredRate(): number {
+    const raw = parseFloat(localStorage.getItem(STORAGE_KEY_RATE) ?? '');
+    return Number.isFinite(raw) && raw >= 0.1 && raw <= 10 ? raw : 0.95;
+  }
+
   setRate(rate: number): void {
     this.speechRate = Math.max(0.1, Math.min(10, rate));
     localStorage.setItem(STORAGE_KEY_RATE, String(this.speechRate));
@@ -372,6 +379,8 @@ export class SpeechService implements OnDestroy {
     return text
       .replace(/₱(\d+(?:,\d{3})*(?:\.\d{2})?)/g, '$1 Philippine Pesos')
       .replace(/₱/g, 'Philippine Pesos')
+      .replace(/^\d+\.\s+/gm, '')
+      .replace(/^[-*•]\s+/gm, '')
       .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{2B00}-\u{2BFF}\u{1F1E6}-\u{1F1FF}]/gu, '')
       .replace(/```[\s\S]*?```/g, '')
       .replace(/`[^`]+`/g, '')
@@ -384,6 +393,7 @@ export class SpeechService implements OnDestroy {
       .replace(/https?:\/\/[^\s]+/g, '')
       .replace(/<[^>]+>/g, '')
       .replace(/[*#_~`|]/g, '')
+      .replace(/\n/g, ', ')
       .replace(/\s+/g, ' ')
       .trim()
       .slice(0, 500);

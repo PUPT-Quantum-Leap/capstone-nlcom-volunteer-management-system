@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Constants\TokenAbilities;
+use App\Enums\AuditAction;
 use App\Http\Requests\RsvpNonRespondersRequest;
+use App\Http\Requests\VerifyPasswordRequest;
 use App\Models\Admin;
 use App\Models\Attendance;
 use App\Models\Rsvp;
 use App\Models\RsvpResponse;
 use App\Models\User;
 use App\Models\Volunteer;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -361,7 +364,11 @@ class AdminController extends Controller
 
         $photoUrl = null;
         if ($admin->profile_photo) {
-            $photoUrl = Storage::disk('public')->url($admin->profile_photo);
+            if (str_starts_with($admin->profile_photo, '/assets/')) {
+                $photoUrl = $admin->profile_photo;
+            } else {
+                $photoUrl = Storage::disk('public')->url($admin->profile_photo);
+            }
         }
 
         return response()->json([
@@ -425,7 +432,14 @@ class AdminController extends Controller
                 // Handle Photo
                 if ($request->filled('profile_photo')) {
                     $photo = $request->profile_photo;
-                    if (str_starts_with($photo, 'data:image')) {
+
+                    // Accept asset path avatars (e.g. /assets/boy.svg, /assets/girl.svg, /assets/apple.svg)
+                    if (str_starts_with($photo, '/assets/')) {
+                        if ($admin->profile_photo && ! str_starts_with($admin->profile_photo, '/assets/')) {
+                            Storage::disk('public')->delete($admin->profile_photo);
+                        }
+                        $adminData['profile_photo'] = $photo;
+                    } elseif (str_starts_with($photo, 'data:image')) {
                         $photoData = substr($photo, strpos($photo, ',') + 1);
                         $photoData = base64_decode($photoData);
                         $mimeType = explode(':', substr($photo, 0, strpos($photo, ';')))[1];
@@ -466,7 +480,11 @@ class AdminController extends Controller
             $freshAdmin = $admin->fresh();
             $photoUrl = null;
             if ($freshAdmin->profile_photo) {
-                $photoUrl = Storage::disk('public')->url($freshAdmin->profile_photo);
+                if (str_starts_with($freshAdmin->profile_photo, '/assets/')) {
+                    $photoUrl = $freshAdmin->profile_photo;
+                } else {
+                    $photoUrl = Storage::disk('public')->url($freshAdmin->profile_photo);
+                }
             }
 
             return response()->json([
@@ -488,6 +506,30 @@ class AdminController extends Controller
                 'message' => 'Failed to update profile.',
             ], 500);
         }
+    }
+
+    /**
+     * Verify the authenticated admin's current password.
+     *
+     * Validates the password via VerifyPasswordRequest, then checks it
+     * against the authenticated user's stored hash. Returns 403 on mismatch
+     * or if no user is authenticated.
+     */
+    public function verifyPassword(VerifyPasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid password.',
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password verified.',
+        ]);
     }
 
     /**
@@ -923,6 +965,13 @@ class AdminController extends Controller
                 ]);
             }
         });
+
+        AuditLogger::success(AuditAction::ATTENDANCE_MANUAL_OVERRIDE, [
+            'resource_type' => 'rsvp_response',
+            'resource_id' => $rsvpResponse->rsvp_response_id,
+            'resource_label' => 'RSVP Response #'.$rsvpResponse->rsvp_response_id,
+            'description' => "Manual attendance override: volunteer #{$rsvpResponse->volunteer_id} marked {$validated['status']}",
+        ]);
 
         return response()->json([
             'success' => true,

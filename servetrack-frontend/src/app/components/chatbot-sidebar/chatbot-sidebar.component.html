@@ -1,11 +1,11 @@
-<div class="sidebar-wrapper" [class.open]="chatbotService.showChatbot()" role="complementary" aria-label="AI Assistant">
+<div class="sidebar-wrapper" [class.open]="chatbotService.showChatbot()" role="complementary" aria-label="Gotcha! Assistant">
 
   <!-- ── Header ── -->
   <div class="sidebar-header">
     <div class="header-info">
-      <img src="/assets/kamen-rider-gotchard.jpg" alt="ServeTrack AI Avatar" class="bot-avatar" width="40" height="40" />
+      <img src="/assets/kamen-rider-gotchard.jpg" alt="Gotcha! Avatar" class="bot-avatar" width="40" height="40" />
       <div class="header-text">
-        <h3>ServeTrack AI</h3>
+        <h3>Gotcha!</h3>
         <span class="status" [class.speaking]="isSpeaking()">
           {{ isSpeaking() ? 'Speaking…' : isRecording() ? 'Listening…' : 'Online' }}
         </span>
@@ -97,10 +97,10 @@
 
   <!-- ── Messages ── -->
   <div class="sidebar-messages" #messagesContainer>
-    @if (!chatbotService.hasMessages()) {
+    @if (!chatbotService.hasMessages() && showTypewriter()) {
       <div class="empty-state">
         <img src="/assets/kamen-rider-gotchard.jpg" alt="" class="empty-avatar" aria-hidden="true" width="72" height="72" />
-        <h4>Hello! I'm ServeTrack AI</h4>
+        <h4 class="typewriter-greeting">{{ typewriterText() }}<span class="cursor">|</span></h4>
         <p>Ask me anything about NLCOM volunteer programs, events, attendance, and more.</p>
         <div class="suggestion-chips">
           @for (s of suggestions; track s) {
@@ -118,6 +118,34 @@
         <div class="message-content">
           @if (msg.role === 'assistant') {
             <div class="markdown" [innerHTML]="chatbotService.parseMarkdown(msg.message)"></div>
+
+            <!-- Inline chart visualization -->
+            @if (msg.visualization) {
+              <app-chat-chart [visualization]="msg.visualization"></app-chat-chart>
+            }
+
+            <!-- Agentic action button -->
+            @if (msg.action) {
+              <div class="message-action">
+                <button type="button" class="action-btn" (click)="executeAction(msg.action!)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    @if (msg.action.type === 'navigate') {
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                      <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                    } @else {
+                      <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
+                    }
+                  </svg>
+                  <span>{{ msg.action.label }}</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" class="action-chevron" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
+            }
+
             @if (msg.isRetrying) {
               <div class="retry-indicator" aria-live="polite">Retrying attempt {{ msg.retryAttempt }}/3…</div>
             }
@@ -145,14 +173,21 @@
                   }
                 </button>
                 @if (isTTSSupported()) {
-                  <button type="button" class="speak-btn" (click)="speakMessage(msg.message)"
+                  <button type="button" class="speak-btn" [class.speaking]="isSpeaking()"
+                    (click)="speakMessage(msg.message)"
                     [attr.aria-label]="isSpeaking() ? 'Stop speaking' : 'Speak message'"
                     [title]="isSpeaking() ? 'Stop' : 'Speak'">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
-                    </svg>
+                    @if (isSpeaking()) {
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                      </svg>
+                    } @else {
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                      </svg>
+                    }
                   </button>
                 }
               </div>
@@ -162,19 +197,21 @@
       </div>
     }
 
+    <!-- Typing indicator with fun loading word -->
     @if (chatbotService.isLoading()) {
-      <div class="message assistant" aria-live="polite" aria-label="ServeTrack AI is typing">
+      <div class="message assistant" aria-live="polite" aria-label="Gotcha! is typing">
         <img src="/assets/kamen-rider-gotchard.jpg" alt="" class="msg-avatar msg-avatar-typing" aria-hidden="true" width="28" height="28" />
         <div class="message-content typing">
           <div class="typing-indicator">
             <span></span><span></span><span></span>
           </div>
+          <span class="loading-word">{{ loadingWord() }}</span>
         </div>
       </div>
     }
   </div>
 
-  <!-- ── Command Palette Dropdown ── -->
+  <!-- ── Command Palette ── -->
   @if (showCommandDropdown()) {
     <div class="command-palette" role="listbox" aria-label="Commands">
       @for (cmd of visibleCommands(); track cmd.id; let i = $index) {
@@ -182,7 +219,31 @@
           [class.selected]="selectedCommandIndex() === i"
           (click)="selectCommand(cmd)"
           [attr.aria-selected]="selectedCommandIndex() === i">
-          <span class="cmd-icon"><i [class]="'bi ' + cmd.icon" aria-hidden="true"></i></span>
+          <span class="cmd-icon" [attr.data-icon]="cmd.icon" aria-hidden="true">
+            @switch (cmd.icon) {
+              @case ('calendar') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              }
+              @case ('clipboard') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+              }
+              @case ('clock') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              }
+              @case ('calendar-check') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+              }
+              @case ('help') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              }
+              @case ('lightbulb') {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+              }
+              @default {
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+              }
+            }
+          </span>
           <span class="cmd-info">
             <span class="cmd-command">{{ cmd.command }}</span>
             <span class="cmd-desc">{{ cmd.description }}</span>
@@ -194,6 +255,7 @@
       }
     </div>
   }
+
 
   <!-- ── Input Area ── -->
   <div class="sidebar-input">

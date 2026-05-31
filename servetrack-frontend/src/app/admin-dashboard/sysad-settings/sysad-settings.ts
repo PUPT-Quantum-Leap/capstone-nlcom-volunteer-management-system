@@ -10,19 +10,26 @@ import {
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  AdminDashboardService,
+  BackupApiService,
   BackupRecord,
-} from '../../services/admin-dashboard.service';
+} from '../../services/backup-api.service';
+import {
+  AuditApiService,
+  AuditLog,
+  AuditStats,
+  AuditLogFilters,
+} from '../../services/audit-api.service';
 
 @Component({
-  selector: 'app-backup-recovery',
+  selector: 'app-sysad-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
-  templateUrl: './backup-recovery.html',
-  styleUrl: './backup-recovery.scss',
+  templateUrl: './sysad-settings.html',
+  styleUrl: './sysad-settings.scss',
 })
-export class BackupRecoveryComponent {
-  private adminDashboardService = inject(AdminDashboardService);
+export class SysadSettingsComponent {
+  private backupApiService = inject(BackupApiService);
+  private auditApiService = inject(AuditApiService);
   private destroyRef = inject(DestroyRef);
 
   // Expose Math for template
@@ -54,6 +61,23 @@ export class BackupRecoveryComponent {
   backupLastPage = signal(1);
   backupTotalRecords = signal(0);
 
+  // ═══════════════ Audit Logger Signals ═══════════════
+  auditLogs = signal<AuditLog[]>([]);
+  auditStats = signal<AuditStats>({ total_today: 0, total_all: 0, failures_today: 0, critical_today: 0, categories: {} });
+  auditLoading = signal(false);
+  auditExporting = signal(false);
+  auditPage = signal(1);
+  auditTotalPages = signal(1);
+  auditTotal = signal(0);
+  readonly auditPerPage = 10;
+
+  // Audit filter signals
+  auditFilterCategory = signal('');
+  auditFilterSeverity = signal('');
+  auditFilterSearch = signal('');
+  auditFilterFrom = signal('');
+  auditFilterTo = signal('');
+
   // Computed
   backupTotalPages = computed(() => this.backupLastPage());
 
@@ -80,6 +104,8 @@ export class BackupRecoveryComponent {
   constructor() {
     this.loadBackups();
     this.loadScheduledBackupSettings();
+    this.loadAuditLogs();
+    this.loadAuditStats();
   }
 
   // Safe date parsing helper
@@ -135,7 +161,7 @@ export class BackupRecoveryComponent {
 
   // Backup actions
   loadBackups(): void {
-    this.adminDashboardService
+    this.backupApiService
       .getBackups(this.backupHistoryPage(), this.backupHistoryPageSize())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
@@ -152,7 +178,7 @@ export class BackupRecoveryComponent {
   }
 
   loadScheduledBackupSettings(): void {
-    this.adminDashboardService
+    this.backupApiService
       .getScheduledBackupSettings()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((response) => {
@@ -168,7 +194,7 @@ export class BackupRecoveryComponent {
   createBackup(): void {
     this.backupActionLoading.set(true);
 
-    this.adminDashboardService
+    this.backupApiService
       .createBackup('manual')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -196,7 +222,7 @@ export class BackupRecoveryComponent {
   refreshBackups(): void {
     this.backupActionLoading.set(true);
 
-    this.adminDashboardService
+    this.backupApiService
       .getBackups(this.backupHistoryPage(), this.backupHistoryPageSize())
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -227,7 +253,7 @@ export class BackupRecoveryComponent {
 
   downloadBackup(backup: BackupRecord): void {
     this.backupActionId.set(backup.id);
-    this.adminDashboardService
+    this.backupApiService
       .downloadBackup(backup.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -260,7 +286,7 @@ export class BackupRecoveryComponent {
         this.backupActionLoading.set(true);
         this.backupActionId.set(backup.id);
 
-        this.adminDashboardService
+        this.backupApiService
           .restoreBackup(backup.id)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
@@ -298,7 +324,7 @@ export class BackupRecoveryComponent {
         this.backupActionLoading.set(true);
         this.backupActionId.set(backupId);
 
-        this.adminDashboardService
+        this.backupApiService
           .deleteBackup(backupId)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
@@ -333,7 +359,7 @@ export class BackupRecoveryComponent {
       () => {
         this.cleanupLoading.set(true);
 
-        this.adminDashboardService
+        this.backupApiService
           .cleanupBackups(0)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
@@ -380,7 +406,7 @@ export class BackupRecoveryComponent {
     this.scheduledBackupFrequency.set(frequency);
     this.scheduleSettingsSaving.set(true);
 
-    this.adminDashboardService
+    this.backupApiService
       .updateScheduledBackupSettings(
         this.scheduledBackupEnabled(),
         frequency,
@@ -426,7 +452,7 @@ export class BackupRecoveryComponent {
 
     this.scheduleSettingsSaving.set(true);
 
-    this.adminDashboardService
+    this.backupApiService
       .updateScheduledBackupSettings(
         newEnabled,
         frequency,
@@ -521,6 +547,140 @@ export class BackupRecoveryComponent {
         pages.push(-1);
       }
 
+      pages.push(total);
+    }
+
+    return pages;
+  }
+
+  // ═══════════════ Audit Logger Methods ═══════════════
+
+  loadAuditLogs(): void {
+    this.auditLoading.set(true);
+    const filters: AuditLogFilters = {
+      page: this.auditPage(),
+      per_page: this.auditPerPage,
+      category: this.auditFilterCategory() || undefined,
+      severity: this.auditFilterSeverity() || undefined,
+      search: this.auditFilterSearch() || undefined,
+      from: this.auditFilterFrom() || undefined,
+      to: this.auditFilterTo() || undefined,
+    };
+
+    this.auditApiService
+      .getAuditLogs(filters)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.auditLogs.set(response.data);
+            this.auditTotalPages.set(response.pagination.last_page);
+            this.auditTotal.set(response.pagination.total);
+          } else {
+            this.auditLogs.set([]);
+            this.auditTotalPages.set(1);
+            this.auditTotal.set(0);
+          }
+          this.auditLoading.set(false);
+        },
+        error: () => {
+          this.auditLogs.set([]);
+          this.auditLoading.set(false);
+        },
+      });
+  }
+
+  loadAuditStats(): void {
+    this.auditApiService
+      .getAuditStats()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.auditStats.set(response.data);
+          }
+        },
+      });
+  }
+
+  onAuditFilterChange(field: string, value: string): void {
+    switch (field) {
+      case 'category': this.auditFilterCategory.set(value); break;
+      case 'severity': this.auditFilterSeverity.set(value); break;
+      case 'from': this.auditFilterFrom.set(value); break;
+      case 'to': this.auditFilterTo.set(value); break;
+    }
+    this.auditPage.set(1);
+    this.loadAuditLogs();
+  }
+
+  private auditSearchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  onAuditSearchInput(value: string): void {
+    if (this.auditSearchTimeout) clearTimeout(this.auditSearchTimeout);
+    this.auditSearchTimeout = setTimeout(() => {
+      this.auditFilterSearch.set(value);
+      this.auditPage.set(1);
+      this.loadAuditLogs();
+    }, 400);
+  }
+
+  changeAuditPage(page: number): void {
+    if (page >= 1 && page <= this.auditTotalPages()) {
+      this.auditPage.set(page);
+      this.loadAuditLogs();
+    }
+  }
+
+  exportAuditCsv(): void {
+    this.auditExporting.set(true);
+    const filters: AuditLogFilters = {
+      category: this.auditFilterCategory() || undefined,
+      from: this.auditFilterFrom() || undefined,
+      to: this.auditFilterTo() || undefined,
+    };
+
+    this.auditApiService
+      .exportAuditLogs(filters)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (blob: Blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          this.showSnackbar.emit({ message: 'Audit log exported successfully.', type: 'success' });
+          this.auditExporting.set(false);
+        },
+        error: () => {
+          this.showSnackbar.emit({ message: 'Failed to export audit logs.', type: 'error' });
+          this.auditExporting.set(false);
+        },
+      });
+  }
+
+  getAuditPageNumbers(): number[] {
+    const total = this.auditTotalPages();
+    const current = this.auditPage();
+    const pages: number[] = [];
+
+    if (total <= 7) {
+      for (let page = 1; page <= total; page += 1) {
+        pages.push(page);
+      }
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1);
+      const start = Math.max(2, current - 1);
+      const end = Math.min(total - 1, current + 1);
+      for (let page = start; page <= end; page += 1) {
+        pages.push(page);
+      }
+      if (current < total - 2) pages.push(-1);
       pages.push(total);
     }
 

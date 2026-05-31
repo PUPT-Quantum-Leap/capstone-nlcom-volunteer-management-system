@@ -13,7 +13,7 @@ import { AttendanceComponent } from './volunteer-dashboard/attendance/attendance
 import { PollsComponent } from './volunteer-dashboard/polls/polls';
 import { AdminLayout } from './admin-dashboard/admin-layout/admin-layout';
 import { DashboardComponent } from './admin-dashboard/dashboard/dashboard';
-import { AnalyticsComponent } from './admin-dashboard/analytics/analytics';
+
 import { AnalyticsFeedingOperationComponent } from './admin-dashboard/analytics-feeding-operation/analytics-feeding-operation';
 import { OverviewDashboard } from './admin-dashboard/overview-dashboard/overview-dashboard';
 import { VolunteerManagement } from './admin-dashboard/volunteer-management/volunteer-management';
@@ -21,10 +21,11 @@ import { AttendanceManagement } from './admin-dashboard/attendance-management/at
 import { PerformanceComponent } from './admin-dashboard/performance/performance';
 import { SmsManagementComponent } from './admin-dashboard/sms-management/sms-management';
 import { RsvpsComponent } from './admin-dashboard/rsvps/rsvps';
-import { BackupRecoveryComponent } from './admin-dashboard/backup-recovery/backup-recovery';
+import { SysadSettingsComponent } from './admin-dashboard/sysad-settings/sysad-settings';
 import { NotFound } from './not-found/not-found';
 import { authGuard } from './guards/auth.guard';
 import { guestGuard } from './guards/guest.guard';
+import { backupAccessGuard } from './guards/backup-access.guard';
 
 export const routes: Routes = [
   { path: '', component: HomeComponent },
@@ -66,7 +67,7 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
       { path: 'analytics/feeding-operation', redirectTo: 'operations', pathMatch: 'full' },
-      { path: 'analytics', component: AnalyticsComponent },
+      { path: 'analytics', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'volunteers', component: VolunteerManagement },
       { path: 'attendance', component: AttendanceManagement },
       { path: 'performance', component: PerformanceComponent },
@@ -79,7 +80,7 @@ export const routes: Routes = [
           import('./incident-command-system/incident-command-system').then((m) => m.IncidentCommandSystemComponent),
         canActivate: [authGuard],
       },
-      { path: 'backup-recovery', component: BackupRecoveryComponent },
+      { path: 'sysad-settings', component: SysadSettingsComponent, canActivate: [backupAccessGuard] },
     ],
   },
   {

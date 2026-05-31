@@ -209,7 +209,16 @@ export class ChatbotService {
     return this.http
       .post<ChatApiResponse>(
         `${this.apiUrl}/chatbot/message`,
-        { message: cleaned, session_id: this.sessionId() },
+        {
+          message: cleaned,
+          session_id: this.sessionId(),
+          context: {
+            user_name: this.authService.currentUser()?.name ?? 'User',
+            user_role: this.authService.currentUser()?.role ?? 'volunteer',
+            app_description:
+              'ServeTrack is a volunteer management system for NLCOM (National Luzon Christian Outreach Ministry). It handles RSVP management for feeding operations, ICS (Incident Command System) org charts, volunteer attendance tracking, team assignments, and operational logistics.',
+          },
+        },
         { withCredentials: true },
       )
       .pipe(

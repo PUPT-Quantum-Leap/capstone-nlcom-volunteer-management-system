@@ -10,6 +10,7 @@ import * as XLSX from 'xlsx';
 interface FeedingOperation {
   id: number;
   team: string;
+  volunteers: string[];
   location: string;
   time: string;
   participants: number;
@@ -152,7 +153,8 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
   private transformApiData(apiData: IcsTeamFeedingOperation[]): FeedingOperation[] {
     return apiData.map((item) => ({
       id: item.id,
-      team: item.team,
+      team: (item as any).parent_team || item.team,
+      volunteers: (item.assigned_volunteers || []).map((v) => v.name),
       location: item.location || '',
       time: item.time || '',
       participants: item.no_of_pax || 0,
@@ -206,11 +208,13 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
   private getGroupedOperations(): Array<{
     team: string;
     departureNote: string;
+    volunteers: string[];
     operations: FeedingOperationRow[];
   }> {
     const teams: Array<{
       team: string;
       departureNote: string;
+      volunteers: string[];
       operations: FeedingOperationRow[];
     }> = [];
 
@@ -225,6 +229,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
           teams.push({
             team: currentTeam!,
             departureNote,
+            volunteers: teamGroup[0]?.volunteers ?? [],
             operations: teamGroup,
           });
         }
@@ -240,6 +245,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
       teams.push({
         team: currentTeam!,
         departureNote,
+        volunteers: teamGroup[0]?.volunteers ?? [],
         operations: teamGroup,
       });
     }
@@ -250,9 +256,13 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
   private exportOperationsToPdf(): void {
     const timestamp = new Date().toISOString().split('T')[0];
     const filename = `feeding-operation-report-${timestamp}.pdf`;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
     const teams = this.getGroupedOperations();
     const tableRows: RowInput[] = [];
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 40;
+    const usableWidth = pageWidth - margin * 2;
+    const fixedColumnsWidth = 100 + 100 + 90 + 60 + 45; // Teams + Volunteers + Location + Time + Pax
     let itemNumber = 1;
     let totalPax = 0;
 
@@ -270,6 +280,14 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
               fillColor: [249, 250, 251],
               halign: 'center',
               valign: 'middle',
+            },
+          });
+          row.push({
+            content: team.volunteers.join(', ') || '—',
+            rowSpan: team.operations.length,
+            styles: {
+              fontSize: 7.5,
+              valign: 'top',
             },
           });
         }
@@ -290,8 +308,9 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
 
     autoTable(pdf, {
       startY: 68,
+      margin: { left: margin, right: margin },
       theme: 'grid',
-      head: [['Team & Time Departure', 'Location', 'Time', 'No. of Pax', 'Details']],
+      head: [['Teams', 'Volunteers', 'Location', 'Time', 'No. of Pax', 'Details']],
       body: tableRows,
       styles: {
         font: 'helvetica',
@@ -309,14 +328,15 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
         halign: 'center',
       },
       columnStyles: {
-        0: { cellWidth: 140 },
-        1: { cellWidth: 115 },
-        2: { cellWidth: 90, halign: 'center' },
-        3: { cellWidth: 55, halign: 'center' },
-        4: { cellWidth: 140 },
+        0: { cellWidth: 100 },   // Teams
+        1: { cellWidth: 100 },   // Volunteers
+        2: { cellWidth: 90 },     // Location
+        3: { cellWidth: 60, halign: 'center' },   // Time
+        4: { cellWidth: 45, halign: 'center' },   // No. of Pax
+        5: { cellWidth: usableWidth - fixedColumnsWidth },  // Details (fills remaining)
       },
       didParseCell: (hookData: any) => {
-        if (hookData.section === 'body' && hookData.column.index === 3) {
+        if (hookData.section === 'body' && hookData.column.index === 4) {
           hookData.cell.styles.fontStyle = 'bold';
           hookData.cell.styles.halign = 'center';
         }
@@ -337,7 +357,7 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
     const sheetRows: (string | number)[][] = [
       [this.operationTitle()],
       [this.operationDate()],
-      ['Team & Time Departure', 'Location', 'Time', 'No. of Pax', 'Details'],
+      ['Teams', 'Volunteers', 'Location', 'Time', 'No. of Pax', 'Details'],
     ];
 
     const merges: XLSX.Range[] = [

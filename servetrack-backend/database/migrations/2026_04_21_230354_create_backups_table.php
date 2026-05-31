@@ -10,21 +10,23 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('backups', function (Blueprint $table) {
-            $table->id();
-            $table->string('name')->unique();
-            $table->string('file_path');
-            $table->unsignedBigInteger('size_bytes');
-            $table->enum('type', ['automatic', 'manual'])->default('manual');
-            $table->enum('status', ['pending', 'in_progress', 'completed', 'failed'])->default('pending');
-            $table->text('description')->nullable();
-            $table->timestamp('completed_at')->nullable();
-            $table->text('error_message')->nullable();
-            $table->timestamps();
+        if (! Schema::hasTable('backups')) {
+            Schema::create('backups', function (Blueprint $table) {
+                $table->id();
+                $table->string('name')->unique();
+                $table->string('file_path');
+                $table->unsignedBigInteger('size_bytes');
+                $table->enum('type', ['automatic', 'manual'])->default('manual');
+                $table->enum('status', ['pending', 'in_progress', 'completed', 'failed'])->default('pending');
+                $table->text('description')->nullable();
+                $table->timestamp('completed_at')->nullable();
+                $table->text('error_message')->nullable();
+                $table->timestamps();
 
-            $table->index(['status', 'created_at']);
-            $table->index('type');
-        });
+                $table->index(['status', 'created_at']);
+                $table->index('type');
+            });
+        }
     }
 
     /**

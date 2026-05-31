@@ -132,6 +132,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | At-Rest Encryption (Laravel Crypt / APP_KEY)
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, backup .sql files are encrypted using Laravel's built-in
+    | Crypt facade (AES-256-CBC) with the APP_KEY from .env. The stored file
+    | extension becomes .sql.enc. Decryption happens transparently on restore.
+    |
+    | Download always streams raw encrypted bytes — zero decryption cost.
+    |
+    */
+    'encryption' => [
+        'enabled' => env('BACKUP_ENCRYPTION', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Require Admin Role
     |--------------------------------------------------------------------------
     |

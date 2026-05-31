@@ -46,12 +46,19 @@ class ChatbotController extends Controller
         ], $jwtSecret, 'HS256');
 
         try {
+            $payload = [
+                'message' => $validated['message'],
+                'sessionId' => $sessionId,
+            ];
+
+            // Forward context from frontend (user name, role, app description)
+            if (! empty($validated['context'])) {
+                $payload['context'] = $validated['context'];
+            }
+
             $response = Http::withToken($jwt)
                 ->timeout(30)
-                ->post($webhookUrl, [
-                    'message' => $validated['message'],
-                    'sessionId' => $sessionId,
-                ]);
+                ->post($webhookUrl, $payload);
 
             if (! $response->successful()) {
                 Log::warning('chatbot.webhook.unsuccessful', [

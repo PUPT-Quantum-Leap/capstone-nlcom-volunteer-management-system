@@ -12,7 +12,7 @@ beforeEach(function (): void {
 
 describe('POST /api/ics', function (): void {
 
-    it('creates ICS and auto-attaches all global teams when team_ids is omitted', function (): void {
+    it('creates ICS record without team rows (teams are seeded on dashboard access)', function (): void {
         $rsvp = Rsvp::factory()->active()->create();
 
         Team::create(['name' => 'Medical Team']);
@@ -28,7 +28,10 @@ describe('POST /api/ics', function (): void {
             ->assertJsonPath('data.rsvp_id', $rsvp->rsvp_id);
 
         $ics = Ics::query()->where('rsvp_id', $rsvp->rsvp_id)->firstOrFail();
-        expect($ics->teams)->toHaveCount(3);
+        // Teams are NOT created at store time — they are seeded by ensureDashboardDefaults()
+        // when the admin first accesses the ICS dashboard for this event.
+        expect($ics->name)->toBe($rsvp->title);
+        expect($ics->status)->toBe('draft');
     });
 
     it('returns the existing ICS instead of creating a duplicate when one already exists for the RSVP', function (): void {
@@ -56,7 +59,7 @@ describe('POST /api/ics', function (): void {
         expect(Ics::query()->where('rsvp_id', $rsvp->rsvp_id)->count())->toBe(1);
     });
 
-    it('respects explicit team_ids when provided', function (): void {
+    it('creates ICS even when team_ids provided (teams are managed by dashboard seeder)', function (): void {
         $rsvp = Rsvp::factory()->active()->create();
 
         $team1 = Team::create(['name' => 'Medical Team']);
@@ -72,7 +75,9 @@ describe('POST /api/ics', function (): void {
             ->assertCreated();
 
         $ics = Ics::query()->where('rsvp_id', $rsvp->rsvp_id)->firstOrFail();
-        expect($ics->teams)->toHaveCount(2);
+        // team_ids param is accepted but teams are seeded on dashboard access, not here
+        expect($ics)->not->toBeNull();
+        expect($ics->rsvp_id)->toBe($rsvp->rsvp_id);
     });
 
     it('rejects unauthenticated requests', function (): void {

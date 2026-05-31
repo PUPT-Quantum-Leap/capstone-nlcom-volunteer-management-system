@@ -67,7 +67,7 @@ import { ChatMessage } from '../../models/chatbot.model';
                 <line x1="16" y1="16" x2="16" y2="16" />
               </svg>
             </div>
-            <h4>Hello! I'm ServeTrack AI Assistant</h4>
+            <h4>Hello! I'm Gotcha!</h4>
             <p>I can help you with questions about NLCOM volunteer programs, RSVP events, attendance tracking, ICS operations, and more.</p>
             <div class="suggestion-chips">
               @for (suggestion of suggestions; track suggestion) {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AuditAction;
 use App\Http\Requests\StoreRsvpRequest;
 use App\Http\Requests\UpdateRsvpRequest;
 use App\Http\Requests\UpdateRsvpResponseRequest;
@@ -10,6 +11,7 @@ use App\Jobs\NotifyVolunteersOfNewRsvp;
 use App\Models\Rsvp;
 use App\Models\RsvpResponse;
 use App\Models\TimeSlot;
+use App\Services\AuditLogger;
 use App\Services\SmsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -112,6 +114,12 @@ class RsvpController extends Controller
             NotifyVolunteersOfNewRsvp::dispatch($rsvp);
         }
 
+        AuditLogger::success(AuditAction::RSVP_CREATED, [
+            'resource_type' => 'rsvp',
+            'resource_id' => $rsvp->rsvp_id,
+            'resource_label' => $rsvp->title,
+        ]);
+
         return (new RsvpResource($rsvp))
             ->response()
             ->setStatusCode(201);
@@ -171,6 +179,12 @@ class RsvpController extends Controller
             }
         });
 
+        AuditLogger::success(AuditAction::RSVP_UPDATED, [
+            'resource_type' => 'rsvp',
+            'resource_id' => $rsvp->rsvp_id,
+            'resource_label' => $rsvp->title,
+        ]);
+
         return new RsvpResource($rsvp->fresh('shifts'));
     }
 
@@ -187,6 +201,12 @@ class RsvpController extends Controller
         }
 
         $rsvp->delete();
+
+        AuditLogger::success(AuditAction::RSVP_DELETED, [
+            'resource_type' => 'rsvp',
+            'resource_id' => $id,
+            'resource_label' => $rsvp->title,
+        ]);
 
         return response()->json(['message' => 'RSVP deleted successfully.']);
     }
@@ -281,6 +301,15 @@ class RsvpController extends Controller
         // Dispatch notifications if transitioning to active for the first time
         if ($newStatus === 'active' && $previousStatus !== 'active') {
             NotifyVolunteersOfNewRsvp::dispatch($rsvp);
+        }
+
+        if ($newStatus === 'closed') {
+            AuditLogger::success(AuditAction::RSVP_CLOSED, [
+                'resource_type' => 'rsvp',
+                'resource_id' => $rsvp->rsvp_id,
+                'resource_label' => $rsvp->title,
+                'description' => "RSVP closed: {$rsvp->title}",
+            ]);
         }
 
         return response()->json(['message' => 'RSVP status updated.', 'status' => $rsvp->status]);
@@ -420,6 +449,13 @@ class RsvpController extends Controller
 
         $response->checkIn();
 
+        AuditLogger::success(AuditAction::ATTENDANCE_CHECKED_IN, [
+            'resource_type' => 'rsvp_response',
+            'resource_id' => $response->rsvp_response_id,
+            'resource_label' => 'RSVP #'.$id,
+            'description' => 'Volunteer #'.$request->volunteer_id.' checked in to RSVP #'.$id,
+        ]);
+
         return response()->json(['success' => true, 'response' => $response]);
     }
 
@@ -444,6 +480,13 @@ class RsvpController extends Controller
         }
 
         $response->checkOut();
+
+        AuditLogger::success(AuditAction::ATTENDANCE_CHECKED_OUT, [
+            'resource_type' => 'rsvp_response',
+            'resource_id' => $response->rsvp_response_id,
+            'resource_label' => 'RSVP #'.$id,
+            'description' => 'Volunteer #'.$request->volunteer_id.' checked out of RSVP #'.$id,
+        ]);
 
         return response()->json(['success' => true, 'response' => $response]);
     }

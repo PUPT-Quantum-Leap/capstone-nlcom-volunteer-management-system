@@ -20,6 +20,12 @@ class Backup extends Model
         'error_message',
     ];
 
+    protected $appends = [
+        'size_formatted',
+        'status_formatted',
+        'type_formatted',
+    ];
+
     protected $casts = [
         'size_bytes' => 'integer',
         'completed_at' => 'datetime',
@@ -32,11 +38,11 @@ class Backup extends Model
         $bytes = $this->size_bytes;
         $units = ['B', 'KB', 'MB', 'GB'];
 
-        for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+        for ($i = 0; $bytes >= 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
 
-        return round($bytes, 1).' '.$units[$i];
+        return number_format($bytes, 1).' '.$units[$i];
     }
 
     public function getStatusFormattedAttribute(): string

@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy, ElementRef, viewChild } from '@angular/core';
+import { Component, inject, input, signal, ChangeDetectionStrategy, ElementRef, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -22,6 +22,9 @@ import {
   },
 })
 export class UserBadgeComponent {
+  /** When true, displays user info only — no dropdown, no chevron, no interactions */
+  readonly = input(false);
+
   private authService = inject(AuthService);
   private router = inject(Router);
   private triggerButton: HTMLElement | null = null;
@@ -114,7 +117,7 @@ export class UserBadgeComponent {
 
     const roleMap: Record<string, string> = {
       volunteer: 'Volunteer',
-      admin: 'Administrator',
+      admin: 'Admin',
       coordinator: 'Coordinator',
     };
 
