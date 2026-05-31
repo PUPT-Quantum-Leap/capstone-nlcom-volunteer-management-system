@@ -352,7 +352,8 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
     this.isLoginLoading.set(true);
     this.loginErrorMessage.set(null);
     try {
-      const { redirect_url } = await firstValueFrom(this.authService.getGoogleAuthUrl$());
+      const { redirect_url, state } = await firstValueFrom(this.authService.getGoogleAuthUrl$());
+      sessionStorage.setItem('google_oauth_state', state);
       window.location.href = redirect_url;
       // intentionally do not reset isLoginLoading — page is navigating away
     } catch {

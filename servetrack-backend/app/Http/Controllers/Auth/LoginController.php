@@ -165,9 +165,6 @@ class LoginController extends Controller
         }
 
         $state = bin2hex(random_bytes(32));
-        if ($request->hasSession()) {
-            $request->session()->put('google_oauth_state', $state);
-        }
 
         $params = http_build_query([
             'client_id' => $clientId,
@@ -177,7 +174,13 @@ class LoginController extends Controller
             'state' => $state,
         ]);
 
-        return response()->json(['redirect_url' => "https://accounts.google.com/o/oauth2/v2/auth?{$params}"]);
+        // Return state to the frontend — it stores it in sessionStorage and
+        // sends it back with the callback request. This avoids cross-domain
+        // session issues when the frontend and backend are on different origins.
+        return response()->json([
+            'redirect_url' => "https://accounts.google.com/o/oauth2/v2/auth?{$params}",
+            'state' => $state,
+        ]);
     }
 
     /**
@@ -186,18 +189,16 @@ class LoginController extends Controller
     public function handleGoogleCallback(Request $request, OAuthService $oauthService): JsonResponse
     {
         $code = $request->query('code');
-        $state = $request->query('state');
+        $incomingState = $request->query('state');
+        // Frontend sends back the state it stored in sessionStorage
+        $expectedState = $request->query('expected_state');
 
-        $storedState = $request->hasSession()
-            ? $request->session()->get('google_oauth_state')
-            : null;
-
-        if (! is_string($state) || ! is_string($storedState) || ! hash_equals($storedState, $state)) {
+        if (
+            ! is_string($incomingState)
+            || ! is_string($expectedState)
+            || ! hash_equals($expectedState, $incomingState)
+        ) {
             return response()->json(['message' => 'Invalid OAuth state.'], 400);
-        }
-
-        if ($request->hasSession()) {
-            $request->session()->forget('google_oauth_state');
         }
 
         if (! $code) {
