@@ -137,11 +137,11 @@ export class AuthService {
   /**
    * Get Google OAuth redirect URL.
    */
-  getGoogleAuthUrl$(): Observable<{ redirect_url: string }> {
+  getGoogleAuthUrl$(): Observable<{ redirect_url: string; state: string }> {
     this.error.set(null);
 
     return this.http
-      .get<{ redirect_url: string }>(`${environment.apiUrl}/auth/google`, { withCredentials: true })
+      .get<{ redirect_url: string; state: string }>(`${environment.apiUrl}/auth/google`, { withCredentials: true })
       .pipe(
         catchError((err: HttpErrorResponse) => {
           const message =
@@ -158,10 +158,13 @@ export class AuthService {
     this.isLoading.set(true);
     this.error.set(null);
 
+    const expectedState = sessionStorage.getItem('google_oauth_state') ?? '';
+    sessionStorage.removeItem('google_oauth_state');
+
     return this.http
       .get<{ user?: AuthResponse['user']; message?: string }>(
         `${environment.apiUrl}/auth/google/callback`,
-        { params: { code, state }, withCredentials: true },
+        { params: { code, state, expected_state: expectedState }, withCredentials: true },
       )
       .pipe(
         map((response) => {
