@@ -13,7 +13,7 @@ import { AttendanceComponent } from './volunteer-dashboard/attendance/attendance
 import { PollsComponent } from './volunteer-dashboard/polls/polls';
 import { AdminLayout } from './admin-dashboard/admin-layout/admin-layout';
 import { DashboardComponent } from './admin-dashboard/dashboard/dashboard';
-import { AnalyticsComponent } from './admin-dashboard/analytics/analytics';
+
 import { AnalyticsFeedingOperationComponent } from './admin-dashboard/analytics-feeding-operation/analytics-feeding-operation';
 import { OverviewDashboard } from './admin-dashboard/overview-dashboard/overview-dashboard';
 import { VolunteerManagement } from './admin-dashboard/volunteer-management/volunteer-management';
@@ -67,7 +67,7 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: DashboardComponent },
       { path: 'analytics/feeding-operation', redirectTo: 'operations', pathMatch: 'full' },
-      { path: 'analytics', component: AnalyticsComponent },
+      { path: 'analytics', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'volunteers', component: VolunteerManagement },
       { path: 'attendance', component: AttendanceManagement },
       { path: 'performance', component: PerformanceComponent },
