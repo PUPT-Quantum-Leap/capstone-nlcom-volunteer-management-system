@@ -13,6 +13,8 @@ import {
   AdminDashboardService,
   DashboardVolunteerRow,
 } from '../../services/admin-dashboard.service';
+import { AnalyticsService, ReportData } from '../../services/analytics.service';
+import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
 import { NotificationItem } from '../../models/notification-item';
 import { PerformanceMetric } from '../../models/performance-metric';
 import { Rsvp } from '../../models/rsvp';
@@ -31,12 +33,13 @@ interface DashboardEventRow {
 @Component({
   selector: 'app-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, CustomSelect],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
 export class DashboardComponent {
   private readonly adminDashboardService = inject(AdminDashboardService);
+  private readonly analyticsService = inject(AnalyticsService);
   private readonly rsvpService = inject(RsvpService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
@@ -52,6 +55,116 @@ export class DashboardComponent {
   readonly upcomingEvents = signal(0);
   readonly completedMissions = signal(0);
   readonly currentTime = signal(new Date());
+
+  readonly reportData = signal<ReportData | null>(null);
+  readonly dateRangeFilter = signal<'all' | 'month' | 'quarter' | 'year'>('all');
+
+  readonly dateRangeOptions: SelectOption<'all' | 'month' | 'quarter' | 'year'>[] = [
+    { label: 'All Time', value: 'all' },
+    { label: 'This Month', value: 'month' },
+    { label: 'This Quarter', value: 'quarter' },
+    { label: 'This Year', value: 'year' },
+  ];
+
+  readonly paginatedSkills = computed(() => {
+    const data = this.reportData()?.skillsDistribution.skills ?? [];
+    return data.filter(skill => skill.count > 0);
+  });
+
+  readonly maxSkillCount = computed(() => {
+    const skills = this.reportData()?.skillsDistribution.skills ?? [];
+    return Math.max(...skills.map(s => s.count), 1);
+  });
+
+  // --- Pie Chart (Department Breakdown) ---
+  private readonly pieColors = [
+    '#3b82f6', '#22c55e', '#f97316', '#9333ea',
+    '#ef4444', '#14b8a6', '#eab308', '#ec4899',
+    '#6366f1', '#84cc16', '#06b6d4', '#d946ef',
+  ];
+
+  readonly totalDepartmentCount = computed(() => {
+    return this.reportData()?.departmentBreakdown.reduce((sum, d) => sum + d.count, 0) ?? 0;
+  });
+
+  readonly departmentChartSlices = computed(() => {
+    const data = this.reportData()?.departmentBreakdown ?? [];
+    const total = this.totalDepartmentCount();
+    if (total === 0) return [];
+
+    const sorted = [...data].sort((a, b) => b.count - a.count);
+    const cols = 3;
+    const columns: (typeof sorted)[] = [[], [], []];
+    let remaining = [...sorted];
+    for (let c = 0; c < cols; c++) {
+      const size = Math.ceil(remaining.length / (cols - c));
+      columns[c] = remaining.slice(0, size);
+      remaining = remaining.slice(size);
+    }
+    const maxRows = Math.max(...columns.map(c => c.length));
+    const rowOrdered: typeof sorted = [];
+    for (let r = 0; r < maxRows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if (r < columns[c].length) rowOrdered.push(columns[c][r]);
+      }
+    }
+
+    const cx = 100, cy = 100, r = 85;
+    let currentAngle = -Math.PI / 2;
+
+    return rowOrdered.map((dept, i) => {
+      const sliceAngle = (dept.count / total) * 2 * Math.PI;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + sliceAngle;
+
+      const x1 = cx + r * Math.cos(startAngle);
+      const y1 = cy + r * Math.sin(startAngle);
+      const x2 = cx + r * Math.cos(endAngle);
+      const y2 = cy + r * Math.sin(endAngle);
+
+      const largeArc = sliceAngle > Math.PI ? 1 : 0;
+      const path = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+
+      currentAngle = endAngle;
+
+      return {
+        path,
+        color: this.pieColors[i % this.pieColors.length],
+        name: dept.name,
+        count: dept.count,
+        percentage: dept.percentage,
+      };
+    });
+  });
+
+  // --- Bar Chart (Skills Distribution) ---
+  readonly skillBarPositions = computed(() => {
+    const skills = this.paginatedSkills();
+    const maxCount = this.maxSkillCount();
+    const count = skills.length;
+    if (count === 0 || maxCount === 0) return [];
+
+    const padding = { top: 20, bottom: 50, left: 30, right: 20 };
+    const chartW = 800, chartH = 250;
+    const availableW = chartW - padding.left - padding.right;
+    const barAreaW = availableW / count;
+    const barW = Math.max(20, barAreaW * 0.6);
+    const maxBarH = chartH - padding.top - padding.bottom;
+
+    return skills.map((skill, i) => {
+      const x = padding.left + i * barAreaW + (barAreaW - barW) / 2;
+      const h = (skill.count / maxCount) * maxBarH;
+      const y = padding.top + maxBarH - h;
+      return {
+        x: Math.round(x),
+        y: Math.round(y),
+        width: Math.round(barW),
+        height: Math.round(h),
+        label: skill.name,
+        count: skill.count,
+      };
+    });
+  });
 
   readonly currentDateLabel = computed(() =>
     new Intl.DateTimeFormat('en-US', {
@@ -97,6 +210,12 @@ export class DashboardComponent {
     return Math.round((this.completedMissions() / denominator) * 100);
   });
 
+  readonly activeUpcomingCount = computed(() => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    return this.rsvps().filter(r => r.status === 'active' && r.date >= todayStr).length;
+  });
+
   readonly nextEvents = computed<DashboardEventRow[]>(() => {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -125,15 +244,39 @@ export class DashboardComponent {
       .slice(0, 3);
   });
 
-  readonly upcomingEventRows = computed(() =>
-    this.nextEvents().map((event) => ({
-      id: event.id,
-      title: event.title,
-      dateLabel: event.dateLabel,
-      responses: event.totalResponses,
-      status: event.status,
-    })),
-  );
+  readonly allIncomingEvents = computed(() => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    return this.rsvps()
+      .filter(r => r.status === 'active' && r.date >= todayStr)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(event => {
+        const parsed = this.safeDate(event.date);
+        const month = parsed
+          ? parsed.toLocaleString('en-US', { month: 'short' }).toUpperCase()
+          : '';
+        const day = parsed ? parsed.getDate() : 0;
+        const year = parsed ? parsed.getFullYear() : 0;
+        const dateLabel = parsed
+          ? parsed.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+          : event.date;
+        const firstShift = event.shifts[0];
+        return {
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          dateLabel,
+          month,
+          day,
+          year,
+          timeSlot: firstShift?.timeSlot ?? '',
+          location: event.eventLocation ?? firstShift?.text ?? '',
+          responses: event.totalResponses,
+          status: event.status,
+        };
+      });
+  });
 
   readonly topVolunteers = computed(() =>
     [...this.volunteers()]
@@ -168,6 +311,7 @@ export class DashboardComponent {
   constructor() {
     this.loadDashboardData();
     this.loadRsvps();
+    this.loadAnalyticsData();
     this.startClock();
   }
 
@@ -183,16 +327,30 @@ export class DashboardComponent {
     this.adminDashboardService
       .getDashboardData()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((response) => {
-        if (response.success && response.data) {
-          this.totalVolunteers.set(response.data.stats.totalVolunteers);
-          this.activeVolunteers.set(response.data.stats.activeVolunteers);
-          this.upcomingEvents.set(response.data.stats.upcomingEvents);
-          this.completedMissions.set(response.data.stats.completedMissions);
-          this.notifications.set(response.data.notifications ?? []);
-          this.volunteers.set(response.data.volunteers ?? []);
-          this.performanceMetrics.set(response.data.performanceMetrics ?? []);
-        } else {
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.totalVolunteers.set(response.data.stats.totalVolunteers);
+            this.activeVolunteers.set(response.data.stats.activeVolunteers);
+            this.upcomingEvents.set(response.data.stats.upcomingEvents);
+            this.completedMissions.set(response.data.stats.completedMissions);
+            this.notifications.set(response.data.notifications ?? []);
+            this.volunteers.set(response.data.volunteers ?? []);
+            this.performanceMetrics.set(response.data.performanceMetrics ?? []);
+          } else {
+            this.notifications.set([]);
+            this.volunteers.set([]);
+            this.performanceMetrics.set([]);
+            this.totalVolunteers.set(0);
+            this.activeVolunteers.set(0);
+            this.upcomingEvents.set(0);
+            this.completedMissions.set(0);
+          }
+
+          this.isLoading.set(false);
+        },
+        error: (error: Error) => {
+          console.error('Error loading dashboard data:', error);
           this.notifications.set([]);
           this.volunteers.set([]);
           this.performanceMetrics.set([]);
@@ -200,9 +358,8 @@ export class DashboardComponent {
           this.activeVolunteers.set(0);
           this.upcomingEvents.set(0);
           this.completedMissions.set(0);
-        }
-
-        this.isLoading.set(false);
+          this.isLoading.set(false);
+        },
       });
   }
 
@@ -244,4 +401,27 @@ export class DashboardComponent {
     const parsed = new Date(value);
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   }
+
+  private loadAnalyticsData(): void {
+    const dateRange = this.dateRangeFilter();
+    this.analyticsService
+      .getReportData(dateRange)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.reportData.set(response.data);
+          }
+        },
+        error: () => {
+          console.error('Failed to load analytics data.');
+        },
+      });
+  }
+
+  setDateRange(range: 'all' | 'month' | 'quarter' | 'year'): void {
+    this.dateRangeFilter.set(range);
+    this.loadAnalyticsData();
+  }
+
 }
