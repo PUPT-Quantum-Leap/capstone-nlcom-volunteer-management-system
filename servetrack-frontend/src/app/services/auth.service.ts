@@ -161,34 +161,35 @@ export class AuthService {
     const expectedState = sessionStorage.getItem('google_oauth_state') ?? '';
     sessionStorage.removeItem('google_oauth_state');
 
-    return this.http
-      .get<{ user?: AuthResponse['user']; message?: string }>(
-        `${environment.apiUrl}/auth/google/callback`,
-        { params: { code, state, expected_state: expectedState }, withCredentials: true },
-      )
-      .pipe(
-        map((response) => {
-          if (response.user) {
-            return { success: true, user: response.user } as AuthResponse;
-          }
+    return this.ensureCsrf$().pipe(
+      switchMap(() =>
+        this.http.get<{ user?: AuthResponse['user']; message?: string }>(
+          `${environment.apiUrl}/auth/google/callback`,
+          { params: { code, state, expected_state: expectedState }, withCredentials: true },
+        ),
+      ),
+      map((response) => {
+        if (response.user) {
+          return { success: true, user: response.user } as AuthResponse;
+        }
 
-          return { success: false, message: response.message || 'Google authentication failed.' } as AuthResponse;
-        }),
-        tap((response) => {
-          if (response.user) {
-            this.isAuthenticated.set(true);
-            this.currentUser.set(response.user);
-            localStorage.setItem('has_session', 'true');
-          }
-        }),
-        catchError((err: HttpErrorResponse) => {
-          const message =
-            typeof err.error?.message === 'string' ? err.error.message : 'Google authentication failed.';
-          this.error.set(message);
-          return of({ success: false, message } as AuthResponse);
-        }),
-        tap(() => this.isLoading.set(false)),
-      );
+        return { success: false, message: response.message || 'Google authentication failed.' } as AuthResponse;
+      }),
+      tap((response) => {
+        if (response.user) {
+          this.isAuthenticated.set(true);
+          this.currentUser.set(response.user);
+          localStorage.setItem('has_session', 'true');
+        }
+      }),
+      catchError((err: HttpErrorResponse) => {
+        const message =
+          typeof err.error?.message === 'string' ? err.error.message : 'Google authentication failed.';
+        this.error.set(message);
+        return of({ success: false, message } as AuthResponse);
+      }),
+      tap(() => this.isLoading.set(false)),
+    );
   }
 
   completeProfile$(data: Record<string, unknown>): Observable<AuthResponse> {
