@@ -57,27 +57,25 @@ export class PollsComponent implements OnInit {
   hasData = signal(false);
   pollError = signal<string | null>(null);
 
-  // Pagination
-  currentPage = signal(1);
+  // Dual-tab Pagination
+  activePage = signal(1);
+  pastPage = signal(1);
   pageSize = 6;
 
-  totalPages = computed(() => Math.max(1, Math.ceil(this.pastPolls().length / this.pageSize)));
-
-  paginatedPastPolls = computed(() => {
-    const start = (this.currentPage() - 1) * this.pageSize;
-    return this.pastPolls().slice(start, start + this.pageSize);
+  // --- Active Polls Pagination ---
+  activeTotalPages = computed(() => Math.max(1, Math.ceil(this.activePolls().length / this.pageSize)));
+  paginatedActivePolls = computed(() => {
+    const start = (this.activePage() - 1) * this.pageSize;
+    return this.activePolls().slice(start, start + this.pageSize);
   });
-
-  visiblePages = computed(() => {
-    const total = this.totalPages();
-    const current = this.currentPage();
+  activeVisiblePages = computed(() => {
+    const total = this.activeTotalPages();
+    const current = this.activePage();
     const pages: (number | 'ellipsis')[] = [];
-
     if (total <= 5) {
       for (let i = 1; i <= total; i++) pages.push(i);
       return pages;
     }
-
     pages.push(1);
     if (current > 3) pages.push('ellipsis');
     const start = Math.max(2, current - 1);
@@ -85,12 +83,37 @@ export class PollsComponent implements OnInit {
     for (let i = start; i <= end; i++) pages.push(i);
     if (current < total - 2) pages.push('ellipsis');
     pages.push(total);
-
     return pages;
   });
+  activePollsStart = computed(() => (this.activePage() - 1) * this.pageSize + 1);
+  activePollsEnd = computed(() => Math.min(this.activePage() * this.pageSize, this.activePolls().length));
+  activePollsTotal = computed(() => this.activePolls().length);
 
-  pastPollsStart = computed(() => (this.currentPage() - 1) * this.pageSize + 1);
-  pastPollsEnd = computed(() => Math.min(this.currentPage() * this.pageSize, this.pastPolls().length));
+  // --- Past Polls Pagination ---
+  pastTotalPages = computed(() => Math.max(1, Math.ceil(this.pastPolls().length / this.pageSize)));
+  paginatedPastPolls = computed(() => {
+    const start = (this.pastPage() - 1) * this.pageSize;
+    return this.pastPolls().slice(start, start + this.pageSize);
+  });
+  pastVisiblePages = computed(() => {
+    const total = this.pastTotalPages();
+    const current = this.pastPage();
+    const pages: (number | 'ellipsis')[] = [];
+    if (total <= 5) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+      return pages;
+    }
+    pages.push(1);
+    if (current > 3) pages.push('ellipsis');
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (current < total - 2) pages.push('ellipsis');
+    pages.push(total);
+    return pages;
+  });
+  pastPollsStart = computed(() => (this.pastPage() - 1) * this.pageSize + 1);
+  pastPollsEnd = computed(() => Math.min(this.pastPage() * this.pageSize, this.pastPolls().length));
   pastPollsTotal = computed(() => this.pastPolls().length);
 
   hasSubmittedVote = signal(false);
@@ -198,20 +221,33 @@ export class PollsComponent implements OnInit {
   setPollTab(tab: 'active' | 'past'): void {
     this.pollTab.set(tab);
     this.selectedPastPoll.set(null);
-    this.currentPage.set(1);
+    if (tab === 'active') {
+      this.activePage.set(1);
+    } else {
+      this.pastPage.set(1);
+    }
   }
 
   goToPage(page: number): void {
-    if (page < 1 || page > this.totalPages()) return;
-    this.currentPage.set(page);
+    if (this.pollTab() === 'active') {
+      if (page < 1 || page > this.activeTotalPages()) return;
+      this.activePage.set(page);
+    } else {
+      if (page < 1 || page > this.pastTotalPages()) return;
+      this.pastPage.set(page);
+    }
   }
 
   nextPage(): void {
-    this.goToPage(this.currentPage() + 1);
+    this.goToPage(
+      this.pollTab() === 'active' ? this.activePage() + 1 : this.pastPage() + 1
+    );
   }
 
   prevPage(): void {
-    this.goToPage(this.currentPage() - 1);
+    this.goToPage(
+      this.pollTab() === 'active' ? this.activePage() - 1 : this.pastPage() - 1
+    );
   }
 
   selectActivePoll(poll: Poll): void {
