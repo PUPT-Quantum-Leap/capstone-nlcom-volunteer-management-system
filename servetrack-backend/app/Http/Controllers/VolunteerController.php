@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Constants\TokenAbilities;
 use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\CompleteVolunteerProfileRequest;
 use App\Http\Requests\UpdateProfilePhotoRequest;
 use App\Http\Requests\UpdateVolunteerProfileRequest;
 use App\Http\Resources\ProfileChangeLogResource;
@@ -213,57 +214,12 @@ class VolunteerController extends Controller
     /**
      * Complete the volunteer profile for SSO users who signed up via Google.
      */
-    public function completeProfile(Request $request): JsonResponse
+    public function completeProfile(CompleteVolunteerProfileRequest $request): JsonResponse
     {
         $user = $request->user();
 
-        if ($user->role !== 'volunteer') {
-            return response()->json(['success' => false, 'message' => 'Forbidden.'], 403);
-        }
-
-        if ($user->volunteer !== null) {
-            return response()->json(['success' => false, 'message' => 'Profile already completed.'], 409);
-        }
-
-        // Clean phone numbers before validation
-        if ($request->has('mobileNumber')) {
-            $request->merge(['mobileNumber' => preg_replace('/[\s\-()]/', '', $request->mobileNumber)]);
-        }
-        if ($request->has('emergencyContactNumber')) {
-            $request->merge(['emergencyContactNumber' => preg_replace('/[\s\-()]/', '', $request->emergencyContactNumber)]);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'firstName' => 'required|string|min:2|max:50',
-            'lastName' => 'required|string|min:2|max:50',
-            'mobileNumber' => 'required|string|min:10|max:15',
-            'birthdate' => 'required|date|before:today',
-            'completeAddress' => 'required|string|min:10|max:255',
-            'lastMedicalExam' => 'required|date|before_or_equal:today',
-            'gender' => 'nullable|string|in:boy,girl,male,female',
-            'educationalAttainment' => 'required|string|max:100',
-            'trainingExperience' => 'nullable|string',
-            'skillsHobbies' => 'nullable|string',
-            'classesTraining' => 'nullable|string',
-            'volunteerPreference' => 'required|string',
-            'otherPreference' => 'nullable|string',
-            'availability' => 'required|string',
-            'otherAvailability' => 'nullable|string',
-            'partOfLifegroup' => 'required|string|in:yes,no',
-            'lifegroupLeaderName' => 'nullable|required_if:partOfLifegroup,yes|string|max:100',
-            'leadingLifegroup' => 'required|string|in:yes,no',
-            'emergencyContactName' => 'required|string|max:100',
-            'emergencyContactNumber' => 'required|string|min:10|max:15',
-            'emergencyContactRelationship' => 'required|string|max:50',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'message' => 'Validation failed', 'errors' => $validator->errors()], 422);
-        }
-
         DB::beginTransaction();
         try {
-            $nameParts = explode(' ', $user->name, 2);
             $firstName = $request->firstName;
             $lastName = $request->lastName;
 

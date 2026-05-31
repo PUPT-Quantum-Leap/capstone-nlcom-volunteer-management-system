@@ -10,8 +10,9 @@ class OAuthService
      * Find or create a User from an OAuth provider.
      *
      * Returns [User $user, bool $needsProfileCompletion].
+     * Returns [null, false] if the email is already linked to a different provider.
      *
-     * @return array{0: User, 1: bool}
+     * @return array{0: User|null, 1: bool}
      */
     public function findOrCreateFromProvider(
         string $provider,
@@ -28,11 +29,18 @@ class OAuthService
             return [$user, $user->volunteer === null];
         }
 
-        // 2. Look up by email (existing volunteer account) — attach provider
+        // 2. Look up by email (existing volunteer account) — attach provider only if not yet linked
         $user = User::where('email', $email)->where('role', 'volunteer')->first();
 
         if ($user) {
-            $user->update(['provider' => $provider, 'provider_id' => $providerId]);
+            if ($user->provider !== null && ($user->provider !== $provider || $user->provider_id !== $providerId)) {
+                // Account already linked to a different provider — reject
+                return [null, false];
+            }
+
+            if ($user->provider === null) {
+                $user->update(['provider' => $provider, 'provider_id' => $providerId]);
+            }
 
             return [$user, $user->volunteer === null];
         }
