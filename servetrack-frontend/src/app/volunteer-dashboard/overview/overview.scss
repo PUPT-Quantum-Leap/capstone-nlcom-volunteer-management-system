@@ -262,7 +262,8 @@
     transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  &.most-voted {
+  &.most-voted,
+  &.user-voted {
     .opt-val { color: #10b981; }
     .fill { background: linear-gradient(90deg, #10b981, #059669); }
   }

@@ -91,7 +91,11 @@
 
           <div class="results-preview">
             @for (option of poll.options; track option.id) {
-              <div class="result-row" [class.most-voted]="isMostVoted(option, poll)">
+              <div
+                class="result-row"
+                [class.user-voted]="isUserVotedOption(option, poll)"
+                [class.most-voted]="!poll.userVote && isMostVoted(option, poll)"
+              >
                 <div class="result-labels">
                   <span class="opt-text">{{ option.timeSlot }}</span>
                   <span class="opt-val">{{ getVotePercentage(option, poll) }}%</span>
