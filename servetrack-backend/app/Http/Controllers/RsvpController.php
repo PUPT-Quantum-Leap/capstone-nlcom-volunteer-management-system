@@ -44,8 +44,15 @@ class RsvpController extends Controller
             ->withCount('responses');
 
         if ($request->user()->role !== 'admin') {
-            // Volunteers see: all active RSVPs + all closed RSVPs
-            $query->whereIn('status', ['active', 'closed']);
+            // Volunteers see: all active RSVPs + closed RSVPs from the past 7 days
+            $sevenDaysAgo = now()->subDays(7)->toDateString();
+            $query->where(function ($sub) use ($sevenDaysAgo) {
+                $sub->where('status', 'active')
+                    ->orWhere(function ($q) use ($sevenDaysAgo) {
+                        $q->where('status', 'closed')
+                            ->where('cutoff_day', '>=', $sevenDaysAgo);
+                    });
+            });
         }
 
         $perPage = $request->integer('per_page', 15);
