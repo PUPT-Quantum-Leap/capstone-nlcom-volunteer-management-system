@@ -15,7 +15,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Attendance, AttendanceStats } from '../../models/attendance';
-import { Rsvp } from '../../models/rsvp';
+import { Rsvp, UserVote } from '../../models/rsvp';
 import { VolunteerProfileResponse } from '../../models/volunteer-profile';
 
 interface PollOption {
@@ -33,6 +33,7 @@ interface Poll {
   cutOffDay?: string;
   status: 'draft' | 'active' | 'closed';
   options: PollOption[];
+  userVote?: UserVote | null;
 }
 
 @Component({
@@ -142,6 +143,7 @@ export class OverviewComponent implements OnInit {
             capacity: s.capacity,
             votes: s.responses,
           })),
+          userVote: active.userVote,
         });
         this.hasSubmittedVote.set(!!active.userVote);
       }
@@ -211,6 +213,7 @@ export class OverviewComponent implements OnInit {
                 capacity: s.capacity,
                 votes: s.responses,
               })),
+              userVote: active.userVote,
             });
             this.hasSubmittedVote.set(!!active.userVote);
           }
@@ -266,6 +269,10 @@ export class OverviewComponent implements OnInit {
   isMostVoted(option: PollOption, poll: Poll): boolean {
     const mostVoted = this.getMostVotedOption(poll);
     return mostVoted ? option.id === mostVoted.id : false;
+  }
+
+  isUserVotedOption(option: PollOption, poll: Poll): boolean {
+    return poll.userVote?.timeSlotId === option.id;
   }
 
   navigateToPolls(): void {
