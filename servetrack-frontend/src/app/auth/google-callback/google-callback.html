@@ -1,0 +1,13 @@
+<div class="callback-container">
+  @if (errorMessage()) {
+    <div class="callback-error">
+      <p>{{ errorMessage() }}</p>
+      <a routerLink="/volunteer-auth">Back to login</a>
+    </div>
+  } @else {
+    <div class="callback-loading">
+      <div class="spinner"></div>
+      <p>Signing you in...</p>
+    </div>
+  }
+</div>

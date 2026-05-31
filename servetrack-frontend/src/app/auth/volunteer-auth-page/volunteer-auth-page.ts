@@ -347,6 +347,15 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
   }
 
   // ─── Login Logic ──────────────────────────────────────────────────────────
+  async loginWithGoogle(): Promise<void> {
+    try {
+      const { redirect_url } = await firstValueFrom(this.authService.getGoogleAuthUrl$());
+      window.location.href = redirect_url;
+    } catch {
+      this.loginErrorMessage.set('Failed to initialize Google login. Please try again.');
+    }
+  }
+
   async onLoginSubmit(): Promise<void> {
     if (this.isLoginLoading() || this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
