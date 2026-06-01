@@ -9,7 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RsvpService } from '../services/rsvp.service';
@@ -20,7 +20,7 @@ import { UserBadgeComponent } from '../components/user-badge/user-badge.componen
 @Component({
   selector: 'app-rsvp',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, UserBadgeComponent, RouterLink],
+  imports: [CommonModule, UserBadgeComponent],
   templateUrl: './rsvp.html',
   styleUrl: './rsvp-styles.scss',
 })

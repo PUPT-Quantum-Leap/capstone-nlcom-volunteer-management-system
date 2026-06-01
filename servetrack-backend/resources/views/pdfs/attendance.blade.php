@@ -133,7 +133,7 @@
                 </td>
                 <td>{{ $record['time_slot'] ?: '—' }}</td>
                 <td style="text-align: center;">
-                    @if ($record['attendance_status'] === 'checked_in')
+                    @if ($record['attendance_status'] !== 'no_show')
                         <span class="status status-present">Present</span>
                     @else
                         <span class="status status-absent">Absent</span>

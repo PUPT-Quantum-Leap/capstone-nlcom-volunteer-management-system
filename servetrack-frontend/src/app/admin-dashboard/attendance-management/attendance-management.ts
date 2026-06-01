@@ -15,6 +15,9 @@ import { VolunteerUser } from '../../models/user';
 import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
 import { GlobalSearchService } from '../../services/global-search.service';
 import { environment } from '../../../environments/environment';
+import { Rsvp } from '../../models/rsvp';
+import { RsvpService } from '../../services/rsvp.service';
+
 
 interface AttendanceRecord {
   id: number; // rsvp_response_id
@@ -49,11 +52,11 @@ export class AttendanceManagement implements OnInit {
   protected readonly Math = Math;
   private adminDashboardService = inject(AdminDashboardService);
   private globalSearchService = inject(GlobalSearchService);
+  private rsvpService = inject(RsvpService);
 
   // Dropdown Options
-  viewOptions: SelectOption<'calendar' | 'history' | 'photos'>[] = [
-    { label: 'Calendar View', value: 'calendar' },
-    { label: 'Attendance Confirmation', value: 'history' },
+  viewOptions: SelectOption<'events' | 'photos'>[] = [
+    { label: 'RSVP Events', value: 'events' },
     { label: 'Attendance Upload', value: 'photos' }
   ];
 
@@ -66,33 +69,54 @@ export class AttendanceManagement implements OnInit {
   showSnackbar = output<{ message: string; type: 'success' | 'error' | 'info' }>();
 
   // View state
-  attendanceView = signal<'calendar' | 'history' | 'photos'>('calendar');
+  attendanceView = signal<'events' | 'photos'>('events');
   attendancePage = signal(1);
   attendancePerPage = signal(5);
   attendanceSearchQuery = this.globalSearchService.searchQuery;
-  attendanceDateFilter = signal(new Date().toISOString().split('T')[0]);
-  selectedEventFilter = signal<number>(0);
+  selectedRsvp = signal<Rsvp | null>(null);
+  rsvps = signal<Rsvp[]>([]);
+  rsvpDateFilter = signal<string>('');
+  filteredRsvps = computed(() => {
+    const list = this.rsvps();
+    const search = this.attendanceSearchQuery().toLowerCase().trim();
+    const dateFilter = this.rsvpDateFilter();
 
-  eventsOptions = computed(() => {
-    let records = this.attendanceRecords();
-    
-    // In calendar view, only show events for the selected date
-    if (this.attendanceView() === 'calendar') {
-      const selectedDate = this.attendanceDateFilter();
-      records = records.filter((r) => r.rsvp_date === selectedDate);
+    let filtered = list;
+
+    if (dateFilter) {
+      filtered = filtered.filter((event) => this.formatAsYmd(event.date) === dateFilter);
     }
 
-    const uniqueEvents = new Map<number, string>();
-    records.forEach((r) => {
-      if (r.rsvp_id && r.rsvp_title) {
-        uniqueEvents.set(r.rsvp_id, r.rsvp_title);
-      }
-    });
-    const options: SelectOption<number>[] = [{ label: 'All Events', value: 0 }];
-    uniqueEvents.forEach((title, id) => {
-      options.push({ label: title, value: id });
-    });
-    return options;
+    if (!search) {
+      return filtered;
+    }
+
+    return filtered.filter(
+      (event) =>
+        event.title.toLowerCase().includes(search) ||
+        (event.eventLocation && event.eventLocation.toLowerCase().includes(search))
+    );
+  });
+  rsvpPage = signal(1);
+  rsvpPerPage = signal(10);
+
+  paginatedRsvpsList = computed(() => {
+    const list = this.filteredRsvps();
+    const page = this.rsvpPage();
+    const perPage = this.rsvpPerPage();
+    const start = (page - 1) * perPage;
+    const end = start + perPage;
+    return list.slice(start, end);
+  });
+
+  rsvpTotalPages = computed(() =>
+    Math.ceil(this.filteredRsvps().length / this.rsvpPerPage()),
+  );
+  attendeeFilter = signal<'all' | 'present' | 'absent'>('all');
+
+  attendanceRate = computed(() => {
+    const total = this.totalAttendanceCount();
+    return total > 0 ? Math.round((this.presentCount() / total) * 100) : 0;
   });
 
   // Loading state
@@ -102,7 +126,6 @@ export class AttendanceManagement implements OnInit {
   showAssignVolunteerModal = signal(false);
   showPhotoUploadModal = signal(false);
   showAttendanceDetailsModal = signal(false);
-  showCalendarModal = signal(false);
   selectedAttendanceRecord = signal<AttendanceRecord | null>(null);
 
   // Photo upload & gallery
@@ -113,10 +136,6 @@ export class AttendanceManagement implements OnInit {
   photos = signal<any[]>([]);
   showArchivedPhotos = signal(false);
   activeLightboxPhoto = signal<any | null>(null);
-
-  // Calendar view state
-  calendarDate = signal(new Date());
-  weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
  
   // Assignment
   availableVolunteersForAssignment = signal<VolunteerUser[]>([]);
@@ -131,6 +150,7 @@ export class AttendanceManagement implements OnInit {
       this.attendanceSearchQuery();
       untracked(() => {
         this.attendancePage.set(1);
+        this.rsvpPage.set(1);
       });
     });
 
@@ -158,6 +178,7 @@ export class AttendanceManagement implements OnInit {
 
   ngOnInit(): void {
     this.loadAttendanceData();
+    this.loadRsvpEvents();
   }
 
   // Load attendance data from API
@@ -203,7 +224,7 @@ export class AttendanceManagement implements OnInit {
               checkInTime: formatTime(item.checked_in_at),
               checkOutTime: formatTime(item.checked_out_at),
               duration: duration,
-              status: (item.attendance_status === 'checked_in' || item.attendance_status === 'checked_out') ? 'present' : 'absent',
+              status: item.attendance_status === 'no_show' ? 'absent' : 'present',
               attendance_status: item.attendance_status,
             };
           });
@@ -219,55 +240,58 @@ export class AttendanceManagement implements OnInit {
     });
   }
 
+  loadRsvpEvents(): void {
+    this.isLoading.set(true);
+    this.rsvpService.getRsvps().subscribe({
+      next: (response) => {
+        this.rsvps.set(response.data || []);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load RSVP events:', err);
+        this.isLoading.set(false);
+        this.showSnackbar.emit({ message: 'Failed to load RSVP events', type: 'error' });
+      }
+    });
+  }
+
   presentCount = computed(() => {
-    const selectedDate = this.attendanceDateFilter();
-    const selectedEventId = this.selectedEventFilter();
     const records = this.attendanceRecords();
     
-    if (this.attendanceView() === 'calendar') {
-      return records.filter((r) => r.rsvp_date === selectedDate && (selectedEventId === 0 || r.rsvp_id === selectedEventId) && r.status === 'present').length;
-    } else if (this.attendanceView() === 'history' && selectedEventId !== 0) {
-      return records.filter((r) => r.rsvp_id === selectedEventId && r.status === 'present').length;
+    if (this.attendanceView() === 'events') {
+      const selected = this.selectedRsvp();
+      return selected ? records.filter((r) => r.rsvp_id === selected.id && r.status === 'present').length : 0;
     }
     return records.filter((r) => r.status === 'present').length;
   });
 
   absentCount = computed(() => {
-    const selectedDate = this.attendanceDateFilter();
-    const selectedEventId = this.selectedEventFilter();
     const records = this.attendanceRecords();
     
-    if (this.attendanceView() === 'calendar') {
-      return records.filter((r) => r.rsvp_date === selectedDate && (selectedEventId === 0 || r.rsvp_id === selectedEventId) && r.status === 'absent').length;
-    } else if (this.attendanceView() === 'history' && selectedEventId !== 0) {
-      return records.filter((r) => r.rsvp_id === selectedEventId && r.status === 'absent').length;
+    if (this.attendanceView() === 'events') {
+      const selected = this.selectedRsvp();
+      return selected ? records.filter((r) => r.rsvp_id === selected.id && r.status === 'absent').length : 0;
     }
     return records.filter((r) => r.status === 'absent').length;
   });
 
   totalAttendanceCount = computed(() => {
-    const selectedDate = this.attendanceDateFilter();
-    const selectedEventId = this.selectedEventFilter();
     const records = this.attendanceRecords();
     
-    if (this.attendanceView() === 'calendar') {
-      return records.filter((r) => r.rsvp_date === selectedDate && (selectedEventId === 0 || r.rsvp_id === selectedEventId)).length;
-    } else if (this.attendanceView() === 'history' && selectedEventId !== 0) {
-      return records.filter((r) => r.rsvp_id === selectedEventId).length;
+    if (this.attendanceView() === 'events') {
+      const selected = this.selectedRsvp();
+      return selected ? records.filter((r) => r.rsvp_id === selected.id).length : 0;
     }
     return records.length;
   });
 
   departmentCount = computed(() => {
-    const selectedDate = this.attendanceDateFilter();
-    const selectedEventId = this.selectedEventFilter();
     const records = this.attendanceRecords();
     
     let targetRecords = records;
-    if (this.attendanceView() === 'calendar') {
-      targetRecords = records.filter((r) => r.rsvp_date === selectedDate && (selectedEventId === 0 || r.rsvp_id === selectedEventId));
-    } else if (this.attendanceView() === 'history' && selectedEventId !== 0) {
-      targetRecords = records.filter((r) => r.rsvp_id === selectedEventId);
+    if (this.attendanceView() === 'events') {
+      const selected = this.selectedRsvp();
+      targetRecords = selected ? records.filter((r) => r.rsvp_id === selected.id) : [];
     }
       
     const departments = new Set(targetRecords.map((r) => r.department));
@@ -276,19 +300,12 @@ export class AttendanceManagement implements OnInit {
 
   filteredAttendance = computed(() => {
     const search = this.attendanceSearchQuery().toLowerCase().trim();
-    const selectedDate = this.attendanceDateFilter();
-    const selectedEventId = this.selectedEventFilter();
     let records = this.attendanceRecords();
 
-    // Filter by selected date in calendar view
-    if (this.attendanceView() === 'calendar') {
-      records = records.filter((r) => r.rsvp_date === selectedDate);
-      if (selectedEventId !== 0) {
-        records = records.filter((r) => r.rsvp_id === selectedEventId);
-      }
-    } else if (this.attendanceView() === 'history') {
-      if (selectedEventId !== 0) {
-        records = records.filter((r) => r.rsvp_id === selectedEventId);
+    if (this.attendanceView() === 'events') {
+      const selected = this.selectedRsvp();
+      if (selected) {
+        records = records.filter((r) => r.rsvp_id === selected.id);
       }
     }
 
@@ -305,67 +322,103 @@ export class AttendanceManagement implements OnInit {
     );
   });
 
-  paginatedAttendance = computed(() => {
-    const filtered = this.filteredAttendance();
-    const page = this.attendancePage();
-    const perPage = this.attendancePerPage();
-    const start = (page - 1) * perPage;
-    const end = start + perPage;
-    return filtered.slice(start, end);
-  });
 
-  attendanceTotalPages = computed(() =>
-    Math.ceil(this.filteredAttendance().length / this.attendancePerPage()),
-  );
 
-  presentVolunteers = computed(() => {
-    return this.filteredAttendance().filter((r) => r.status === 'present');
-  });
 
-  absentVolunteers = computed(() => {
-    return this.filteredAttendance().filter((r) => r.status === 'absent');
+  filteredAttendeesList = computed(() => {
+    const list = this.filteredAttendance();
+    const filter = this.attendeeFilter();
+    if (filter === 'present') {
+      return list.filter((r) => r.status === 'present');
+    } else if (filter === 'absent') {
+      return list.filter((r) => r.status === 'absent');
+    }
+    return list;
   });
 
   // View methods
-  setAttendanceView(view: 'calendar' | 'history' | 'photos'): void {
+  setAttendanceView(view: 'events' | 'photos'): void {
     this.attendanceView.set(view);
     this.attendancePage.set(1);
-    this.selectedEventFilter.set(0);
-    if (view === 'calendar') {
-      this.showCalendarModal.set(true);
-    }
+    this.rsvpPage.set(1);
+    this.selectedRsvp.set(null);
+    this.attendeeFilter.set('all');
   }
 
-  closeCalendarModal(): void {
-    this.showCalendarModal.set(false);
+  updateSearchQuery(query: string): void {
+    this.globalSearchService.setSearchQuery(query);
   }
 
-  setAttendanceDateFilter(date: string): void {
-    this.attendanceDateFilter.set(date);
+  selectRsvp(rsvp: Rsvp): void {
+    this.selectedRsvp.set(rsvp);
     this.attendancePage.set(1);
-    this.selectedEventFilter.set(0);
+    this.attendeeFilter.set('all');
   }
 
-  // Pagination
-  previousAttendancePage(): void {
-    if (this.attendancePage() > 1) {
-      this.attendancePage.update((p) => p - 1);
+  clearSelectedRsvp(): void {
+    this.selectedRsvp.set(null);
+    this.attendeeFilter.set('all');
+    this.globalSearchService.clearSearchQuery();
+  }
+
+  setRsvpDateFilter(date: string): void {
+    this.rsvpDateFilter.set(date);
+    this.rsvpPage.set(1);
+  }
+
+  clearRsvpDateFilter(): void {
+    this.rsvpDateFilter.set('');
+    this.rsvpPage.set(1);
+  }
+
+  markAllPresent(): void {
+    const selected = this.selectedRsvp();
+    if (!selected) return;
+
+    if (confirm('Are you sure you want to mark all attendees as present for this event?')) {
+      this.isLoading.set(true);
+      this.adminDashboardService.markAllPresent(selected.id).subscribe({
+        next: (response) => {
+          this.isLoading.set(false);
+          if (response.success) {
+            this.showSnackbar.emit({ message: response.message || 'All attendees marked as present', type: 'success' });
+            this.loadAttendanceData();
+            this.loadRsvpEvents();
+          } else {
+            this.showSnackbar.emit({ message: response.message || 'Failed to mark attendees as present', type: 'error' });
+          }
+        },
+        error: (err) => {
+          this.isLoading.set(false);
+          console.error('Error marking all present:', err);
+          this.showSnackbar.emit({ message: 'Error communicating with server', type: 'error' });
+        }
+      });
     }
   }
 
-  nextAttendancePage(): void {
-    if (this.attendancePage() < this.attendanceTotalPages()) {
-      this.attendancePage.update((p) => p + 1);
+
+
+  // Pagination for RSVP Events
+  previousRsvpPage(): void {
+    if (this.rsvpPage() > 1) {
+      this.rsvpPage.update((p) => p - 1);
     }
   }
 
-  goToAttendancePage(page: number): void {
-    this.attendancePage.set(page);
+  nextRsvpPage(): void {
+    if (this.rsvpPage() < this.rsvpTotalPages()) {
+      this.rsvpPage.update((p) => p + 1);
+    }
   }
 
-  getAttendancePageNumbers(): number[] {
-    const total = this.attendanceTotalPages();
-    const current = this.attendancePage();
+  goToRsvpPage(page: number): void {
+    this.rsvpPage.set(page);
+  }
+
+  getRsvpPageNumbers(): number[] {
+    const total = this.rsvpTotalPages();
+    const current = this.rsvpPage();
     const pages: number[] = [];
 
     if (total <= 7) {
@@ -384,6 +437,8 @@ export class AttendanceManagement implements OnInit {
 
     return pages;
   }
+
+
 
   // Status update calling API
   updateAttendanceStatus(recordId: number, status: 'present' | 'absent'): void {
@@ -419,10 +474,8 @@ export class AttendanceManagement implements OnInit {
     const search = this.attendanceSearchQuery();
     let url = `${environment.apiUrl}/admin/attendance/export/pdf?search=${search}`;
     
-    if (this.attendanceView() === 'calendar') {
-      url += `&date=${this.attendanceDateFilter()}`;
-    } else if (this.attendanceView() === 'history' && this.selectedEventFilter() !== 0) {
-      url += `&rsvp_id=${this.selectedEventFilter()}`;
+    if (this.attendanceView() === 'events' && this.selectedRsvp()) {
+      url += `&rsvp_id=${this.selectedRsvp()!.id}`;
     }
     
     this.showSnackbar.emit({ message: 'Exporting attendance to PDF...', type: 'info' });
@@ -433,10 +486,8 @@ export class AttendanceManagement implements OnInit {
     const search = this.attendanceSearchQuery();
     let url = `${environment.apiUrl}/admin/attendance/export/excel?search=${search}`;
     
-    if (this.attendanceView() === 'calendar') {
-      url += `&date=${this.attendanceDateFilter()}`;
-    } else if (this.attendanceView() === 'history' && this.selectedEventFilter() !== 0) {
-      url += `&rsvp_id=${this.selectedEventFilter()}`;
+    if (this.attendanceView() === 'events' && this.selectedRsvp()) {
+      url += `&rsvp_id=${this.selectedRsvp()!.id}`;
     }
     
     this.showSnackbar.emit({ message: 'Exporting attendance to Excel...', type: 'info' });
@@ -571,60 +622,7 @@ export class AttendanceManagement implements OnInit {
     this.activeLightboxPhoto.set(null);
   }
 
-  // Calendar helpers
-  prevMonth(): void {
-    const current = this.calendarDate();
-    this.calendarDate.set(new Date(current.getFullYear(), current.getMonth() - 1, 1));
-  }
 
-  nextMonth(): void {
-    const current = this.calendarDate();
-    this.calendarDate.set(new Date(current.getFullYear(), current.getMonth() + 1, 1));
-  }
-
-  getCalendarCells(): (number | null)[] {
-    const date = this.calendarDate();
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const totalDays = new Date(year, month + 1, 0).getDate();
-
-    const cells: (number | null)[] = [];
-    for (let i = 0; i < firstDay; i++) {
-      cells.push(null);
-    }
-    for (let i = 1; i <= totalDays; i++) {
-      cells.push(i);
-    }
-    return cells;
-  }
-
-  getAttendanceForDate(day: number) {
-    const date = this.calendarDate();
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    
-    const dayRecords = this.attendanceRecords().filter((r) => r.rsvp_date === dateStr);
-    const present = dayRecords.filter((r) => r.status === 'present').length;
-    const absent = dayRecords.filter((r) => r.status === 'absent').length;
-
-    return {
-      dateStr,
-      present,
-      absent,
-      total: dayRecords.length
-    };
-  }
-
-  selectCalendarDay(dateStr: string): void {
-    this.attendanceDateFilter.set(dateStr);
-    this.attendancePage.set(1);
-    this.selectedEventFilter.set(0);
-    this.attendanceView.set('calendar');
-    this.showCalendarModal.set(false);
-    this.showSnackbar.emit({ message: `Viewing attendance for ${dateStr}`, type: 'success' });
-  }
 
   // Assignment modal mock functions
   openAssignVolunteerModal(): void {
@@ -680,6 +678,17 @@ export class AttendanceManagement implements OnInit {
       return diffDays <= 7;
     } catch {
       return true;
+    }
+  }
+
+  private formatAsYmd(dateStr: string | null | undefined): string {
+    if (!dateStr) return '';
+    try {
+      const parsed = new Date(dateStr);
+      if (Number.isNaN(parsed.getTime())) return dateStr;
+      return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
+    } catch {
+      return dateStr;
     }
   }
 }

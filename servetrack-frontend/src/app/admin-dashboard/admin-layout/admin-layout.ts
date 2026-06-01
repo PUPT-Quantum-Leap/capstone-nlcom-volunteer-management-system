@@ -318,15 +318,9 @@ export class AdminLayout implements OnInit {
   toggleNotifications(): void {
     const nextState = !this.showNotifications();
     this.showNotifications.set(nextState);
-    if (nextState) this.showUserMenu.set(false);
-  }
-
-  toggleUserMenu(): void {
-    const nextState = !this.showUserMenu();
-    this.showUserMenu.set(nextState);
-    if (nextState) this.showNotifications.set(false);
     
     if (nextState) {
+      this.showUserMenu.set(false);
       // Mark all current notifications as read when opening dropdown
       this.notificationsList.update(list => list.map(n => ({ ...n, read: true })));
       
@@ -347,6 +341,14 @@ export class AdminLayout implements OnInit {
 
   toggleChatbot(): void {
     this.chatbotService.toggleChatbot();
+  }
+
+  toggleUserMenu(): void {
+    const nextState = !this.showUserMenu();
+    this.showUserMenu.set(nextState);
+    if (nextState) {
+      this.showNotifications.set(false);
+    }
   }
 
   openLogoutModal(): void {

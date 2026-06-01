@@ -151,6 +151,9 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::post('/admin/attendance-status', [AdminController::class, 'updateAttendanceStatus'])
         ->middleware('throttle:60,1')
         ->name('admin.attendance.status.update');
+    Route::post('/admin/attendance/mark-all-present', [AdminController::class, 'markAllPresent'])
+        ->middleware('throttle:60,1')
+        ->name('admin.attendance.mark-all-present');
     Route::get('/admin/attendance/export/pdf', [AdminController::class, 'exportAttendancePdf'])
         ->middleware('throttle:analytics-exports')
         ->name('admin.attendance.export.pdf');
