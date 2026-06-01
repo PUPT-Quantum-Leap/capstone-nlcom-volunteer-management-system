@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateRsvpRequest;
 use App\Http\Requests\UpdateRsvpResponseRequest;
 use App\Http\Resources\RsvpResource;
 use App\Jobs\NotifyVolunteersOfNewRsvp;
+use App\Models\Location;
 use App\Models\Rsvp;
 use App\Models\RsvpResponse;
 use App\Models\TimeSlot;
@@ -86,11 +87,29 @@ class RsvpController extends Controller
     public function store(StoreRsvpRequest $request): JsonResponse
     {
         $rsvp = DB::transaction(function () use ($request): Rsvp {
+            // Resolve location_id if coordinates are provided
+            $locationId = null;
+            if ($request->filled('latitude') && $request->filled('longitude')) {
+                $location = Location::query()->firstOrCreate(
+                    [
+                        'latitude' => $request->input('latitude'),
+                        'longitude' => $request->input('longitude'),
+                    ],
+                    [
+                        'name' => $request->input('event_location', 'Event Location'),
+                        'address' => $request->input('event_location'),
+                        'is_active' => true,
+                    ]
+                );
+                $locationId = $location->location_id;
+            }
+
             $rsvp = Rsvp::query()->create([
                 'title' => $request->input('title'),
                 'description' => $request->input('description'),
                 'date' => $request->input('date'),
                 'event_location' => $request->input('event_location'),
+                'location_id' => $locationId,
                 'cutoff_day' => $request->input('cutoff_day'),
                 'cutoff_time' => $request->input('cutoff_time'),
                 'status' => $request->input('status', 'draft'),
@@ -107,7 +126,7 @@ class RsvpController extends Controller
                 ]);
             }
 
-            return $rsvp->load('shifts');
+            return $rsvp->load(['shifts', 'location']);
         });
 
         // Dispatch notifications if RSVP is created as active
@@ -139,11 +158,29 @@ class RsvpController extends Controller
         }
 
         DB::transaction(function () use ($request, $rsvp): void {
+            // Resolve location if coordinates are provided
+            $locationId = $rsvp->location_id;
+            if ($request->filled('latitude') && $request->filled('longitude')) {
+                $location = Location::query()->firstOrCreate(
+                    [
+                        'latitude' => $request->input('latitude'),
+                        'longitude' => $request->input('longitude'),
+                    ],
+                    [
+                        'name' => $request->input('event_location', 'Event Location'),
+                        'address' => $request->input('event_location'),
+                        'is_active' => true,
+                    ]
+                );
+                $locationId = $location->location_id;
+            }
+
             $rsvp->update(array_filter([
                 'title' => $request->input('title'),
                 'description' => $request->input('description'),
                 'date' => $request->input('date'),
                 'event_location' => $request->input('event_location'),
+                'location_id' => $locationId,
                 'cutoff_day' => $request->input('cutoff_day'),
                 'cutoff_time' => $request->input('cutoff_time'),
                 'status' => $request->input('status'),
