@@ -9,7 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RsvpService } from '../services/rsvp.service';
@@ -21,7 +21,7 @@ import { MapViewComponent } from '../components/map-view/map-view';
 @Component({
   selector: 'app-rsvp',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, UserBadgeComponent, RouterLink, MapViewComponent],
+  imports: [CommonModule, UserBadgeComponent, MapViewComponent],
   templateUrl: './rsvp.html',
   styleUrl: './rsvp-styles.scss',
 })
