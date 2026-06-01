@@ -316,7 +316,24 @@
               <div class="form-group">
                 <label for="rsvp-location">Event Location *</label>
                 <input id="rsvp-location" type="text" formControlName="eventLocation" placeholder="e.g., NLCOM Main Hall" class="form-input" />
+                <button type="button" class="map-toggle-btn" (click)="toggleMapPicker()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  {{ showMapPicker() ? 'Hide Map' : 'Pin on Map' }}
+                </button>
               </div>
+
+              @if (showMapPicker()) {
+                <div class="form-group full-width map-picker-section">
+                  <app-map-picker
+                    [initialLat]="rsvpForm.get('latitude')?.value ?? 14.5995"
+                    [initialLng]="rsvpForm.get('longitude')?.value ?? 120.9842"
+                    (locationSelected)="onMapLocationSelected($event)"
+                  />
+                </div>
+              }
 
               <div class="form-group full-width">
                 <label for="rsvp-description">Description *</label>

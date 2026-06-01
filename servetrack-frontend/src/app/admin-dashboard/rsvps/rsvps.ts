@@ -17,6 +17,7 @@ import { RsvpService } from '../../services/rsvp.service';
 import { AdminDashboardService, NonResponder } from '../../services/admin-dashboard.service';
 
 import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
+import { MapPickerComponent, MapLocation } from '../../components/map-picker/map-picker';
 import { GlobalSearchService } from '../../services/global-search.service';
 
 export interface RespondedItem {
@@ -36,7 +37,7 @@ export interface RespondedItem {
 @Component({
   selector: 'app-rsvps',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, CustomSelect],
+  imports: [CommonModule, ReactiveFormsModule, CustomSelect, MapPickerComponent],
   templateUrl: './rsvps.html',
   styleUrl: './rsvps.scss',
 })
@@ -70,6 +71,7 @@ export class RsvpsComponent {
   readonly deletingRsvpId = signal<number | null>(null);
   readonly isCreatingRsvp = signal(false);
   readonly isDeletingRsvp = signal(false);
+  readonly showMapPicker = signal(false);
   readonly feedbackMessage = signal('');
   readonly feedbackType = signal<'success' | 'error' | 'info'>('info');
 
@@ -182,6 +184,8 @@ export class RsvpsComponent {
     {
       title: ['', [Validators.required, Validators.minLength(3)]],
       eventLocation: ['', [Validators.required, Validators.maxLength(255)]],
+      latitude: [null as number | null],
+      longitude: [null as number | null],
       date: ['', Validators.required],
       cutOffDay: ['', Validators.required],
       cutOffTime: ['', Validators.required],
@@ -345,6 +349,13 @@ export class RsvpsComponent {
       status: rsvp.status,
     });
 
+    if (rsvp.location?.latitude && rsvp.location?.longitude) {
+      this.rsvpForm.patchValue({
+        latitude: rsvp.location.latitude,
+        longitude: rsvp.location.longitude,
+      });
+      this.showMapPicker.set(true);
+    }
     this.lockBodyScroll();
     this.showRsvpModal.set(true);
   }
@@ -375,6 +386,18 @@ export class RsvpsComponent {
     }
   }
 
+  onMapLocationSelected(location: MapLocation): void {
+    this.rsvpForm.patchValue({
+      eventLocation: location.address,
+      latitude: location.latitude,
+      longitude: location.longitude,
+    });
+  }
+
+  toggleMapPicker(): void {
+    this.showMapPicker.update((v) => !v);
+  }
+
   saveRsvp(): void {
     if (this.rsvpForm.invalid) {
       this.rsvpForm.markAllAsTouched();
@@ -386,6 +409,8 @@ export class RsvpsComponent {
     const payload = {
       title: formValue.title!,
       event_location: formValue.eventLocation!,
+      latitude: formValue.latitude ?? null,
+      longitude: formValue.longitude ?? null,
       date: this.formatDateForBackend(formValue.date!),
       cutoff_day: this.formatDateForBackend(formValue.cutOffDay!),
       cutoff_time: this.formatTimeForBackend(formValue.cutOffTime!),

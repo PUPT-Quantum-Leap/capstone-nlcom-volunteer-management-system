@@ -3,6 +3,8 @@ export interface Location {
   name: string;
   address: string;
   displayName: string;
+  latitude: number;
+  longitude: number;
 }
 
 export interface Rsvp {

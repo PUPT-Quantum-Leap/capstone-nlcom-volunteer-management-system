@@ -20,6 +20,8 @@ class UpdateRsvpRequest extends FormRequest
             'event_location' => ['nullable', 'string', 'max:255'],
             'cutoff_day' => ['sometimes', 'date', 'after_or_equal:today', 'before_or_equal:date'],
             'cutoff_time' => ['sometimes', 'regex:/^([01]?[0-9]|1[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/', 'max:20'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'status' => ['sometimes', 'in:draft,active,closed'],
             'share_url' => ['nullable', 'string', 'max:500'],
             'shifts' => ['sometimes', 'array', 'min:1'],
