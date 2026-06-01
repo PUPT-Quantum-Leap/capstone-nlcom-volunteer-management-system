@@ -1,6 +1,11 @@
 <section class="feeding-operation-page">
   <header class="report-header">
-    <div>
+    <button type="button" class="back-arrow-btn" (click)="backToOverview.emit()" aria-label="Back to overview">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    <div class="header-text">
       <span class="report-label">OPERATIONS</span>
       <h2 class="report-title">{{ operationTitle() }}</h2>
       <p class="report-date">{{ operationDate() }}</p>
