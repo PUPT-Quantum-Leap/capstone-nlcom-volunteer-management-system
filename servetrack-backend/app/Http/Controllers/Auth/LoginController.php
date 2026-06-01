@@ -255,6 +255,12 @@ class LoginController extends Controller
             $userData['volunteer_profile'] = $user->volunteer;
             $userData['needs_profile_completion'] = $needsProfileCompletion;
 
+            // Establish session (same as normal login) so Sanctum SPA auth works
+            Auth::login($user);
+            if ($request->hasSession()) {
+                $request->session()->regenerate();
+            }
+
             return $this->buildAuthenticatedResponse($userData, $user, TokenAbilities::VOLUNTEER);
         } catch (\Exception $e) {
             report($e);
