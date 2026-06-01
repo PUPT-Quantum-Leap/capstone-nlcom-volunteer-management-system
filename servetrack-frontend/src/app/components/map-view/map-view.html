@@ -1,0 +1,19 @@
+<div class="map-view-wrapper">
+  <div #mapContainer class="map-container" [style.height.px]="height()"></div>
+  <a
+    class="directions-link"
+    [href]="directionsUrl()"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+      <polygon points="3 11 22 2 13 21 11 13 3 11"/>
+    </svg>
+    Get Directions
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" class="external-icon">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+      <polyline points="15 3 21 3 21 9"/>
+      <line x1="10" y1="14" x2="21" y2="3"/>
+    </svg>
+  </a>
+</div>

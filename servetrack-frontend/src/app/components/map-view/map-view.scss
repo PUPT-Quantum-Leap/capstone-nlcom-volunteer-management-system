@@ -1,0 +1,35 @@
+.map-view-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.map-container {
+  width: 100%;
+  min-height: 150px;
+}
+
+.directions-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #1d4ed8;
+  background: #eff6ff;
+  text-decoration: none;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  .external-icon {
+    opacity: 0.6;
+  }
+}
