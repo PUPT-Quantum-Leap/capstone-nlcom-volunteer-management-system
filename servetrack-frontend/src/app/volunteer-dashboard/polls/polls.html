@@ -268,6 +268,16 @@
             </span>
           </div>
 
+          <!-- Map View (shown when location has coordinates) -->
+          @if (poll.location?.latitude && poll.location?.longitude) {
+            <app-map-view
+              [latitude]="poll.location.latitude"
+              [longitude]="poll.location.longitude"
+              [locationName]="poll.eventLocation ?? poll.location.name ?? ''"
+              [height]="160"
+            />
+          }
+
           <div class="active-poll-votes">
             @for (option of poll.options; track option.id) {
             <div class="vote-row">
@@ -385,6 +395,16 @@
             {{ getTotalVotes(selectedPoll) }} total votes
           </span>
         </div>
+
+        <!-- Map View (past poll detail) -->
+        @if (selectedPoll.location?.latitude && selectedPoll.location?.longitude) {
+          <app-map-view
+            [latitude]="selectedPoll.location.latitude"
+            [longitude]="selectedPoll.location.longitude"
+            [locationName]="selectedPoll.eventLocation ?? selectedPoll.location.name ?? ''"
+            [height]="160"
+          />
+        }
 
         @if (hasUserVotedOnPoll(selectedPoll.id)) {
         <div class="user-vote-indicator" role="status">

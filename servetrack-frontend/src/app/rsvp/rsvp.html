@@ -109,6 +109,16 @@
           </span>
         </div>
 
+        <!-- Map View (shown when location has coordinates) -->
+        @if (rsvp.location?.latitude && rsvp.location?.longitude) {
+          <app-map-view
+            [latitude]="rsvp.location.latitude"
+            [longitude]="rsvp.location.longitude"
+            [locationName]="rsvp.eventLocation ?? rsvp.location.name ?? ''"
+            [height]="200"
+          />
+        }
+
         <!-- RSVP Options (Shifts) -->
         @if (isClosed()) {
           <div

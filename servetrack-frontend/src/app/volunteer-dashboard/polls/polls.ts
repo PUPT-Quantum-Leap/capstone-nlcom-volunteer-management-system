@@ -11,7 +11,8 @@ import {
 import { NgClass } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RsvpService } from '../../services/rsvp.service';
-import { Rsvp, UserVote } from '../../models/rsvp';
+import { Rsvp, UserVote, Location } from '../../models/rsvp';
+import { MapViewComponent } from '../../components/map-view/map-view';
 
 interface PollOption {
   id: number;
@@ -27,6 +28,8 @@ interface Poll {
   description?: string;
   date?: string;
   cutOffDay?: string;
+  eventLocation?: string;
+  location?: Location | null;
   status: 'draft' | 'active' | 'closed';
   isCutoffPassed: boolean;
   options: PollOption[];
@@ -38,7 +41,7 @@ interface Poll {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgClass],
+  imports: [NgClass, MapViewComponent],
   templateUrl: './polls.html',
   styleUrl: './polls.scss',
 })
@@ -203,6 +206,8 @@ export class PollsComponent implements OnInit {
       description: rsvp.description,
       date: rsvp.date,
       cutOffDay: rsvp.cutOffDay,
+      eventLocation: rsvp.eventLocation,
+      location: rsvp.location,
       status: rsvp.status,
       isCutoffPassed: rsvp.isCutoffPassed,
       totalResponses: rsvp.totalResponses,

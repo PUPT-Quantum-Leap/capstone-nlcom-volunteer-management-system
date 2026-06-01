@@ -916,3 +916,9 @@
     transform: translateY(0) scale(1);
   }
 }
+
+// Map View spacing
+app-map-view {
+  display: block;
+  margin: 1rem 0;
+}

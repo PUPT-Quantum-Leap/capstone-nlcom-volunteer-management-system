@@ -1576,4 +1576,10 @@
       animation: shimmer 1.5s infinite;
     }
   }
-}
+}
+
+// Map View spacing
+app-map-view {
+  display: block;
+  margin: 0.75rem 0;
+}
