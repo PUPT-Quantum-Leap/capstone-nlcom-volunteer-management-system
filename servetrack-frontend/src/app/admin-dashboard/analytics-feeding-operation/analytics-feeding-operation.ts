@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AnalyticsService } from '../../services/analytics.service';
@@ -34,6 +34,8 @@ interface FeedingOperationRow extends FeedingOperation {
 export class AnalyticsFeedingOperationComponent implements OnInit {
   private readonly analyticsService = inject(AnalyticsService);
   readonly addLocationOptionValue = '__add_new_location__';
+
+  readonly backToOverview = output<void>();
 
   readonly analyticsLoading = signal(false);
   readonly operationsData = signal<FeedingOperationRow[]>([]);
