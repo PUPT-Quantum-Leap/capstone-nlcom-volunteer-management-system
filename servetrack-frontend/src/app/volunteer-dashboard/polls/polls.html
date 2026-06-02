@@ -161,13 +161,15 @@
       </div>
 
       <!-- Map View (detail view - shown when location has coordinates) -->
-      @if (poll.location?.latitude && poll.location?.longitude) {
-        <app-map-view
-          [latitude]="poll.location.latitude"
-          [longitude]="poll.location.longitude"
-          [locationName]="poll.eventLocation ?? poll.location.name ?? ''"
-          [height]="180"
-        />
+      @if (poll.location; as loc) {
+        @if (loc.latitude && loc.longitude) {
+          <app-map-view
+            [latitude]="loc.latitude"
+            [longitude]="loc.longitude"
+            [locationName]="poll.eventLocation ?? loc.name"
+            [height]="180"
+          />
+        }
       }
 
       <p class="poll-prompt">@if (hasSubmittedVote()) { Your selection: } @else { Select your preferred option: }</p>
