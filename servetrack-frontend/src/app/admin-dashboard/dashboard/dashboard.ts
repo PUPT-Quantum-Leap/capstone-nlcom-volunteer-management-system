@@ -20,6 +20,8 @@ import { PerformanceMetric } from '../../models/performance-metric';
 import { Rsvp } from '../../models/rsvp';
 import { RsvpService } from '../../services/rsvp.service';
 
+import { GlobalSearchService } from '../../services/global-search.service';
+
 interface DashboardEventRow {
   id: number;
   title: string;
@@ -43,6 +45,7 @@ export class DashboardComponent {
   private readonly rsvpService = inject(RsvpService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private readonly globalSearchService = inject(GlobalSearchService);
 
   readonly isLoading = signal(true);
   readonly isRsvpLoading = signal(true);
@@ -133,35 +136,6 @@ export class DashboardComponent {
         name: dept.name,
         count: dept.count,
         percentage: dept.percentage,
-      };
-    });
-  });
-
-  // --- Bar Chart (Skills Distribution) ---
-  readonly skillBarPositions = computed(() => {
-    const skills = this.paginatedSkills();
-    const maxCount = this.maxSkillCount();
-    const count = skills.length;
-    if (count === 0 || maxCount === 0) return [];
-
-    const padding = { top: 20, bottom: 50, left: 30, right: 20 };
-    const chartW = 800, chartH = 250;
-    const availableW = chartW - padding.left - padding.right;
-    const barAreaW = availableW / count;
-    const barW = Math.max(20, barAreaW * 0.6);
-    const maxBarH = chartH - padding.top - padding.bottom;
-
-    return skills.map((skill, i) => {
-      const x = padding.left + i * barAreaW + (barAreaW - barW) / 2;
-      const h = (skill.count / maxCount) * maxBarH;
-      const y = padding.top + maxBarH - h;
-      return {
-        x: Math.round(x),
-        y: Math.round(y),
-        width: Math.round(barW),
-        height: Math.round(h),
-        label: skill.name,
-        count: skill.count,
       };
     });
   });
@@ -316,7 +290,14 @@ export class DashboardComponent {
   }
 
   navigateTo(path: string): void {
+    if (path === '/admin-dashboard/rsvps') {
+      this.globalSearchService.clearSearchQuery();
+    }
     void this.router.navigateByUrl(path);
+  }
+
+  viewEventDetails(title: string): void {
+    void this.router.navigate(['/admin-dashboard/rsvps'], { queryParams: { search: title } });
   }
 
   formatStatusLabel(status: string): string {
@@ -417,6 +398,10 @@ export class DashboardComponent {
           console.error('Failed to load analytics data.');
         },
       });
+  }
+
+  calculateSkillPercentage(count: number): number {
+    return Math.round((count / this.maxSkillCount()) * 100);
   }
 
   setDateRange(range: 'all' | 'month' | 'quarter' | 'year'): void {

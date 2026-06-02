@@ -21,7 +21,7 @@ import { MapViewComponent } from '../components/map-view/map-view';
 @Component({
   selector: 'app-rsvp',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, UserBadgeComponent],
+  imports: [CommonModule, UserBadgeComponent, MapViewComponent],
   templateUrl: './rsvp.html',
   styleUrl: './rsvp-styles.scss',
 })
