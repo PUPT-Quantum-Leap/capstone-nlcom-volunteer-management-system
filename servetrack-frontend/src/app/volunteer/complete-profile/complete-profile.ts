@@ -74,9 +74,12 @@ export class ProfileCompleteComponent implements OnInit {
         mobileNumber: volunteer?.mobile_number ?? '',
       });
       // Remove required validators since these are already stored
-      this.form.get('firstName')?.clearValidators();
-      this.form.get('lastName')?.clearValidators();
-      this.form.get('mobileNumber')?.clearValidators();
+      // Remove required validators since these are already stored
+      for (const field of ['firstName', 'lastName', 'mobileNumber']) {
+        const ctrl = this.form.get(field);
+        ctrl?.clearValidators();
+        ctrl?.updateValueAndValidity();
+      }
     }
 
     this.form.get('volunteerPreference')?.valueChanges.subscribe((v) => {
