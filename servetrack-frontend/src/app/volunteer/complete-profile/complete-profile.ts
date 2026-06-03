@@ -36,6 +36,7 @@ export class ProfileCompleteComponent implements OnInit {
   currentUser = this.authService.currentUser;
   displayName = computed(() => this.currentUser()?.name ?? '');
   displayEmail = computed(() => this.currentUser()?.email ?? '');
+  isGoogleUser = computed(() => this.currentUser()?.provider === 'google');
 
   form: FormGroup = this.fb.group({
     firstName: ['', [Validators.required, nameValidator(this.sanitizer)]],
@@ -61,6 +62,22 @@ export class ProfileCompleteComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    // For email signup users: pre-fill and hide fields already collected at registration
+    const user = this.currentUser();
+    if (user && !this.isGoogleUser()) {
+      const volunteer = user.volunteer_profile;
+      const nameParts = user.name?.split(' ') ?? [];
+      this.form.patchValue({
+        firstName: nameParts[0] ?? '',
+        lastName: nameParts.slice(1).join(' ') ?? '',
+        mobileNumber: volunteer?.mobile_number ?? '',
+      });
+      // Remove required validators since these are already stored
+      this.form.get('firstName')?.clearValidators();
+      this.form.get('lastName')?.clearValidators();
+      this.form.get('mobileNumber')?.clearValidators();
+    }
+
     this.form.get('volunteerPreference')?.valueChanges.subscribe((v) => {
       this.showOtherPreference.set(v === 'other');
       if (v !== 'other') { this.form.get('otherPreference')?.setValue(''); }
