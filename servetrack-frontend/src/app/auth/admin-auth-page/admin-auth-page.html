@@ -3,30 +3,22 @@
 }
 
 <div class="auth-container">
-  <div class="auth-card">
+  <div class="brand">
+    <img ngSrc="/assets/nlcom.png" width="36" height="36" alt="NLCOM Logo" class="brand-logo" priority />
+    <span class="brand-name">ServeTrack</span>
+  </div>
 
-    <!-- ── Header ─────────────────────────────────────────────────── -->
-    <div class="auth-header">
-      <div class="logo">
-        <img
-          ngSrc="/assets/nlcom.png"
-          width="60"
-          height="60"
-          alt="NLCOM Logo"
-          class="logo-image"
-          priority
-        />
-        <span class="logo-text">ServeTrack</span>
-      </div>
-      <h1 class="auth-title">Admin Portal</h1>
-      <p class="auth-subtitle">Sign in or create your administrator account</p>
+  <div class="auth-card" [class.signup-mode]="isSignupTab()">
+    <div class="form-header">
+      <h1>Admin Portal</h1>
+      <p>Sign in or create your administrator account</p>
     </div>
 
-    <!-- ── Tab list ────────────────────────────────────────────────── -->
-    <div class="tab-list" role="tablist" aria-label="Authentication options">
+    <!-- Tab Switcher -->
+    <div class="tabs" role="tablist" aria-label="Authentication options">
       <button
         role="tab"
-        class="tab-btn"
+        class="tab"
         [class.active]="isLoginTab()"
         [attr.aria-selected]="isLoginTab()"
         aria-controls="panel-login"
@@ -34,12 +26,10 @@
         (click)="switchTab('login')"
         (keydown)="onTabKeydown($event)"
         [tabindex]="isLoginTab() ? 0 : -1"
-      >
-        Sign In
-      </button>
+      >Sign In</button>
       <button
         role="tab"
-        class="tab-btn"
+        class="tab"
         [class.active]="isSignupTab()"
         [attr.aria-selected]="isSignupTab()"
         aria-controls="panel-signup"
@@ -47,178 +37,98 @@
         (click)="switchTab('signup')"
         (keydown)="onTabKeydown($event)"
         [tabindex]="isSignupTab() ? 0 : -1"
-      >
-        Create Account
-      </button>
+      >Create Account</button>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════════════ -->
-    <!-- LOGIN PANEL                                                   -->
-    <!-- ══════════════════════════════════════════════════════════════ -->
-    <div
-      role="tabpanel"
-      id="panel-login"
-      aria-labelledby="tab-login"
-      [class.hidden]="!isLoginTab()"
-    >
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- LOGIN PANEL                                   -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div role="tabpanel" id="panel-login" aria-labelledby="tab-login" [class.hidden]="!isLoginTab()">
       @if (loginError()) {
-        <div class="alert alert-error" role="alert">
-          {{ loginError() }}
-        </div>
+        <div class="alert alert-error" role="alert">{{ loginError() }}</div>
       }
 
       @if (isLoginSuccess()) {
         <div class="alert alert-success" role="status">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="alert-icon">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <span>Login successful! Redirecting to admin dashboard...</span>
         </div>
       }
 
-      <form
-        class="auth-form"
-        [formGroup]="loginForm"
-        (ngSubmit)="onLoginSubmit()"
-        novalidate
-      >
-        <!-- Email -->
+      <form class="auth-form" [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()" novalidate>
         <div class="form-group">
-          <label for="login-email" class="form-label">Email Address</label>
+          <label for="login-email" class="form-label">Email</label>
           <input
             type="email"
             id="login-email"
             formControlName="email"
             class="form-input"
             [class.error]="loginEmailControl?.invalid && loginEmailControl?.touched"
-            placeholder="admin@example.com"
+            placeholder="admin@newlife.ph"
             autocomplete="email"
-            [attr.aria-describedby]="
-              loginEmailControl?.invalid && loginEmailControl?.touched
-                ? 'login-email-error'
-                : null
-            "
           />
           @if (loginEmailControl?.invalid && loginEmailControl?.touched) {
-            <span id="login-email-error" class="error-text" role="alert">
-              {{ getLoginError('email') }}
-            </span>
+            <span class="error-text" role="alert">{{ getLoginError('email') }}</span>
           }
         </div>
 
-        <!-- Password -->
         <div class="form-group">
           <label for="login-password" class="form-label">Password</label>
-          <div class="password-input-wrapper">
+          <div class="input-wrapper">
             <input
               [type]="showLoginPassword() ? 'text' : 'password'"
               id="login-password"
               formControlName="password"
-              class="form-input password-input"
+              class="form-input"
               [class.error]="loginPasswordControl?.invalid && loginPasswordControl?.touched"
-              placeholder="Enter your password"
+              placeholder="••••••••"
               autocomplete="current-password"
-              [attr.aria-describedby]="
-                loginPasswordControl?.invalid && loginPasswordControl?.touched
-                  ? 'login-password-error'
-                  : null
-              "
             />
-            <button
-              type="button"
-              class="password-toggle"
-              (click)="toggleLoginPassword()"
-              [attr.aria-label]="showLoginPassword() ? 'Hide password' : 'Show password'"
-              [disabled]="isLoginLoading()"
-            >
+            <button type="button" class="input-action" (click)="toggleLoginPassword()" [attr.aria-label]="showLoginPassword() ? 'Hide password' : 'Show password'" [disabled]="isLoginLoading()">
               @if (showLoginPassword()) {
-                <!-- Eye-slash icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                     stroke-width="1.5" stroke="currentColor" class="eye-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0
-                           1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162
-                           10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65
-                           3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242
-                           4.242L9.88 9.88" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><path d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
               } @else {
-                <!-- Eye icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                     stroke-width="1.5" stroke="currentColor" class="eye-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0
-                           8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12
-                           19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               }
             </button>
           </div>
           @if (loginPasswordControl?.invalid && loginPasswordControl?.touched) {
-            <span id="login-password-error" class="error-text" role="alert">
-              {{ getLoginError('password') }}
-            </span>
+            <span class="error-text" role="alert">{{ getLoginError('password') }}</span>
           }
         </div>
 
-        <!-- Remember me + Forgot password -->
         <div class="form-options">
-          <label class="checkbox-container">
-            <input
-              type="checkbox"
-              formControlName="rememberMe"
-              class="checkbox-input"
-            />
-            <span class="checkmark"></span>
-            Remember me
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="rememberMe" />
+            <span>Remember me</span>
           </label>
-          <a routerLink="/forgot-password" class="link-muted">Forgot password?</a>
+          <a routerLink="/forgot-password" class="link">Forgot password?</a>
         </div>
 
-        <button
-          type="submit"
-          class="btn btn-primary btn-full"
-          [disabled]="isLoginLoading()"
-        >
+        <button type="submit" class="btn-primary" [disabled]="isLoginLoading()">
           @if (isLoginLoading()) {
-            <span class="loading-spinner" aria-hidden="true"></span>
+            <span class="spinner"></span> Signing In...
+          } @else {
+            Sign In
           }
-          {{ isLoginLoading() ? 'Signing In...' : 'Sign In' }}
         </button>
       </form>
 
-      <p class="switch-hint">
+      <p class="footer-text" style="text-align: center; margin-top: 1.5rem;">
         Don't have an account?
-        <button type="button" class="link-btn" (click)="switchTab('signup')">
-          Create one
-        </button>
+        <button type="button" class="link" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;padding:0;" (click)="switchTab('signup')">Create one</button>
       </p>
     </div>
 
-    <!-- ══════════════════════════════════════════════════════════════ -->
-    <!-- SIGNUP PANEL                                                  -->
-    <!-- ══════════════════════════════════════════════════════════════ -->
-    <div
-      role="tabpanel"
-      id="panel-signup"
-      aria-labelledby="tab-signup"
-      [class.hidden]="!isSignupTab()"
-    >
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SIGNUP PANEL                                  -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div role="tabpanel" id="panel-signup" aria-labelledby="tab-signup" [class.hidden]="!isSignupTab()">
       @if (signupError()) {
-        <div class="alert alert-error" role="alert">
-          {{ signupError() }}
-        </div>
+        <div class="alert alert-error" role="alert">{{ signupError() }}</div>
       }
 
-      <form
-        class="auth-form"
-        [formGroup]="signupForm"
-        (ngSubmit)="onSignupSubmit()"
-        novalidate
-      >
-        <!-- Name row -->
+      <form class="auth-form" [formGroup]="signupForm" (ngSubmit)="onSignupSubmit()" novalidate>
         <div class="form-row">
           <div class="form-group">
             <label for="signup-firstName" class="form-label">First Name</label>
@@ -230,19 +140,11 @@
               [class.error]="firstNameControl?.invalid && firstNameControl?.touched"
               placeholder="Juan"
               autocomplete="given-name"
-              [attr.aria-describedby]="
-                firstNameControl?.invalid && firstNameControl?.touched
-                  ? 'signup-firstName-error'
-                  : null
-              "
             />
             @if (firstNameControl?.invalid && firstNameControl?.touched) {
-              <span id="signup-firstName-error" class="error-text" role="alert">
-                {{ getSignupError('firstName') }}
-              </span>
+              <span class="error-text" role="alert">{{ getSignupError('firstName') }}</span>
             }
           </div>
-
           <div class="form-group">
             <label for="signup-lastName" class="form-label">Last Name</label>
             <input
@@ -251,52 +153,33 @@
               formControlName="lastName"
               class="form-input"
               [class.error]="lastNameControl?.invalid && lastNameControl?.touched"
-              placeholder="dela Cruz"
+              placeholder="Dela Cruz"
               autocomplete="family-name"
-              [attr.aria-describedby]="
-                lastNameControl?.invalid && lastNameControl?.touched
-                  ? 'signup-lastName-error'
-                  : null
-              "
             />
             @if (lastNameControl?.invalid && lastNameControl?.touched) {
-              <span id="signup-lastName-error" class="error-text" role="alert">
-                {{ getSignupError('lastName') }}
-              </span>
+              <span class="error-text" role="alert">{{ getSignupError('lastName') }}</span>
             }
           </div>
         </div>
 
-        <!-- Email -->
         <div class="form-group">
-          <label for="signup-email" class="form-label">Email Address</label>
+          <label for="signup-email" class="form-label">Email</label>
           <input
             type="email"
             id="signup-email"
             formControlName="email"
             class="form-input"
             [class.error]="signupEmailControl?.invalid && signupEmailControl?.touched"
-            placeholder="admin@example.com"
+            placeholder="admin@newlife.ph"
             autocomplete="email"
-            [attr.aria-describedby]="
-              signupEmailControl?.invalid && signupEmailControl?.touched
-                ? 'signup-email-error'
-                : null
-            "
           />
           @if (signupEmailControl?.invalid && signupEmailControl?.touched) {
-            <span id="signup-email-error" class="error-text" role="alert">
-              {{ getSignupError('email') }}
-            </span>
+            <span class="error-text" role="alert">{{ getSignupError('email') }}</span>
           }
         </div>
 
-        <!-- Contact Number (optional) -->
         <div class="form-group">
-          <label for="signup-contactNumber" class="form-label">
-            Contact Number
-            <span class="label-hint">(optional)</span>
-          </label>
+          <label for="signup-contactNumber" class="form-label">Contact Number <span style="color: #9ca3af; font-weight: 400;">(optional)</span></label>
           <input
             type="tel"
             id="signup-contactNumber"
@@ -305,267 +188,143 @@
             [class.error]="contactNumberControl?.invalid && contactNumberControl?.touched"
             placeholder="+639XXXXXXXXX"
             autocomplete="tel"
-            [attr.aria-describedby]="
-              contactNumberControl?.invalid && contactNumberControl?.touched
-                ? 'signup-contact-error'
-                : null
-            "
           />
           @if (contactNumberControl?.invalid && contactNumberControl?.touched) {
-            <span id="signup-contact-error" class="error-text" role="alert">
-              {{ getSignupError('contactNumber') }}
-            </span>
+            <span class="error-text" role="alert">{{ getSignupError('contactNumber') }}</span>
           }
         </div>
 
-        <!-- Password -->
         <div class="form-group">
           <label for="signup-inviteCode" class="form-label">Invite Code</label>
-          <div class="password-input-wrapper">
+          <div class="input-wrapper">
             <input
               [type]="showInviteCode() ? 'text' : 'password'"
               id="signup-inviteCode"
               formControlName="inviteCode"
-              class="form-input password-input"
+              class="form-input"
               [class.error]="inviteCodeControl?.invalid && inviteCodeControl?.touched"
               placeholder="Enter your invite code"
               autocomplete="off"
-              [attr.aria-describedby]="
-                inviteCodeControl?.invalid && inviteCodeControl?.touched
-                  ? 'signup-inviteCode-error'
-                  : null
-              "
             />
-            <button
-              type="button"
-              class="password-toggle"
-              (click)="toggleInviteCodeVisibility()"
-              [attr.aria-label]="showInviteCode() ? 'Hide invite code' : 'Show invite code'"
-              [disabled]="isSignupLoading()"
-            >
+            <button type="button" class="input-action" (click)="toggleInviteCodeVisibility()" [attr.aria-label]="showInviteCode() ? 'Hide' : 'Show'" [disabled]="isSignupLoading()">
               @if (showInviteCode()) {
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                     stroke-width="1.5" stroke="currentColor" class="eye-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12
-                           19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756
-                           0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3
-                           3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3
-                           3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
               } @else {
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                     stroke-width="1.5" stroke="currentColor" class="eye-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638
-                           0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5
-                           12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               }
             </button>
           </div>
           @if (inviteCodeControl?.invalid && inviteCodeControl?.touched) {
-            <span id="signup-inviteCode-error" class="error-text" role="alert">
-              {{ getSignupError('inviteCode') }}
-            </span>
+            <span class="error-text" role="alert">{{ getSignupError('inviteCode') }}</span>
           }
         </div>
 
-        <!-- Password -->
         <div class="form-group">
           <label for="signup-password" class="form-label">Password</label>
-          <div class="password-input-wrapper">
+          <div class="input-wrapper">
             <input
               [type]="showSignupPassword() ? 'text' : 'password'"
               id="signup-password"
               formControlName="password"
-              class="form-input password-input"
+              class="form-input"
               [class.error]="signupPasswordControl?.invalid && signupPasswordControl?.touched"
               placeholder="Create a strong password"
               autocomplete="new-password"
               (focus)="showPasswordRequirements.set(true)"
-              [attr.aria-describedby]="
-                signupPasswordControl?.invalid && signupPasswordControl?.touched
-                  ? 'signup-password-error'
-                  : 'password-requirements'
-              "
+              (blur)="showPasswordRequirements.set(false)"
             />
-            <button
-              type="button"
-              class="password-toggle"
-              (click)="toggleSignupPassword()"
-              [attr.aria-label]="showSignupPassword() ? 'Hide password' : 'Show password'"
-              [disabled]="isSignupLoading()"
-            >
+            <button type="button" class="input-action" (click)="toggleSignupPassword()" [attr.aria-label]="showSignupPassword() ? 'Hide' : 'Show'" [disabled]="isSignupLoading()">
               @if (showSignupPassword()) {
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                     stroke-width="1.5" stroke="currentColor" class="eye-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12
-                           19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756
-                           0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3
-                           3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3
-                           3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
               } @else {
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                     stroke-width="1.5" stroke="currentColor" class="eye-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638
-                           0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5
-                           12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               }
             </button>
           </div>
           @if (signupPasswordControl?.invalid && signupPasswordControl?.touched) {
-            <span id="signup-password-error" class="error-text" role="alert">
-              {{ getSignupError('password') }}
-            </span>
+            <span class="error-text" role="alert">{{ getSignupError('password') }}</span>
           }
           @if (showPasswordRequirements()) {
-            <div class="password-requirements" id="password-requirements" aria-live="polite">
-              <p class="requirements-title">Password must contain:</p>
-              <ul class="requirements-list">
-                @for (req of getPasswordRequirements(); track req.label) {
-                  <li [class.met]="req.met">
-                    <span class="requirement-icon" aria-hidden="true">
-                      {{ req.met ? '✓' : '○' }}
-                    </span>
-                    {{ req.label }}
-                  </li>
-                }
-              </ul>
+            <div class="password-requirements">
+              @for (req of getPasswordRequirements(); track req.label) {
+                <div class="req-item" [class.met]="req.met">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                    @if (req.met) {
+                      <polyline points="20 6 9 17 4 12"/>
+                    } @else {
+                      <circle cx="12" cy="12" r="10"/>
+                    }
+                  </svg>
+                  <span>{{ req.label }}</span>
+                </div>
+              }
             </div>
           }
         </div>
 
-        <!-- Confirm Password -->
         <div class="form-group">
           <label for="signup-confirmPassword" class="form-label">Confirm Password</label>
-          <div class="password-input-wrapper">
+          <div class="input-wrapper">
             <input
               [type]="showConfirmPassword() ? 'text' : 'password'"
               id="signup-confirmPassword"
               formControlName="confirmPassword"
-              class="form-input password-input"
+              class="form-input"
               [class.error]="confirmPasswordControl?.invalid && confirmPasswordControl?.touched"
               placeholder="Repeat your password"
               autocomplete="new-password"
-              [attr.aria-describedby]="
-                confirmPasswordControl?.invalid && confirmPasswordControl?.touched
-                  ? 'signup-confirm-error'
-                  : null
-              "
             />
-            <button
-              type="button"
-              class="password-toggle"
-              (click)="toggleConfirmPasswordVisibility()"
-              [attr.aria-label]="showConfirmPassword() ? 'Hide password' : 'Show password'"
-              [disabled]="isSignupLoading()"
-            >
+            <button type="button" class="input-action" (click)="toggleConfirmPasswordVisibility()" [attr.aria-label]="showConfirmPassword() ? 'Hide' : 'Show'" [disabled]="isSignupLoading()">
               @if (showConfirmPassword()) {
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                     stroke-width="1.5" stroke="currentColor" class="eye-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12
-                           19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756
-                           0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3
-                           3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3
-                           3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
               } @else {
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                     stroke-width="1.5" stroke="currentColor" class="eye-icon">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638
-                           0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5
-                           12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
               }
             </button>
           </div>
           @if (confirmPasswordControl?.invalid && confirmPasswordControl?.touched) {
-            <span id="signup-confirm-error" class="error-text" role="alert">
-              {{ getSignupError('confirmPassword') }}
-            </span>
+            <span class="error-text" role="alert">{{ getSignupError('confirmPassword') }}</span>
           }
         </div>
 
         <!-- Terms -->
-        <div class="form-options">
-          <label class="checkbox-container">
-            <input
-              type="checkbox"
-              formControlName="agreeToTerms"
-              class="checkbox-input"
-            />
-            <span class="checkmark"></span>
-            I agree to the
-            <a routerLink="/terms-of-service" class="link-primary">Terms of Service</a>
-            and
-            <a routerLink="/privacy-policy" class="link-primary">Privacy Policy</a>
+        <div class="form-options" style="margin-bottom: 1rem;">
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="agreeToTerms" />
+            <span>I agree to the <a routerLink="/terms-of-service" class="link">Terms</a> and <a routerLink="/privacy-policy" class="link">Privacy Policy</a></span>
           </label>
           @if (agreeToTermsControl?.invalid && agreeToTermsControl?.touched) {
-            <span class="error-text" role="alert">{{ getSignupError('agreeToTerms') }}</span>
+            <span class="error-text" role="alert" style="margin-top: 0.25rem;">{{ getSignupError('agreeToTerms') }}</span>
           }
         </div>
 
-        <button
-          type="submit"
-          class="btn btn-primary btn-full"
-          [disabled]="isSignupLoading()"
-        >
+        <button type="submit" class="btn-primary" [disabled]="isSignupLoading()">
           @if (isSignupLoading()) {
-            <span class="loading-spinner" aria-hidden="true"></span>
+            <span class="spinner"></span> Creating Account...
+          } @else {
+            Create Admin Account
           }
-          {{ isSignupLoading() ? 'Creating Account...' : 'Create Admin Account' }}
         </button>
       </form>
 
-      <p class="switch-hint">
+      <p class="footer-text" style="text-align: center; margin-top: 1.5rem;">
         Already have an account?
-        <button type="button" class="link-btn" (click)="switchTab('login')">
-          Sign in
-        </button>
+        <button type="button" class="link" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;padding:0;" (click)="switchTab('login')">Sign in</button>
       </p>
     </div>
   </div>
-</div>
 
-<!-- ── Success modal ─────────────────────────────────────────────────────── -->
+
+<!-- Success Modal -->
 @if (showSuccessModal()) {
-  <div class="popup-overlay" (click)="closeSuccessModal()" role="dialog"
-       aria-modal="true" aria-labelledby="success-modal-title">
-    <div class="popup-modal" (click)="$event.stopPropagation()">
-      <button class="popup-close" (click)="closeSuccessModal()" aria-label="Close">×</button>
-      <div class="popup-content">
-        <div class="success-icon" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-               stroke-width="2" stroke="currentColor" class="success-check">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <h3 id="success-modal-title" class="popup-title">Registration Successful!</h3>
-        <p class="popup-message">
-          Your admin account has been created. You can now sign in with your credentials.
-        </p>
-        <p class="popup-redirect" aria-live="polite">
-          Switching to Sign In in {{ countdown() }} seconds...
-        </p>
-        <div class="popup-actions">
-          <button class="btn btn-primary" (click)="goToLoginNow()">Sign In Now</button>
-          <button class="btn btn-outline" (click)="closeSuccessModal()">Close</button>
-        </div>
+  <div class="modal-overlay" (click)="closeSuccessModal()" role="dialog" aria-modal="true">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-icon success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </div>
+      <h2>Registration Successful!</h2>
+      <p>Your admin account has been created. Switching to Sign In in {{ countdown() }}s...</p>
+      <button type="button" class="btn-primary" (click)="goToLoginNow()">Sign In Now</button>
     </div>
   </div>
 }
