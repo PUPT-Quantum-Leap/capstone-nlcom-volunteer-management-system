@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AnalyticsService } from '../../services/analytics.service';
@@ -31,11 +31,13 @@ interface FeedingOperationRow extends FeedingOperation {
   templateUrl: './analytics-feeding-operation.html',
   styleUrl: './analytics-feeding-operation.scss',
 })
-export class AnalyticsFeedingOperationComponent implements OnInit {
+export class AnalyticsFeedingOperationComponent {
   private readonly analyticsService = inject(AnalyticsService);
   readonly addLocationOptionValue = '__add_new_location__';
 
   readonly backToOverview = output<void>();
+
+  readonly rsvpId = input<number | null>(null);
 
   readonly analyticsLoading = signal(false);
   readonly operationsData = signal<FeedingOperationRow[]>([]);
@@ -45,9 +47,12 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
   readonly operationTitle = signal('NLCOM x Metro World Child Feeding Operation');
   readonly operationDate = signal('');
 
-  ngOnInit(): void {
-    this.loadTeams();
-    this.loadOperations();
+  constructor() {
+    effect(() => {
+      const id = this.rsvpId();
+      this.loadTeams();
+      this.loadOperations(id);
+    });
   }
 
   private loadTeams(): void {
@@ -57,9 +62,9 @@ export class AnalyticsFeedingOperationComponent implements OnInit {
     });
   }
 
-  private loadOperations(): void {
+  private loadOperations(rsvpId?: number | null): void {
     this.analyticsLoading.set(true);
-    this.analyticsService.getFeedingOperations().subscribe({
+    this.analyticsService.getFeedingOperations(rsvpId).subscribe({
       next: (data) => {
         const transformedData = this.transformApiData(data);
         this.operationsData.set(this.buildOperationsRows(transformedData));

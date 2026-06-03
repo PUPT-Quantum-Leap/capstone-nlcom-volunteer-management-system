@@ -9,6 +9,7 @@ import {
   MoveVolunteerRequest,
   IcsMetadata,
   AssignVolunteerRequest,
+  RsvpIcsInfo,
   RsvpVolunteer,
   IcsDashboard,
 } from '../models/ics';
@@ -39,6 +40,15 @@ export class IcsService {
    */
   getIcsById(id: number): Observable<{ data: Ics }> {
     return this.http.get<{ data: Ics }>(`${this.apiUrl}/${id}`, { withCredentials: true });
+  }
+
+  /**
+   * Get RSVPs that have ICS records — used by the operations carousel.
+   */
+  getRsvpIcsList(): Observable<{ data: RsvpIcsInfo[] }> {
+    return this.http.get<{ data: RsvpIcsInfo[] }>(`${this.apiUrl}/rsvp-list`, {
+      withCredentials: true,
+    });
   }
 
   /**
