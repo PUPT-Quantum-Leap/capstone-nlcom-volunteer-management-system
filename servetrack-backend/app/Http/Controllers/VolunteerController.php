@@ -65,36 +65,36 @@ class VolunteerController extends Controller
 
         // Validate incoming data
         $validator = Validator::make($request->all(), [
-            // Personal Information
+            // Personal Information (required for registration)
             'firstName' => 'required|string|min:2|max:50',
             'lastName' => 'required|string|min:2|max:50',
-            'facebookName' => 'required|string|max:100',
+            'facebookName' => 'nullable|string|max:100',
             'email' => 'required|email|unique:volunteer,email|unique:users,email',
             'mobileNumber' => 'required|string|min:10|max:15',
-            'birthdate' => 'required|date|before:today',
-            'completeAddress' => 'required|string|min:10|max:255',
-            'lastMedicalExam' => 'required|date|before_or_equal:today',
+            'birthdate' => 'nullable|date|before:today',
+            'completeAddress' => 'nullable|string|min:10|max:255',
+            'lastMedicalExam' => 'nullable|date|before_or_equal:today',
             'gender' => 'nullable|string|in:boy,girl,male,female',
 
-            // Education & Experience
-            'educationalAttainment' => 'required|string|max:100',
+            // Education & Experience (collected in complete-profile)
+            'educationalAttainment' => 'nullable|string|max:100',
             'trainingExperience' => 'nullable|string',
             'skillsHobbies' => 'nullable|string',
             'classesTraining' => 'nullable|string',
 
-            // Preferences
-            'volunteerPreference' => 'required|string',
+            // Preferences (collected in complete-profile)
+            'volunteerPreference' => 'nullable|string',
             'otherPreference' => 'nullable|string',
-            'availability' => 'required|string',
+            'availability' => 'nullable|string',
             'otherAvailability' => 'nullable|string',
-            'partOfLifegroup' => 'required|string|in:yes,no',
+            'partOfLifegroup' => 'nullable|string|in:yes,no',
             'lifegroupLeaderName' => 'nullable|required_if:partOfLifegroup,yes|string|max:100',
-            'leadingLifegroup' => 'required|string|in:yes,no',
+            'leadingLifegroup' => 'nullable|string|in:yes,no',
 
-            // Emergency Contact
-            'emergencyContactName' => 'required|string|max:100',
-            'emergencyContactNumber' => 'required|string|min:10|max:15',
-            'emergencyContactRelationship' => 'required|string|max:50',
+            // Emergency Contact (collected in complete-profile)
+            'emergencyContactName' => 'nullable|string|max:100',
+            'emergencyContactNumber' => 'nullable|string|min:10|max:15',
+            'emergencyContactRelationship' => 'nullable|string|max:50',
 
             // Password (for authentication)
             'password' => ['required', 'string', Password::defaults()],
