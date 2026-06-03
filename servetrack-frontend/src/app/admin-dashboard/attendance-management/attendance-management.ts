@@ -113,6 +113,21 @@ export class AttendanceManagement implements OnInit {
     Math.ceil(this.filteredRsvps().length / this.rsvpPerPage()),
   );
   attendeeFilter = signal<'all' | 'present' | 'absent'>('all');
+  attendeePage = signal(1);
+  attendeePerPage = signal(10);
+
+  paginatedAttendeesList = computed(() => {
+    const list = this.filteredAttendeesList();
+    const page = this.attendeePage();
+    const perPage = this.attendeePerPage();
+    const start = (page - 1) * perPage;
+    const end = start + perPage;
+    return list.slice(start, end);
+  });
+
+  attendeeTotalPages = computed(() =>
+    Math.ceil(this.filteredAttendeesList().length / this.attendeePerPage()),
+  );
 
   attendanceRate = computed(() => {
     const total = this.totalAttendanceCount();
@@ -151,6 +166,7 @@ export class AttendanceManagement implements OnInit {
       untracked(() => {
         this.attendancePage.set(1);
         this.rsvpPage.set(1);
+        this.attendeePage.set(1);
       });
     });
 
@@ -341,6 +357,7 @@ export class AttendanceManagement implements OnInit {
     this.attendanceView.set(view);
     this.attendancePage.set(1);
     this.rsvpPage.set(1);
+    this.attendeePage.set(1);
     this.selectedRsvp.set(null);
     this.attendeeFilter.set('all');
   }
@@ -352,12 +369,14 @@ export class AttendanceManagement implements OnInit {
   selectRsvp(rsvp: Rsvp): void {
     this.selectedRsvp.set(rsvp);
     this.attendancePage.set(1);
+    this.attendeePage.set(1);
     this.attendeeFilter.set('all');
   }
 
   clearSelectedRsvp(): void {
     this.selectedRsvp.set(null);
     this.attendeeFilter.set('all');
+    this.attendeePage.set(1);
     this.globalSearchService.clearSearchQuery();
   }
 
@@ -371,30 +390,48 @@ export class AttendanceManagement implements OnInit {
     this.rsvpPage.set(1);
   }
 
-  markAllPresent(): void {
-    const selected = this.selectedRsvp();
-    if (!selected) return;
+  setAttendeeFilter(filter: 'all' | 'present' | 'absent'): void {
+    this.attendeeFilter.set(filter);
+    this.attendeePage.set(1);
+  }
 
-    if (confirm('Are you sure you want to mark all attendees as present for this event?')) {
-      this.isLoading.set(true);
-      this.adminDashboardService.markAllPresent(selected.id).subscribe({
-        next: (response) => {
-          this.isLoading.set(false);
-          if (response.success) {
-            this.showSnackbar.emit({ message: response.message || 'All attendees marked as present', type: 'success' });
-            this.loadAttendanceData();
-            this.loadRsvpEvents();
-          } else {
-            this.showSnackbar.emit({ message: response.message || 'Failed to mark attendees as present', type: 'error' });
-          }
-        },
-        error: (err) => {
-          this.isLoading.set(false);
-          console.error('Error marking all present:', err);
-          this.showSnackbar.emit({ message: 'Error communicating with server', type: 'error' });
-        }
-      });
+  // Pagination for Attendees
+  previousAttendeePage(): void {
+    if (this.attendeePage() > 1) {
+      this.attendeePage.update((p) => p - 1);
     }
+  }
+
+  nextAttendeePage(): void {
+    if (this.attendeePage() < this.attendeeTotalPages()) {
+      this.attendeePage.update((p) => p + 1);
+    }
+  }
+
+  goToAttendeePage(page: number): void {
+    this.attendeePage.set(page);
+  }
+
+  getAttendeePageNumbers(): number[] {
+    const total = this.attendeeTotalPages();
+    const current = this.attendeePage();
+    const pages: number[] = [];
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (current <= 3) {
+        pages.push(1, 2, 3, 4, -1, total);
+      } else if (current >= total - 2) {
+        pages.push(1, -1, total - 3, total - 2, total - 1, total);
+      } else {
+        pages.push(1, -1, current - 1, current, current + 1, -1, total);
+      }
+    }
+
+    return pages;
   }
 
 

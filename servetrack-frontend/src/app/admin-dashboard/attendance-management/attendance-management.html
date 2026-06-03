@@ -285,33 +285,26 @@
             <button type="button" 
                     class="tab-btn" 
                     [class.active]="attendeeFilter() === 'all'" 
-                    (click)="attendeeFilter.set('all')">
+                    (click)="setAttendeeFilter('all')">
               All Responders ({{ totalAttendanceCount() }})
             </button>
             <button type="button" 
                     class="tab-btn" 
                     [class.active]="attendeeFilter() === 'present'" 
-                    (click)="attendeeFilter.set('present')">
+                    (click)="setAttendeeFilter('present')">
               Present ({{ presentCount() }})
             </button>
             <button type="button" 
                     class="tab-btn" 
                     [class.active]="attendeeFilter() === 'absent'" 
-                    (click)="attendeeFilter.set('absent')">
+                    (click)="setAttendeeFilter('absent')">
               Absent ({{ absentCount() }})
             </button>
           </div>
 
           <div class="tabs-header-right">
-            <button type="button" class="mark-all-present-btn" (click)="markAllPresent()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-              Mark All Present
-            </button>
-
             <div class="showing-count-text">
-              Showing <strong>{{ filteredAttendeesList().length }}</strong> volunteer(s)
+              Showing <strong>{{ Math.min(attendeePage() * attendeePerPage(), filteredAttendeesList().length) }}</strong> of <strong>{{ filteredAttendeesList().length }}</strong> volunteer(s)
             </div>
           </div>
         </div>
@@ -331,7 +324,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (record of filteredAttendeesList(); track record.id) {
+              @for (record of paginatedAttendeesList(); track record.id) {
               <tr>
                 <td>
                   <div class="volunteer-info-cell">
@@ -433,6 +426,46 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Pagination for Attendees -->
+        @if (attendeeTotalPages() > 1) {
+        <div class="pagination-container" style="margin-top: 1rem; border-top: 1px solid #f1f5f9; padding-top: 1rem;">
+          <div class="pagination-info">
+            @if (filteredAttendeesList().length > 0) {
+              Showing <strong>{{ (attendeePage() - 1) * attendeePerPage() + 1 }}</strong> to
+              <strong>{{ Math.min(attendeePage() * attendeePerPage(), filteredAttendeesList().length) }}</strong>
+              of <strong>{{ filteredAttendeesList().length }}</strong> volunteer(s)
+            } @else {
+              No volunteers found
+            }
+          </div>
+
+          <nav class="pagination-controls" aria-label="Attendee list pages">
+            <button type="button" class="pagination-btn" [disabled]="attendeePage() === 1" (click)="previousAttendeePage()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <div class="pagination-numbers">
+              @for (page of getAttendeePageNumbers(); track page) {
+                @if (page === -1) {
+                  <span class="pagination-ellipsis">...</span>
+                } @else {
+                  <button type="button" class="pagination-number" [class.active]="attendeePage() === page"
+                    (click)="goToAttendeePage(page)" [attr.aria-current]="attendeePage() === page ? 'page' : null">
+                    {{ page }}
+                  </button>
+                }
+              }
+            </div>
+            <button type="button" class="pagination-btn" [disabled]="attendeePage() === attendeeTotalPages()" (click)="nextAttendeePage()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </nav>
+        </div>
+        }
       </div>
     </div>
   }

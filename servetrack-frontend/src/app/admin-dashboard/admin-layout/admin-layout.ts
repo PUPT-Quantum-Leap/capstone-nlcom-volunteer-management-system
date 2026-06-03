@@ -147,7 +147,16 @@ export class AdminLayout implements OnInit {
       )
       .subscribe((event) => {
         this.currentUrl.set(event.urlAfterRedirects);
-        this.globalSearchService.clearSearchQuery();
+        
+        // Parse search query parameter if present in the URL
+        const urlTree = this.router.parseUrl(event.urlAfterRedirects);
+        const searchQueryParam = urlTree.queryParams['search'];
+        if (searchQueryParam) {
+          this.globalSearchService.setSearchQuery(searchQueryParam);
+        } else {
+          this.globalSearchService.clearSearchQuery();
+        }
+
         this.loadHeaderNotifications();
       });
   }
