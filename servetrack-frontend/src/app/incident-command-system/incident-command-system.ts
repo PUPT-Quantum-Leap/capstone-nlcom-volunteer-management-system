@@ -12,6 +12,7 @@ import {
   IcsCommandRole,
   IcsDashboard,
   IcsDashboardTeam,
+  RsvpIcsInfo,
   RsvpVolunteer,
 } from '../models/ics';
 import { Rsvp } from '../models/rsvp';
@@ -60,6 +61,23 @@ export class IncidentCommandSystemComponent implements OnInit {
   // View state for master-detail swap
   readonly activeView = signal<'dashboard' | 'operations'>('dashboard');
 
+  // ── Operations Carousel State ──
+  readonly rsvpIcsList = signal<RsvpIcsInfo[]>([]);
+  readonly selectedOperationsRsvpId = signal<number | null>(null);
+  readonly carouselStartIndex = signal(0);
+  readonly visibleCardsCount = 5;
+
+  readonly isFirstRsvp = computed(() => this.carouselStartIndex() === 0);
+  readonly isLastRsvp = computed(() =>
+    this.carouselStartIndex() + this.visibleCardsCount >= this.rsvpIcsList().length,
+  );
+
+  readonly visibleRsvpCards = computed(() => {
+    const list = this.rsvpIcsList();
+    const start = this.carouselStartIndex();
+    return list.slice(start, start + this.visibleCardsCount);
+  });
+
   // Move volunteer state
   readonly movingVolunteer = signal<{ volunteerId: number; fromTeamId: number } | null>(null);
 
@@ -97,10 +115,39 @@ export class IncidentCommandSystemComponent implements OnInit {
 
   navigateToOperations(): void {
     this.activeView.set('operations');
+    this.loadRsvpIcsList();
   }
 
   backToOverview(): void {
     this.activeView.set('dashboard');
+  }
+
+  // ===== OPERATIONS CAROUSEL =====
+
+  prevRsvp(): void {
+    this.carouselStartIndex.update((i) => Math.max(0, i - 1));
+  }
+
+  nextRsvp(): void {
+    const max = this.rsvpIcsList().length - this.visibleCardsCount;
+    this.carouselStartIndex.update((i) => Math.min(max, i + 1));
+  }
+
+  selectOperationsRsvp(rsvpId: number): void {
+    this.selectedOperationsRsvpId.set(rsvpId);
+  }
+
+  private loadRsvpIcsList(): void {
+    this.icsService.getRsvpIcsList().subscribe({
+      next: (response) => {
+        const list = response.data ?? [];
+        this.rsvpIcsList.set(list);
+        if (list.length > 0) {
+          this.selectedOperationsRsvpId.set(list[0].rsvp_id);
+        }
+      },
+      error: () => console.error('Failed to load RSVP ICS list.'),
+    });
   }
 
   // ===== RSVP & DASHBOARD =====
