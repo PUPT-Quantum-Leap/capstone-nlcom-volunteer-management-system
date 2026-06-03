@@ -1,10 +1,11 @@
 <div class="auth-container">
-  <div class="brand">
+  <a class="brand" routerLink="/">
     <img ngSrc="/assets/nlcom.png" width="36" height="36" alt="NLCOM Logo" class="brand-logo" priority />
     <span class="brand-name">ServeTrack</span>
-  </div>
+  </a>
 
-  <div class="auth-card" [class.signup-mode]="isSignupTab()">
+  <div class="auth-content">
+  <div class="auth-form-wrapper" [class.signup-mode]="isSignupTab()">
     <!-- Tab Switcher -->
     <div class="tabs" role="tablist" aria-label="Authentication options">
       <button
@@ -304,6 +305,7 @@
         </button>
       </form>
     </div>
+  </div>
   </div>
 
 
