@@ -229,6 +229,7 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     // ICS management — full CRUD + AI suggestions (admin only)
     Route::get('/ics', [IcsController::class, 'index'])->name('ics.index');
     Route::get('/ics/dashboard', [IcsController::class, 'dashboard'])->name('ics.dashboard');
+    Route::get('/ics/rsvp-list', [IcsController::class, 'rsvpList'])->name('ics.rsvp-list');
     Route::get('/ics/{id}', [IcsController::class, 'show'])->name('ics.show');
     Route::post('/ics', [IcsController::class, 'store'])->name('ics.store');
     Route::put('/ics/{id}', [IcsController::class, 'update'])->name('ics.update');
