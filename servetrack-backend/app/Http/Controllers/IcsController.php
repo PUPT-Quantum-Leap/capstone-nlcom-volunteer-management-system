@@ -228,6 +228,27 @@ class IcsController extends Controller
     }
 
     /**
+     * Get RSVPs that have ICS records — used by the operations carousel.
+     */
+    public function rsvpList(): JsonResponse
+    {
+        $icsRecords = Ics::query()->with('rsvp')->get();
+
+        $data = $icsRecords
+            ->filter(fn (Ics $ics): bool => $ics->relationLoaded('rsvp') && $ics->rsvp !== null)
+            ->map(fn (Ics $ics): array => [
+                'rsvp_id' => $ics->rsvp->rsvp_id,
+                'ics_id' => $ics->id,
+                'title' => $ics->rsvp->title,
+                'date' => $ics->rsvp->date?->format('Y-m-d'),
+                'status' => $ics->rsvp->status,
+            ])
+            ->values();
+
+        return response()->json(['data' => $data]);
+    }
+
+    /**
      * Get volunteers who RSVP'd for a specific event.
      */
     public function getRsvpVolunteers(int $rsvpId, Request $request): JsonResponse

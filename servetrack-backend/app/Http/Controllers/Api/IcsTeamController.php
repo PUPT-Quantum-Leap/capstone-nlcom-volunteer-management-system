@@ -13,15 +13,20 @@ class IcsTeamController extends Controller
 {
     /**
      * Display a listing of the resource.
-     * Returns distribution teams (Alpha→Foxtrot) from the latest ICS,
+     * Returns distribution teams (Alpha→Foxtrot) from the specified ICS,
      * grouped by parent team (Charlie 1+2 → Team Charlie, Delta 1+2 → Team Delta).
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        // Get the latest ICS record
-        $latestIcs = Ics::query()->with('rsvp')->latest()->first();
+        $rsvpId = $request->query('rsvp_id');
 
-        if (! $latestIcs) {
+        if ($rsvpId) {
+            $ics = Ics::query()->with('rsvp')->where('rsvp_id', $rsvpId)->first();
+        } else {
+            $ics = Ics::query()->with('rsvp')->latest()->first();
+        }
+
+        if (! $ics) {
             return response()->json([]);
         }
 
@@ -37,12 +42,12 @@ class IcsTeamController extends Controller
         }
 
         // Get RSVP shifts for time auto-fill
-        $rsvp = $latestIcs->rsvp;
+        $rsvp = $ics->rsvp;
         $shifts = $rsvp ? $rsvp->shifts()->orderBy('time_slot.time_slot_id', 'asc')->get() : collect();
         $totalRows = $teams->count();
 
         // Load volunteers + auto-fill for each team row
-        $teams->each(function ($icsTeam) use ($latestIcs, $rsvp, $shifts, $totalRows) {
+        $teams->each(function ($icsTeam) use ($ics, $rsvp, $shifts, $totalRows) {
             // --- Volunteers ---
             if ($icsTeam->team_id && $icsTeam->ics_id) {
                 $volunteers = DB::table('ics_volunteer')
@@ -76,8 +81,8 @@ class IcsTeamController extends Controller
             }
 
             // --- Auto-fill Pax (ICS objective ÷ total rows, if 0/null) ---
-            if (($icsTeam->no_of_pax === 0 || $icsTeam->no_of_pax === null) && $latestIcs->objective && $totalRows > 0) {
-                $icsTeam->setAttribute('no_of_pax', (int) round($latestIcs->objective / $totalRows));
+            if (($icsTeam->no_of_pax === 0 || $icsTeam->no_of_pax === null) && $ics->objective && $totalRows > 0) {
+                $icsTeam->setAttribute('no_of_pax', (int) round($ics->objective / $totalRows));
             }
 
             // --- Parent team grouping (for frontend rowspan) ---
