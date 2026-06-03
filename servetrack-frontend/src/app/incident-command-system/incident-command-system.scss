@@ -799,7 +799,23 @@ $radius: 12px;
 
 // ── Operations inline view ──────────────────────────────────────
 .operations-inline-view {
+  background: white;
+  border-radius: $radius;
+  border: 1px solid $border-color;
+  box-shadow: $shadow-sm;
   animation: fadeIn 0.25s ease;
+  overflow: hidden;
+
+  ::ng-deep > app-analytics-feeding-operation {
+    display: block;
+    padding: 0;
+    background: transparent;
+  }
+
+  ::ng-deep app-analytics-feeding-operation .feeding-operation-page {
+    max-width: none;
+    margin: 0;
+  }
 }
 
 @keyframes fadeIn {
