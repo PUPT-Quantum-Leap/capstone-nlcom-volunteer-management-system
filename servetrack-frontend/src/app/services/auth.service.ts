@@ -68,6 +68,7 @@ export interface AuthResponse {
     email: string;
     name?: string;
     role?: 'volunteer' | 'admin' | 'coordinator';
+    provider?: string | null;
     profile_photo_url?: string;
     user_type?: 'volunteer' | 'admin' | 'coordinator';
     needs_profile_completion?: boolean;
@@ -75,6 +76,7 @@ export interface AuthResponse {
       volunteer_id: number;
       first_name: string;
       last_name: string;
+      mobile_number?: string;
     };
     admin_profile?: {
       id: number;

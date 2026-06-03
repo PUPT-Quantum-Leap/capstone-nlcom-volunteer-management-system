@@ -1,21 +1,18 @@
-<div class="complete-profile-page">
-  <div class="complete-profile-card">
-    <h1>Complete Your Profile</h1>
-    <p class="subtitle">Welcome, {{ displayName() }}! Please fill in the remaining details to finish setting up your volunteer account.</p>
+<div class="auth-container">
+  <a class="brand" routerLink="/">
+    <img ngSrc="/assets/nlcom.png" width="32" height="32" alt="NLCOM Logo" class="brand-logo" priority />
+    <span class="brand-name">ServeTrack</span>
+  </a>
 
-    <div class="prefilled-info">
-      <div class="info-row">
-        <span class="label">Name</span>
-        <span class="value">{{ displayName() }}</span>
-      </div>
-      <div class="info-row">
-        <span class="label">Email</span>
-        <span class="value">{{ displayEmail() }}</span>
-      </div>
+  <div class="auth-content">
+  <div class="form-wrapper">
+    <div class="form-header">
+      <h1>Complete your profile</h1>
+      <p>Hi {{ displayName() }} — fill in the remaining details to finish setup.</p>
     </div>
 
     @if (submitError()) {
-      <div class="form-error-banner">{{ submitError() }}</div>
+      <div class="alert alert-error">{{ submitError() }}</div>
     }
 
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -178,9 +175,10 @@
         </div>
       </section>
 
-      <button type="submit" class="btn-submit" [disabled]="isSubmitting()">
+      <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
         {{ isSubmitting() ? 'Saving...' : 'Complete Profile' }}
       </button>
     </form>
+  </div>
   </div>
 </div>
