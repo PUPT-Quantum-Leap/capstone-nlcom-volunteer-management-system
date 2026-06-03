@@ -155,6 +155,14 @@ export interface AssignVolunteerRequest {
   is_leader?: boolean;
 }
 
+export interface RsvpIcsInfo {
+  rsvp_id: number;
+  ics_id: number;
+  title: string;
+  date: string;
+  status: string;
+}
+
 export interface RsvpVolunteer {
   volunteer_id: number;
   first_name: string;

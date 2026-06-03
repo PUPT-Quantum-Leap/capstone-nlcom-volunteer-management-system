@@ -267,9 +267,11 @@ exportPdf(dateRange: 'all' | 'month' | 'quarter' | 'year' = 'all', department?: 
     });
   }
 
-  getFeedingOperations(): Observable<IcsTeamFeedingOperation[]> {
+  getFeedingOperations(rsvpId?: number | null): Observable<IcsTeamFeedingOperation[]> {
+    const params = rsvpId ? new HttpParams().set('rsvp_id', rsvpId) : undefined;
     return this.http
       .get<IcsTeamFeedingOperation[]>(`${environment.apiUrl}/ics-team`, {
+        params,
         withCredentials: true,
       })
       .pipe(
