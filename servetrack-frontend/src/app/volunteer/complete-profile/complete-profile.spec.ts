@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 import { ProfileCompleteComponent } from './complete-profile';
 import { AuthService } from '../../services/auth.service';
@@ -19,6 +19,7 @@ describe('ProfileCompleteComponent', () => {
       providers: [
         { provide: Router, useValue: mockRouter },
         { provide: AuthService, useValue: mockAuthService },
+        { provide: ActivatedRoute, useValue: {} },
       ],
     });
   });
