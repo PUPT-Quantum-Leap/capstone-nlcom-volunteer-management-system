@@ -1,75 +1,71 @@
 // ═══════════════════════════════════════════════════════════════════════
-// ServeTrack Auth Page — Minimal Modern Design
+// ServeTrack Auth Page — Full-screen Supabase-style
 // ═══════════════════════════════════════════════════════════════════════
 
 $primary: #2563eb;
 $primary-hover: #1d4ed8;
-$text: #111827;
+$text: #1f2937;
 $text-secondary: #6b7280;
+$text-muted: #9ca3af;
 $border: #e5e7eb;
 $border-focus: #3b82f6;
-$bg: #f8fafc;
-$card-bg: #ffffff;
+$bg: #f9fafb;
 $error: #dc2626;
 $error-bg: #fef2f2;
 $success: #059669;
 $success-bg: #ecfdf5;
-$info-bg: #f0f9ff;
-$info-border: #bae6fd;
-$info-text: #0369a1;
-$radius-sm: 8px;
-$radius-md: 12px;
-$radius-lg: 16px;
+$radius: 6px;
 
 :host {
   display: block;
   min-height: 100vh;
 }
 
+// Full-screen container
 .auth-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
   background: $bg;
-  padding: 1.25rem 1rem;
 }
 
-// Brand
+// Top bar with logo
 .brand {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  padding: 1.25rem 1.5rem;
+  text-decoration: none;
 
   .brand-logo {
-    width: 36px;
-    height: 36px;
-    border-radius: $radius-sm;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
   }
 
   .brand-name {
-    font-size: 1.125rem;
+    font-size: 1rem;
     font-weight: 600;
     color: $text;
     letter-spacing: -0.02em;
   }
 }
 
-// Card
-.auth-card {
+// Main content area — centered
+.auth-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.5rem 3rem;
+}
+
+.auth-form-wrapper {
   width: 100%;
   max-width: 400px;
-  background: $card-bg;
-  border-radius: $radius-lg;
-  border: 1px solid $border;
-  padding: 1.5rem 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: max-width 0.3s ease;
 
   &.signup-mode {
-    max-width: 460px;
+    max-width: 440px;
   }
 }
 
@@ -77,22 +73,22 @@ $radius-lg: 16px;
 .tabs {
   display: flex;
   background: #f3f4f6;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 3px;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.75rem;
 }
 
 .tab {
   flex: 1;
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 1rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   background: transparent;
   color: $text-secondary;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
   font-family: inherit;
 
   &.active {
@@ -104,11 +100,10 @@ $radius-lg: 16px;
 
 // Form header
 .form-header {
-  text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 
   h1 {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: $text;
     margin-bottom: 0.25rem;
@@ -126,15 +121,13 @@ $radius-lg: 16px;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 0.875rem;
-  border-radius: $radius-sm;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius;
   font-size: 0.8125rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
   line-height: 1.4;
 
-  svg {
-    flex-shrink: 0;
-  }
+  svg { flex-shrink: 0; }
 
   &.alert-error {
     background: $error-bg;
@@ -152,11 +145,11 @@ $radius-lg: 16px;
 // Google button
 .btn-google {
   width: 100%;
-  padding: 0.65rem 1rem;
+  padding: 0.6rem 1rem;
   background: white;
   color: #374151;
-  border: 1.5px solid $border;
-  border-radius: $radius-sm;
+  border: 1px solid $border;
+  border-radius: $radius;
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
@@ -164,7 +157,7 @@ $radius-lg: 16px;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  transition: all 0.15s ease;
+  transition: all 0.15s;
   font-family: inherit;
 
   &:hover:not(:disabled) {
@@ -183,10 +176,9 @@ $radius-lg: 16px;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin: 0.875rem 0;
+  margin: 1rem 0;
 
-  &::before,
-  &::after {
+  &::before, &::after {
     content: '';
     flex: 1;
     height: 1px;
@@ -194,29 +186,8 @@ $radius-lg: 16px;
   }
 
   span {
-    color: #9ca3af;
+    color: $text-muted;
     font-size: 0.75rem;
-    font-weight: 500;
-  }
-}
-
-// Info note
-.info-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  background: $info-bg;
-  border: 1px solid $info-border;
-  border-radius: $radius-sm;
-  padding: 0.5rem 0.75rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.75rem;
-  color: $info-text;
-  line-height: 1.4;
-
-  svg {
-    flex-shrink: 0;
-    margin-top: 1px;
   }
 }
 
@@ -227,7 +198,7 @@ $radius-lg: 16px;
 }
 
 .form-group {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.875rem;
 }
 
 .form-row {
@@ -236,7 +207,7 @@ $radius-lg: 16px;
   gap: 0.75rem;
 
   .form-group {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.875rem;
   }
 }
 
@@ -245,23 +216,21 @@ $radius-lg: 16px;
   font-size: 0.8125rem;
   font-weight: 500;
   color: #374151;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.3rem;
 }
 
 .form-input {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1.5px solid $border;
-  border-radius: $radius-sm;
+  border: 1px solid $border;
+  border-radius: $radius;
   font-size: 0.875rem;
   font-family: inherit;
   color: $text;
   background: white;
   transition: border-color 0.15s, box-shadow 0.15s;
 
-  &::placeholder {
-    color: #9ca3af;
-  }
+  &::placeholder { color: $text-muted; }
 
   &:focus {
     outline: none;
@@ -271,19 +240,14 @@ $radius-lg: 16px;
 
   &.error {
     border-color: $error;
-
-    &:focus {
-      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
-    }
+    &:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08); }
   }
 }
 
 .input-wrapper {
   position: relative;
 
-  .form-input {
-    padding-right: 2.5rem;
-  }
+  .form-input { padding-right: 2.5rem; }
 
   .input-action {
     position: absolute;
@@ -293,7 +257,7 @@ $radius-lg: 16px;
     background: none;
     border: none;
     cursor: pointer;
-    color: #9ca3af;
+    color: $text-muted;
     padding: 0.25rem;
     display: flex;
     align-items: center;
@@ -301,9 +265,7 @@ $radius-lg: 16px;
     border-radius: 4px;
     transition: color 0.15s;
 
-    &:hover {
-      color: #6b7280;
-    }
+    &:hover { color: $text-secondary; }
   }
 }
 
@@ -311,15 +273,15 @@ $radius-lg: 16px;
   display: block;
   font-size: 0.75rem;
   color: $error;
-  margin-top: 0.25rem;
+  margin-top: 0.2rem;
 }
 
-// Form options (remember me / forgot password)
+// Form options
 .form-options {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
   font-size: 0.8125rem;
 }
 
@@ -343,9 +305,7 @@ $radius-lg: 16px;
   font-weight: 500;
   font-size: 0.8125rem;
 
-  &:hover {
-    text-decoration: underline;
-  }
+  &:hover { text-decoration: underline; }
 }
 
 // Primary button
@@ -355,7 +315,7 @@ $radius-lg: 16px;
   background: $primary;
   color: white;
   border: none;
-  border-radius: $radius-sm;
+  border-radius: $radius;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -366,14 +326,8 @@ $radius-lg: 16px;
   justify-content: center;
   gap: 0.5rem;
 
-  &:hover:not(:disabled) {
-    background: $primary-hover;
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+  &:hover:not(:disabled) { background: $primary-hover; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 
 // Spinner
@@ -395,10 +349,10 @@ $radius-lg: 16px;
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 1rem;
-  margin-bottom: 1rem;
-  padding: 0.625rem 0.75rem;
+  margin-bottom: 0.875rem;
+  padding: 0.5rem 0.75rem;
   background: #f9fafb;
-  border-radius: $radius-sm;
+  border-radius: $radius;
   border: 1px solid #f3f4f6;
 }
 
@@ -409,14 +363,13 @@ $radius-lg: 16px;
   font-size: 0.6875rem;
   color: $text-secondary;
 
-  &.met {
-    color: $success;
-  }
+  &.met { color: $success; }
 }
 
 // Footer
-.footer-text {
-  margin-top: 1rem;
+.form-footer {
+  text-align: center;
+  margin-top: 1.25rem;
   font-size: 0.8125rem;
   color: $text-secondary;
 }
@@ -436,7 +389,7 @@ $radius-lg: 16px;
 
 .modal-card {
   background: white;
-  border-radius: $radius-lg;
+  border-radius: 12px;
   padding: 2rem;
   max-width: 360px;
   width: 100%;
@@ -465,40 +418,17 @@ $radius-lg: 16px;
   justify-content: center;
   margin: 0 auto 1rem;
 
-  &.success {
-    background: $success-bg;
-    color: $success;
-  }
-
-  &.error {
-    background: $error-bg;
-    color: $error;
-  }
+  &.success { background: $success-bg; color: $success; }
+  &.error { background: $error-bg; color: $error; }
 }
 
 // Utility
-.hidden {
-  display: none !important;
-}
+.hidden { display: none !important; }
 
 // Responsive
 @media (max-width: 480px) {
-  .auth-container {
-    padding: 1.5rem 1rem;
-    justify-content: flex-start;
-    padding-top: 3rem;
-  }
-
-  .auth-card {
-    padding: 1.5rem 1.25rem;
-    border-radius: $radius-md;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .form-header h1 {
-    font-size: 1.25rem;
-  }
+  .brand { padding: 1rem; }
+  .auth-content { padding: 0 1rem 2rem; }
+  .form-row { grid-template-columns: 1fr; }
+  .form-header h1 { font-size: 1.25rem; }
 }

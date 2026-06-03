@@ -3,12 +3,13 @@
 }
 
 <div class="auth-container">
-  <div class="brand">
+  <a class="brand" routerLink="/">
     <img ngSrc="/assets/nlcom.png" width="36" height="36" alt="NLCOM Logo" class="brand-logo" priority />
     <span class="brand-name">ServeTrack</span>
-  </div>
+  </a>
 
-  <div class="auth-card" [class.signup-mode]="isSignupTab()">
+  <div class="auth-content">
+  <div class="auth-form-wrapper" [class.signup-mode]="isSignupTab()">
     <div class="form-header">
       <h1>Admin Portal</h1>
       <p>Sign in or create your administrator account</p>
@@ -114,10 +115,6 @@
         </button>
       </form>
 
-      <p class="footer-text" style="text-align: center; margin-top: 1.5rem;">
-        Don't have an account?
-        <button type="button" class="link" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;padding:0;" (click)="switchTab('signup')">Create one</button>
-      </p>
     </div>
 
     <!-- ══════════════════════════════════════════════ -->
@@ -307,11 +304,8 @@
         </button>
       </form>
 
-      <p class="footer-text" style="text-align: center; margin-top: 1.5rem;">
-        Already have an account?
-        <button type="button" class="link" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;padding:0;" (click)="switchTab('login')">Sign in</button>
-      </p>
     </div>
+  </div>
   </div>
 
 
