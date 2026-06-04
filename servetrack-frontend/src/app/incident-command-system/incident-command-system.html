@@ -503,7 +503,7 @@
     <div class="rsvp-selector-container">
       <label class="filter-label">Target RSVP Event</label>
       @if (rsvpIcsList().length > 0) {
-        <div class="rsvp-carousel">
+        <div class="rsvp-carousel" (wheel)="onRsvpCarouselWheel($event)">
           <button
             type="button"
             class="carousel-arrow"
