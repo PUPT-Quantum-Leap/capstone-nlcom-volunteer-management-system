@@ -66,6 +66,7 @@ export class IncidentCommandSystemComponent implements OnInit {
   readonly selectedOperationsRsvpId = signal<number | null>(null);
   readonly carouselStartIndex = signal(0);
   readonly visibleCardsCount = 5;
+  private rsvpScrollThrottled = false;
 
   readonly isFirstRsvp = computed(() => this.carouselStartIndex() === 0);
   readonly isLastRsvp = computed(() =>
@@ -131,6 +132,21 @@ export class IncidentCommandSystemComponent implements OnInit {
   nextRsvp(): void {
     const max = this.rsvpIcsList().length - this.visibleCardsCount;
     this.carouselStartIndex.update((i) => Math.min(max, i + 1));
+  }
+
+  onRsvpCarouselWheel(event: WheelEvent): void {
+    event.preventDefault();
+    if (this.rsvpScrollThrottled) return;
+    this.rsvpScrollThrottled = true;
+
+    const delta = event.deltaY !== 0 ? event.deltaY : event.deltaX;
+    if (delta > 0) {
+      this.nextRsvp();
+    } else if (delta < 0) {
+      this.prevRsvp();
+    }
+
+    setTimeout(() => { this.rsvpScrollThrottled = false; }, 350);
   }
 
   selectOperationsRsvp(rsvpId: number): void {
