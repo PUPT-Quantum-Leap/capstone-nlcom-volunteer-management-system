@@ -3,18 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreIcsTeamRequest;
+use App\Http\Requests\UpdateIcsTeamRequest;
 use App\Models\Ics;
 use App\Models\IcsTeam;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class IcsTeamController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     * Returns distribution teams (Alpha→Foxtrot) from the specified ICS,
-     * grouped by parent team (Charlie 1+2 → Team Charlie, Delta 1+2 → Team Delta).
+     * Display distribution teams (Alpha→Foxtrot) for the specified ICS,
+     * grouped by parent team with auto-filled location, time, pax, and assigned volunteers.
      */
     public function index(Request $request): JsonResponse
     {
@@ -30,9 +30,8 @@ class IcsTeamController extends Controller
             return response()->json([]);
         }
 
-        // Get distribution teams (AM + PM) from the latest ICS, ordered logically
         $teams = IcsTeam::with('ics.rsvp')
-            ->where('ics_id', $latestIcs->id)
+            ->where('ics_id', $ics->id)
             ->whereIn('branch_key', ['am_distribution', 'pm_distribution'])
             ->orderByRaw("FIELD(team_key, 'alpha', 'bravo', 'charlie_1', 'charlie_2', 'delta_1', 'delta_2', 'echo', 'foxtrot')")
             ->get();
@@ -41,52 +40,39 @@ class IcsTeamController extends Controller
             return response()->json([]);
         }
 
-        // Get RSVP shifts for time auto-fill
         $rsvp = $ics->rsvp;
         $shifts = $rsvp ? $rsvp->shifts()->orderBy('time_slot.time_slot_id', 'asc')->get() : collect();
         $totalRows = $teams->count();
 
-        // Load volunteers + auto-fill for each team row
         $teams->each(function ($icsTeam) use ($ics, $rsvp, $shifts, $totalRows) {
-            // --- Volunteers ---
             if ($icsTeam->team_id && $icsTeam->ics_id) {
-                $volunteers = DB::table('ics_volunteer')
-                    ->join('volunteer', 'volunteer.volunteer_id', '=', 'ics_volunteer.volunteer_id')
-                    ->where('ics_volunteer.ics_id', $icsTeam->ics_id)
-                    ->where('ics_volunteer.team_id', $icsTeam->team_id)
-                    ->select('volunteer.volunteer_id', 'volunteer.first_name', 'volunteer.last_name', 'ics_volunteer.role', 'ics_volunteer.is_driver', 'ics_volunteer.is_leader')
-                    ->get();
+                $volunteers = $icsTeam->volunteers()->get();
 
                 $icsTeam->setAttribute('assigned_volunteers', $volunteers->map(fn ($v) => [
                     'id' => $v->volunteer_id,
                     'name' => trim($v->first_name.' '.$v->last_name),
-                    'role' => $v->role,
-                    'is_driver' => (bool) $v->is_driver,
-                    'is_leader' => (bool) $v->is_leader,
+                    'role' => $v->pivot->role,
+                    'is_driver' => (bool) $v->pivot->is_driver,
+                    'is_leader' => (bool) $v->pivot->is_leader,
                 ])->values());
             } else {
                 $icsTeam->setAttribute('assigned_volunteers', []);
             }
 
-            // --- Auto-fill Location (from RSVP, if empty) ---
-            if (empty($icsTeam->location) && $rsvp) {
+            if ($icsTeam->location === null && $rsvp) {
                 $icsTeam->setAttribute('location', $rsvp->event_location ?? '');
             }
 
-            // --- Auto-fill Time (AM or PM shift from RSVP, if empty) ---
-            if (empty($icsTeam->time) && $shifts->isNotEmpty()) {
+            if ($icsTeam->time === null && $shifts->isNotEmpty()) {
                 $isAm = $icsTeam->branch_key === 'am_distribution';
                 $shift = $isAm ? $shifts->first() : $shifts->last();
                 $icsTeam->setAttribute('time', $shift->text ?? '');
             }
 
-            // --- Auto-fill Pax (ICS objective ÷ total rows, if 0/null) ---
             if (($icsTeam->no_of_pax === 0 || $icsTeam->no_of_pax === null) && $ics->objective && $totalRows > 0) {
                 $icsTeam->setAttribute('no_of_pax', (int) round($ics->objective / $totalRows));
             }
 
-            // --- Parent team grouping (for frontend rowspan) ---
-            // "Charlie 1" → "Team Charlie", "Delta 2" → "Team Delta", "Alpha" → "Team Alpha"
             $teamName = $icsTeam->team ?? '';
             $parentTeam = trim(preg_replace('/\s*\d+$/', '', $teamName));
             $icsTeam->setAttribute('parent_team', 'Team '.$parentTeam);
@@ -95,25 +81,20 @@ class IcsTeamController extends Controller
         return response()->json($teams);
     }
 
+    /**
+     * Return a distinct list of all team names across all ICS records.
+     */
     public function getTeams(): JsonResponse
     {
         return response()->json(IcsTeam::distinct()->pluck('team'));
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created ICS team.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreIcsTeamRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'team' => 'required|string',
-            'departure_note' => 'nullable|string',
-            'location' => 'nullable|string',
-            'time' => 'nullable|string',
-            'no_of_pax' => 'nullable|integer',
-            'details' => 'nullable|string',
-            'ics_id' => 'sometimes|integer|exists:ics,id',
-        ]);
+        $validated = $request->validated();
 
         if (! isset($validated['ics_id'])) {
             $validated['ics_id'] = IcsTeam::query()
@@ -127,7 +108,7 @@ class IcsTeamController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified ICS team.
      */
     public function show(string $id): JsonResponse
     {
@@ -137,20 +118,13 @@ class IcsTeamController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified ICS team.
      */
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateIcsTeamRequest $request, string $id): JsonResponse
     {
         $icsTeam = IcsTeam::findOrFail($id);
 
-        $validated = $request->validate([
-            'team' => 'sometimes|required|string',
-            'departure_note' => 'nullable|string',
-            'location' => 'nullable|string',
-            'time' => 'nullable|string',
-            'no_of_pax' => 'nullable|integer',
-            'details' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         $icsTeam->update($validated);
 
