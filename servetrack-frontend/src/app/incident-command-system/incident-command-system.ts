@@ -180,7 +180,9 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   private loadRsvpIcsList(): void {
     this.icsService.getRsvpIcsList().subscribe({
       next: (response) => {
-        const list = response.data ?? [];
+        const list = (response.data ?? []).sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        );
         this.rsvpIcsList.set(list);
         if (list.length > 0) {
           this.selectedOperationsRsvpId.set(list[0].rsvp_id);
