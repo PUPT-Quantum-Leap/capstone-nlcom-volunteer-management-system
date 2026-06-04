@@ -1088,3 +1088,61 @@ $radius: 12px;
   :host { padding: 1rem; }
   .summary-grid { grid-template-columns: 1fr 1fr; }
 }
+
+// ── RSVP Carousel Responsive ─────────────────────────────────
+@media (max-width: 768px) {
+  .rsvp-selector-container {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .rsvp-carousel {
+    overflow: hidden;
+  }
+
+  .carousel-track {
+    overflow: hidden;
+  }
+
+  .rsvp-card {
+    height: 2.75rem;
+    padding: 0.3rem 0.5rem;
+
+    &-title {
+      font-size: 0.65rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &-date {
+      font-size: 0.5rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-arrow {
+    width: 1.5rem;
+    height: 1.5rem;
+
+    svg { width: 0.75rem; height: 0.75rem; }
+  }
+
+  .carousel-track {
+    gap: 0.375rem;
+  }
+
+  .rsvp-card {
+    height: 2.5rem;
+    padding: 0.25rem 0.4rem;
+
+    &-title {
+      font-size: 0.6rem;
+    }
+
+    &-date {
+      font-size: 0.45rem;
+    }
+  }
+}
