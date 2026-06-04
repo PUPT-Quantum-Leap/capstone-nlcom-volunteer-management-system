@@ -159,7 +159,7 @@ export interface RsvpIcsInfo {
   rsvp_id: number;
   ics_id: number;
   title: string;
-  date: string;
+  date: string | null;
   status: string;
 }
 

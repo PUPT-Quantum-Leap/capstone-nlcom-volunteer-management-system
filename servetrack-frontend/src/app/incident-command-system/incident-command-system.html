@@ -523,7 +523,7 @@
                 [class.active]="rsvp.rsvp_id === selectedOperationsRsvpId()"
                 (click)="selectOperationsRsvp(rsvp.rsvp_id)">
                 <span class="rsvp-card-title">{{ rsvp.title }}</span>
-                <span class="rsvp-card-date">{{ rsvp.date | date: 'MMM d, yyyy' }}</span>
+                <span class="rsvp-card-date">{{ rsvp.date ? (rsvp.date | date: 'MMM d, yyyy') : '—' }}</span>
                 <span class="rsvp-card-status" [class.active]="rsvp.status === 'active'">
                   {{ rsvp.status === 'active' ? 'Active' : 'Closed' }}
                 </span>
