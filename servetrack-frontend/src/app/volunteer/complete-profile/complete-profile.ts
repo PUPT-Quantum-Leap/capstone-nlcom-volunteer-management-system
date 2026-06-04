@@ -7,7 +7,6 @@ import { AuthService } from '../../services/auth.service';
 import { InputSanitizerService } from '../../services/input-sanitizer.service';
 import {
   phoneNumberValidator,
-  nameValidator,
   dateValidator,
   addressValidator,
   emergencyContactValidator,
@@ -40,8 +39,6 @@ export class ProfileCompleteComponent implements OnInit {
   isGoogleUser = computed(() => this.currentUser()?.provider === 'google');
 
   form: FormGroup = this.fb.group({
-    firstName: ['', [Validators.required, nameValidator(this.sanitizer)]],
-    lastName: ['', [Validators.required, nameValidator(this.sanitizer)]],
     mobileNumber: ['', [Validators.required, phoneNumberValidator(this.sanitizer)]],
     birthdate: ['', [Validators.required, dateValidator(this.sanitizer, 'Birthdate')]],
     completeAddress: ['', [Validators.required, addressValidator()]],
@@ -117,9 +114,11 @@ export class ProfileCompleteComponent implements OnInit {
     this.submitError.set(null);
 
     const v = this.form.value;
+    const fullName = this.currentUser()?.name ?? '';
+    const [first, ...rest] = fullName.split(' ');
     const payload = {
-      firstName: this.sanitizer.sanitizeInput(v.firstName, 'both'),
-      lastName: this.sanitizer.sanitizeInput(v.lastName, 'both'),
+      firstName: this.sanitizer.sanitizeInput(first ?? '', 'both'),
+      lastName: this.sanitizer.sanitizeInput(rest.join(' ') || first || '', 'both'),
       mobileNumber: v.mobileNumber,
       birthdate: v.birthdate,
       completeAddress: this.sanitizer.sanitizeInput(v.completeAddress, 'both'),
