@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { AnalyticsService } from '../../services/analytics.service';
 import { IcsTeamFeedingOperation } from '../../services/analytics.service';
 import jsPDF from 'jspdf';
@@ -48,10 +49,12 @@ export class AnalyticsFeedingOperationComponent {
   readonly operationDate = signal('');
 
   constructor() {
-    effect(() => {
+    this.loadTeams();
+
+    effect((onCleanup) => {
       const id = this.rsvpId();
-      this.loadTeams();
-      this.loadOperations(id);
+      const sub = this.loadOperations(id);
+      onCleanup(() => sub.unsubscribe());
     });
   }
 
@@ -62,9 +65,9 @@ export class AnalyticsFeedingOperationComponent {
     });
   }
 
-  private loadOperations(rsvpId?: number | null): void {
+  private loadOperations(rsvpId?: number | null): Subscription {
     this.analyticsLoading.set(true);
-    this.analyticsService.getFeedingOperations(rsvpId).subscribe({
+    return this.analyticsService.getFeedingOperations(rsvpId).subscribe({
       next: (data) => {
         const transformedData = this.transformApiData(data);
         this.operationsData.set(this.buildOperationsRows(transformedData));
@@ -76,7 +79,7 @@ export class AnalyticsFeedingOperationComponent {
         const firstWithRsvp = data.find((op) => op.ics?.rsvp);
         if (firstWithRsvp?.ics?.rsvp) {
           this.operationTitle.set(firstWithRsvp.ics.rsvp.title);
-          this.operationDate.set(formatDate(firstWithRsvp.ics.rsvp.created_at));
+          this.operationDate.set(formatDate(firstWithRsvp.ics.rsvp.date));
         } else {
           const firstWithIcs = data.find((op) => op.ics?.date);
           if (firstWithIcs?.ics?.date) {

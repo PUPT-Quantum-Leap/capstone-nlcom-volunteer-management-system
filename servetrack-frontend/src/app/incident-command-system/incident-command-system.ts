@@ -145,6 +145,10 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
 
   backToOverview(): void {
     this.activeView.set('dashboard');
+    const rsvpId = this.selectedOperationsRsvpId();
+    if (rsvpId) {
+      this.loadDashboard(rsvpId);
+    }
   }
 
   // ===== OPERATIONS CAROUSEL =====
@@ -154,7 +158,7 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   }
 
   nextRsvp(): void {
-    const max = this.rsvpIcsList().length - this.visibleCardsCount();
+    const max = Math.max(0, this.rsvpIcsList().length - this.visibleCardsCount());
     this.carouselStartIndex.update((i) => Math.min(max, i + 1));
   }
 
@@ -175,14 +179,17 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
 
   selectOperationsRsvp(rsvpId: number): void {
     this.selectedOperationsRsvpId.set(rsvpId);
-    this.loadDashboard(rsvpId);
   }
 
   private loadRsvpIcsList(): void {
     this.icsService.getRsvpIcsList().subscribe({
       next: (response) => {
         const list = (response.data ?? []).sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+          (a, b) => {
+            const dateA = a.date ? new Date(a.date).getTime() : 0;
+            const dateB = b.date ? new Date(b.date).getTime() : 0;
+            return dateB - dateA;
+          },
         );
         this.rsvpIcsList.set(list);
         if (list.length > 0) {
