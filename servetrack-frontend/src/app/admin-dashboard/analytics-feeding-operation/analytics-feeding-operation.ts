@@ -190,8 +190,8 @@ export class AnalyticsFeedingOperationComponent {
   }
 
   private buildOperationsRows(operations: FeedingOperation[]): FeedingOperationRow[] {
-    // Sort operations by team to ensure proper grouping
-    const sortedOps = [...operations].sort((a, b) => a.team.localeCompare(b.team));
+    // Sort by id to preserve the backend's FIELD-order (Alpha→Foxtrot)
+    const sortedOps = [...operations].sort((a, b) => a.id - b.id);
 
     const teamCounts = sortedOps.reduce<Record<string, number>>((counts, operation) => {
       counts[operation.team] = (counts[operation.team] ?? 0) + 1;

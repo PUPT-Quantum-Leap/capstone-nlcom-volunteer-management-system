@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged, finalize, Subject, switchMap } from 'rxjs';
+import { finalize, switchMap } from 'rxjs';
 import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
 import jsPDF from 'jspdf';
 import autoTable, { RowInput } from 'jspdf-autotable';
@@ -38,6 +39,7 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   private readonly rsvpService = inject(RsvpService);
   private readonly icsService = inject(IcsService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   // --- State Signals ---
   readonly rsvpOptions = signal<SelectOption<string>[]>([]);
@@ -182,7 +184,7 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   }
 
   private loadRsvpIcsList(): void {
-    this.icsService.getRsvpIcsList().subscribe({
+    this.icsService.getRsvpIcsList().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response) => {
         const list = (response.data ?? []).sort(
           (a, b) => {
@@ -253,7 +255,7 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   }
 
   private loadVolunteerPool(rsvpId: number): void {
-    this.icsService.getRsvpVolunteers(rsvpId).subscribe({
+    this.icsService.getRsvpVolunteers(rsvpId).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (response) => this.rsvpVolunteerPool.set(response.data ?? []),
       error: () => {}, // Non-critical — search will just be empty
     });

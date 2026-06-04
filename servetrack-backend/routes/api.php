@@ -221,9 +221,9 @@ Route::middleware(['api', 'auth:sanctum', 'role:admin'])->group(function (): voi
     Route::post('/email/broadcast', [EmailBroadcastController::class, 'sendBroadcast'])->name('email.broadcast');
 
     // ICS Team management — feeding operation data (admin only)
-    Route::get('/ics-team', [IcsTeamController::class, 'index']);
-    Route::post('/ics-team', [IcsTeamController::class, 'store']);
-    Route::put('/ics-team/{id}', [IcsTeamController::class, 'update']);
+    Route::get('/ics-team', [IcsTeamController::class, 'index'])->name('ics-teams.index');
+    Route::post('/ics-team', [IcsTeamController::class, 'store'])->name('ics-teams.store');
+    Route::put('/ics-team/{id}', [IcsTeamController::class, 'update'])->name('ics-teams.update');
     Route::get('/teams', [TeamController::class, 'index']);
 
     // ICS management — full CRUD + AI suggestions (admin only)
