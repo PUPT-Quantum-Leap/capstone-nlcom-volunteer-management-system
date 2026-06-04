@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class IcsTeam extends Model
 {
@@ -36,5 +37,16 @@ class IcsTeam extends Model
     public function team(): BelongsTo
     {
         return $this->belongsTo(Team::class, 'team_id');
+    }
+
+    public function volunteers(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Volunteer::class,
+            'ics_volunteer',
+            'team_id',
+            'volunteer_id'
+        )->wherePivot('ics_id', $this->ics_id)
+            ->withPivot('role', 'is_driver', 'is_leader', 'assigned_at');
     }
 }
