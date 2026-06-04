@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -34,7 +34,7 @@ const BRANCH_DIRECTOR_KEYS = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, CustomSelect, AnalyticsFeedingOperationComponent],
 })
-export class IncidentCommandSystemComponent implements OnInit {
+export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   private readonly rsvpService = inject(RsvpService);
   private readonly icsService = inject(IcsService);
   private readonly router = inject(Router);
@@ -65,18 +65,19 @@ export class IncidentCommandSystemComponent implements OnInit {
   readonly rsvpIcsList = signal<RsvpIcsInfo[]>([]);
   readonly selectedOperationsRsvpId = signal<number | null>(null);
   readonly carouselStartIndex = signal(0);
-  readonly visibleCardsCount = 5;
+  readonly visibleCardsCount = signal(5);
   private rsvpScrollThrottled = false;
+  private boundResizeHandler: (() => void) | null = null;
 
   readonly isFirstRsvp = computed(() => this.carouselStartIndex() === 0);
   readonly isLastRsvp = computed(() =>
-    this.carouselStartIndex() + this.visibleCardsCount >= this.rsvpIcsList().length,
+    this.carouselStartIndex() + this.visibleCardsCount() >= this.rsvpIcsList().length,
   );
 
   readonly visibleRsvpCards = computed(() => {
     const list = this.rsvpIcsList();
     const start = this.carouselStartIndex();
-    return list.slice(start, start + this.visibleCardsCount);
+    return list.slice(start, start + this.visibleCardsCount());
   });
 
   // Move volunteer state
@@ -110,6 +111,29 @@ export class IncidentCommandSystemComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadRsvpList();
+    this.initResponsiveVisibleCards();
+  }
+
+  ngOnDestroy(): void {
+    if (this.boundResizeHandler) {
+      window.removeEventListener('resize', this.boundResizeHandler);
+    }
+  }
+
+  private initResponsiveVisibleCards(): void {
+    const update = (): void => {
+      const w = window.innerWidth;
+      if (w < 480) {
+        this.visibleCardsCount.set(1);
+      } else if (w < 768) {
+        this.visibleCardsCount.set(2);
+      } else {
+        this.visibleCardsCount.set(5);
+      }
+    };
+    update();
+    this.boundResizeHandler = update;
+    window.addEventListener('resize', update);
   }
 
   // ===== NAVIGATION =====
@@ -130,7 +154,7 @@ export class IncidentCommandSystemComponent implements OnInit {
   }
 
   nextRsvp(): void {
-    const max = this.rsvpIcsList().length - this.visibleCardsCount;
+    const max = this.rsvpIcsList().length - this.visibleCardsCount();
     this.carouselStartIndex.update((i) => Math.min(max, i + 1));
   }
 
