@@ -175,6 +175,7 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
 
   selectOperationsRsvp(rsvpId: number): void {
     this.selectedOperationsRsvpId.set(rsvpId);
+    this.loadDashboard(rsvpId);
   }
 
   private loadRsvpIcsList(): void {
@@ -185,7 +186,8 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
         );
         this.rsvpIcsList.set(list);
         if (list.length > 0) {
-          this.selectedOperationsRsvpId.set(list[0].rsvp_id);
+          const match = this.selectedRsvpId() ? list.find(r => r.rsvp_id === this.selectedRsvpId()) : null;
+          this.selectedOperationsRsvpId.set(match?.rsvp_id ?? list[0].rsvp_id);
         }
       },
       error: () => console.error('Failed to load RSVP ICS list.'),
