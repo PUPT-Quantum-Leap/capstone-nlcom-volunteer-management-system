@@ -9,7 +9,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { RsvpService } from '../services/rsvp.service';
@@ -21,7 +21,7 @@ import { MapViewComponent } from '../components/map-view/map-view';
 @Component({
   selector: 'app-rsvp',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, UserBadgeComponent, MapViewComponent],
+  imports: [CommonModule, UserBadgeComponent, MapViewComponent, RouterLink],
   templateUrl: './rsvp.html',
   styleUrl: './rsvp-styles.scss',
 })
@@ -298,79 +298,50 @@ export class RsvpComponent implements OnInit {
               timeSlotId: editShiftId,
               remainingEdits: response.remaining_edits,
               editCount: currentResponse.editCount + 1,
-              lastEditedAt: new Date().toISOString(),
             };
             this.rsvpResponse.set(updated);
           }
 
+          // Reload RSVP data
+          this.rsvpService
+            .getRsvpById(rsvp.id)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: (rsvpResp) => {
+                this.rsvp.set(rsvpResp.data);
+              },
+            });
+
           this.isEditSubmitting.set(false);
           this.isEditMode.set(false);
           this.editShiftId.set(null);
-          this.loadRsvp(rsvp.id);
         },
         error: (err: { error?: { message?: string } }) => {
-          this.editError.set(err?.error?.message ?? 'Failed to update response. Please try again.');
+          this.editError.set(err?.error?.message ?? 'Failed to update response.');
           this.isEditSubmitting.set(false);
         },
       });
   }
 
   /**
-   * Get the currently selected shift label for display.
+   * Get the display label for the user's currently voted shift.
    */
   getCurrentShiftLabel(): string {
     const rsvp = this.rsvp();
     const response = this.rsvpResponse();
-    if (!rsvp || !response) {
-      return 'N/A';
-    }
+    if (!rsvp || !response) return '';
     const shift = rsvp.shifts.find((s) => s.id === response.timeSlotId);
     return shift ? shift.timeSlot : 'Unknown';
   }
 
   /**
-   * Get the newly selected shift label for edit.
-   */
-  getEditShiftLabel(): string {
-    const rsvp = this.rsvp();
-    if (!rsvp) {
-      return 'N/A';
-    }
-    const editShiftId = this.editShiftId();
-    if (!editShiftId) {
-      return 'Select a shift';
-    }
-    const shift = rsvp.shifts.find((s) => s.id === editShiftId);
-    return shift ? shift.timeSlot : 'Unknown';
-  }
-
-  /**
-   * Get the reason why the RSVP is closed ('manual' for status-based, 'cutoff' for time-based).
-   */
-  getClosureReason(): 'manual' | 'cutoff' | null {
-    const rsvp = this.rsvp();
-    if (rsvp?.status === 'closed' || rsvp?.status === 'draft') {
-      return 'manual';
-    }
-    if (rsvp?.isCutoffPassed) {
-      return 'cutoff';
-    }
-    return null;
-  }
-
-  /**
-   * Get the appropriate closure message based on the reason for closure.
+   * Get closure message for a closed RSVP.
    */
   getClosureMessage(): string {
-    const reason = this.getClosureReason();
     const rsvp = this.rsvp();
-
-    if (reason === 'cutoff') {
-      return 'This RSVP has closed and is no longer accepting responses.';
-    }
-    if (reason === 'manual') {
-      return `This RSVP is ${rsvp?.status} and no longer accepting responses.`;
-    }
-    return '';
+    if (!rsvp) return '';
+    if (rsvp.status === 'closed') return 'This RSVP has been closed by an administrator.';
+    if (rsvp.isCutoffPassed) return 'The cut-off date for this RSVP has passed.';
+    return 'This RSVP is no longer accepting responses.';
   }
 }
