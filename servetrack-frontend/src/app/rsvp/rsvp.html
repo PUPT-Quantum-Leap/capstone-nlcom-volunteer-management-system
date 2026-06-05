@@ -101,7 +101,7 @@
         </div>
 
         <!-- Map View (shown when location has coordinates) -->
-        @if (rsvp.location?.latitude && rsvp.location?.longitude) {
+        @if (rsvp.location?.latitude != null && rsvp.location?.longitude != null) {
           <app-map-view
             [latitude]="rsvp.location!.latitude!"
             [longitude]="rsvp.location!.longitude!"
@@ -148,7 +148,7 @@
                 </span>
                 <div
                   class="option-fill-bar"
-                  [style.width.%]="(shift.responses / shift.capacity) * 100"
+                  [style.width.%]="shift.capacity ? (shift.responses / shift.capacity) * 100 : 0"
                 ></div>
               </label>
             }
@@ -282,7 +282,7 @@
                     <div class="result-bar-container">
                       <div
                         class="result-bar"
-                        [style.width.%]="(shift.responses / shift.capacity) * 100"
+                        [style.width.%]="shift.capacity ? (shift.responses / shift.capacity) * 100 : 0"
                       ></div>
                     </div>
                   </div>
@@ -303,7 +303,7 @@
                   <div class="result-bar-container">
                     <div
                       class="result-bar"
-                      [style.width.%]="(shift.responses / shift.capacity) * 100"
+                      [style.width.%]="shift.capacity ? (shift.responses / shift.capacity) * 100 : 0"
                     ></div>
                   </div>
                 </div>

@@ -111,7 +111,7 @@ export class ProfileCompleteComponent implements OnInit {
     const [first, ...rest] = fullName.split(' ');
     const payload = {
       firstName: this.sanitizer.sanitizeInput(first ?? '', 'both'),
-      lastName: this.sanitizer.sanitizeInput(rest.join(' ') || first || '', 'both'),
+      lastName: this.sanitizer.sanitizeInput(rest.length ? rest.join(' ') : '', 'both'),
       mobileNumber: v.mobileNumber,
       birthdate: v.birthdate,
       completeAddress: this.sanitizer.sanitizeInput(v.completeAddress, 'both'),
