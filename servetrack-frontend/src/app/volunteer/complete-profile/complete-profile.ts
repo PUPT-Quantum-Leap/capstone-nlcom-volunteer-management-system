@@ -64,19 +64,12 @@ export class ProfileCompleteComponent implements OnInit {
     const user = this.currentUser();
     if (user && !this.isGoogleUser()) {
       const volunteer = user.volunteer_profile;
-      const nameParts = user.name?.split(' ') ?? [];
       this.form.patchValue({
-        firstName: nameParts[0] ?? '',
-        lastName: nameParts.slice(1).join(' ') ?? '',
         mobileNumber: volunteer?.mobile_number ?? '',
       });
-      // Remove required validators since these are already stored
-      // Remove required validators since these are already stored
-      for (const field of ['firstName', 'lastName', 'mobileNumber']) {
-        const ctrl = this.form.get(field);
-        ctrl?.clearValidators();
-        ctrl?.updateValueAndValidity();
-      }
+      // Clear mobileNumber validator since it's already stored
+      this.form.get('mobileNumber')?.clearValidators();
+      this.form.get('mobileNumber')?.updateValueAndValidity();
     }
 
     this.form.get('volunteerPreference')?.valueChanges.subscribe((v) => {
