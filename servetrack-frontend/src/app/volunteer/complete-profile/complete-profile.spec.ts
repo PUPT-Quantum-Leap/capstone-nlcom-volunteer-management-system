@@ -42,15 +42,13 @@ describe('ProfileCompleteComponent', () => {
 
     // Fill required fields
     comp.form.patchValue({
-      firstName: 'John',
-      lastName: 'Doe',
       mobileNumber: '09123456789',
       birthdate: '1990-01-01',
       completeAddress: '123 Main Street, City, Province',
       lastMedicalExam: '2024-01-01',
-      educationalAttainment: 'Bachelor',
+      educationalAttainment: 'College',
       volunteerPreference: 'Relief Operations',
-      availability: 'Weekends Only',
+      availability: 'weekends-only',
       partOfLifegroup: 'no',
       leadingLifegroup: 'no',
       emergencyContactName: 'Jane Doe',
