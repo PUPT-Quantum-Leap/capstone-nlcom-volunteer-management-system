@@ -340,8 +340,9 @@ export class RsvpComponent implements OnInit {
   getClosureMessage(): string {
     const rsvp = this.rsvp();
     if (!rsvp) return '';
-    if (rsvp.status === 'closed') return 'This RSVP has been closed by an administrator.';
-    if (rsvp.isCutoffPassed) return 'The cut-off date for this RSVP has passed.';
-    return 'This RSVP is no longer accepting responses.';
+    if (rsvp.isCutoffPassed) return 'This RSVP has closed and is no longer accepting responses.';
+    if (rsvp.status === 'closed') return 'This RSVP is closed and no longer accepting responses.';
+    if (rsvp.status === 'draft') return 'This RSVP is draft and no longer accepting responses.';
+    return '';
   }
 }
