@@ -48,7 +48,7 @@ describe('ProfileCompleteComponent', () => {
       lastMedicalExam: '2024-01-01',
       educationalAttainment: 'College',
       volunteerPreference: 'Relief Operations',
-      availability: 'weekends-only',
+      availability: 'Weekends Only',
       partOfLifegroup: 'no',
       leadingLifegroup: 'no',
       emergencyContactName: 'Jane Doe',
