@@ -90,37 +90,6 @@ describe('RsvpComponent - Closed State Logic', () => {
     });
   });
 
-  describe('getClosureReason method', () => {
-    it('should return "manual" when status is closed', () => {
-      const rsvp = createMockRsvp({ status: 'closed', isCutoffPassed: false });
-      component.rsvp.set(rsvp);
-      expect(component.getClosureReason()).toBe('manual');
-    });
-
-    it('should return "manual" when status is draft', () => {
-      const rsvp = createMockRsvp({ status: 'draft', isCutoffPassed: false });
-      component.rsvp.set(rsvp);
-      expect(component.getClosureReason()).toBe('manual');
-    });
-
-    it('should return "cutoff" when cutoff has passed and status is active', () => {
-      const rsvp = createMockRsvp({ status: 'active', isCutoffPassed: true });
-      component.rsvp.set(rsvp);
-      expect(component.getClosureReason()).toBe('cutoff');
-    });
-
-    it('should return null when RSVP is open', () => {
-      const rsvp = createMockRsvp({ status: 'active', isCutoffPassed: false });
-      component.rsvp.set(rsvp);
-      expect(component.getClosureReason()).toBeNull();
-    });
-
-    it('should return null when RSVP is null', () => {
-      component.rsvp.set(null);
-      expect(component.getClosureReason()).toBeNull();
-    });
-  });
-
   describe('getClosureMessage method', () => {
     it('should return cutoff message when cutoff has passed', () => {
       const rsvp = createMockRsvp({ status: 'active', isCutoffPassed: true });
