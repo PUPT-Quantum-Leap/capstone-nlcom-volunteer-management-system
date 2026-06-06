@@ -18,14 +18,16 @@
         </p>
       </header>
 
-      <nav
-        class="wizard-progress"
+      <div
+        class="wizard-progress-indicator"
         role="progressbar"
         aria-valuemin="1"
         aria-valuemax="{{ totalSteps }}"
         aria-valuenow="{{ currentStep() }}"
         aria-valuetext="Step {{ currentStep() }} of {{ totalSteps }}: {{ currentStepConfig().label }}"
-      >
+      ></div>
+
+      <nav class="wizard-progress" aria-label="Profile completion steps">
         <ol class="progress-steps">
           @for (step of steps; track step.id) {
             <li
