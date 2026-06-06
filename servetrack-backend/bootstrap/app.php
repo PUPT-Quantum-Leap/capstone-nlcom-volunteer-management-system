@@ -6,6 +6,7 @@ use App\Console\Commands\RunScheduledBackup;
 use App\Console\Commands\SendRsvpCutoffReminders;
 use App\Http\Middleware\AdvancedRateLimit;
 use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\DynamicSessionDomain;
 use App\Http\Middleware\NormalizeEmail;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\RoleMiddleware;
@@ -51,6 +52,8 @@ return Application::configure(basePath: dirname(__DIR__))
             ->description('Archive old attendance photos older than 30 days');
     })
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->prepend(DynamicSessionDomain::class);
+
         $middleware->append(StripTags::class);
 
         $middleware->alias([
