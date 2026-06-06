@@ -1,184 +1,435 @@
-<div class="auth-container">
+<div class="auth-shell">
   <a class="brand" routerLink="/">
     <img ngSrc="/assets/nlcom.png" width="32" height="32" alt="NLCOM Logo" class="brand-logo" priority />
     <span class="brand-name">ServeTrack</span>
   </a>
 
   <div class="auth-content">
-  <div class="form-wrapper">
-    <div class="form-header">
-      <h1>Complete your profile</h1>
-      <p>Hi {{ displayName() }} — fill in the remaining details to finish setup.</p>
-    </div>
-
-    @if (submitError()) {
-      <div class="alert alert-error">{{ submitError() }}</div>
-    }
-
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <!-- Personal Info -->
-      <section class="form-section">
-        <h2>Personal Information</h2>
-
-        @if (isGoogleUser()) {
-        <div class="form-row">
-          <div class="form-group">
-            <label for="firstName">First Name <span class="required">*</span></label>
-            <input id="firstName" type="text" formControlName="firstName" [class.error]="hasError('firstName')" />
-            @if (hasError('firstName')) { <span class="error-text">First name is invalid.</span> }
-          </div>
-          <div class="form-group">
-            <label for="lastName">Last Name <span class="required">*</span></label>
-            <input id="lastName" type="text" formControlName="lastName" [class.error]="hasError('lastName')" />
-          </div>
-        </div>
-        }
-
-        <div class="form-row">
+    <div class="wizard-card" [class.is-loading]="isSubmitting()">
+      <header class="wizard-header">
+        <p class="wizard-eyebrow">@if (displayName()) { Hi {{ displayName() }} · }Almost there</p>
+        <h1 class="wizard-title">Complete your profile</h1>
+        <p class="wizard-subtitle">
           @if (isGoogleUser()) {
-          <div class="form-group">
-            <label for="mobileNumber">Mobile Number <span class="required">*</span></label>
-            <input id="mobileNumber" type="tel" formControlName="mobileNumber" placeholder="09XXXXXXXXX" [class.error]="hasError('mobileNumber')" />
-          </div>
+            We need a few more details to finish setting up your volunteer account.
+          } @else {
+            We saved the basics at sign-up. Tell us the rest so you can start volunteering.
           }
-          <div class="form-group">
-            <label for="birthdate">Birthdate <span class="required">*</span></label>
-            <input id="birthdate" type="date" formControlName="birthdate" [class.error]="hasError('birthdate')" />
-          </div>
+        </p>
+      </header>
+
+      <nav
+        class="wizard-progress"
+        role="progressbar"
+        aria-valuemin="1"
+        aria-valuemax="{{ totalSteps }}"
+        aria-valuenow="{{ currentStep() }}"
+        aria-valuetext="Step {{ currentStep() }} of {{ totalSteps }}: {{ currentStepConfig().label }}"
+      >
+        <ol class="progress-steps">
+          @for (step of steps; track step.id) {
+            <li
+              class="progress-step"
+              [class.is-current]="step.id === currentStep()"
+              [class.is-complete]="completedSteps().has(step.id)"
+              [class.is-future]="step.id > currentStep() && !completedSteps().has(step.id)"
+            >
+              <button
+                type="button"
+                class="step-button"
+                (click)="goToStep(step.id)"
+                [attr.aria-label]="'Go to step ' + step.id + ': ' + step.label"
+                [attr.aria-current]="step.id === currentStep() ? 'step' : null"
+              >
+                <span class="step-dot" aria-hidden="true">
+                  @if (completedSteps().has(step.id)) {
+                    <svg viewBox="0 0 16 16" width="14" height="14">
+                      <path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  } @else {
+                    <span class="step-number">{{ step.id }}</span>
+                  }
+                </span>
+                <span class="step-label">{{ step.label }}</span>
+              </button>
+            </li>
+          }
+        </ol>
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" [style.width.%]="progressPercent()"></div>
+        </div>
+      </nav>
+
+      @if (submitError()) {
+        <div class="alert alert-error" role="alert">{{ submitError() }}</div>
+      }
+      @if (stepError()) {
+        <div class="alert alert-error" role="alert" aria-live="polite">{{ stepError() }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="wizard-form" novalidate>
+        <div class="step-panel" [attr.data-step]="currentStep()">
+          @switch (currentStep()) {
+            @case (1) {
+              <fieldset class="step-fieldset">
+                <legend class="visually-hidden">Personal information</legend>
+                <h2 #stepHeading class="step-heading" tabindex="-1">Personal information</h2>
+                <p class="step-description">Tell us about yourself.</p>
+
+                @if (isGoogleUser()) {
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="firstName">First Name <span class="required" aria-hidden="true">*</span></label>
+                      <input
+                        id="firstName"
+                        type="text"
+                        formControlName="firstName"
+                        autocomplete="given-name"
+                        [class.error]="hasError('firstName')"
+                      />
+                      @if (hasError('firstName')) {
+                        <span class="error-text">First name is invalid.</span>
+                      }
+                    </div>
+                    <div class="form-group">
+                      <label for="lastName">Last Name <span class="required" aria-hidden="true">*</span></label>
+                      <input
+                        id="lastName"
+                        type="text"
+                        formControlName="lastName"
+                        autocomplete="family-name"
+                        [class.error]="hasError('lastName')"
+                      />
+                      @if (hasError('lastName')) {
+                        <span class="error-text">Last name is invalid.</span>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <div class="form-row">
+                  @if (isGoogleUser()) {
+                    <div class="form-group">
+                      <label for="mobileNumber">Mobile Number <span class="required" aria-hidden="true">*</span></label>
+                      <input
+                        id="mobileNumber"
+                        type="tel"
+                        formControlName="mobileNumber"
+                        placeholder="09XXXXXXXXX"
+                        autocomplete="tel"
+                        inputmode="tel"
+                        [class.error]="hasError('mobileNumber')"
+                      />
+                      @if (hasError('mobileNumber')) {
+                        <span class="error-text">Enter a valid Philippine mobile number.</span>
+                      }
+                    </div>
+                  }
+                  <div class="form-group">
+                    <label for="birthdate">Birthdate <span class="required" aria-hidden="true">*</span></label>
+                    <input
+                      id="birthdate"
+                      type="date"
+                      formControlName="birthdate"
+                      [class.error]="hasError('birthdate')"
+                    />
+                    @if (hasError('birthdate')) {
+                      <span class="error-text">Please enter a valid date.</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="completeAddress">Complete Address <span class="required" aria-hidden="true">*</span></label>
+                  <input
+                    id="completeAddress"
+                    type="text"
+                    formControlName="completeAddress"
+                    placeholder="Street, Barangay, City, Province"
+                    autocomplete="street-address"
+                    [class.error]="hasError('completeAddress')"
+                  />
+                  @if (hasError('completeAddress')) {
+                    <span class="error-text">Address is required.</span>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="lastMedicalExam">Last Medical Exam Date <span class="required" aria-hidden="true">*</span></label>
+                  <input
+                    id="lastMedicalExam"
+                    type="date"
+                    formControlName="lastMedicalExam"
+                    [class.error]="hasError('lastMedicalExam')"
+                  />
+                  @if (hasError('lastMedicalExam')) {
+                    <span class="error-text">Please enter a valid date.</span>
+                  }
+                </div>
+              </fieldset>
+            }
+
+            @case (2) {
+              <fieldset class="step-fieldset">
+                <legend class="visually-hidden">Education and experience</legend>
+                <h2 #stepHeading class="step-heading" tabindex="-1">Education &amp; experience</h2>
+                <p class="step-description">Share your background so we can match you with the right service.</p>
+
+                <div class="form-group">
+                  <label for="educationalAttainment">Educational Attainment <span class="required" aria-hidden="true">*</span></label>
+                  <select
+                    id="educationalAttainment"
+                    class="modern-select"
+                    formControlName="educationalAttainment"
+                    [class.error]="hasError('educationalAttainment')"
+                  >
+                    <option value="">Select educational attainment</option>
+                    <option value="Elementary">Elementary</option>
+                    <option value="High School">High School</option>
+                    <option value="College">College</option>
+                    <option value="Post-Graduate">Post-Graduate</option>
+                  </select>
+                  @if (hasError('educationalAttainment')) {
+                    <span class="error-text">Please select your highest attainment.</span>
+                  }
+                </div>
+
+                <div class="form-group">
+                  <label for="trainingExperience">Relevant Training &amp; Experience</label>
+                  <textarea
+                    id="trainingExperience"
+                    formControlName="trainingExperience"
+                    rows="3"
+                    placeholder="Tell us about trainings, certifications, or volunteer work."
+                  ></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="skillsHobbies">Skills &amp; Hobbies</label>
+                  <textarea
+                    id="skillsHobbies"
+                    formControlName="skillsHobbies"
+                    rows="3"
+                    placeholder="Cooking, first aid, photography..."
+                  ></textarea>
+                </div>
+
+                <div class="form-group">
+                  <label for="classesTraining">Classes &amp; Training</label>
+                  <textarea
+                    id="classesTraining"
+                    formControlName="classesTraining"
+                    rows="3"
+                    placeholder="Current classes or training programs you're taking."
+                  ></textarea>
+                </div>
+              </fieldset>
+            }
+
+            @case (3) {
+              <fieldset class="step-fieldset">
+                <legend class="visually-hidden">Volunteer preferences</legend>
+                <h2 #stepHeading class="step-heading" tabindex="-1">Volunteer preferences</h2>
+                <p class="step-description">Where and when would you like to serve?</p>
+
+                <div class="form-group">
+                  <label for="volunteerPreference">Where do you want to volunteer? <span class="required" aria-hidden="true">*</span></label>
+                  <select
+                    id="volunteerPreference"
+                    class="modern-select"
+                    formControlName="volunteerPreference"
+                    [class.error]="hasError('volunteerPreference')"
+                  >
+                    <option value="">Select preference</option>
+                    <option value="Mobile Kitchen Operations">Mobile Kitchen Operations</option>
+                    <option value="Relief Operations">Relief Operations</option>
+                    <option value="Digital Marketing & Promotions">Digital Marketing &amp; Promotions</option>
+                    <option value="Medical / Health Services">Medical / Health Services</option>
+                    <option value="other">Other</option>
+                  </select>
+                  @if (hasError('volunteerPreference')) {
+                    <span class="error-text">Please choose a preference.</span>
+                  }
+                </div>
+
+                @if (showOtherPreference()) {
+                  <div class="form-group">
+                    <label for="otherPreference">Please specify</label>
+                    <input id="otherPreference" type="text" formControlName="otherPreference" />
+                  </div>
+                }
+
+                <div class="form-group">
+                  <label for="availability">Availability <span class="required" aria-hidden="true">*</span></label>
+                  <select
+                    id="availability"
+                    class="modern-select"
+                    formControlName="availability"
+                    [class.error]="hasError('availability')"
+                  >
+                    <option value="">Select availability</option>
+                    <option value="Weekdays Only">Weekdays Only</option>
+                    <option value="Weekends Only">Weekends Only</option>
+                    <option value="Anytime / On Call">Anytime / On Call</option>
+                    <option value="others">Others</option>
+                  </select>
+                  @if (hasError('availability')) {
+                    <span class="error-text">Please select an availability window.</span>
+                  }
+                </div>
+
+                @if (showOtherAvailability()) {
+                  <div class="form-group">
+                    <label for="otherAvailability">Please specify</label>
+                    <input id="otherAvailability" type="text" formControlName="otherAvailability" />
+                  </div>
+                }
+
+                <div class="form-group">
+                  <label>Are you part of a Lifegroup? <span class="required" aria-hidden="true">*</span></label>
+                  <div class="radio-group" role="radiogroup" aria-label="Part of a Lifegroup">
+                    <label class="radio-pill">
+                      <input type="radio" formControlName="partOfLifegroup" value="yes" />
+                      <span>Yes</span>
+                    </label>
+                    <label class="radio-pill">
+                      <input type="radio" formControlName="partOfLifegroup" value="no" />
+                      <span>No</span>
+                    </label>
+                  </div>
+                </div>
+
+                @if (showLifegroupLeader()) {
+                  <div class="form-group">
+                    <label for="lifegroupLeaderName">Lifegroup Leader Name <span class="required" aria-hidden="true">*</span></label>
+                    <input
+                      id="lifegroupLeaderName"
+                      type="text"
+                      formControlName="lifegroupLeaderName"
+                      [class.error]="hasError('lifegroupLeaderName')"
+                    />
+                  </div>
+                }
+
+                <div class="form-group">
+                  <label>Are you leading a Lifegroup? <span class="required" aria-hidden="true">*</span></label>
+                  <div class="radio-group" role="radiogroup" aria-label="Leading a Lifegroup">
+                    <label class="radio-pill">
+                      <input type="radio" formControlName="leadingLifegroup" value="yes" />
+                      <span>Yes</span>
+                    </label>
+                    <label class="radio-pill">
+                      <input type="radio" formControlName="leadingLifegroup" value="no" />
+                      <span>No</span>
+                    </label>
+                  </div>
+                </div>
+              </fieldset>
+            }
+
+            @case (4) {
+              <fieldset class="step-fieldset">
+                <legend class="visually-hidden">Emergency contact</legend>
+                <h2 #stepHeading class="step-heading" tabindex="-1">Emergency contact</h2>
+                <p class="step-description">Who should we reach out to in case of an emergency?</p>
+
+                <div class="form-group">
+                  <label for="emergencyContactName">Name <span class="required" aria-hidden="true">*</span></label>
+                  <input
+                    id="emergencyContactName"
+                    type="text"
+                    formControlName="emergencyContactName"
+                    autocomplete="name"
+                    [class.error]="hasError('emergencyContactName')"
+                  />
+                  @if (hasError('emergencyContactName')) {
+                    <span class="error-text">Name is required.</span>
+                  }
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="emergencyContactNumber">Contact Number <span class="required" aria-hidden="true">*</span></label>
+                    <input
+                      id="emergencyContactNumber"
+                      type="tel"
+                      formControlName="emergencyContactNumber"
+                      placeholder="09XXXXXXXXX"
+                      autocomplete="tel"
+                      inputmode="tel"
+                      [class.error]="hasError('emergencyContactNumber')"
+                    />
+                    @if (hasError('emergencyContactNumber')) {
+                      <span class="error-text">Enter a valid contact number.</span>
+                    }
+                  </div>
+                  <div class="form-group">
+                    <label for="emergencyContactRelationship">Relationship <span class="required" aria-hidden="true">*</span></label>
+                    <input
+                      id="emergencyContactRelationship"
+                      type="text"
+                      formControlName="emergencyContactRelationship"
+                      placeholder="e.g. Spouse, Parent, Sibling"
+                      [class.error]="hasError('emergencyContactRelationship')"
+                    />
+                    @if (hasError('emergencyContactRelationship')) {
+                      <span class="error-text">Relationship is required.</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="review-card" aria-label="Review summary">
+                  <p class="review-eyebrow">Ready to submit</p>
+                  <p class="review-text">
+                    Once you submit, your profile will be marked complete and you'll be taken to your
+                    volunteer dashboard.
+                  </p>
+                </div>
+              </fieldset>
+            }
+          }
         </div>
 
-        <div class="form-group">
-          <label for="completeAddress">Complete Address <span class="required">*</span></label>
-          <input id="completeAddress" type="text" formControlName="completeAddress" [class.error]="hasError('completeAddress')" />
+        <div class="wizard-footer">
+          <button
+            type="button"
+            class="btn-ghost"
+            (click)="prevStep()"
+            [hidden]="isFirstStep()"
+            [disabled]="isSubmitting()"
+          >
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+              <path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Back
+          </button>
+
+          <p class="step-indicator" aria-live="polite">
+            Step <strong>{{ currentStep() }}</strong> of {{ totalSteps }}
+          </p>
+
+          @if (isLastStep()) {
+            <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
+              @if (isSubmitting()) {
+                <span class="btn-spinner" aria-hidden="true"></span>
+                Saving...
+              } @else {
+                Complete Profile
+                <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                  <path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              }
+            </button>
+          } @else {
+            <button type="button" class="btn-primary" (click)="nextStep()" [disabled]="isSubmitting()">
+              Save &amp; Continue
+              <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                <path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+          }
         </div>
-
-        <div class="form-group">
-          <label for="lastMedicalExam">Last Medical Exam Date <span class="required">*</span></label>
-          <input id="lastMedicalExam" type="date" formControlName="lastMedicalExam" [class.error]="hasError('lastMedicalExam')" />
-        </div>
-      </section>
-
-      <!-- Education & Experience -->
-      <section class="form-section">
-        <h2>Education &amp; Experience</h2>
-
-        <div class="form-group">
-          <label for="educationalAttainment">Educational Attainment <span class="required">*</span></label>
-          <select id="educationalAttainment" formControlName="educationalAttainment" [class.error]="hasError('educationalAttainment')">
-            <option value="">Select educational attainment</option>
-            <option value="Elementary">Elementary</option>
-            <option value="High School">High School</option>
-            <option value="College">College</option>
-            <option value="Post-Graduate">Post-Graduate</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="trainingExperience">Relevant Training &amp; Experience</label>
-          <textarea id="trainingExperience" formControlName="trainingExperience" rows="3"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="skillsHobbies">Skills &amp; Hobbies</label>
-          <textarea id="skillsHobbies" formControlName="skillsHobbies" rows="3"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="classesTraining">Classes &amp; Training</label>
-          <textarea id="classesTraining" formControlName="classesTraining" rows="3"></textarea>
-        </div>
-      </section>
-
-      <!-- Preferences -->
-      <section class="form-section">
-        <h2>Volunteer Preferences</h2>
-
-        <div class="form-group">
-          <label for="volunteerPreference">Where do you want to volunteer? <span class="required">*</span></label>
-          <select id="volunteerPreference" formControlName="volunteerPreference" [class.error]="hasError('volunteerPreference')">
-            <option value="">Select preference</option>
-            <option value="Mobile Kitchen Operations">Mobile Kitchen Operations</option>
-            <option value="Relief Operations">Relief Operations</option>
-            <option value="Digital Marketing & Promotions">Digital Marketing &amp; Promotions</option>
-            <option value="Medical / Health Services">Medical / Health Services</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        @if (showOtherPreference()) {
-          <div class="form-group">
-            <label for="otherPreference">Please specify</label>
-            <input id="otherPreference" type="text" formControlName="otherPreference" />
-          </div>
-        }
-
-        <div class="form-group">
-          <label for="availability">Availability <span class="required">*</span></label>
-          <select id="availability" formControlName="availability" [class.error]="hasError('availability')">
-            <option value="">Select availability</option>
-            <option value="Weekdays Only">Weekdays Only</option>
-            <option value="Weekends Only">Weekends Only</option>
-            <option value="Anytime / On Call">Anytime / On Call</option>
-            <option value="others">Others</option>
-          </select>
-        </div>
-
-        @if (showOtherAvailability()) {
-          <div class="form-group">
-            <label for="otherAvailability">Please specify</label>
-            <input id="otherAvailability" type="text" formControlName="otherAvailability" />
-          </div>
-        }
-
-        <div class="form-group">
-          <label>Are you part of a Lifegroup? <span class="required">*</span></label>
-          <div class="radio-group">
-            <label><input type="radio" formControlName="partOfLifegroup" value="yes" /> Yes</label>
-            <label><input type="radio" formControlName="partOfLifegroup" value="no" /> No</label>
-          </div>
-        </div>
-
-        @if (showLifegroupLeader()) {
-          <div class="form-group">
-            <label for="lifegroupLeaderName">Lifegroup Leader Name <span class="required">*</span></label>
-            <input id="lifegroupLeaderName" type="text" formControlName="lifegroupLeaderName" [class.error]="hasError('lifegroupLeaderName')" />
-          </div>
-        }
-
-        <div class="form-group">
-          <label>Are you leading a Lifegroup? <span class="required">*</span></label>
-          <div class="radio-group">
-            <label><input type="radio" formControlName="leadingLifegroup" value="yes" /> Yes</label>
-            <label><input type="radio" formControlName="leadingLifegroup" value="no" /> No</label>
-          </div>
-        </div>
-      </section>
-
-      <!-- Emergency Contact -->
-      <section class="form-section">
-        <h2>Emergency Contact</h2>
-
-        <div class="form-group">
-          <label for="emergencyContactName">Name <span class="required">*</span></label>
-          <input id="emergencyContactName" type="text" formControlName="emergencyContactName" [class.error]="hasError('emergencyContactName')" />
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="emergencyContactNumber">Contact Number <span class="required">*</span></label>
-            <input id="emergencyContactNumber" type="tel" formControlName="emergencyContactNumber" [class.error]="hasError('emergencyContactNumber')" />
-          </div>
-          <div class="form-group">
-            <label for="emergencyContactRelationship">Relationship <span class="required">*</span></label>
-            <input id="emergencyContactRelationship" type="text" formControlName="emergencyContactRelationship" [class.error]="hasError('emergencyContactRelationship')" />
-          </div>
-        </div>
-      </section>
-
-      <button type="submit" class="btn-primary" [disabled]="isSubmitting()">
-        {{ isSubmitting() ? 'Saving...' : 'Complete Profile' }}
-      </button>
-    </form>
-  </div>
+      </form>
+    </div>
   </div>
 </div>
