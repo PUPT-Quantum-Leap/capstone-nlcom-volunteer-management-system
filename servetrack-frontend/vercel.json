@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/sanctum/:path*",
+      "destination": "https://api.servetrack.quantumapp.tech/sanctum/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://api.servetrack.quantumapp.tech/api/:path*"
+    },
+    {
+      "source": "/((?!api|sanctum).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
