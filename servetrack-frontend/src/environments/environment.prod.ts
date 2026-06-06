@@ -1,6 +1,14 @@
+/**
+ * Detect if running on a Vercel preview deployment.
+ * If so, use relative API paths (proxied via vercel.json rewrites).
+ * Otherwise, use the absolute production API URL.
+ */
+const isVercelPreview =
+  typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app');
+
 export const environment = {
   production: true,
-  apiUrl: 'https://api.servetrack.quantumapp.tech/api',
+  apiUrl: isVercelPreview ? '/api' : 'https://api.servetrack.quantumapp.tech/api',
   chatbot: {
     ttsEnabled: true,
     voiceInputEnabled: true,
