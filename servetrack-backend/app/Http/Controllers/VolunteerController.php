@@ -1000,8 +1000,12 @@ class VolunteerController extends Controller
     /**
      * Process volunteer preference and create/find position record
      */
-    private function processVolunteerPreference(Volunteer $volunteer, string $preference, ?string $otherPreference): void
+    private function processVolunteerPreference(Volunteer $volunteer, ?string $preference, ?string $otherPreference): void
     {
+        if (empty($preference)) {
+            return;
+        }
+
         $positionName = $preference;
 
         // Map preference values to readable position names
@@ -1044,14 +1048,18 @@ class VolunteerController extends Controller
      */
     private function processEmergencyContact(
         Volunteer $volunteer,
-        string $name,
-        string $number,
-        string $relationship
+        ?string $name,
+        ?string $number,
+        ?string $relationship
     ): void {
+        if (empty($name) && empty($number) && empty($relationship)) {
+            return;
+        }
+
         $emergencyContact = EmergencyContact::firstOrCreate([
-            'name' => $name,
-            'phone_number' => $number,
-            'relationship' => $relationship,
+            'name' => $name ?? '',
+            'phone_number' => $number ?? '',
+            'relationship' => $relationship ?? '',
         ]);
 
         $volunteer->emergency_contact_id =
@@ -1064,9 +1072,13 @@ class VolunteerController extends Controller
      */
     private function processAvailability(
         Volunteer $volunteer,
-        string $availability,
+        ?string $availability,
         ?string $otherAvailability
     ): void {
+        if (empty($availability)) {
+            return;
+        }
+
         $availabilityName = $availability;
         $customDescription = null;
 
@@ -1090,9 +1102,9 @@ class VolunteerController extends Controller
      */
     private function processLifegroupInfo(
         Volunteer $volunteer,
-        string $partOfLifegroup,
+        ?string $partOfLifegroup,
         ?string $lifegroupLeaderName,
-        string $leadingLifegroup
+        ?string $leadingLifegroup
     ): void {
         if ($partOfLifegroup === 'yes') {
             $lifegroupName = ! empty($lifegroupLeaderName) ? $lifegroupLeaderName : 'General Lifegroup';
