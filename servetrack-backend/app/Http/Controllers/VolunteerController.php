@@ -192,6 +192,7 @@ class VolunteerController extends Controller
                     'email' => $user->email,
                     'role' => $user->role,
                     'volunteer_profile' => $volunteer->load(['experiences', 'skills', 'trainings', 'positions', 'availabilities', 'lifegroups', 'emergencyContact']),
+                    'needs_profile_completion' => $volunteer->isProfileIncomplete(),
                 ],
             ], 201)->withCookie($cookie);
 

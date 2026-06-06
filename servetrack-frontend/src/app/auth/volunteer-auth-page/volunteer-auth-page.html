@@ -309,20 +309,6 @@
   </div>
 
 
-<!-- Success Modal -->
-@if (showSuccessModal()) {
-  <div class="modal-overlay" (click)="closeSuccessModal()">
-    <div class="modal-card" (click)="$event.stopPropagation()">
-      <div class="modal-icon success">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-      </div>
-      <h2>Account Created!</h2>
-      <p>Redirecting to sign in... ({{ countdown() }}s)</p>
-      <button type="button" class="btn-primary" (click)="goToLoginNow()">Sign In Now</button>
-    </div>
-  </div>
-}
-
 <!-- Error Modal -->
 @if (showErrorModal()) {
   <div class="modal-overlay" (click)="closeErrorModal()">
