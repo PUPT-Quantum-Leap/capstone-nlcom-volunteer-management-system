@@ -109,7 +109,9 @@ export class AuthService {
    * Fetch CSRF cookie before making stateful requests
    */
   public ensureCsrf$(): Observable<void> {
-    const backendUrl = environment.apiUrl.replace(/\/api$/, '');
+    const backendUrl = environment.apiUrl.endsWith('/api')
+      ? environment.apiUrl.slice(0, -4)
+      : environment.apiUrl;
     return this.http.get<void>(`${backendUrl}/sanctum/csrf-cookie`, { withCredentials: true });
   }
 
