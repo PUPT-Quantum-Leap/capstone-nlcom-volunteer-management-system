@@ -1,4 +1,15 @@
-import { Component, ChangeDetectionStrategy, signal, inject, OnInit, computed } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnInit,
+  Signal,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgOptimizedImage } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -15,6 +26,61 @@ import {
   lifegroupLeaderValidator,
 } from '../../validators/form.validator';
 
+interface StepConfig {
+  readonly id: number;
+  readonly label: string;
+  readonly fields: ReadonlyArray<string>;
+}
+
+const STEP_CONFIGS: ReadonlyArray<StepConfig> = [
+  {
+    id: 1,
+    label: 'Personal',
+    fields: [
+      'firstName',
+      'lastName',
+      'mobileNumber',
+      'birthdate',
+      'completeAddress',
+      'lastMedicalExam',
+    ],
+  },
+  {
+    id: 2,
+    label: 'Education',
+    fields: [
+      'educationalAttainment',
+      'trainingExperience',
+      'skillsHobbies',
+      'classesTraining',
+    ],
+  },
+  {
+    id: 3,
+    label: 'Preferences',
+    fields: [
+      'volunteerPreference',
+      'otherPreference',
+      'availability',
+      'otherAvailability',
+      'partOfLifegroup',
+      'lifegroupLeaderName',
+      'leadingLifegroup',
+    ],
+  },
+  {
+    id: 4,
+    label: 'Emergency',
+    fields: [
+      'emergencyContactName',
+      'emergencyContactNumber',
+      'emergencyContactRelationship',
+    ],
+  },
+];
+
+const DRAFT_STORAGE_KEY = 'completeProfile.draft';
+
 @Component({
   selector: 'app-complete-profile',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -28,16 +94,32 @@ export class ProfileCompleteComponent implements OnInit {
   private authService = inject(AuthService);
   private sanitizer = inject(InputSanitizerService);
 
-  isSubmitting = signal(false);
-  submitError = signal<string | null>(null);
-  showOtherPreference = signal(false);
-  showOtherAvailability = signal(false);
-  showLifegroupLeader = signal(false);
+  readonly steps = STEP_CONFIGS;
+  readonly currentStep = signal(1);
+  readonly isSubmitting = signal(false);
+  readonly submitError = signal<string | null>(null);
+  readonly stepError = signal<string | null>(null);
+  readonly showOtherPreference = signal(false);
+  readonly showOtherAvailability = signal(false);
+  readonly showLifegroupLeader = signal(false);
+  readonly completedSteps = signal<ReadonlySet<number>>(new Set());
 
-  currentUser = this.authService.currentUser;
-  displayName = computed(() => this.currentUser()?.name ?? '');
-  displayEmail = computed(() => this.currentUser()?.email ?? '');
-  isGoogleUser = computed(() => this.currentUser()?.provider === 'google');
+  readonly currentUser = this.authService.currentUser;
+  readonly displayName = computed(() => this.currentUser()?.name ?? '');
+  readonly displayEmail = computed(() => this.currentUser()?.email ?? '');
+  readonly isGoogleUser = computed(() => this.currentUser()?.provider === 'google');
+
+  readonly totalSteps = this.steps.length;
+  readonly progressPercent = computed(() =>
+    Math.round(((this.currentStep() - 1) / (this.totalSteps - 1)) * 100),
+  );
+  readonly isFirstStep = computed(() => this.currentStep() === 1);
+  readonly isLastStep = computed(() => this.currentStep() === this.totalSteps);
+  readonly currentStepConfig: Signal<StepConfig> = computed(
+    () => this.steps[this.currentStep() - 1] ?? this.steps[0]!,
+  );
+
+  readonly stepHeading = viewChild<ElementRef<HTMLHeadingElement>>('stepHeading');
 
   form: FormGroup = this.fb.group({
     firstName: ['', [Validators.required, nameValidator(this.sanitizer)]],
@@ -62,8 +144,16 @@ export class ProfileCompleteComponent implements OnInit {
     emergencyContactRelationship: ['', [Validators.required, Validators.maxLength(50)]],
   });
 
+  constructor() {
+    effect(() => {
+      if (this.currentStep() === 1) { return; }
+      queueMicrotask(() => {
+        this.stepHeading()?.nativeElement.focus();
+      });
+    });
+  }
+
   ngOnInit(): void {
-    // For email signup users: pre-fill and hide fields already collected at registration
     const user = this.currentUser();
     if (user && !this.isGoogleUser()) {
       const volunteer = user.volunteer_profile;
@@ -73,14 +163,14 @@ export class ProfileCompleteComponent implements OnInit {
         lastName: nameParts.slice(1).join(' ') ?? '',
         mobileNumber: volunteer?.mobile_number ?? '',
       });
-      // Remove required validators since these are already stored
-      // Remove required validators since these are already stored
       for (const field of ['firstName', 'lastName', 'mobileNumber']) {
         const ctrl = this.form.get(field);
         ctrl?.clearValidators();
         ctrl?.updateValueAndValidity();
       }
     }
+
+    this.restoreDraft();
 
     this.form.get('volunteerPreference')?.valueChanges.subscribe((v) => {
       this.showOtherPreference.set(v === 'other');
@@ -104,17 +194,71 @@ export class ProfileCompleteComponent implements OnInit {
       }
       ctrl?.updateValueAndValidity();
     });
+
+    this.form.valueChanges.subscribe(() => {
+      this.persistDraft();
+    });
+  }
+
+  nextStep(): void {
+    if (!this.validateCurrentStep()) { return; }
+    this.stepError.set(null);
+    this.completedSteps.update((set) => new Set([...set, this.currentStep()]));
+    if (this.isLastStep()) { return; }
+    this.currentStep.update((s) => s + 1);
+  }
+
+  prevStep(): void {
+    this.stepError.set(null);
+    if (this.isFirstStep()) { return; }
+    this.currentStep.update((s) => s - 1);
+  }
+
+  goToStep(step: number): void {
+    if (step === this.currentStep()) { return; }
+    if (step > this.currentStep() && !this.completedSteps().has(step - 1)
+        && step - 1 !== this.currentStep() - 1) { return; }
+    if (step < this.currentStep() || this.completedSteps().has(step)) {
+      this.currentStep.set(step);
+    }
+  }
+
+  validateCurrentStep(): boolean {
+    const config = this.currentStepConfig();
+    let valid = true;
+    for (const field of config.fields) {
+      const ctrl = this.form.get(field);
+      if (!ctrl) { continue; }
+      ctrl.markAsTouched();
+      ctrl.updateValueAndValidity({ onlySelf: true });
+      if (ctrl.invalid) { valid = false; }
+    }
+    if (!valid) {
+      this.stepError.set('Please fix the highlighted fields before continuing.');
+    }
+    return valid;
+  }
+
+  hasError(field: string): boolean {
+    const ctrl = this.form.get(field);
+    return !!(ctrl?.invalid && ctrl.touched);
+  }
+
+  isFieldInCurrentStep(field: string): boolean {
+    return this.currentStepConfig().fields.includes(field);
   }
 
   async onSubmit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.stepError.set('Some required fields are missing. Please review each step.');
       return;
     }
     if (this.isSubmitting()) { return; }
 
     this.isSubmitting.set(true);
     this.submitError.set(null);
+    this.stepError.set(null);
 
     const v = this.form.value;
     const payload = {
@@ -145,14 +289,52 @@ export class ProfileCompleteComponent implements OnInit {
     this.isSubmitting.set(false);
 
     if (response.success) {
+      this.clearDraft();
       await this.router.navigate(['/volunteer-dashboard']);
     } else {
       this.submitError.set(response.message ?? 'Profile completion failed. Please try again.');
     }
   }
 
-  hasError(field: string): boolean {
-    const ctrl = this.form.get(field);
-    return !!(ctrl?.invalid && ctrl.touched);
+  private persistDraft(): void {
+    if (typeof sessionStorage === 'undefined') { return; }
+    try {
+      const draft = {
+        step: this.currentStep(),
+        values: this.form.value,
+      };
+      sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch {
+      // storage may be unavailable; fail silently
+    }
+  }
+
+  private restoreDraft(): void {
+    if (typeof sessionStorage === 'undefined') { return; }
+    try {
+      const raw = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) { return; }
+      const parsed = JSON.parse(raw) as { step?: number; values?: Record<string, unknown> };
+      if (parsed.values && typeof parsed.values === 'object') {
+        this.form.patchValue(parsed.values);
+      }
+      if (parsed.step && parsed.step >= 1 && parsed.step <= this.totalSteps) {
+        this.currentStep.set(parsed.step);
+        const completed = new Set<number>();
+        for (let i = 1; i < parsed.step; i++) { completed.add(i); }
+        this.completedSteps.set(completed);
+      }
+    } catch {
+      // corrupt draft; ignore
+    }
+  }
+
+  private clearDraft(): void {
+    if (typeof sessionStorage === 'undefined') { return; }
+    try {
+      sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
   }
 }
