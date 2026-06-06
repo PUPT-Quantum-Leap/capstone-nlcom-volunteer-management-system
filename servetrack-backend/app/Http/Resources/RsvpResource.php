@@ -58,7 +58,13 @@ class RsvpResource extends JsonResource
                     return [
                         'id' => $shift->time_slot_id,
                         'text' => $shift->text ?? 'Unknown Time Slot',
-                        'timeSlot' => $shift->pivot?->time_slot ?? 'Unknown Time Slot',
+                        'timeSlot' => $shift->pivot?->time_slot
+                            ? (str_contains($shift->pivot->time_slot, ' - ')
+                                ? collect(explode(' - ', $shift->pivot->time_slot))
+                                    ->map(fn ($t) => date('g:i A', strtotime(trim($t))))
+                                    ->implode(' - ')
+                                : date('g:i A', strtotime($shift->pivot->time_slot)))
+                            : 'Unknown Time Slot',
                         'capacity' => $shift->pivot?->capacity ?? 0,
                         'responses' => $responseCount,
                     ];
