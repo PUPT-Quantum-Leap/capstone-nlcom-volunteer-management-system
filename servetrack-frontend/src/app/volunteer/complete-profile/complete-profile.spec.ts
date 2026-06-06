@@ -2,10 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { Router, ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
-import { ProfileCompleteComponent } from './complete-profile';
+import { ProfileCompleteComponent, DRAFT_STORAGE_KEY } from './complete-profile';
 import { AuthService } from '../../services/auth.service';
-
-const DRAFT_KEY = 'completeProfile.draft';
 
 describe('ProfileCompleteComponent', () => {
   const mockRouter = { navigate: vi.fn() };
@@ -133,8 +131,8 @@ describe('ProfileCompleteComponent', () => {
     fixture.detectChanges();
     const comp = fixture.componentInstance;
     comp.form.patchValue({ birthdate: '1995-05-05' });
-    expect(sessionStorage.getItem(DRAFT_KEY)).toBeTruthy();
-    const parsed = JSON.parse(sessionStorage.getItem(DRAFT_KEY)!);
+    expect(sessionStorage.getItem(DRAFT_STORAGE_KEY)).toBeTruthy();
+    const parsed = JSON.parse(sessionStorage.getItem(DRAFT_STORAGE_KEY)!);
     expect(parsed.values.birthdate).toBe('1995-05-05');
   });
 
@@ -162,7 +160,7 @@ describe('ProfileCompleteComponent', () => {
     });
 
     await comp.onSubmit();
-    expect(sessionStorage.getItem(DRAFT_KEY)).toBeNull();
+    expect(sessionStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull();
   });
 
   it('goToStep allows jumping back to a completed step', () => {
@@ -179,4 +177,37 @@ describe('ProfileCompleteComponent', () => {
     comp.goToStep(1);
     expect(comp.currentStep()).toBe(1);
   });
+
+  it('restoreDraft restores step, values, and completed steps from sessionStorage', () => {
+    const draft = {
+      step: 3,
+      values: {
+        firstName: 'Jane',
+        lastName: 'Doe',
+        mobileNumber: '09123456789',
+        birthdate: '1992-02-02',
+        completeAddress: '456 Avenue, City',
+        lastMedicalExam: '2024-06-01',
+        educationalAttainment: 'College',
+        volunteerPreference: 'Relief Operations',
+        availability: 'Weekends Only',
+        partOfLifegroup: 'yes',
+        lifegroupLeaderName: 'Leader Name',
+        leadingLifegroup: 'no',
+      },
+    };
+    sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+
+    const fixture = TestBed.createComponent(ProfileCompleteComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance;
+
+    expect(comp.currentStep()).toBe(3);
+    expect(comp.form.get('firstName')?.value).toBe('Jane');
+    expect(comp.form.get('birthdate')?.value).toBe('1992-02-02');
+    expect(comp.form.get('educationalAttainment')?.value).toBe('College');
+    expect(comp.completedSteps().has(1)).toBe(true);
+    expect(comp.completedSteps().has(2)).toBe(true);
+  });
 });
+

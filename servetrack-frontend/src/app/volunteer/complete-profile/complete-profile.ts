@@ -79,7 +79,7 @@ const STEP_CONFIGS: ReadonlyArray<StepConfig> = [
   },
 ];
 
-const DRAFT_STORAGE_KEY = 'completeProfile.draft';
+export const DRAFT_STORAGE_KEY = 'completeProfile.draft';
 
 @Component({
   selector: 'app-complete-profile',
@@ -145,8 +145,11 @@ export class ProfileCompleteComponent implements OnInit {
   });
 
   constructor() {
+    let prevStep = 0;
     effect(() => {
-      if (this.currentStep() === 1) { return; }
+      const step = this.currentStep();
+      if (step === prevStep) { return; }
+      prevStep = step;
       queueMicrotask(() => {
         this.stepHeading()?.nativeElement.focus();
       });
@@ -170,8 +173,6 @@ export class ProfileCompleteComponent implements OnInit {
       }
     }
 
-    this.restoreDraft();
-
     this.form.get('volunteerPreference')?.valueChanges.subscribe((v) => {
       this.showOtherPreference.set(v === 'other');
       if (v !== 'other') { this.form.get('otherPreference')?.setValue(''); }
@@ -194,6 +195,8 @@ export class ProfileCompleteComponent implements OnInit {
       }
       ctrl?.updateValueAndValidity();
     });
+
+    this.restoreDraft();
 
     this.form.valueChanges.subscribe(() => {
       this.persistDraft();
@@ -284,15 +287,19 @@ export class ProfileCompleteComponent implements OnInit {
       emergencyContactRelationship: this.sanitizer.sanitizeInput(v.emergencyContactRelationship, 'both'),
     };
 
-    const response = await firstValueFrom(this.authService.completeProfile$(payload));
-
-    this.isSubmitting.set(false);
-
-    if (response.success) {
-      this.clearDraft();
-      await this.router.navigate(['/volunteer-dashboard']);
-    } else {
-      this.submitError.set(response.message ?? 'Profile completion failed. Please try again.');
+    try {
+      const response = await firstValueFrom(this.authService.completeProfile$(payload));
+      if (response.success) {
+        this.clearDraft();
+        await this.router.navigate(['/volunteer-dashboard']);
+      } else {
+        this.submitError.set(response.message ?? 'Profile completion failed. Please try again.');
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Profile completion failed. Please try again.';
+      this.submitError.set(message);
+    } finally {
+      this.isSubmitting.set(false);
     }
   }
 
