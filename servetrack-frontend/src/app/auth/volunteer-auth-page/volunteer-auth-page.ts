@@ -64,10 +64,7 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
   showConfirmPassword = signal(false);
   showPasswordRequirements = signal(false);
   signupError = signal<string | null>(null);
-  showSuccessModal = signal(false);
   showErrorModal = signal(false);
-  countdown = signal(5);
-  private countdownInterval?: ReturnType<typeof setInterval>;
 
   private queryParamsSubscription?: Subscription;
 
@@ -133,7 +130,6 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.queryParamsSubscription?.unsubscribe();
-    this.clearCountdown();
   }
 
   // ─── Tab switching ────────────────────────────────────────────────────────
@@ -296,7 +292,11 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
         setTimeout(async () => {
           try {
             const redirectPath = this.route.snapshot.queryParams['redirect'];
-            await this.router.navigateByUrl(redirectPath || '/volunteer-dashboard');
+            const target = redirectPath
+              || (response.user?.needs_profile_completion
+                ? '/volunteer/complete-profile'
+                : '/volunteer-dashboard');
+            await this.router.navigateByUrl(target);
           } catch {
             this.loginErrorMessage.set('Redirect failed. Please try again.');
           } finally {
@@ -338,7 +338,11 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
       const response = await this.authService.volunteerSignup(formData);
 
       if (response.success) {
-        this.startSuccessCountdown();
+        if (response.user?.needs_profile_completion) {
+          await this.router.navigate(['/volunteer/complete-profile']);
+        } else {
+          await this.router.navigate(['/volunteer-dashboard']);
+        }
       } else {
         this.signupError.set(response.message || 'Registration failed');
         this.showErrorModal.set(true);
@@ -354,35 +358,5 @@ export class VolunteerAuthPage implements OnInit, OnDestroy {
   // ─── Modals & Redirect ────────────────────────────────────────────────────
   closeErrorModal(): void {
     this.showErrorModal.set(false);
-  }
-
-  startSuccessCountdown(): void {
-    this.countdown.set(5);
-    this.showSuccessModal.set(true);
-    this.countdownInterval = setInterval(() => {
-      const next = this.countdown() - 1;
-      this.countdown.set(Math.max(0, next));
-      if (next <= 0) {
-        this.goToLoginNow();
-      }
-    }, 1000);
-  }
-
-  closeSuccessModal(): void {
-    this.clearCountdown();
-    this.showSuccessModal.set(false);
-  }
-
-  goToLoginNow(): void {
-    this.closeSuccessModal();
-    this.switchTab('login');
-    this.registrationSuccessMessage.set('Registration successful! Please log in with your new credentials.');
-  }
-
-  private clearCountdown(): void {
-    if (this.countdownInterval) {
-      clearInterval(this.countdownInterval);
-      this.countdownInterval = undefined;
-    }
   }
 }

@@ -77,6 +77,9 @@ class LoginController extends Controller
             case 'volunteer':
             default:
                 $userData['volunteer_profile'] = $user->volunteer;
+                $userData['needs_profile_completion'] = $user->volunteer
+                    ? $user->volunteer->isProfileIncomplete()
+                    : true;
                 break;
         }
 

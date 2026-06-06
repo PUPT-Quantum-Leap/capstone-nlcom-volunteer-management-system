@@ -42,6 +42,22 @@ class Volunteer extends Model
         'last_medical_examination' => 'date',
     ];
 
+    /**
+     * Check whether the volunteer profile is missing fields collected in
+     * the post-signup "complete profile" step. Used by login and signup
+     * responses to decide whether to send the user to /volunteer/complete-profile.
+     */
+    public function isProfileIncomplete(): bool
+    {
+        return empty($this->birthdate)
+            || empty($this->address)
+            || empty($this->educational_attainment)
+            || empty($this->last_medical_examination)
+            || $this->positions()->count() === 0
+            || $this->availabilities()->count() === 0
+            || $this->emergencyContact === null;
+    }
+
     // Define Relationships
     /**
      * @return BelongsTo<User, $this>

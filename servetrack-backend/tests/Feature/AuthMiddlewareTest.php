@@ -1,6 +1,10 @@
 <?php
 
+use App\Models\Availability;
+use App\Models\EmergencyContact;
+use App\Models\Position;
 use App\Models\User;
+use App\Models\Volunteer;
 use Illuminate\Support\Facades\Log;
 
 describe('SecurityAudit middleware', function (): void {
@@ -130,5 +134,53 @@ describe('LoginRequest validation', function (): void {
             'email' => 'lower@example.com',
             'password' => 'password',
         ])->assertOk();
+    });
+});
+
+describe('Login response includes needs_profile_completion', function (): void {
+    it('sets needs_profile_completion=true for volunteer with incomplete profile', function (): void {
+        $user = User::factory()->create([
+            'email' => 'incomplete@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'volunteer',
+        ]);
+        Volunteer::factory()->create([
+            'user_id' => $user->id,
+            'birthdate' => null,
+        ]);
+
+        $this->postJson('/api/login', [
+            'email' => 'incomplete@example.com',
+            'password' => 'password',
+        ])
+            ->assertOk()
+            ->assertJsonPath('user.needs_profile_completion', true);
+    });
+
+    it('sets needs_profile_completion=false for volunteer with complete profile', function (): void {
+        $user = User::factory()->create([
+            'email' => 'complete@example.com',
+            'password' => bcrypt('password'),
+            'role' => 'volunteer',
+        ]);
+        $volunteer = Volunteer::factory()->create(['user_id' => $user->id]);
+        $position = Position::firstOrCreate(['name' => 'Test Position']);
+        $availability = Availability::firstOrCreate(['name' => 'Weekends']);
+        $emergencyContact = EmergencyContact::firstOrCreate([
+            'name' => 'Test Contact',
+            'phone_number' => '09123456789',
+            'relationship' => 'Friend',
+        ]);
+        $volunteer->positions()->attach($position->position_id);
+        $volunteer->availabilities()->attach($availability->availability_id);
+        $volunteer->emergency_contact_id = $emergencyContact->emergency_contact_id;
+        $volunteer->save();
+
+        $this->postJson('/api/login', [
+            'email' => 'complete@example.com',
+            'password' => 'password',
+        ])
+            ->assertOk()
+            ->assertJsonPath('user.needs_profile_completion', false);
     });
 });
