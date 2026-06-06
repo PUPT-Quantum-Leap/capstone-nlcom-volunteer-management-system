@@ -29,6 +29,15 @@ class DynamicSessionDomain
             config(['session.domain' => null]);
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        foreach ($response->headers->getCookies() as $cookie) {
+            if ($cookie->getName() === 'XSRF-TOKEN') {
+                $response->headers->set('X-CSRF-TOKEN', $cookie->getValue());
+                break;
+            }
+        }
+
+        return $response;
     }
 }

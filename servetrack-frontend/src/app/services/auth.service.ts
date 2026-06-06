@@ -1,6 +1,6 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Observable, catchError, tap, of, map, switchMap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -98,6 +98,7 @@ export interface AuthResponse {
 export class AuthService {
   private router = inject(Router);
   private http = inject(HttpClient);
+  private csrfTokenValue: string | null = null;
 
   // State signals
   isAuthenticated = signal(false);
@@ -106,13 +107,36 @@ export class AuthService {
   error = signal<string | null>(null);
 
   /**
-   * Fetch CSRF cookie before making stateful requests
+   * Return the cached CSRF token (set by ensureCsrf$ from the X-CSRF-TOKEN response header).
+   * Used as fallback when document.cookie doesn't contain XSRF-TOKEN.
+   */
+  getStoredCsrfToken(): string | null {
+    return this.csrfTokenValue;
+  }
+
+  /**
+   * Fetch CSRF cookie before making stateful requests.
+   * Also captures the encrypted token from a custom response header as a
+   * fallback for environments (e.g. Vercel preview) where the Set-Cookie
+   * header may be dropped by the proxy/CDN.
    */
   public ensureCsrf$(): Observable<void> {
     const backendUrl = environment.apiUrl.endsWith('/api')
       ? environment.apiUrl.slice(0, -4)
       : environment.apiUrl;
-    return this.http.get<void>(`${backendUrl}/sanctum/csrf-cookie`, { withCredentials: true });
+
+    return this.http.get(
+      `${backendUrl}/sanctum/csrf-cookie`,
+      { withCredentials: true, observe: 'response', responseType: 'text' },
+    ).pipe(
+      tap((response: HttpResponse<string>) => {
+        const token = response.headers.get('X-CSRF-TOKEN');
+        if (token) {
+          this.csrfTokenValue = token;
+        }
+      }),
+      map(() => void 0),
+    );
   }
 
   /**
