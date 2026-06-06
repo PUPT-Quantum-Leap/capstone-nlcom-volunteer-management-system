@@ -58,13 +58,7 @@ class RsvpResource extends JsonResource
                     return [
                         'id' => $shift->time_slot_id,
                         'text' => $shift->text ?? 'Unknown Time Slot',
-                        'timeSlot' => $shift->pivot?->time_slot
-                            ? (str_contains($shift->pivot->time_slot, ' - ')
-                                ? collect(explode(' - ', $shift->pivot->time_slot))
-                                    ->map(fn ($t) => date('g:i A', strtotime(trim($t))))
-                                    ->implode(' - ')
-                                : date('g:i A', strtotime($shift->pivot->time_slot)))
-                            : 'Unknown Time Slot',
+                        'timeSlot' => $this->formatTimeSlotValue($shift->pivot?->time_slot),
                         'capacity' => $shift->pivot?->capacity ?? 0,
                         'responses' => $responseCount,
                     ];
@@ -74,6 +68,33 @@ class RsvpResource extends JsonResource
             'canEditVote' => $volunteerId ? $this->canUserEditVote($volunteerId) : false,
             'remainingEdits' => $volunteerId ? $this->getRemainingEdits($volunteerId) : 0,
         ];
+    }
+
+    private function formatTimeSlotValue(?string $value): string
+    {
+        if ($value === null || $value === '') {
+            return 'Unknown Time Slot';
+        }
+
+        if (str_contains($value, ' - ')) {
+            $parts = explode(' - ', $value);
+            $formatted = [];
+
+            foreach ($parts as $part) {
+                $part = trim($part);
+                $timestamp = strtotime($part);
+                if ($timestamp === false) {
+                    return 'Unknown Time Slot';
+                }
+                $formatted[] = date('g:i A', $timestamp);
+            }
+
+            return implode(' - ', $formatted);
+        }
+
+        $timestamp = strtotime($value);
+
+        return $timestamp !== false ? date('g:i A', $timestamp) : 'Unknown Time Slot';
     }
 
     private function getUserVote(int $volunteerId): ?array
