@@ -67,4 +67,29 @@ describe('DynamicSessionDomain middleware', function (): void {
 
         expect(Config::get('session.domain'))->toBe('.quantumapp.tech');
     });
+
+    it('exposes the encrypted XSRF-TOKEN value as an X-CSRF-TOKEN response header', function (): void {
+        $response = $this->get('/sanctum/csrf-cookie');
+
+        $response->assertNoContent();
+        $response->assertHeader('X-CSRF-TOKEN');
+
+        $xsrfCookieValue = collect($response->headers->getCookies())
+            ->first(fn ($cookie) => $cookie->getName() === 'XSRF-TOKEN')
+            ?->getValue();
+
+        $headerValue = $response->headers->get('X-CSRF-TOKEN');
+
+        expect($headerValue)->not->toBeNull();
+        expect($headerValue)->toBe($xsrfCookieValue);
+    });
+
+    it('exposes the X-CSRF-TOKEN header for Vercel origins', function (): void {
+        $response = $this->withHeaders([
+            'Origin' => 'https://servetrack-git-feat-abc123.vercel.app',
+        ])->get('/sanctum/csrf-cookie');
+
+        $response->assertNoContent();
+        $response->assertHeader('X-CSRF-TOKEN');
+    });
 });
