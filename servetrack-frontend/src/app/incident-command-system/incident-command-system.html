@@ -56,6 +56,34 @@
     </div>
   }
 
+  <!-- VIEW TABS -->
+  <div class="ics-tabs">
+    <button
+      type="button"
+      class="ics-tab"
+      [class.active]="activeView() === 'dashboard'"
+      (click)="backToOverview()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tab-icon">
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="14" y="14" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
+      </svg>
+      <span>Dashboard</span>
+    </button>
+    <button
+      type="button"
+      class="ics-tab"
+      [class.active]="activeView() === 'operations'"
+      (click)="navigateToOperations()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tab-icon">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+      </svg>
+      <span>Operations</span>
+    </button>
+  </div>
+
   <!-- RSVP SELECTOR — only visible on dashboard -->
   @if (activeView() === 'dashboard' && rsvpOptions().length > 0) {
     <div class="rsvp-selector-container">
@@ -66,12 +94,6 @@
         (valueChange)="selectRsvp($event)"
         variant="volunteer">
       </app-custom-select>
-      <button
-        type="button"
-        class="action-btn"
-        (click)="navigateToOperations()">
-        View Operations
-      </button>
     </div>
   }
 

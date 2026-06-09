@@ -545,7 +545,8 @@ export class AdminLayout implements OnInit {
       lowerQuery.includes('planning') ||
       lowerQuery.includes('plan')
     ) {
-      this.navigateTo('operations', true);
+      void this.router.navigate(['/admin-dashboard', 'ics'], { queryParams: { view: 'operations' } });
+      this.closeMobileSidebar();
       return;
     }
 

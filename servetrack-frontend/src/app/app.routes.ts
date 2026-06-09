@@ -15,7 +15,6 @@ import { PollsComponent } from './volunteer-dashboard/polls/polls';
 import { AdminLayout } from './admin-dashboard/admin-layout/admin-layout';
 import { DashboardComponent } from './admin-dashboard/dashboard/dashboard';
 
-import { AnalyticsFeedingOperationComponent } from './admin-dashboard/analytics-feeding-operation/analytics-feeding-operation';
 import { OverviewDashboard } from './admin-dashboard/overview-dashboard/overview-dashboard';
 import { VolunteerManagement } from './admin-dashboard/volunteer-management/volunteer-management';
 import { AttendanceManagement } from './admin-dashboard/attendance-management/attendance-management';
@@ -73,7 +72,7 @@ export const routes: Routes = [
       { path: 'volunteers', component: VolunteerManagement },
       { path: 'attendance', component: AttendanceManagement },
       { path: 'performance', component: PerformanceComponent },
-      { path: 'operations', component: AnalyticsFeedingOperationComponent },
+      { path: 'operations', redirectTo: '/admin-dashboard/ics?view=operations', pathMatch: 'full' },
       { path: 'sms', component: SmsManagementComponent },
       { path: 'rsvps', component: RsvpsComponent },
       {
