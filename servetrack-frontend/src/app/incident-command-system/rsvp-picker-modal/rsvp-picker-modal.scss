@@ -114,7 +114,7 @@ $radius: 12px;
   justify-content: center;
   background: rgba(15, 23, 42, 0.4);
   backdrop-filter: blur(4px);
-  animation: fadeIn 0.15s ease;
+  animation: fade-in 0.15s ease;
   padding: 1rem;
 }
 
@@ -127,7 +127,7 @@ $radius: 12px;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
-  animation: scaleIn 0.2s ease;
+  animation: scale-in 0.2s ease;
   overflow: hidden;
 }
 
@@ -336,13 +336,13 @@ $radius: 12px;
   color: $text-muted;
 }
 
-// ─── Animations ──────────────────────────────────────────────
-@keyframes fadeIn {
+
+@keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-@keyframes scaleIn {
+@keyframes scale-in {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }

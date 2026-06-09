@@ -5,7 +5,6 @@ import {
   output,
   signal,
   computed,
-  HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -28,11 +27,11 @@ export interface RsvpPickerEvent {
  */
 @Component({
   selector: 'app-rsvp-picker',
-  standalone: true,
   imports: [CommonModule],
   templateUrl: './rsvp-picker-modal.html',
   styleUrl: './rsvp-picker-modal.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown.escape)': 'onEscape()' },
 })
 export class RsvpPickerComponent {
   // Inputs
@@ -75,7 +74,6 @@ export class RsvpPickerComponent {
   });
 
   // Keyboard support
-  @HostListener('document:keydown.escape')
   onEscape(): void {
     if (this.isOpen()) this.closeModal();
   }
