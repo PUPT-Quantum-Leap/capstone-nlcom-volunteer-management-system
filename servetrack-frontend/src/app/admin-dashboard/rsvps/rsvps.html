@@ -315,14 +315,26 @@
 
               <div class="form-group">
                 <label for="rsvp-location">Event Location *</label>
-                <input id="rsvp-location" type="text" formControlName="eventLocation" placeholder="e.g., NLCOM Main Hall" class="form-input" />
-                <button type="button" class="map-toggle-btn" (click)="toggleMapPicker()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                    <circle cx="12" cy="10" r="3"/>
-                  </svg>
-                  {{ showMapPicker() ? 'Hide Map' : 'Pin on Map' }}
-                </button>
+                <div class="input-icon-group">
+                  <button
+                    type="button"
+                    class="input-icon-btn"
+                    (click)="toggleMapPicker()"
+                    [title]="showMapPicker() ? 'Hide map' : 'Pin on map'"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                      <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                  </button>
+                  <input
+                    id="rsvp-location"
+                    type="text"
+                    formControlName="eventLocation"
+                    placeholder="e.g., NLCOM Main Hall"
+                    class="form-input"
+                  />
+                </div>
               </div>
 
               @if (showMapPicker()) {
@@ -408,6 +420,13 @@
 
         <div class="modal-footer">
           <button type="button" class="outline-btn" (click)="closeRsvpModal()" [disabled]="isCreatingRsvp()">Cancel</button>
+          <button type="button" class="preview-btn" (click)="openPreview()" [disabled]="isCreatingRsvp()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            Preview
+          </button>
           <button type="submit" class="primary-btn" [disabled]="isCreatingRsvp()">
             @if (isCreatingRsvp()) {
               <span class="btn-spinner"></span> {{ editingRsvp() ? 'Updating...' : 'Creating...' }}
@@ -417,6 +436,98 @@
           </button>
         </div>
       </form>
+    </section>
+  </div>
+}
+
+@if (showPreview()) {
+  <div class="modal-backdrop" (click)="closePreview()">
+    <section class="modal-card modal-md" (click)="$event.stopPropagation()" role="dialog"
+      aria-modal="true" aria-labelledby="preview-rsvp-title">
+      <div class="modal-header header-info">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </div>
+          <h3 id="preview-rsvp-title">RSVP Preview</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closePreview()" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="m18 6-12 12" /><path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (previewRsvp(); as rsvp) {
+          <div class="preview-card">
+            <div class="preview-header">
+              <h2 class="preview-title">{{ rsvp.title }}</h2>
+              @if (rsvp.description) {
+                <p class="preview-description">{{ rsvp.description }}</p>
+              }
+            </div>
+
+            <div class="preview-status-row">
+              <span class="preview-badge" [class.badge-active]="rsvp.status === 'active'" [class.badge-draft]="rsvp.status === 'draft'">
+                {{ rsvp.status === 'active' ? 'Open for RSVP' : 'Draft' }}
+              </span>
+            </div>
+
+            <div class="preview-meta">
+              <div class="preview-meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                <span>{{ rsvp.date }}</span>
+              </div>
+              @if (rsvp.eventLocation) {
+                <div class="preview-meta-item">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <span>{{ rsvp.eventLocation }}</span>
+                </div>
+              }
+              <div class="preview-meta-item preview-meta-urgent">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span>Cut-off: {{ rsvp.cutOffDay }} {{ rsvp.cutOffTime }}</span>
+              </div>
+            </div>
+
+            <div class="preview-shifts">
+              <h4 class="preview-shifts-title">Available Shifts</h4>
+              @for (shift of rsvp.shifts; track $index) {
+                <div class="preview-shift-item">
+                  <div class="preview-shift-info">
+                    <span class="preview-shift-time">{{ shift.timeSlot }}</span>
+                  </div>
+                  <div class="preview-shift-capacity">
+                    <div class="preview-capacity-bar">
+                      <div class="preview-capacity-fill" [style.width.%]="0"></div>
+                    </div>
+                    <span class="preview-capacity-text">0 / {{ shift.capacity }} slots filled</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <span class="preview-footer-note">This is a preview of how volunteers will see the RSVP</span>
+        <button type="button" class="primary-btn" (click)="closePreview()">Close Preview</button>
+      </div>
     </section>
   </div>
 }
