@@ -504,6 +504,17 @@
               </div>
             </div>
 
+            @if (rsvp.latitude && rsvp.longitude) {
+              <div class="preview-map">
+                <app-map-view
+                  [latitude]="rsvp.latitude"
+                  [longitude]="rsvp.longitude"
+                  [locationName]="rsvp.eventLocation"
+                  [height]="180"
+                />
+              </div>
+            }
+
             <div class="preview-shifts">
               <h4 class="preview-shifts-title">Available Shifts</h4>
               @for (shift of rsvp.shifts; track $index) {
