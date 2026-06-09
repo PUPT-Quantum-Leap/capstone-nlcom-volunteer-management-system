@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { of } from 'rxjs';
+import { provideRouter } from '@angular/router';
 import { IncidentCommandSystemComponent } from './incident-command-system';
 import { IcsDashboard } from '../models/ics';
 import { RsvpService } from '../services/rsvp.service';
@@ -122,6 +123,7 @@ describe('IncidentCommandSystemComponent', () => {
       providers: [
         { provide: RsvpService, useClass: MockRsvpService },
         { provide: IcsService, useClass: MockIcsService },
+        provideRouter([]),
       ],
     }).compileComponents();
 
