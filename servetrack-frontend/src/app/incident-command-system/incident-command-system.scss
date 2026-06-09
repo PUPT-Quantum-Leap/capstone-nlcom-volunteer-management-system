@@ -38,11 +38,11 @@ $radius: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
+  background: linear-gradient(135deg, $primary 0%, #3b82f6 100%);
   border-radius: $radius;
   padding: 1.25rem 1.5rem;
-  border: 1px solid $border-color;
-  box-shadow: $shadow-sm;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .report-header-left {
@@ -54,13 +54,12 @@ $radius: 12px;
 .report-badge {
   width: 3rem;
   height: 3rem;
-  background: linear-gradient(135deg, $primary 0%, #3b82f6 100%);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  box-shadow: 0 4px 12px rgba($primary, 0.2);
 
   svg {
     width: 1.5rem;
@@ -74,7 +73,7 @@ $radius: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: $primary;
+    color: rgba(255, 255, 255, 0.8);
     margin-bottom: 2px;
     display: block;
   }
@@ -82,7 +81,7 @@ $radius: 12px;
   .report-title {
     font-size: 1.5rem;
     font-weight: 800;
-    color: $text-main;
+    color: white;
     margin: 0;
     letter-spacing: -0.02em;
   }
@@ -91,6 +90,28 @@ $radius: 12px;
 .report-header-right {
   display: flex;
   gap: 0.75rem;
+
+  .action-btn {
+    background: white;
+    color: $primary;
+    border: none;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.9);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    &.secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    }
+  }
 }
 
 // Buttons
