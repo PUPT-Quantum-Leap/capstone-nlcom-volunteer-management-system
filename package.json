@@ -21,7 +21,6 @@
   },
   "homepage": "https://github.com/PUPT-Quantum-Leap/capstone-nlcom-volunteer-management-system#readme",
   "devDependencies": {
-    "gitleaks": "^1.0.0",
     "husky": "^9.1.7"
   },
   "dependencies": {
