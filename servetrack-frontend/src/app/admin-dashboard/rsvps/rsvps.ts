@@ -73,6 +73,7 @@ export class RsvpsComponent {
   readonly isCreatingRsvp = signal(false);
   readonly isDeletingRsvp = signal(false);
   readonly showMapPicker = signal(false);
+  readonly showPreview = signal(false);
   readonly feedbackMessage = signal('');
   readonly feedbackType = signal<'success' | 'error' | 'info'>('info');
 
@@ -196,6 +197,24 @@ export class RsvpsComponent {
     },
     { validators: this.cutoffDateValidator() },
   );
+
+  readonly previewRsvp = computed(() => {
+    const form = this.rsvpForm.value;
+    const rawShifts = (form.shifts ?? []) as { startTime: string; endTime: string; capacity: number }[];
+    return {
+      title: form.title || 'Untitled Event',
+      description: form.description || '',
+      eventLocation: form.eventLocation || '',
+      date: form.date || '',
+      cutOffDay: form.cutOffDay || '',
+      cutOffTime: form.cutOffTime || '',
+      status: form.status === 'active' ? ('active' as const) : ('draft' as const),
+      shifts: rawShifts.map((s) => ({
+        timeSlot: `${s.startTime || '--:--'} - ${s.endTime || '--:--'}`,
+        capacity: s.capacity || 0,
+      })),
+    };
+  });
 
   constructor() {
     this.loadRsvps();
@@ -362,6 +381,9 @@ export class RsvpsComponent {
   }
 
   closeRsvpModal(): void {
+    if (this.rsvpForm.dirty && !confirm('You have unsaved changes. Discard them?')) {
+      return;
+    }
     this.showRsvpModal.set(false);
     this.unlockBodyScroll();
     this.editingRsvp.set(null);
@@ -397,6 +419,16 @@ export class RsvpsComponent {
 
   toggleMapPicker(): void {
     this.showMapPicker.update((v) => !v);
+  }
+
+  openPreview(): void {
+    this.showPreview.set(true);
+    this.lockBodyScroll();
+  }
+
+  closePreview(): void {
+    this.showPreview.set(false);
+    this.unlockBodyScroll();
   }
 
   saveRsvp(): void {
