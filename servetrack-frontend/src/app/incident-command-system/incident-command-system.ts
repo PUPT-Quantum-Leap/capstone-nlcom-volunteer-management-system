@@ -20,6 +20,7 @@ import { Rsvp } from '../models/rsvp';
 import { IcsService } from '../services/ics.service';
 import { RsvpService } from '../services/rsvp.service';
 import { AnalyticsFeedingOperationComponent } from '../admin-dashboard/analytics-feeding-operation/analytics-feeding-operation';
+import { RsvpPickerComponent, RsvpPickerEvent } from './rsvp-picker-modal/rsvp-picker-modal';
 
 const SECTION_CHIEF_KEYS = ['planning', 'purchasing', 'mwc_coordinator', 'safety_emergency'];
 const BRANCH_DIRECTOR_KEYS = [
@@ -33,7 +34,7 @@ const BRANCH_DIRECTOR_KEYS = [
   templateUrl: './incident-command-system.html',
   styleUrl: './incident-command-system.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, CustomSelect, AnalyticsFeedingOperationComponent],
+  imports: [CommonModule, FormsModule, CustomSelect, AnalyticsFeedingOperationComponent, RsvpPickerComponent],
 })
 export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   private readonly rsvpService = inject(RsvpService);
@@ -44,6 +45,7 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
 
   // --- State Signals ---
   readonly rsvpOptions = signal<SelectOption<string>[]>([]);
+  readonly allRsvps = signal<Rsvp[]>([]);
   readonly selectedRsvp = signal<Rsvp | null>(null);
   readonly icsData = signal<IcsDashboard | null>(null);
   readonly aiSuggestions = signal<AiSuggestion[]>([]);
@@ -106,6 +108,17 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   // Export
   readonly operationsComponent = viewChild(AnalyticsFeedingOperationComponent);
   readonly showExportDropdown = signal(false);
+
+  // Unified RSVP picker events (derived from loaded RSVPs)
+  readonly pickerEvents = computed<RsvpPickerEvent[]>(() => {
+    return this.allRsvps().map(r => ({
+      id: r.id,
+      title: r.title,
+      date: r.date ?? null,
+      location: r.eventLocation,
+      status: r.status,
+    }));
+  });
 
   readonly dashboardVolunteers = computed(() => {
     const dashboard = this.icsData();
@@ -246,6 +259,7 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           const rsvps = response.data ?? [];
+          this.allRsvps.set(rsvps);
           this.rsvpOptions.set(rsvps.map((rsvp) => ({ label: rsvp.title, value: rsvp.id.toString() })));
 
           if (rsvps.length === 0) {
@@ -267,6 +281,16 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
     const option = this.rsvpOptions().find((rsvp) => Number(rsvp.value) === id);
     this.selectedRsvp.set(option ? ({ id, title: option.label } as Rsvp) : this.selectedRsvp());
     this.loadDashboard(id);
+  }
+
+  /** Unified handler for the RSVP picker modal */
+  onRsvpSelected(eventId: number): void {
+    const rsvp = this.allRsvps().find(r => r.id === eventId);
+    if (rsvp) {
+      this.selectedRsvp.set(rsvp);
+    }
+    this.selectedOperationsRsvpId.set(eventId);
+    this.loadDashboard(eventId);
   }
 
   loadDashboard(rsvpId: number): void {

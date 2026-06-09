@@ -1,4 +1,9 @@
-:host {
+
+.rsvp-picker-row {
+  display: flex;
+  align-items: center;
+}
+
   display: block;
   padding: 1.5rem;
   background: #f8fafc;

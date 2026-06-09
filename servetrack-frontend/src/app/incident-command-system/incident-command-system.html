@@ -114,18 +114,15 @@
     </button>
   </div>
 
-  <!-- RSVP SELECTOR — only visible on dashboard -->
-  @if (activeView() === 'dashboard' && rsvpOptions().length > 0) {
-    <div class="rsvp-selector-container">
-      <label class="filter-label">Target RSVP Event</label>
-      <app-custom-select
-        [options]="rsvpOptions()"
-        [value]="selectedRsvpId()?.toString() || ''"
-        (valueChange)="selectRsvp($event)"
-        variant="volunteer">
-      </app-custom-select>
-    </div>
-  }
+  <!-- UNIFIED RSVP PICKER -->
+  <div class="rsvp-picker-row">
+    <app-rsvp-picker
+      [events]="pickerEvents()"
+      [selectedId]="selectedRsvpId()"
+      [loading]="isLoading()"
+      (eventSelected)="onRsvpSelected($event)">
+    </app-rsvp-picker>
+  </div>
 
   <!-- LOADING / EMPTY -->
   @if (isLoading()) {
@@ -551,54 +548,6 @@
     </div>
     } @else if (activeView() === 'operations') {
     <!-- OPERATIONS VIEW (inline) -->
-    <!-- Standalone RSVP selector (outside operations container) -->
-    <div class="rsvp-selector-container">
-      <label class="filter-label">Target RSVP Event</label>
-      @if (rsvpIcsList().length > 0) {
-        <div class="rsvp-carousel" (wheel)="onRsvpCarouselWheel($event)">
-          <button
-            type="button"
-            class="carousel-arrow"
-            (click)="prevRsvp()"
-            [disabled]="isFirstRsvp()"
-            aria-label="Previous RSVPs">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M15 18l-6-6 6-6"/>
-            </svg>
-          </button>
-
-          <div class="carousel-track">
-            @for (rsvp of visibleRsvpCards(); track rsvp.rsvp_id) {
-              <button
-                type="button"
-                class="rsvp-card"
-                [class.active]="rsvp.rsvp_id === selectedOperationsRsvpId()"
-                (click)="selectOperationsRsvp(rsvp.rsvp_id)">
-                <span class="rsvp-card-title">{{ rsvp.title }}</span>
-                <span class="rsvp-card-date">{{ rsvp.date ? (rsvp.date | date: 'MMM d, yyyy') : '—' }}</span>
-                <span class="rsvp-card-status" [class.active]="rsvp.status === 'active'">
-                  {{ rsvp.status === 'active' ? 'Active' : 'Closed' }}
-                </span>
-              </button>
-            }
-          </div>
-
-          <button
-            type="button"
-            class="carousel-arrow"
-            (click)="nextRsvp()"
-            [disabled]="isLastRsvp()"
-            aria-label="Next RSVPs">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </button>
-        </div>
-      } @else {
-        <span class="carousel-empty-inline">No RSVP events with ICS data.</span>
-      }
-    </div>
-
     <div class="operations-inline-view">
       <app-analytics-feeding-operation
         [rsvpId]="selectedOperationsRsvpId()">
