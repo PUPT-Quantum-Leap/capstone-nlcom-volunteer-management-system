@@ -71,7 +71,15 @@
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
-          }
+        }
+        </div>
+
+        <!-- Status Filter -->
+        <div class="picker-filters">
+          <button type="button" class="filter-pill" [class.active]="statusFilter() === 'all'" (click)="statusFilter.set('all')">All</button>
+          <button type="button" class="filter-pill filter-active" [class.active]="statusFilter() === 'active'" (click)="statusFilter.set('active')">Active</button>
+          <button type="button" class="filter-pill filter-closed" [class.active]="statusFilter() === 'closed'" (click)="statusFilter.set('closed')">Closed</button>
+          <button type="button" class="filter-pill filter-draft" [class.active]="statusFilter() === 'draft'" (click)="statusFilter.set('draft')">Draft</button>
         </div>
 
         <!-- Event List -->

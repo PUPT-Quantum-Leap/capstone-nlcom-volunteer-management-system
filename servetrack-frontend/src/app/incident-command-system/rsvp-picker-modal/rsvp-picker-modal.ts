@@ -45,16 +45,22 @@ export class RsvpPickerComponent {
   // Internal state
   readonly searchQuery = signal('');
   readonly isOpen = signal(false);
+  readonly statusFilter = signal<'all' | 'active' | 'closed' | 'draft'>('all');
 
   // Computed
   readonly filteredEvents = computed(() => {
     const query = this.searchQuery().toLowerCase().trim();
-    let filtered = [...this.events()];
+    const status = this.statusFilter();
+    let filtered = this.events();
 
-    if (query) {
-      filtered = filtered.filter(event =>
-        event.title.toLowerCase().includes(query)
-      );
+    if (query || status !== 'all') {
+      filtered = filtered.filter(event => {
+        const matchesSearch = !query ||
+          event.title.toLowerCase().includes(query);
+        const matchesStatus = status === 'all' ||
+          event.status === status;
+        return matchesSearch && matchesStatus;
+      });
     }
 
     return filtered;
@@ -79,6 +85,7 @@ export class RsvpPickerComponent {
   closeModal(): void {
     this.isOpen.set(false);
     this.searchQuery.set('');
+    this.statusFilter.set('all');
   }
 
   selectEvent(eventId: number): void {
