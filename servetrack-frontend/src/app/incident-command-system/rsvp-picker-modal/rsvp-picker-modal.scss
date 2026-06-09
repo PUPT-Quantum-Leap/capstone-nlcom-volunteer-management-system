@@ -1,0 +1,366 @@
+// Design tokens
+$primary: #2563eb;
+$border-color: #e2e8f0;
+$text-main: #1e293b;
+$text-muted: #64748b;
+$radius: 12px;
+
+// ─── Chip Button ─────────────────────────────────────────────
+.chip-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: white;
+  border: 1.5px solid $border-color;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: $text-main;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  max-width: 480px;
+
+  &:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+  }
+
+  &.has-selection {
+    border-left: 3px solid $primary;
+    padding-left: 0.875rem;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.chip-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid $border-color;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+.chip-icon-calendar {
+  width: 16px;
+  height: 16px;
+  color: $primary;
+  flex-shrink: 0;
+}
+
+.chip-text {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chip-placeholder {
+  color: $text-muted;
+  font-weight: 500;
+}
+
+.chip-separator {
+  color: $text-muted;
+  font-weight: 400;
+}
+
+.chip-date {
+  color: $text-muted;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.chip-badge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: white;
+  flex-shrink: 0;
+
+  &.badge-active { background: #10b981; }
+  &.badge-closed { background: #94a3b8; }
+  &.badge-draft { background: #f59e0b; }
+}
+
+.chip-chevron {
+  width: 14px;
+  height: 14px;
+  color: $text-muted;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+// ─── Modal Overlay ───────────────────────────────────────────
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.15s ease;
+  padding: 1rem;
+}
+
+.modal-dialog {
+  background: white;
+  border-radius: $radius;
+  width: 100%;
+  max-width: 480px;
+  max-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 8px 20px rgba(0, 0, 0, 0.1);
+  animation: scaleIn 0.2s ease;
+  overflow: hidden;
+}
+
+// ─── Modal Header ────────────────────────────────────────────
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $border-color;
+}
+
+.modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: $text-main;
+  margin: 0;
+}
+
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: $text-muted;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  svg { width: 16px; height: 16px; }
+
+  &:hover {
+    background: #f1f5f9;
+    color: $text-main;
+  }
+}
+
+// ─── Search ──────────────────────────────────────────────────
+.modal-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid $border-color;
+}
+
+.search-icon {
+  width: 16px;
+  height: 16px;
+  color: $text-muted;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: $text-main;
+  background: transparent;
+
+  &::placeholder { color: #94a3b8; }
+}
+
+.search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: $text-muted;
+  cursor: pointer;
+
+  svg { width: 12px; height: 12px; }
+
+  &:hover { background: #e2e8f0; }
+}
+
+// ─── Event List ──────────────────────────────────────────────
+.modal-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.event-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: #f8fafc;
+  }
+
+  &.selected {
+    background: #eff6ff;
+    border: 1px solid rgba($primary, 0.15);
+  }
+
+  & + & {
+    margin-top: 2px;
+  }
+}
+
+.event-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.event-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $text-main;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: $text-muted;
+}
+
+.event-date {
+  white-space: nowrap;
+}
+
+.event-location {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &::before {
+    content: '·';
+    margin-right: 0.5rem;
+  }
+}
+
+.event-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.status-badge {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: white;
+
+  &.badge-active { background: #10b981; }
+  &.badge-closed { background: #94a3b8; }
+  &.badge-draft { background: #f59e0b; }
+}
+
+.check-icon {
+  width: 16px;
+  height: 16px;
+  color: $primary;
+}
+
+// ─── Empty State ─────────────────────────────────────────────
+.empty-state {
+  padding: 2rem 1rem;
+  text-align: center;
+
+  p {
+    font-size: 0.875rem;
+    color: $text-muted;
+    margin: 0;
+  }
+}
+
+// ─── Footer ──────────────────────────────────────────────────
+.modal-footer {
+  padding: 0.625rem 1.25rem;
+  border-top: 1px solid $border-color;
+}
+
+.footer-count {
+  font-size: 0.75rem;
+  color: $text-muted;
+}
+
+// ─── Animations ──────────────────────────────────────────────
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ─── Responsive ──────────────────────────────────────────────
+@media (max-width: 640px) {
+  .modal-dialog {
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: 12px 12px 0 0;
+    align-self: flex-end;
+  }
+
+  .chip-button {
+    max-width: 100%;
+  }
+}
