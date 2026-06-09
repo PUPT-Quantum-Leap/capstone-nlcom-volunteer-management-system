@@ -17,11 +17,12 @@ import { AuthService } from '../services/auth.service';
 import { Rsvp as RsvpModel, RsvpShift, RsvpResponse } from '../models/rsvp';
 import { UserBadgeComponent } from '../components/user-badge/user-badge.component';
 import { MapViewComponent } from '../components/map-view/map-view';
+import { Time12hrPipe } from '../pipes/time12hr.pipe';
 
 @Component({
   selector: 'app-rsvp',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, UserBadgeComponent, MapViewComponent],
+  imports: [CommonModule, UserBadgeComponent, MapViewComponent, Time12hrPipe],
   templateUrl: './rsvp.html',
   styleUrl: './rsvp-styles.scss',
 })
