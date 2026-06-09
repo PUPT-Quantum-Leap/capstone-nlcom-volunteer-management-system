@@ -118,7 +118,7 @@
                   />
                   <span class="radio-dot" aria-hidden="true"></span>
                 </div>
-                <span class="option-label">{{ shift.timeSlot }}</span>
+                <span class="option-label">{{ shift.timeSlot | time12hr }}</span>
                 <span class="option-meta">
                   @if (isFull(shift)) {
                     <span class="badge-full">Full</span>
@@ -196,7 +196,7 @@
                         <span class="radio-dot" aria-hidden="true"></span>
                       </div>
                       <span class="option-label">
-                        {{ shift.timeSlot }}
+                        {{ shift.timeSlot | time12hr }}
                         @if (shift.id === response.timeSlotId) {
                           <span class="current-tag">(Current)</span>
                         }
@@ -237,7 +237,7 @@
                   <div class="result-item" [class.user-choice]="shift.id === response.timeSlotId">
                     <div class="result-info">
                       <span class="result-label">
-                        {{ shift.timeSlot }}
+                        {{ shift.timeSlot | time12hr }}
                         @if (shift.id === response.timeSlotId) {
                           <span class="your-tag">Your pick</span>
                         }
@@ -263,7 +263,7 @@
               @for (shift of rsvp.shifts; track shift.id) {
                 <div class="result-item">
                   <div class="result-info">
-                    <span class="result-label">{{ shift.timeSlot }}</span>
+                    <span class="result-label">{{ shift.timeSlot | time12hr }}</span>
                     <span class="result-count">{{ shift.responses }}/{{ shift.capacity }}</span>
                   </div>
                   <div class="result-bar-bg">
