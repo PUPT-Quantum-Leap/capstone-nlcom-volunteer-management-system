@@ -173,6 +173,51 @@ $radius: 12px;
   font-size: 0.875rem;
 }
 
+// Tabs
+.ics-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 0.25rem;
+  border: 1px solid $border-color;
+}
+
+.ics-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+  padding: 0.625rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: $text-muted;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: $text-main;
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  &.active {
+    background: white;
+    color: $primary;
+    box-shadow: $shadow-sm;
+  }
+
+  .tab-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+}
+
 // RSVP Selector
 .rsvp-selector-container {
   background: #f8fafc;

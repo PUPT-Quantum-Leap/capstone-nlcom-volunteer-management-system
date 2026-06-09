@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, comp
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { finalize, switchMap } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { finalize, switchMap, take } from 'rxjs';
 import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
 import jsPDF from 'jspdf';
 import autoTable, { RowInput } from 'jspdf-autotable';
@@ -39,6 +39,7 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   private readonly rsvpService = inject(RsvpService);
   private readonly icsService = inject(IcsService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
   // --- State Signals ---
@@ -114,6 +115,12 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadRsvpList();
     this.initResponsiveVisibleCards();
+
+    this.route.queryParams.pipe(take(1)).subscribe((params) => {
+      if (params['view'] === 'operations') {
+        this.navigateToOperations();
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -143,6 +150,12 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   navigateToOperations(): void {
     this.activeView.set('operations');
     this.loadRsvpIcsList();
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { view: 'operations' },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   backToOverview(): void {
@@ -151,6 +164,12 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
     if (rsvpId) {
       this.loadDashboard(rsvpId);
     }
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { view: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   // ===== OPERATIONS CAROUSEL =====
