@@ -1,7 +1,7 @@
 # Check for secrets with gitleaks (optional - runs if installed)
 if command -v gitleaks &> /dev/null; then
   echo "🔍 Running gitleaks..."
-  gitleaks detect --verbose --no-git || {
+  gitleaks detect --log-opts=--cached --verbose || {
     echo "❌ Gitleaks detected secrets! Commit aborted."
     exit 1
   }
