@@ -39,15 +39,23 @@ class IcsTeam extends Model
         return $this->belongsTo(Team::class, 'team_id');
     }
 
+    /**
+     * Volunteers assigned to this ICS team via the ics_volunteer pivot.
+     *
+     * Key mapping:
+     *  - Pivot foreign key: ics_volunteer.team_id  → matches ics_team.team_id (local key)
+     *  - Pivot related key: ics_volunteer.volunteer_id → matches volunteer.volunteer_id
+     *  - Scoped by ics_id to isolate assignments per ICS instance.
+     */
     public function volunteers(): BelongsToMany
     {
         return $this->belongsToMany(
             Volunteer::class,
             'ics_volunteer',
-            'team_id',
-            'volunteer_id',
-            'team_id',       // Local key on ics_team that matches pivot's team_id
-            'volunteer_id'   // Related key on volunteer table
+            'team_id',       // foreignPivotKey
+            'volunteer_id',  // relatedPivotKey
+            'team_id',       // parentKey
+            'volunteer_id'   // relatedKey
         )->wherePivot('ics_id', $this->ics_id)
             ->withPivot('role', 'is_driver', 'is_leader', 'assigned_at');
     }

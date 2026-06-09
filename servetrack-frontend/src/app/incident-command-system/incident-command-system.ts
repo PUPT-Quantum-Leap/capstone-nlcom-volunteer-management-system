@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { finalize, switchMap, take } from 'rxjs';
+import { distinctUntilChanged, finalize, map, switchMap } from 'rxjs';
 import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
 import jsPDF from 'jspdf';
 import autoTable, { RowInput } from 'jspdf-autotable';
@@ -116,9 +116,17 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
     this.loadRsvpList();
     this.initResponsiveVisibleCards();
 
-    this.route.queryParams.pipe(take(1)).subscribe((params) => {
-      if (params['view'] === 'operations') {
-        this.navigateToOperations();
+    this.route.queryParams.pipe(
+      map(params => params['view'] as string | undefined),
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(view => {
+      if (view === 'operations') {
+        if (this.activeView() !== 'operations') {
+          this.navigateToOperations();
+        }
+      } else if (this.activeView() === 'operations') {
+        this.backToOverview();
       }
     });
   }
