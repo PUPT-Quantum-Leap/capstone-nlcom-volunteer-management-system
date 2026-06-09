@@ -14,6 +14,14 @@
     </div>
 
     <div class="report-header-right">
+      <!-- RSVP Event Picker -->
+      <app-rsvp-picker
+        [events]="pickerEvents()"
+        [selectedId]="selectedRsvpId()"
+        [loading]="isLoading()"
+        (eventSelected)="onRsvpSelected($event)">
+      </app-rsvp-picker>
+
       <!-- Export PDF dropdown -->
       <div class="export-dropdown-container">
         <button
@@ -112,16 +120,6 @@
       </svg>
       <span>Operations</span>
     </button>
-  </div>
-
-  <!-- UNIFIED RSVP PICKER -->
-  <div class="rsvp-picker-row">
-    <app-rsvp-picker
-      [events]="pickerEvents()"
-      [selectedId]="selectedRsvpId()"
-      [loading]="isLoading()"
-      (eventSelected)="onRsvpSelected($event)">
-    </app-rsvp-picker>
   </div>
 
   <!-- LOADING / EMPTY -->
