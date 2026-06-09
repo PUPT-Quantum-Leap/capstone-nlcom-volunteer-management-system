@@ -45,7 +45,9 @@ class IcsTeam extends Model
             Volunteer::class,
             'ics_volunteer',
             'team_id',
-            'volunteer_id'
+            'volunteer_id',
+            'team_id',       // Local key on ics_team that matches pivot's team_id
+            'volunteer_id'   // Related key on volunteer table
         )->wherePivot('ics_id', $this->ics_id)
             ->withPivot('role', 'is_driver', 'is_leader', 'assigned_at');
     }
