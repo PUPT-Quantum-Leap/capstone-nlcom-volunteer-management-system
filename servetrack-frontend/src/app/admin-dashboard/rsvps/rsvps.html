@@ -645,7 +645,7 @@
                         </div>
                       </td>
                       <td>{{ r.volunteer_department }}</td>
-                      <td>{{ r.time_slot }}</td>
+                      <td>{{ r.time_slot | time12hr }}</td>
                       <td>
                         <span [class]="'status-chip status-chip--' + r.attendance_status">
                           {{ r.attendance_status | titlecase }}

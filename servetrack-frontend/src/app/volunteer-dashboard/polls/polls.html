@@ -184,7 +184,7 @@
               [checked]="selectedOptionId() === option.id" [disabled]="isOptionFull(option)" />
             <span class="radio-indicator" aria-hidden="true"></span>
           </div>
-          <span class="option-label">{{ option.timeSlot }}</span>
+          <span class="option-label">{{ option.timeSlot | time12hr }}</span>
           <span class="option-meta">
             @if (isOptionFull(option)) { <span class="full-badge">Full</span> }
             @else { <span class="spots-left">{{ option.capacity - option.votes }} left</span> }
@@ -293,7 +293,7 @@
           <div class="active-poll-votes">
             @for (option of poll.options; track option.id) {
             <div class="vote-row">
-              <span class="vote-row-label">{{ option.timeSlot }}</span>
+              <span class="vote-row-label">{{ option.timeSlot | time12hr }}</span>
               <span class="vote-row-count">{{ option.votes }}</span>
               <div class="vote-row-bar-bg">
                 <div class="vote-row-bar" [style.width.%]="getVotePercentage(option, poll)"></div>
@@ -437,7 +437,7 @@
           @for (option of selectedPoll.options; track option.id) {
           <div class="result-item" [class.user-choice]="hasUserVotedOnPoll(selectedPoll.id) && option.id === getUserSelectedOption(selectedPoll.id)">
             <div class="result-info">
-              <span class="result-label">{{ option.timeSlot }}</span>
+              <span class="result-label">{{ option.timeSlot | time12hr }}</span>
               <div class="result-stats">
                 <span class="result-votes">{{ option.votes }} volunteer{{ option.votes === 1 ? '' : 's' }}</span>
                 <span class="result-percentage">{{ getVotePercentage(option, selectedPoll) }}%</span>

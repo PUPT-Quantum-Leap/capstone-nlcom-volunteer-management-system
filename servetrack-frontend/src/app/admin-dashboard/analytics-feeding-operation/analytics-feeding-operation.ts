@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, effect, inject, input, output, sign
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { Time12hrPipe } from '../../pipes/time12hr.pipe';
 import { AnalyticsService } from '../../services/analytics.service';
 import { IcsTeamFeedingOperation } from '../../services/analytics.service';
 import jsPDF from 'jspdf';
@@ -28,7 +29,7 @@ interface FeedingOperationRow extends FeedingOperation {
 @Component({
   selector: 'app-analytics-feeding-operation',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, Time12hrPipe],
   templateUrl: './analytics-feeding-operation.html',
   styleUrl: './analytics-feeding-operation.scss',
 })

@@ -17,6 +17,7 @@ import { catchError } from 'rxjs/operators';
 import { Attendance, AttendanceStats } from '../../models/attendance';
 import { Rsvp, UserVote } from '../../models/rsvp';
 import { VolunteerProfileResponse } from '../../models/volunteer-profile';
+import { Time12hrPipe } from '../../pipes/time12hr.pipe';
 
 interface PollOption {
   id: number;
@@ -38,7 +39,7 @@ interface Poll {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [],
+  imports: [Time12hrPipe],
   templateUrl: './overview.html',
   styleUrl: './overview.scss',
 })
