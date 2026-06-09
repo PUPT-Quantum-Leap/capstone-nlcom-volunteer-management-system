@@ -14,15 +14,13 @@
     </div>
 
     <div class="report-header-right">
-      <button
-        type="button"
-        class="action-btn secondary"
-        [disabled]="!hasIcsData() || isExporting()"
-        (click)="exportPdf()">
-        @if (isExporting()) {
-          <span class="btn-spinner" aria-hidden="true"></span>
-          <span>Exporting...</span>
-        } @else {
+      <!-- Export PDF dropdown -->
+      <div class="export-dropdown-container">
+        <button
+          type="button"
+          class="action-btn secondary"
+          [disabled]="!hasIcsData() || isExporting()"
+          (click)="toggleExportDropdown()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
             <polyline points="14,2 14,8 20,8"/>
@@ -30,7 +28,39 @@
             <line x1="16" y1="17" x2="8" y2="17"/>
           </svg>
           <span>Export PDF</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-chevron">
+            <polyline points="6,9 12,15 18,9"/>
+          </svg>
+        </button>
+
+        @if (showExportDropdown()) {
+          <div class="export-dropdown-backdrop" (click)="showExportDropdown.set(false)"></div>
+          <div class="export-dropdown">
+            <button type="button" class="export-dropdown-item" (click)="exportIcsPdf(); $event.stopPropagation()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              <span>ICS Dashboard PDF</span>
+            </button>
+            <button type="button" class="export-dropdown-item" (click)="exportOperationsPdf(); $event.stopPropagation()" [disabled]="activeView() !== 'operations'">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+              <span>Operations PDF</span>
+            </button>
+          </div>
         }
+      </div>
+
+      <!-- Export Excel (Operations only) -->
+      <button
+        type="button"
+        class="action-btn secondary"
+        [disabled]="activeView() !== 'operations'"
+        (click)="exportOperationsExcel()"
+        title="Export Operations as Excel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <path d="M10 14l4 4M14 14l-4 4"/>
+        </svg>
+        <span>Export Excel</span>
       </button>
 
       <button
@@ -571,8 +601,7 @@
 
     <div class="operations-inline-view">
       <app-analytics-feeding-operation
-        [rsvpId]="selectedOperationsRsvpId()"
-        (backToOverview)="backToOverview()">
+        [rsvpId]="selectedOperationsRsvpId()">
       </app-analytics-feeding-operation>
     </div>
     }

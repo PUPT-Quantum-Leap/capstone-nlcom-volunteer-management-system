@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -102,6 +102,10 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   readonly sectionChiefRoles = computed(() => this.rolesByKeys(SECTION_CHIEF_KEYS));
   readonly branchDirectorRoles = computed(() => this.rolesByKeys(BRANCH_DIRECTOR_KEYS));
   readonly hasSelectedSuggestions = computed(() => this.selectedSuggestionIds().size > 0);
+
+  // Export
+  readonly operationsComponent = viewChild(AnalyticsFeedingOperationComponent);
+  readonly showExportDropdown = signal(false);
 
   readonly dashboardVolunteers = computed(() => {
     const dashboard = this.icsData();
@@ -518,6 +522,24 @@ export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
     } finally {
       this.isExporting.set(false);
     }
+  }
+
+  exportOperationsPdf(): void {
+    this.showExportDropdown.set(false);
+    this.operationsComponent()?.exportReport('pdf');
+  }
+
+  exportOperationsExcel(): void {
+    this.operationsComponent()?.exportReport('excel');
+  }
+
+  exportIcsPdf(): void {
+    this.showExportDropdown.set(false);
+    this.exportPdf();
+  }
+
+  toggleExportDropdown(): void {
+    this.showExportDropdown.update(v => !v);
   }
 
   private generateIcsPdf(dashboard: IcsDashboard): void {
