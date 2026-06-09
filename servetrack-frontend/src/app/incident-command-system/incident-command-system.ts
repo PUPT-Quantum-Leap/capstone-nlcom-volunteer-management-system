@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { distinctUntilChanged, finalize, map, switchMap } from 'rxjs';
-import { CustomSelect, SelectOption } from '../components/custom-select/custom-select';
+import { SelectOption } from '../components/custom-select/custom-select';
 import jsPDF from 'jspdf';
 import autoTable, { RowInput } from 'jspdf-autotable';
 import {
@@ -34,7 +34,7 @@ const BRANCH_DIRECTOR_KEYS = [
   templateUrl: './incident-command-system.html',
   styleUrl: './incident-command-system.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, CustomSelect, AnalyticsFeedingOperationComponent, RsvpPickerComponent],
+  imports: [CommonModule, FormsModule, AnalyticsFeedingOperationComponent, RsvpPickerComponent],
 })
 export class IncidentCommandSystemComponent implements OnInit, OnDestroy {
   private readonly rsvpService = inject(RsvpService);
