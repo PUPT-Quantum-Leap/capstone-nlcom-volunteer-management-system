@@ -13,6 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RsvpService } from '../../services/rsvp.service';
 import { Rsvp, UserVote, Location } from '../../models/rsvp';
 import { MapViewComponent } from '../../components/map-view/map-view';
+import { Time12hrPipe } from '../../pipes/time12hr.pipe';
 
 interface PollOption {
   id: number;
@@ -41,7 +42,7 @@ interface Poll {
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgClass, MapViewComponent],
+  imports: [NgClass, MapViewComponent, Time12hrPipe],
   templateUrl: './polls.html',
   styleUrl: './polls.scss',
 })

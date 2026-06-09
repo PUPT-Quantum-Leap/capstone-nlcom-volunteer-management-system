@@ -85,7 +85,7 @@
                     class="edit-input"
                     [(ngModel)]="operation.time" />
                 } @else {
-                  {{ operation.time }}
+                  {{ operation.time | time12hr }}
                 }
               </td>
               <td class="pax-cell">

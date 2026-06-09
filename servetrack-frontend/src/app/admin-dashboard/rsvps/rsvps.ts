@@ -18,6 +18,7 @@ import { AdminDashboardService, NonResponder } from '../../services/admin-dashbo
 
 import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
 import { MapPickerComponent, MapLocation } from '../../components/map-picker/map-picker';
+import { Time12hrPipe } from '../../pipes/time12hr.pipe';
 import { GlobalSearchService } from '../../services/global-search.service';
 
 export interface RespondedItem {
@@ -37,7 +38,7 @@ export interface RespondedItem {
 @Component({
   selector: 'app-rsvps',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, CustomSelect, MapPickerComponent],
+  imports: [CommonModule, ReactiveFormsModule, CustomSelect, MapPickerComponent, Time12hrPipe],
   templateUrl: './rsvps.html',
   styleUrl: './rsvps.scss',
 })

@@ -566,7 +566,7 @@ export class ChatbotContainerComponent {
   formatTime(dateStr: string): string {
     const date = new Date(dateStr);
     if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   }
 
   copyMessage(msg: ChatMessage, index: number): void {

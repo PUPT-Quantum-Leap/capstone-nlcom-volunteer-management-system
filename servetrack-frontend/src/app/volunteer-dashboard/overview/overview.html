@@ -97,7 +97,7 @@
                 [class.most-voted]="!poll.userVote && isMostVoted(option, poll)"
               >
                 <div class="result-labels">
-                  <span class="opt-text">{{ option.timeSlot }}</span>
+                  <span class="opt-text">{{ option.timeSlot | time12hr }}</span>
                   <span class="opt-val">{{ getVotePercentage(option, poll) }}%</span>
                 </div>
                 <div class="track">
