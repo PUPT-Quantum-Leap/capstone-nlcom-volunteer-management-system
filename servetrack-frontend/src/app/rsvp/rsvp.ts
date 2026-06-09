@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RsvpService } from '../services/rsvp.service';
 import { AuthService } from '../services/auth.service';
 import { Rsvp as RsvpModel, RsvpShift, RsvpResponse } from '../models/rsvp';
@@ -22,7 +22,7 @@ import { Time12hrPipe } from '../pipes/time12hr.pipe';
 @Component({
   selector: 'app-rsvp',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, UserBadgeComponent, MapViewComponent, Time12hrPipe],
+  imports: [CommonModule, NgOptimizedImage, UserBadgeComponent, MapViewComponent, Time12hrPipe],
   templateUrl: './rsvp.html',
   styleUrl: './rsvp-styles.scss',
 })
