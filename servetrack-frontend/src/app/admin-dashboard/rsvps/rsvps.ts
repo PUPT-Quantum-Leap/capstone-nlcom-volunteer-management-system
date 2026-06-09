@@ -18,6 +18,7 @@ import { AdminDashboardService, NonResponder } from '../../services/admin-dashbo
 
 import { CustomSelect, SelectOption } from '../../components/custom-select/custom-select';
 import { MapPickerComponent, MapLocation } from '../../components/map-picker/map-picker';
+import { MapViewComponent } from '../../components/map-view/map-view';
 import { Time12hrPipe } from '../../pipes/time12hr.pipe';
 import { GlobalSearchService } from '../../services/global-search.service';
 
@@ -38,7 +39,7 @@ export interface RespondedItem {
 @Component({
   selector: 'app-rsvps',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, CustomSelect, MapPickerComponent, Time12hrPipe],
+  imports: [CommonModule, ReactiveFormsModule, CustomSelect, MapPickerComponent, MapViewComponent, Time12hrPipe],
   templateUrl: './rsvps.html',
   styleUrl: './rsvps.scss',
 })
@@ -198,23 +199,18 @@ export class RsvpsComponent {
     { validators: this.cutoffDateValidator() },
   );
 
-  readonly previewRsvp = computed(() => {
-    const form = this.rsvpForm.value;
-    const rawShifts = (form.shifts ?? []) as { startTime: string; endTime: string; capacity: number }[];
-    return {
-      title: form.title || 'Untitled Event',
-      description: form.description || '',
-      eventLocation: form.eventLocation || '',
-      date: form.date || '',
-      cutOffDay: form.cutOffDay || '',
-      cutOffTime: form.cutOffTime || '',
-      status: form.status === 'active' ? ('active' as const) : ('draft' as const),
-      shifts: rawShifts.map((s) => ({
-        timeSlot: `${s.startTime || '--:--'} - ${s.endTime || '--:--'}`,
-        capacity: s.capacity || 0,
-      })),
-    };
-  });
+  readonly previewRsvp = signal<{
+    title: string;
+    description: string;
+    eventLocation: string;
+    latitude: number | null;
+    longitude: number | null;
+    date: string;
+    cutOffDay: string;
+    cutOffTime: string;
+    status: 'active' | 'draft';
+    shifts: { timeSlot: string; capacity: number }[];
+  } | null>(null);
 
   constructor() {
     this.loadRsvps();
@@ -422,12 +418,30 @@ export class RsvpsComponent {
   }
 
   openPreview(): void {
+    const form = this.rsvpForm.value;
+    const rawShifts = (form.shifts ?? []) as { startTime: string; endTime: string; capacity: number }[];
+    this.previewRsvp.set({
+      title: form.title || 'Untitled Event',
+      description: form.description || '',
+      eventLocation: form.eventLocation || '',
+      latitude: form.latitude ?? null,
+      longitude: form.longitude ?? null,
+      date: form.date || '',
+      cutOffDay: form.cutOffDay || '',
+      cutOffTime: form.cutOffTime || '',
+      status: form.status === 'active' ? 'active' : 'draft',
+      shifts: rawShifts.map((s) => ({
+        timeSlot: `${s.startTime || '--:--'} - ${s.endTime || '--:--'}`,
+        capacity: s.capacity || 0,
+      })),
+    });
     this.showPreview.set(true);
     this.lockBodyScroll();
   }
 
   closePreview(): void {
     this.showPreview.set(false);
+    this.previewRsvp.set(null);
     this.unlockBodyScroll();
   }
 
