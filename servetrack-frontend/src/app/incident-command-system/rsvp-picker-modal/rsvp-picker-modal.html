@@ -29,82 +29,93 @@
   </svg>
 </button>
 
-<!-- Modal -->
+<!-- Modal (uses unified modal pattern from admin-layout) -->
 @if (isOpen()) {
-  <div class="modal-overlay" (click)="onBackdropClick($event)">
-    <div class="modal-dialog">
+  <div class="modal-backdrop" (click)="onBackdropClick($event)">
+    <div class="modal-card modal-sm">
       <!-- Header -->
-      <div class="modal-header">
-        <h3 class="modal-title">Select RSVP Event</h3>
-        <button type="button" class="modal-close" (click)="closeModal()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="modal-header header-primary">
+        <div class="modal-title-wrapper">
+          <div class="modal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <h3>Select RSVP Event</h3>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
       </div>
 
-      <!-- Search -->
-      <div class="modal-search">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-        </svg>
-        <input
-          type="text"
-          class="search-input"
-          placeholder="Search events..."
-          [value]="searchQuery()"
-          (input)="onSearchInput($event)"
-          autofocus
-        />
-        @if (searchQuery()) {
-          <button type="button" class="search-clear" (click)="searchQuery.set('')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        }
-      </div>
+      <!-- Body -->
+      <div class="modal-body picker-body">
+        <!-- Search -->
+        <div class="picker-search">
+          <svg class="picker-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input
+            type="text"
+            class="picker-search-input"
+            placeholder="Search by name..."
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+            autofocus
+          />
+          @if (searchQuery()) {
+            <button type="button" class="picker-search-clear" (click)="searchQuery.set('')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          }
+        </div>
 
-      <!-- Event List -->
-      <div class="modal-list">
-        @if (filteredEvents().length === 0) {
-          <div class="empty-state">
-            <p>{{ searchQuery() ? 'No events match your search' : 'No events available' }}</p>
-          </div>
-        }
+        <!-- Event List -->
+        <div class="picker-list">
+          @if (filteredEvents().length === 0) {
+            <div class="picker-empty">
+              <p>{{ searchQuery() ? 'No events match your search' : 'No events available' }}</p>
+            </div>
+          }
 
-        @for (event of filteredEvents(); track event.id) {
-          <button
-            type="button"
-            class="event-item"
-            [class.selected]="selectedId() === event.id"
-            (click)="selectEvent(event.id)">
-            <div class="event-info">
-              <span class="event-title">{{ event.title }}</span>
-              <div class="event-meta">
-                @if (event.date) {
-                  <span class="event-date">{{ formatDate(event.date) }}</span>
-                }
-                @if (event.location) {
-                  <span class="event-location">{{ truncateLocation(event.location) }}</span>
+          @for (event of filteredEvents(); track event.id) {
+            <button
+              type="button"
+              class="picker-item"
+              [class.selected]="selectedId() === event.id"
+              (click)="selectEvent(event.id)">
+              <div class="picker-item-info">
+                <span class="picker-item-title">{{ event.title }}</span>
+                <div class="picker-item-meta">
+                  @if (event.date) {
+                    <span>{{ formatDate(event.date) }}</span>
+                  }
+                  @if (event.location) {
+                    <span class="picker-item-location">{{ truncateLocation(event.location) }}</span>
+                  }
+                </div>
+              </div>
+              <div class="picker-item-right">
+                <span class="picker-badge" [class]="'badge-' + event.status">{{ event.status }}</span>
+                @if (selectedId() === event.id) {
+                  <svg class="picker-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="18" height="18">
+                    <polyline points="20,6 9,17 4,12"/>
+                  </svg>
                 }
               </div>
-            </div>
-            <div class="event-right">
-              <span class="status-badge" [class]="'badge-' + event.status">{{ event.status }}</span>
-              @if (selectedId() === event.id) {
-                <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <polyline points="20,6 9,17 4,12"/>
-                </svg>
-              }
-            </div>
-          </button>
-        }
+            </button>
+          }
+        </div>
       </div>
 
       <!-- Footer -->
       <div class="modal-footer">
-        <span class="footer-count">{{ filteredEvents().length }} event{{ filteredEvents().length !== 1 ? 's' : '' }}</span>
+        <span class="picker-count">{{ filteredEvents().length }} event{{ filteredEvents().length !== 1 ? 's' : '' }}</span>
+        <button type="button" class="btn-secondary" (click)="closeModal()">Close</button>
       </div>
     </div>
   </div>
